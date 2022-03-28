@@ -193,7 +193,7 @@ func TestVerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  "asraa/slsa-on-github-test",
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: "/gossts/slsa-go/.github/workflows/builder.yml@refs/heads/main",
+				JobWobWorkflowRef: "/slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml@refs/heads/main",
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://bad.issuer.com",
 			},
@@ -205,7 +205,7 @@ func TestVerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  "malicious/slsa-on-github-test",
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: "/gossts/slsa-go/.github/workflows/builder.yml@refs/heads/main",
+				JobWobWorkflowRef: "/slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml@refs/heads/main",
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
@@ -217,7 +217,7 @@ func TestVerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  "asraa/slsa-on-github-test",
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: "/gossts/slsa-go/.github/workflows/builder.yml@refs/heads/main",
+				JobWobWorkflowRef: "/slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml@refs/heads/main",
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
@@ -229,7 +229,7 @@ func TestVerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  "asraa/slsa-on-github-test",
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: "/gossts/slsa-go/.github/workflows/builder.yml@refs/heads/main",
+				JobWobWorkflowRef: "/slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml@refs/heads/main",
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
