@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/gossts/slsa-provenance/pkg"
+	"github.com/slsa-framework/slsa-verifier/pkg"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 )
 
