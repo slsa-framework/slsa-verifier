@@ -1,4 +1,4 @@
-module github.com/gossts/slsa-provenance
+module github.com/slsa-framework/slsa-verifier
 
 go 1.17
 
