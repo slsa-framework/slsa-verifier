@@ -40,7 +40,7 @@ func errCmp(e1, e2 error) bool {
 	return errors.Is(e1, e2) || errors.Is(e2, e1)
 }
 
-func TestGetRekorEntries(t *testing.T) {
+func Test_GetRekorEntries(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -95,7 +95,7 @@ func TestGetRekorEntries(t *testing.T) {
 	}
 }
 
-func TestVerifyProvenance(t *testing.T) {
+func Test_VerifyProvenance(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -105,31 +105,31 @@ func TestVerifyProvenance(t *testing.T) {
 	}{
 		{
 			name:         "invalid dsse: not SLSA predicate",
-			path:         "./testdata/dsse-not-slsa.intoto",
+			path:         "./testdata/dsse-not-slsa.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     errorInvalidDssePayload,
 		},
 		{
 			name:         "invalid dsse: nil subject",
-			path:         "./testdata/dsse-no-subject.intoto",
+			path:         "./testdata/dsse-no-subject.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     errorInvalidDssePayload,
 		},
 		{
 			name:         "invalid dsse: no sha256 subject digest",
-			path:         "./testdata/dsse-no-subject-hash.intoto",
+			path:         "./testdata/dsse-no-subject-hash.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     errorInvalidDssePayload,
 		},
 		{
 			name:         "mismatched artifact hash with env",
-			path:         "./testdata/dsse-valid.intoto",
+			path:         "./testdata/dsse-valid.intoto.jsonl",
 			artifactHash: "1ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     errorMismatchHash,
 		},
 		{
 			name:         "valid rekor entries found",
-			path:         "./testdata/dsse-valid.intoto",
+			path:         "./testdata/dsse-valid.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     nil,
 		},
@@ -156,7 +156,7 @@ func TestVerifyProvenance(t *testing.T) {
 	}
 }
 
-func TestVerifyWorkflowIdentity(t *testing.T) {
+func Test_VerifyWorkflowIdentity(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
@@ -244,6 +244,62 @@ func TestVerifyWorkflowIdentity(t *testing.T) {
 			err := VerifyWorkflowIdentity(tt.workflow, tt.source)
 			if (err == nil) != tt.res {
 				t.Errorf("unexpected result, expected verfication %t", tt.res)
+			}
+		})
+	}
+}
+
+func Test_VerifyBranch(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		path     string
+		branch   string
+		expected error
+	}{
+		{
+			name:   "ref main",
+			path:   "./testdata/dsse-main-ref.intoto.jsonl",
+			branch: "main",
+		},
+		{
+			name:   "ref branch3",
+			path:   "./testdata/dsse-branch3-ref.intoto.jsonl",
+			branch: "branch3",
+		},
+		{
+			name:     "invalid ref type",
+			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
+			expected: errorInvalidDssePayload,
+		},
+		{
+			name:     "invalid version",
+			path:     "./testdata/dsse-invalid-version.intoto.jsonl",
+			expected: errorInvalidVersion,
+		},
+		{
+			name:   "tag branch2",
+			path:   "./testdata/dsse-branch2-tag.intoto.jsonl",
+			branch: "branch2",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(tt.path)
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+			env, err := envelopeFromBytes(content)
+			if err != nil {
+				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+			}
+
+			err = VerifyBranch(env, tt.branch)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})
 	}

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -48,6 +49,8 @@ var (
 	errorInvalidDssePayload = errors.New("invalid DSSE envelope payload")
 	errorRekorSearch        = errors.New("error searching rekor entries")
 	errorMismatchHash       = errors.New("binary artifact hash does not match provenance subject")
+	errorMismatchBranch     = errors.New("branch used to generate the binary does not match provenance")
+	errorInvalidVersion     = errors.New("invalid version")
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -393,8 +396,103 @@ func VerifyProvenance(env *dsselib.Envelope, expectedHash string) error {
 	}
 
 	if !strings.EqualFold(hash, expectedHash) {
-		return errorMismatchHash
+		return fmt.Errorf("hash '%s': %w", hash, errorMismatchHash)
 	}
 
 	return nil
+}
+
+func VerifyBranch(env *dsselib.Envelope, expectedBranch string) error {
+	branch, err := getBranch(env)
+	if err != nil {
+		return err
+	}
+
+	if !strings.EqualFold(branch, "refs/heads/"+expectedBranch) {
+		return fmt.Errorf("branch '%s': %w", branch, errorMismatchBranch)
+	}
+
+	return nil
+}
+
+func getAsInt(parameters map[string]interface{}, field string) (int, error) {
+	value, ok := parameters[field]
+	if !ok {
+		return -1, fmt.Errorf("%w: %s", errorInvalidDssePayload,
+			fmt.Sprintf("parameters type for %s", field))
+	}
+
+	fmt.Println(reflect.TypeOf(value))
+	i, ok := value.(float64)
+	if !ok {
+		return -1, fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type float64")
+	}
+	return int(i), nil
+}
+
+func getAsString(parameters map[string]interface{}, field string) (string, error) {
+	value, ok := parameters[field]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload,
+			fmt.Sprintf("parameters type for %s", field))
+	}
+
+	i, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type string")
+	}
+	return i, nil
+}
+
+// Get branch from the provenance invocation parameters.
+func getBranch(env *dsselib.Envelope) (string, error) {
+	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "decoding payload")
+	}
+
+	var prov intoto.ProvenanceStatement
+	if err := json.Unmarshal([]byte(pyld), &prov); err != nil {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "unmarshalling json")
+	}
+
+	parameters, ok := prov.Predicate.Invocation.Parameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type")
+	}
+
+	// Version.
+	version, err := getAsInt(parameters, "version")
+	if err != nil {
+		return "", err
+	}
+	if version != 1 {
+		return "", fmt.Errorf("%w", errorInvalidVersion)
+	}
+
+	// RefType.
+	refType, err := getAsString(parameters, "ref_type")
+	if err != nil {
+		return "", err
+	}
+	// RefType.
+	ref, err := getAsString(parameters, "ref")
+	if err != nil {
+		return "", err
+	}
+	// BaseRef.
+	baseRef, err := getAsString(parameters, "base_ref")
+	if err != nil {
+		return "", err
+	}
+
+	switch refType {
+	case "branch":
+		return ref, nil
+	case "tag":
+		return baseRef, nil
+	}
+
+	return "", fmt.Errorf("%w: %s", errorInvalidDssePayload,
+		fmt.Sprintf("unknown ref type: %s", refType))
 }
