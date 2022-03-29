@@ -11,8 +11,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/gossts/slsa-provenance/pkg"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
+	"github.com/slsa-framework/slsa-verifier/pkg"
 )
 
 func usage(p string) {
@@ -89,7 +89,7 @@ func verify(ctx context.Context, provenancePath, artifactHash, source string) er
 func main() {
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&binaryPath, "binary", "", "path to a binary to verify")
-	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/gossts/example")
+	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/some/repo")
 	flag.Parse()
 
 	if provenancePath == "" || binaryPath == "" || source == "" {

@@ -1,1 +1,1 @@
-# slsa-provenance
+# slsa-verifier
