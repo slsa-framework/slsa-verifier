@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -422,7 +421,6 @@ func getAsInt(parameters map[string]interface{}, field string) (int, error) {
 			fmt.Sprintf("parameters type for %s", field))
 	}
 
-	fmt.Println(reflect.TypeOf(value))
 	i, ok := value.(float64)
 	if !ok {
 		return -1, fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type float64")
