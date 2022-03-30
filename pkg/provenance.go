@@ -442,6 +442,52 @@ func getAsString(parameters map[string]interface{}, field string) (string, error
 	return i, nil
 }
 
+func getBaseRef(parameters map[string]interface{}) (string, error) {
+	baseRef, err := getAsString(parameters, "base_ref")
+	if err != nil {
+		return "", err
+	}
+
+	// This `base_ref` seems to always be "".
+	if baseRef != "" {
+		return baseRef, nil
+	}
+
+	// Look at the event payload instead.
+	// We don't do thatt it all the time because the payload
+	// is event-specific; and only the `push` event seems to have a `base_ref``.
+	eventName, err := getAsString(parameters, "event_name")
+	if err != nil {
+		return "", err
+	}
+
+	if eventName != "push" {
+		return "", nil
+	}
+
+	eventPayload, ok := parameters["event_payload"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type event payload")
+	}
+
+	payload, ok := eventPayload.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type payload")
+	}
+
+	bRef, ok := payload["base_ref"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type base_ref")
+	}
+
+	baseRef, ok = bRef.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type base_ref")
+	}
+
+	return baseRef, nil
+}
+
 // Get branch from the provenance invocation parameters.
 func getBranch(env *dsselib.Envelope) (string, error) {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
@@ -479,7 +525,7 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 		return "", err
 	}
 	// BaseRef.
-	baseRef, err := getAsString(parameters, "base_ref")
+	baseRef, err := getBaseRef(parameters)
 	if err != nil {
 		return "", err
 	}
