@@ -29,11 +29,12 @@ var (
 	provenancePath string
 	binaryPath     string
 	source         string
+	branch         string
 )
 
 var defaultRekorAddr = "https://rekor.sigstore.dev"
 
-func verify(ctx context.Context, provenancePath, artifactHash, source string) error {
+func verify(ctx context.Context, provenancePath, artifactHash, source, branch string) error {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
 		return err
@@ -72,8 +73,13 @@ func verify(ctx context.Context, provenancePath, artifactHash, source string) er
 		return err
 	}
 
-	// Verify the workflow identity
+	// Verify the workflow identity.
 	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
+		return err
+	}
+
+	// Verify the branch.
+	if err := pkg.VerifyBranch(env, branch); err != nil {
 		return err
 	}
 
@@ -90,6 +96,7 @@ func main() {
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&binaryPath, "binary", "", "path to a binary to verify")
 	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/some/repo")
+	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from. Default: main")
 	flag.Parse()
 
 	if provenancePath == "" || binaryPath == "" || source == "" {
@@ -109,7 +116,10 @@ func main() {
 	}
 
 	ctx := context.Background()
-	if err := verify(ctx, provenancePath, hex.EncodeToString(h.Sum(nil)), source); err != nil {
+	if err := verify(ctx, provenancePath,
+		hex.EncodeToString(h.Sum(nil)),
+		source,
+		branch); err != nil {
 		log.Fatal(err)
 	}
 
