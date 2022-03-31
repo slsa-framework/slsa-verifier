@@ -475,17 +475,7 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type payload")
 	}
 
-	bRef, ok := payload["base_ref"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type base_ref")
-	}
-
-	baseRef, ok = bRef.(string)
-	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type base_ref")
-	}
-
-	return baseRef, nil
+	return getAsString(payload, "base_ref")
 }
 
 // Get branch from the provenance invocation parameters.
