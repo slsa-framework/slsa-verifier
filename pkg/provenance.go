@@ -525,7 +525,7 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 	case "tag":
 		return getBaseRef(parameters)
 	default:
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload,
-			fmt.Sprintf("unknown ref type: %s", refType))
+		return "", fmt.Errorf("%w: %s %s", errorInvalidDssePayload,
+			"unknown ref type", refType)
 	}
 }
