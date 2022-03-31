@@ -514,29 +514,18 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 		return "", fmt.Errorf("%w", errorInvalidVersion)
 	}
 
-	// RefType.
 	refType, err := getAsString(parameters, "ref_type")
-	if err != nil {
-		return "", err
-	}
-	// RefType.
-	ref, err := getAsString(parameters, "ref")
-	if err != nil {
-		return "", err
-	}
-	// BaseRef.
-	baseRef, err := getBaseRef(parameters)
 	if err != nil {
 		return "", err
 	}
 
 	switch refType {
 	case "branch":
-		return ref, nil
+		return getAsString(parameters, "ref")
 	case "tag":
-		return baseRef, nil
+		return getBaseRef(parameters)
+	default:
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload,
+			fmt.Sprintf("unknown ref type: %s", refType))
 	}
-
-	return "", fmt.Errorf("%w: %s", errorInvalidDssePayload,
-		fmt.Sprintf("unknown ref type: %s", refType))
 }
