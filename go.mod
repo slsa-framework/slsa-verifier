@@ -13,7 +13,10 @@ require (
 	github.com/sigstore/sigstore v1.1.1-0.20220217212907-e48ca03a5ba7
 )
 
-require github.com/sigstore/cosign v1.6.0
+require (
+	github.com/sigstore/cosign v1.6.0
+	golang.org/x/mod v0.5.1
+)
 
 require (
 	cloud.google.com/go v0.100.2 // indirect
@@ -178,7 +181,6 @@ require (
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220213190939-1e6e3497d506 // indirect
-	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
