@@ -304,3 +304,232 @@ func Test_VerifyBranch(t *testing.T) {
 		})
 	}
 }
+
+func Test_VerifyTag(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		path     string
+		tag      string
+		expected error
+	}{
+		{
+			name:     "ref main",
+			path:     "./testdata/dsse-main-ref.intoto.jsonl",
+			expected: errorMismatchTag,
+		},
+		{
+			name:     "ref branch3",
+			path:     "./testdata/dsse-branch3-ref.intoto.jsonl",
+			expected: errorMismatchTag,
+		},
+		{
+			name:     "invalid ref type",
+			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
+			expected: errorInvalidDssePayload,
+		},
+		{
+			name:     "invalid version",
+			path:     "./testdata/dsse-invalid-version.intoto.jsonl",
+			expected: errorInvalidVersion,
+		},
+		{
+			name: "tag vslsa1",
+			path: "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			tag:  "vslsa1",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(tt.path)
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+			env, err := envelopeFromBytes(content)
+			if err != nil {
+				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+			}
+
+			err = VerifyTag(env, tt.tag)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
+func Test_VerifyVersionedTag(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		path     string
+		tag      string
+		expected error
+	}{
+		{
+			name:     "ref main",
+			path:     "./testdata/dsse-main-ref.intoto.jsonl",
+			expected: errorInvalidSemver,
+			tag:      "v1.2.3",
+		},
+		{
+			name:     "ref branch3",
+			path:     "./testdata/dsse-branch3-ref.intoto.jsonl",
+			expected: errorInvalidSemver,
+			tag:      "v1.2.3",
+		},
+		{
+			name:     "tag v1.2 invalid versioning",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "1.2",
+			expected: errorInvalidSemver,
+		},
+
+		{
+			name:     "invalid ref",
+			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
+			expected: errorInvalidDssePayload,
+			tag:      "v1.2.3",
+		},
+		{
+			name:     "invalid version",
+			path:     "./testdata/dsse-invalid-version.intoto.jsonl",
+			expected: errorInvalidVersion,
+			tag:      "v1.2.3",
+		},
+		{
+			name:     "tag vslsa1 invalid",
+			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			tag:      "vslsa1",
+			expected: errorInvalidSemver,
+		},
+		{
+			name:     "tag vslsa1 invalid semver",
+			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			tag:      "v1.2.3",
+			expected: errorInvalidSemver,
+		},
+		{
+			name: "tag v1.2.3 exact match",
+			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:  "v1.2.3",
+		},
+		{
+			name: "tag v1.2.3 match v1.2",
+			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:  "v1.2",
+		},
+		{
+			name: "tag v1.2.3 match v1",
+			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:  "v1",
+		},
+		{
+			name:     "tag v1.2.3 no match v2",
+			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:      "v2",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2.3 no match v1.3",
+			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:      "v1.3",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2.3 no match v1.2.4",
+			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:      "v1.2.4",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1.2 exact v1.2",
+			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:  "v1.2",
+		},
+		{
+			name: "tag v1.2 match v1",
+			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:  "v1",
+		},
+		{
+			name:     "tag v1.2 no match v1.3",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.3",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2 no match v1.2.3",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.2.3",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1.2 match v1.2.0",
+			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:  "v1.2.0",
+		},
+		{
+			name:     "tag v1.2 no match v2",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v2",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1 exact match",
+			path: "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:  "v1",
+		},
+		{
+			name:     "tag v1 no match v2",
+			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:      "v2",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1 no match v1.2",
+			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:      "v1.2",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1 no match v1.2.3",
+			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:      "v1.2.3",
+			expected: errorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1 match v1.0",
+			path: "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:  "v1.0",
+		},
+		{
+			name: "tag v1 match v1.0.0",
+			path: "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:  "v1.0.0",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(tt.path)
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+			env, err := envelopeFromBytes(content)
+			if err != nil {
+				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+			}
+
+			err = VerifyVersionedTag(env, tt.tag)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
