@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/mod/semver"
+
 	cjson "github.com/docker/go/canonical/json"
 	"github.com/go-openapi/runtime"
 	"github.com/google/trillian/merkle/logverifier"
@@ -45,11 +47,14 @@ const (
 )
 
 var (
-	errorInvalidDssePayload = errors.New("invalid DSSE envelope payload")
-	errorRekorSearch        = errors.New("error searching rekor entries")
-	errorMismatchHash       = errors.New("binary artifact hash does not match provenance subject")
-	errorMismatchBranch     = errors.New("branch used to generate the binary does not match provenance")
-	errorInvalidVersion     = errors.New("invalid version")
+	errorInvalidDssePayload   = errors.New("invalid DSSE envelope payload")
+	errorRekorSearch          = errors.New("error searching rekor entries")
+	errorMismatchHash         = errors.New("binary artifact hash does not match provenance subject")
+	errorMismatchBranch       = errors.New("branch used to generate the binary does not match provenance")
+	errorMismatchTag          = errors.New("tag used to generate the binary does not match provenance")
+	errorMismatchVersionedTag = errors.New("tag used to generate the binary does not match provenance")
+	errorInvalidSemver        = errors.New("invalid semantic version")
+	errorInvalidVersion       = errors.New("invalid version")
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -414,6 +419,42 @@ func VerifyBranch(env *dsselib.Envelope, expectedBranch string) error {
 	return nil
 }
 
+func VerifyTag(env *dsselib.Envelope, expectedTag string) error {
+	tag, err := getTag(env)
+	if err != nil {
+		return err
+	}
+
+	if !strings.EqualFold(tag, "refs/tags/"+expectedTag) {
+		return fmt.Errorf("tag '%s': %w", tag, errorMismatchTag)
+	}
+
+	return nil
+}
+
+func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
+	if !semver.IsValid(expectedTag) {
+		return fmt.Errorf("%s: %w", expectedTag, errorInvalidSemver)
+	}
+
+	tag, err := getTag(env)
+	if err != nil {
+		return err
+	}
+
+	semTag := strings.TrimPrefix(tag, "refs/tags/")
+	if !semver.IsValid(semTag) {
+		return fmt.Errorf("%s: %w", expectedTag, errorInvalidSemver)
+	}
+
+	if semver.Compare(semTag, expectedTag) < 0 {
+		return errorMismatchVersionedTag
+	}
+
+	// Match.
+	return nil
+}
+
 func getAsInt(parameters map[string]interface{}, field string) (int, error) {
 	value, ok := parameters[field]
 	if !ok {
@@ -454,7 +495,7 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 	}
 
 	// Look at the event payload instead.
-	// We don't do thatt it all the time because the payload
+	// We don't do that for all triggers because the payload
 	// is event-specific; and only the `push` event seems to have a `base_ref``.
 	eventName, err := getAsString(parameters, "event_name")
 	if err != nil {
@@ -478,6 +519,44 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 	return getAsString(payload, "base_ref")
 }
 
+// Get tag from the provenance invocation parameters.
+func getTag(env *dsselib.Envelope) (string, error) {
+	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "decoding payload")
+	}
+
+	var prov intoto.ProvenanceStatement
+	if err := json.Unmarshal([]byte(pyld), &prov); err != nil {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "unmarshalling json")
+	}
+
+	parameters, ok := prov.Predicate.Invocation.Parameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type")
+	}
+
+	// Validate version.
+	if err := validateVersion(parameters); err != nil {
+		return "", err
+	}
+
+	refType, err := getAsString(parameters, "ref_type")
+	if err != nil {
+		return "", err
+	}
+
+	switch refType {
+	case "branch":
+		return "", nil
+	case "tag":
+		return getAsString(parameters, "ref")
+	default:
+		return "", fmt.Errorf("%w: %s %s", errorInvalidDssePayload,
+			"unknown ref type", refType)
+	}
+}
+
 // Get branch from the provenance invocation parameters.
 func getBranch(env *dsselib.Envelope) (string, error) {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
@@ -495,13 +574,9 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type")
 	}
 
-	// Version.
-	version, err := getAsInt(parameters, "version")
-	if err != nil {
+	// Validate version.
+	if err := validateVersion(parameters); err != nil {
 		return "", err
-	}
-	if version != 1 {
-		return "", fmt.Errorf("%w", errorInvalidVersion)
 	}
 
 	refType, err := getAsString(parameters, "ref_type")
@@ -518,4 +593,15 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 		return "", fmt.Errorf("%w: %s %s", errorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
+}
+
+func validateVersion(parameters map[string]interface{}) error {
+	version, err := getAsInt(parameters, "version")
+	if err != nil {
+		return err
+	}
+	if version != 1 {
+		return fmt.Errorf("%w", errorInvalidVersion)
+	}
+	return nil
 }
