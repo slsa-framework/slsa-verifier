@@ -495,7 +495,7 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 	}
 
 	// Look at the event payload instead.
-	// We don't do that for all trggers because the payload
+	// We don't do that for all triggers because the payload
 	// is event-specific; and only the `push` event seems to have a `base_ref``.
 	eventName, err := getAsString(parameters, "event_name")
 	if err != nil {

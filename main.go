@@ -37,8 +37,8 @@ var (
 var defaultRekorAddr = "https://rekor.sigstore.dev"
 
 func verify(ctx context.Context,
-	provenancePath, artifactHash, source string,
-	branch, tag, versiontag *string,
+	provenancePath, artifactHash, source, branch string,
+	tag, versiontag *string,
 ) error {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
@@ -84,10 +84,8 @@ func verify(ctx context.Context,
 	}
 
 	// Verify the branch.
-	if branch != nil {
-		if err := pkg.VerifyBranch(env, *branch); err != nil {
-			return err
-		}
+	if err := pkg.VerifyBranch(env, branch); err != nil {
+		return err
 	}
 
 	// Verify the tag.
@@ -117,7 +115,7 @@ func main() {
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&binaryPath, "binary", "", "path to a binary to verify")
 	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/some/repo")
-	flag.StringVar(&branch, "branch", "main", "[optional] expected branch the binary was compiled from")
+	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
 	flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 	flag.Parse()
@@ -127,10 +125,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	var pbranch, ptag, pversiontag *string
-	if isFlagPassed("branch") {
-		pbranch = &branch
-	}
+	var ptag, pversiontag *string
+
 	if isFlagPassed("tag") {
 		ptag = &tag
 	}
@@ -157,7 +153,7 @@ func main() {
 	ctx := context.Background()
 	if err := verify(ctx, provenancePath,
 		hex.EncodeToString(h.Sum(nil)),
-		source, pbranch,
+		source, branch,
 		ptag, pversiontag); err != nil {
 		log.Fatal(err)
 	}
