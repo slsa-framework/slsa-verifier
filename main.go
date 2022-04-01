@@ -98,7 +98,7 @@ func verify(ctx context.Context,
 	}
 
 	// Verify the versioned tag.
-	if tag != nil {
+	if versiontag != nil {
 		if err := pkg.VerifyVersionedTag(env, *versiontag); err != nil {
 			return err
 		}
