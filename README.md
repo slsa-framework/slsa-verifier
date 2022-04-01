@@ -20,18 +20,19 @@ Below is a list of options currently supported. Note that signature verification
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ go run . --help
-    -binary string
+ Usage of ./slsa-verifier:
+  -binary string
     	path to a binary to verify
-    -provenance string
+  -branch string
+    	[optional] expected branch the binary was compiled from. Default: main (default "main")
+  -provenance string
     	path to a provenance file
-    -source string
-        expected source repository that should have produced the binary, e.g. github.com/org/example
-    -tag string
-       expected tag the build was generated for
-    -versioned-tag string
-       expected version the build was generated for. Uses semenatic version to match the tag
-    -branch
-      expected branch the build was generated from       
+  -source string
+    	expected source repository that should have produced the binary, e.g. github.com/some/repo
+  -tag string
+    	[optional] expected tag the binary was compiled from
+  -versioned-tag string
+    	[optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
 ### Example
