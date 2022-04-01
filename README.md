@@ -24,7 +24,7 @@ $ go run . --help
   -binary string
     	path to a binary to verify
   -branch string
-    	[optional] expected branch the binary was compiled from. Default: main (default "main")
+    	[optional] expected branch the binary was compiled from (default "main")
   -provenance string
     	path to a provenance file
   -source string
