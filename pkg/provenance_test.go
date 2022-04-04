@@ -107,19 +107,19 @@ func Test_VerifyProvenance(t *testing.T) {
 			name:         "invalid dsse: not SLSA predicate",
 			path:         "./testdata/dsse-not-slsa.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     errorInvalidDssePayload,
+			expected:     ErrorInvalidDssePayload,
 		},
 		{
 			name:         "invalid dsse: nil subject",
 			path:         "./testdata/dsse-no-subject.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     errorInvalidDssePayload,
+			expected:     ErrorInvalidDssePayload,
 		},
 		{
 			name:         "invalid dsse: no sha256 subject digest",
 			path:         "./testdata/dsse-no-subject-hash.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     errorInvalidDssePayload,
+			expected:     ErrorInvalidDssePayload,
 		},
 		{
 			name:         "mismatched artifact hash with env",
@@ -270,7 +270,7 @@ func Test_VerifyBranch(t *testing.T) {
 		{
 			name:     "invalid ref type",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: errorInvalidDssePayload,
+			expected: ErrorInvalidDssePayload,
 		},
 		{
 			name:     "invalid version",
@@ -316,17 +316,17 @@ func Test_VerifyTag(t *testing.T) {
 		{
 			name:     "ref main",
 			path:     "./testdata/dsse-main-ref.intoto.jsonl",
-			expected: errorMismatchTag,
+			expected: ErrorMismatchTag,
 		},
 		{
 			name:     "ref branch3",
 			path:     "./testdata/dsse-branch3-ref.intoto.jsonl",
-			expected: errorMismatchTag,
+			expected: ErrorMismatchTag,
 		},
 		{
 			name:     "invalid ref type",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: errorInvalidDssePayload,
+			expected: ErrorInvalidDssePayload,
 		},
 		{
 			name:     "invalid version",
@@ -372,26 +372,25 @@ func Test_VerifyVersionedTag(t *testing.T) {
 		{
 			name:     "ref main",
 			path:     "./testdata/dsse-main-ref.intoto.jsonl",
-			expected: errorInvalidSemver,
+			expected: ErrorInvalidSemver,
 			tag:      "v1.2.3",
 		},
 		{
 			name:     "ref branch3",
 			path:     "./testdata/dsse-branch3-ref.intoto.jsonl",
-			expected: errorInvalidSemver,
+			expected: ErrorInvalidSemver,
 			tag:      "v1.2.3",
 		},
 		{
 			name:     "tag v1.2 invalid versioning",
 			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
 			tag:      "1.2",
-			expected: errorInvalidSemver,
+			expected: ErrorInvalidSemver,
 		},
-
 		{
 			name:     "invalid ref",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: errorInvalidDssePayload,
+			expected: ErrorInvalidDssePayload,
 			tag:      "v1.2.3",
 		},
 		{
@@ -404,13 +403,13 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name:     "tag vslsa1 invalid",
 			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
 			tag:      "vslsa1",
-			expected: errorInvalidSemver,
+			expected: ErrorInvalidSemver,
 		},
 		{
 			name:     "tag vslsa1 invalid semver",
 			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
 			tag:      "v1.2.3",
-			expected: errorInvalidSemver,
+			expected: ErrorInvalidSemver,
 		},
 		{
 			name: "tag v1.2.3 exact match",
@@ -431,19 +430,25 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name:     "tag v1.2.3 no match v2",
 			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
 			tag:      "v2",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name:     "tag v1.2.3 no match v1.3",
 			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
 			tag:      "v1.3",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name:     "tag v1.2.3 no match v1.2.4",
 			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
 			tag:      "v1.2.4",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2.3 no match v1.2.2",
+			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:      "v1.2.2",
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1.2 exact v1.2",
@@ -456,16 +461,28 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			tag:  "v1",
 		},
 		{
+			name:     "tag v1.1 no match v1.3",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.1",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v0 no match v1.3",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v0",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
 			name:     "tag v1.2 no match v1.3",
 			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
 			tag:      "v1.3",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name:     "tag v1.2 no match v1.2.3",
 			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
 			tag:      "v1.2.3",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1.2 match v1.2.0",
@@ -476,7 +493,7 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name:     "tag v1.2 no match v2",
 			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
 			tag:      "v2",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1 exact match",
@@ -487,19 +504,25 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name:     "tag v1 no match v2",
 			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
 			tag:      "v2",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name:     "tag v1 no match v1.2",
 			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
 			tag:      "v1.2",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1 no match v0",
+			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:      "v0",
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name:     "tag v1 no match v1.2.3",
 			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
 			tag:      "v1.2.3",
-			expected: errorMismatchVersionedTag,
+			expected: ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1 match v1.0",
