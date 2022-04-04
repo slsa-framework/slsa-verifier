@@ -47,13 +47,14 @@ const (
 )
 
 var (
-	errorInvalidDssePayload   = errors.New("invalid DSSE envelope payload")
+	ErrorInvalidDssePayload   = errors.New("invalid DSSE envelope payload")
 	errorRekorSearch          = errors.New("error searching rekor entries")
 	errorMismatchHash         = errors.New("binary artifact hash does not match provenance subject")
-	errorMismatchBranch       = errors.New("branch used to generate the binary does not match provenance")
-	errorMismatchTag          = errors.New("tag used to generate the binary does not match provenance")
-	errorMismatchVersionedTag = errors.New("tag used to generate the binary does not match provenance")
-	errorInvalidSemver        = errors.New("invalid semantic version")
+	ErrorMismatchBranch       = errors.New("branch used to generate the binary does not match provenance")
+	ErrorMismatchRepository   = errors.New("repository used to generate the binary does not match provenance")
+	ErrorMismatchTag          = errors.New("tag used to generate the binary does not match provenance")
+	ErrorMismatchVersionedTag = errors.New("tag used to generate the binary does not match provenance")
+	ErrorInvalidSemver        = errors.New("invalid semantic version")
 	errorInvalidVersion       = errors.New("invalid version")
 )
 
@@ -67,19 +68,19 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 func getSha256Digest(env *dsselib.Envelope) (string, error) {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "decoding payload")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "decoding payload")
 	}
 	prov := &intoto.ProvenanceStatement{}
 	if err := json.Unmarshal([]byte(pyld), prov); err != nil {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "unmarshalling json")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
 	}
 	if len(prov.Subject) == 0 {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "no subjects")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no subjects")
 	}
 	digestSet := prov.Subject[0].Digest
 	hash, exists := digestSet["sha256"]
 	if !exists {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "no sha256 subject digest")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no sha256 subject digest")
 	}
 	return hash, nil
 }
@@ -387,7 +388,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 	// The caller repository in the x509 extension is not fully qualified. It only contains
 	// {org}/{repository}.
 	if !strings.EqualFold(id.CallerRepository, strings.TrimPrefix(source, "github.com/")) {
-		return fmt.Errorf("unexpected caller repository, got '%s'", id.CallerRepository)
+		return fmt.Errorf("%w: '%s'", ErrorMismatchRepository, id.CallerRepository)
 	}
 
 	return nil
@@ -413,7 +414,7 @@ func VerifyBranch(env *dsselib.Envelope, expectedBranch string) error {
 	}
 
 	if !strings.EqualFold(branch, "refs/heads/"+expectedBranch) {
-		return fmt.Errorf("branch '%s': %w", branch, errorMismatchBranch)
+		return fmt.Errorf("branch '%s': %w", branch, ErrorMismatchBranch)
 	}
 
 	return nil
@@ -426,7 +427,7 @@ func VerifyTag(env *dsselib.Envelope, expectedTag string) error {
 	}
 
 	if !strings.EqualFold(tag, "refs/tags/"+expectedTag) {
-		return fmt.Errorf("tag '%s': %w", tag, errorMismatchTag)
+		return fmt.Errorf("tag '%s': %w", tag, ErrorMismatchTag)
 	}
 
 	return nil
@@ -434,7 +435,7 @@ func VerifyTag(env *dsselib.Envelope, expectedTag string) error {
 
 func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 	if !semver.IsValid(expectedTag) {
-		return fmt.Errorf("%s: %w", expectedTag, errorInvalidSemver)
+		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
 	}
 
 	tag, err := getTag(env)
@@ -444,11 +445,13 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 
 	semTag := strings.TrimPrefix(tag, "refs/tags/")
 	if !semver.IsValid(semTag) {
-		return fmt.Errorf("%s: %w", expectedTag, errorInvalidSemver)
+		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
 	}
 
+	fmt.Println("comparing", expectedTag, "with", semTag)
+	fmt.Println("result:", semver.Compare(semTag, expectedTag))
 	if semver.Compare(semTag, expectedTag) < 0 {
-		return errorMismatchVersionedTag
+		return ErrorMismatchVersionedTag
 	}
 
 	// Match.
@@ -458,13 +461,13 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 func getAsInt(parameters map[string]interface{}, field string) (int, error) {
 	value, ok := parameters[field]
 	if !ok {
-		return -1, fmt.Errorf("%w: %s", errorInvalidDssePayload,
+		return -1, fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
 			fmt.Sprintf("parameters type for %s", field))
 	}
 
 	i, ok := value.(float64)
 	if !ok {
-		return -1, fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type float64")
+		return -1, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type float64")
 	}
 	return int(i), nil
 }
@@ -472,13 +475,13 @@ func getAsInt(parameters map[string]interface{}, field string) (int, error) {
 func getAsString(parameters map[string]interface{}, field string) (string, error) {
 	value, ok := parameters[field]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
 			fmt.Sprintf("parameters type for %s", field))
 	}
 
 	i, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type string")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type string")
 	}
 	return i, nil
 }
@@ -508,12 +511,12 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 
 	eventPayload, ok := parameters["event_payload"]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type event payload")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
 	}
 
 	payload, ok := eventPayload.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type payload")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
 	}
 
 	return getAsString(payload, "base_ref")
@@ -523,17 +526,17 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 func getTag(env *dsselib.Envelope) (string, error) {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "decoding payload")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "decoding payload")
 	}
 
 	var prov intoto.ProvenanceStatement
 	if err := json.Unmarshal([]byte(pyld), &prov); err != nil {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "unmarshalling json")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
 	}
 
 	parameters, ok := prov.Predicate.Invocation.Parameters.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type")
 	}
 
 	// Validate version.
@@ -552,7 +555,7 @@ func getTag(env *dsselib.Envelope) (string, error) {
 	case "tag":
 		return getAsString(parameters, "ref")
 	default:
-		return "", fmt.Errorf("%w: %s %s", errorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }
@@ -561,17 +564,17 @@ func getTag(env *dsselib.Envelope) (string, error) {
 func getBranch(env *dsselib.Envelope) (string, error) {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "decoding payload")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "decoding payload")
 	}
 
 	var prov intoto.ProvenanceStatement
 	if err := json.Unmarshal([]byte(pyld), &prov); err != nil {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "unmarshalling json")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
 	}
 
 	parameters, ok := prov.Predicate.Invocation.Parameters.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", errorInvalidDssePayload, "parameters type")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type")
 	}
 
 	// Validate version.
@@ -590,7 +593,7 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 	case "tag":
 		return getBaseRef(parameters)
 	default:
-		return "", fmt.Errorf("%w: %s %s", errorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }

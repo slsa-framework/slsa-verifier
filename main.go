@@ -37,7 +37,7 @@ var (
 var defaultRekorAddr = "https://rekor.sigstore.dev"
 
 func verify(ctx context.Context,
-	provenancePath, artifactHash, source, branch string,
+	provenance []byte, artifactHash, source, branch string,
 	tag, versiontag *string,
 ) error {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
@@ -49,11 +49,6 @@ func verify(ctx context.Context,
 	uuids, err := pkg.GetRekorEntries(rClient, artifactHash)
 	if err != nil {
 		return err
-	}
-
-	provenance, err := os.ReadFile(provenancePath)
-	if err != nil {
-		return fmt.Errorf("os.ReadFile: %w", err)
 	}
 
 	env, err := pkg.EnvelopeFromBytes(provenance)
@@ -139,21 +134,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	f, err := os.Open(binaryPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		log.Fatal(err)
-	}
-
-	ctx := context.Background()
-	if err := verify(ctx, provenancePath,
-		hex.EncodeToString(h.Sum(nil)),
-		source, branch,
+	if err := runVerify(binaryPath, provenancePath, source, branch,
 		ptag, pversiontag); err != nil {
 		log.Fatal(err)
 	}
@@ -169,4 +150,30 @@ func isFlagPassed(name string) bool {
 		}
 	})
 	return found
+}
+
+func runVerify(binaryPath, provenancePath, source, branch string,
+	ptag, pversiontag *string,
+) error {
+	f, err := os.Open(binaryPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	provenance, err := os.ReadFile(provenancePath)
+	if err != nil {
+		return err
+	}
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	return verify(ctx, provenance,
+		hex.EncodeToString(h.Sum(nil)),
+		source, branch,
+		ptag, pversiontag)
 }
