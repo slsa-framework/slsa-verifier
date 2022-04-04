@@ -117,7 +117,7 @@ func main() {
 	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/some/repo")
 	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
-	flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+	// flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 	flag.Parse()
 
 	if provenancePath == "" || binaryPath == "" || source == "" {
