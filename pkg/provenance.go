@@ -448,12 +448,6 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
 	}
 
-	// fmt.Println("comparing", expectedTag, "with", semTag)
-	// fmt.Println("result:", semver.Compare(semTag, expectedTag))
-	// if semver.Compare(semTag, expectedTag) < 0 {
-	// 	return ErrorMismatchVersionedTag
-	// }
-
 	// Major should always be the same.
 	if semver.Major(semTag) != semver.Major(expectedTag) {
 		return fmt.Errorf("%w: major version", ErrorMismatchVersionedTag)
