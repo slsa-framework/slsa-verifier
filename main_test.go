@@ -20,11 +20,6 @@ func pString(s string) *string {
 
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
-	/*
-		ctx context.Context,
-		provenancePath, artifactHash, source, branch string,
-		tag, versiontag *string
-	*/
 	tests := []struct {
 		name        string
 		artifact    string
