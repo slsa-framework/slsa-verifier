@@ -34,56 +34,56 @@ func Test_runVerify(t *testing.T) {
 		pversiontag *string
 		err         error
 	}{
-		// {
-		// 	name:     "valid main branch default",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "github.com/laurentsimon/slsa-on-github-test",
-		// },
-		// {
-		// 	name:     "valid main branch set",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "github.com/laurentsimon/slsa-on-github-test",
-		// 	branch:   "main",
-		// },
-		// {
-		// 	name:     "wrong branch master",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "github.com/laurentsimon/slsa-on-github-test",
-		// 	branch:   "master",
-		// 	err:      pkg.ErrorMismatchBranch,
-		// },
-		// {
-		// 	name:     "wrong source append A",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "github.com/laurentsimon/slsa-on-github-testA",
-		// 	err:      pkg.ErrorMismatchRepository,
-		// },
-		// {
-		// 	name:     "wrong source prepend A",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "Agithub.com/laurentsimon/slsa-on-github-test",
-		// 	err:      pkg.ErrorMismatchRepository,
-		// },
-		// {
-		// 	name:     "wrong source middle A",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "github.com/Alaurentsimon/slsa-on-github-test",
-		// 	err:      pkg.ErrorMismatchRepository,
-		// },
-		// {
-		// 	name:     "tag no match empty tag workflow_dispatch",
-		// 	artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:   "github.com/laurentsimon/slsa-on-github-test",
-		// 	ptag:     pString("v1.2.3"),
-		// 	err:      pkg.ErrorMismatchTag,
-		// },
-		// {
-		// 	name:        "versioned tag no match empty tag workflow_dispatch",
-		// 	artifact:    "./testdata/binary-linux-amd64-workflow_dispatch",
-		// 	source:      "github.com/laurentsimon/slsa-on-github-test",
-		// 	pversiontag: pString("v1"),
-		// 	err:         pkg.ErrorInvalidSemver,
-		// },
+		{
+			name:     "valid main branch default",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+		},
+		{
+			name:     "valid main branch set",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			branch:   "main",
+		},
+		{
+			name:     "wrong branch master",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			branch:   "master",
+			err:      pkg.ErrorMismatchBranch,
+		},
+		{
+			name:     "wrong source append A",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/laurentsimon/slsa-on-github-testA",
+			err:      pkg.ErrorMismatchRepository,
+		},
+		{
+			name:     "wrong source prepend A",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "Agithub.com/laurentsimon/slsa-on-github-test",
+			err:      pkg.ErrorMismatchRepository,
+		},
+		{
+			name:     "wrong source middle A",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/Alaurentsimon/slsa-on-github-test",
+			err:      pkg.ErrorMismatchRepository,
+		},
+		{
+			name:     "tag no match empty tag workflow_dispatch",
+			artifact: "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			ptag:     pString("v1.2.3"),
+			err:      pkg.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch",
+			artifact:    "./testdata/binary-linux-amd64-workflow_dispatch",
+			source:      "github.com/laurentsimon/slsa-on-github-test",
+			pversiontag: pString("v1"),
+			err:         pkg.ErrorInvalidSemver,
+		},
 		{
 			name:     "tag v1.2.3 no match v1.2.4",
 			artifact: "./testdata/binary-linux-amd64-push-v1.2.4",
