@@ -31,6 +31,8 @@ $ go run . --help
     	expected source repository that should have produced the binary, e.g. github.com/some/repo
   -tag string
     	[optional] expected tag the binary was compiled from
+  -versioned-tag string
+    	[optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
 ### Example
