@@ -443,19 +443,66 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 		return err
 	}
 
-	semTag := strings.TrimPrefix(tag, "refs/tags/")
+	semTag := semver.Canonical(strings.TrimPrefix(tag, "refs/tags/"))
 	if !semver.IsValid(semTag) {
 		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
 	}
 
-	fmt.Println("comparing", expectedTag, "with", semTag)
-	fmt.Println("result:", semver.Compare(semTag, expectedTag))
-	if semver.Compare(semTag, expectedTag) < 0 {
-		return ErrorMismatchVersionedTag
+	// fmt.Println("comparing", expectedTag, "with", semTag)
+	// fmt.Println("result:", semver.Compare(semTag, expectedTag))
+	// if semver.Compare(semTag, expectedTag) < 0 {
+	// 	return ErrorMismatchVersionedTag
+	// }
+
+	// Major should always be the same.
+	if semver.Major(semTag) != semver.Major(expectedTag) {
+		return fmt.Errorf("%w: major version", ErrorMismatchVersionedTag)
+	}
+
+	expectedMinor, err := minorVersion(expectedTag)
+	if err == nil {
+		// A minor version was provided by the user.
+		minor, err := minorVersion(semTag)
+		if err != nil {
+			return err
+		}
+
+		if minor != expectedMinor {
+			return ErrorMismatchVersionedTag
+		}
+	}
+
+	expectedPatch, err := patchVersion(expectedTag)
+	if err == nil {
+		// A patch version was provided by the user.
+		patch, err := patchVersion(semTag)
+		if err != nil {
+			return err
+		}
+
+		if patch != expectedPatch {
+			return ErrorMismatchVersionedTag
+		}
 	}
 
 	// Match.
 	return nil
+}
+
+func minorVersion(v string) (string, error) {
+	return extractFromVersion(v, 1)
+}
+
+func patchVersion(v string) (string, error) {
+	return extractFromVersion(v, 2)
+}
+
+func extractFromVersion(v string, i int) (string, error) {
+	parts := strings.Split(v, ".")
+	if len(parts) <= i {
+		return "", fmt.Errorf("%s: %w", v, ErrorInvalidSemver)
+	}
+	return parts[i], nil
 }
 
 func getAsInt(parameters map[string]interface{}, field string) (int, error) {
