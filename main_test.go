@@ -301,8 +301,6 @@ func Test_runVerify(t *testing.T) {
 				tt.source, branch,
 				tt.ptag, tt.pversiontag)
 
-			fmt.Println("err:", err)
-			fmt.Println("tt.err:", tt.err)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
