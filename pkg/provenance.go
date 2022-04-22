@@ -43,7 +43,7 @@ const (
 	defaultRekorAddr = "https://rekor.sigstore.dev"
 	certOidcIssuer   = "https://token.actions.githubusercontent.com"
 	// TODO: Make this into a list.
-	trustedReusableWorkflow = "slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml"
+	trustedReusableWorkflow = "slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml"
 )
 
 var (
