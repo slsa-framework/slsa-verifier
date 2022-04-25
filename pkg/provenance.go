@@ -42,9 +42,13 @@ import (
 const (
 	defaultRekorAddr = "https://rekor.sigstore.dev"
 	certOidcIssuer   = "https://token.actions.githubusercontent.com"
-	// TODO: Make this into a list.
-	trustedReusableWorkflow = "slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml"
 )
+
+// TODO: remove builder.yml
+var trustedReusableWorkflows = map[string]bool{
+	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
+	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
+}
 
 var (
 	ErrorInvalidDssePayload   = errors.New("invalid DSSE envelope payload")
@@ -377,7 +381,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 		return errors.New("malformed URI for workflow")
 	}
 
-	if !strings.EqualFold(strings.Trim(workflowPath[0], "/"), trustedReusableWorkflow) {
+	if _, ok := trustedReusableWorkflows[strings.Trim(workflowPath[0], "/")]; !ok {
 		return errors.New("untrusted reuseable workflow")
 	}
 
