@@ -27,7 +27,7 @@ func check(e error) {
 
 var (
 	provenancePath string
-	binaryPath     string
+	artifactPath   string
 	source         string
 	branch         string
 	tag            string
@@ -108,14 +108,14 @@ func verify(ctx context.Context,
 
 func main() {
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
-	flag.StringVar(&binaryPath, "binary", "", "path to a binary to verify")
+	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
 	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/some/repo")
 	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
 	flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 	flag.Parse()
 
-	if provenancePath == "" || binaryPath == "" || source == "" {
+	if provenancePath == "" || artifactPath == "" || source == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -134,7 +134,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := runVerify(binaryPath, provenancePath, source, branch,
+	if err := runVerify(artifactPath, provenancePath, source, branch,
 		ptag, pversiontag); err != nil {
 		log.Fatal(err)
 	}
@@ -152,10 +152,10 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(binaryPath, provenancePath, source, branch string,
+func runVerify(artifactPath, provenancePath, source, branch string,
 	ptag, pversiontag *string,
 ) error {
-	f, err := os.Open(binaryPath)
+	f, err := os.Open(artifactPath)
 	if err != nil {
 		log.Fatal(err)
 	}
