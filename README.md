@@ -21,8 +21,8 @@ Below is a list of options currently supported. Note that signature verification
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ go run . --help
  Usage of ./slsa-verifier:
-  -binary string
-    	path to a binary to verify
+  -artifact-path string
+    	path to an artifact to verify
   -branch string
     	expected branch the binary was compiled from (default "main")
   -provenance string
@@ -38,7 +38,7 @@ $ go run . --help
 ### Example
 
 ```bash
-$ go run . --binary ~/Downloads/binary-linux-amd64 --provenance ~/Downloads/binary-linux-amd64.intoto.jsonl --source github.com/origin/repo
+$ go run . --artifact-path ~/Downloads/binary-linux-amd64 --provenance ~/Downloads/binary-linux-amd64.intoto.jsonl --source github.com/origin/repo
 
 Verified against tlog entry 1544571
 verified SLSA provenance produced at 
