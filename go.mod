@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/docker/go v1.5.1-1
 	github.com/go-openapi/runtime v0.23.3
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.8
 	github.com/google/trillian v1.4.0
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
 	github.com/secure-systems-lab/go-securesystemslib v0.3.1
