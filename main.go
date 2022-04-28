@@ -15,16 +15,6 @@ import (
 	"github.com/slsa-framework/slsa-verifier/pkg"
 )
 
-func usage(p string) {
-	panic(fmt.Sprintf("Usage: %s TODO\n", p))
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 var (
 	provenancePath string
 	artifactPath   string
@@ -136,7 +126,8 @@ func main() {
 
 	if err := runVerify(artifactPath, provenancePath, source, branch,
 		ptag, pversiontag); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "verification failed: %v", err)
+		os.Exit(2)
 	}
 
 	fmt.Println("successfully verified SLSA provenance")
