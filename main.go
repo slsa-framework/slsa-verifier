@@ -126,7 +126,7 @@ func main() {
 
 	if err := runVerify(artifactPath, provenancePath, source, branch,
 		ptag, pversiontag); err != nil {
-		fmt.Fprintf(os.Stderr, "verification failed: %v", err)
+		fmt.Fprintf(os.Stderr, "verification failed: %v\n", err)
 		os.Exit(2)
 	}
 
