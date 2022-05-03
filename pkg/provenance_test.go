@@ -273,11 +273,6 @@ func Test_VerifyBranch(t *testing.T) {
 			expected: ErrorInvalidDssePayload,
 		},
 		{
-			name:     "invalid version",
-			path:     "./testdata/dsse-invalid-version.intoto.jsonl",
-			expected: errorInvalidVersion,
-		},
-		{
 			name:   "tag branch2",
 			path:   "./testdata/dsse-branch2-tag.intoto.jsonl",
 			branch: "branch2",
@@ -327,11 +322,6 @@ func Test_VerifyTag(t *testing.T) {
 			name:     "invalid ref type",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
 			expected: ErrorInvalidDssePayload,
-		},
-		{
-			name:     "invalid version",
-			path:     "./testdata/dsse-invalid-version.intoto.jsonl",
-			expected: errorInvalidVersion,
 		},
 		{
 			name: "tag vslsa1",
@@ -391,12 +381,6 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name:     "invalid ref",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
 			expected: ErrorInvalidDssePayload,
-			tag:      "v1.2.3",
-		},
-		{
-			name:     "invalid version",
-			path:     "./testdata/dsse-invalid-version.intoto.jsonl",
-			expected: errorInvalidVersion,
 			tag:      "v1.2.3",
 		},
 		{
