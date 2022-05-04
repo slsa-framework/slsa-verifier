@@ -503,36 +503,36 @@ func extractFromVersion(v string, i int) (string, error) {
 	return parts[i], nil
 }
 
-func getAsInt(parameters map[string]interface{}, field string) (int, error) {
-	value, ok := parameters[field]
+func getAsInt(environment map[string]interface{}, field string) (int, error) {
+	value, ok := environment[field]
 	if !ok {
 		return -1, fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
-			fmt.Sprintf("parameters type for %s", field))
+			fmt.Sprintf("environment type for %s", field))
 	}
 
 	i, ok := value.(float64)
 	if !ok {
-		return -1, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type float64")
+		return -1, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "environment type float64")
 	}
 	return int(i), nil
 }
 
-func getAsString(parameters map[string]interface{}, field string) (string, error) {
-	value, ok := parameters[field]
+func getAsString(environment map[string]interface{}, field string) (string, error) {
+	value, ok := environment[field]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
-			fmt.Sprintf("parameters type for %s", field))
+			fmt.Sprintf("environment type for %s", field))
 	}
 
 	i, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type string")
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "environment type string")
 	}
 	return i, nil
 }
 
-func getBaseRef(parameters map[string]interface{}) (string, error) {
-	baseRef, err := getAsString(parameters, "base_ref")
+func getBaseRef(environment map[string]interface{}) (string, error) {
+	baseRef, err := getAsString(environment, "github_base_ref")
 	if err != nil {
 		return "", err
 	}
@@ -545,7 +545,7 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 	// Look at the event payload instead.
 	// We don't do that for all triggers because the payload
 	// is event-specific; and only the `push` event seems to have a `base_ref``.
-	eventName, err := getAsString(parameters, "event_name")
+	eventName, err := getAsString(environment, "github_event_name")
 	if err != nil {
 		return "", err
 	}
@@ -554,7 +554,7 @@ func getBaseRef(parameters map[string]interface{}) (string, error) {
 		return "", nil
 	}
 
-	eventPayload, ok := parameters["event_payload"]
+	eventPayload, ok := environment["github_event_payload"]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
 	}
@@ -579,17 +579,12 @@ func getTag(env *dsselib.Envelope) (string, error) {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
 	}
 
-	parameters, ok := prov.Predicate.Invocation.Parameters.(map[string]interface{})
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type")
 	}
 
-	// Validate version.
-	if err := validateVersion(parameters); err != nil {
-		return "", err
-	}
-
-	refType, err := getAsString(parameters, "ref_type")
+	refType, err := getAsString(environment, "github_ref_type")
 	if err != nil {
 		return "", err
 	}
@@ -598,7 +593,7 @@ func getTag(env *dsselib.Envelope) (string, error) {
 	case "branch":
 		return "", nil
 	case "tag":
-		return getAsString(parameters, "ref")
+		return getAsString(environment, "github_ref")
 	default:
 		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
 			"unknown ref type", refType)
@@ -617,39 +612,23 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
 	}
 
-	parameters, ok := prov.Predicate.Invocation.Parameters.(map[string]interface{})
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type")
 	}
 
-	// Validate version.
-	if err := validateVersion(parameters); err != nil {
-		return "", err
-	}
-
-	refType, err := getAsString(parameters, "ref_type")
+	refType, err := getAsString(environment, "github_ref_type")
 	if err != nil {
 		return "", err
 	}
 
 	switch refType {
 	case "branch":
-		return getAsString(parameters, "ref")
+		return getAsString(environment, "github_ref")
 	case "tag":
-		return getBaseRef(parameters)
+		return getBaseRef(environment)
 	default:
 		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
-}
-
-func validateVersion(parameters map[string]interface{}) error {
-	version, err := getAsInt(parameters, "version")
-	if err != nil {
-		return err
-	}
-	if version != 1 {
-		return fmt.Errorf("%w", errorInvalidVersion)
-	}
-	return nil
 }
