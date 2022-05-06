@@ -487,7 +487,7 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 		}
 
 		if patch != expectedPatch {
-			return fmt.Errorf("%w: minor version expected '%s', got '%s'",
+			return fmt.Errorf("%w: patch version expected '%s', got '%s'",
 				ErrorMismatchVersionedTag, expectedPatch, patch)
 		}
 	}
