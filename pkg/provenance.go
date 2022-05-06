@@ -391,8 +391,10 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 
 	// The caller repository in the x509 extension is not fully qualified. It only contains
 	// {org}/{repository}.
-	if !strings.EqualFold(id.CallerRepository, strings.TrimPrefix(source, "github.com/")) {
-		return fmt.Errorf("%w: '%s'", ErrorMismatchRepository, id.CallerRepository)
+	expectedSource := strings.TrimPrefix(source, "github.com/")
+	if !strings.EqualFold(id.CallerRepository, expectedSource) {
+		return fmt.Errorf("%w: expected source '%s', got '%s'", ErrorMismatchRepository,
+			expectedSource, id.CallerRepository)
 	}
 
 	return nil
@@ -405,7 +407,7 @@ func VerifyProvenance(env *dsselib.Envelope, expectedHash string) error {
 	}
 
 	if !strings.EqualFold(hash, expectedHash) {
-		return fmt.Errorf("hash '%s': %w", hash, errorMismatchHash)
+		return fmt.Errorf("expected hash '%s', got '%s': %w", expectedHash, hash, errorMismatchHash)
 	}
 
 	return nil
@@ -417,8 +419,9 @@ func VerifyBranch(env *dsselib.Envelope, expectedBranch string) error {
 		return err
 	}
 
-	if !strings.EqualFold(branch, "refs/heads/"+expectedBranch) {
-		return fmt.Errorf("branch '%s': %w", branch, ErrorMismatchBranch)
+	expectedBranch = "refs/heads/" + expectedBranch
+	if !strings.EqualFold(branch, expectedBranch) {
+		return fmt.Errorf("expected branch '%s', got '%s': %w", expectedBranch, branch, ErrorMismatchBranch)
 	}
 
 	return nil
@@ -430,8 +433,9 @@ func VerifyTag(env *dsselib.Envelope, expectedTag string) error {
 		return err
 	}
 
-	if !strings.EqualFold(tag, "refs/tags/"+expectedTag) {
-		return fmt.Errorf("tag '%s': %w", tag, ErrorMismatchTag)
+	expectedTag = "refs/tags/" + expectedTag
+	if !strings.EqualFold(tag, expectedTag) {
+		return fmt.Errorf("expected tag '%s', got '%s': %w", expectedTag, tag, ErrorMismatchTag)
 	}
 
 	return nil
@@ -453,8 +457,11 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 	}
 
 	// Major should always be the same.
-	if semver.Major(semTag) != semver.Major(expectedTag) {
-		return fmt.Errorf("%w: major version", ErrorMismatchVersionedTag)
+	expectedMajor := semver.Major(expectedTag)
+	major := semver.Major(semTag)
+	if major != expectedMajor {
+		return fmt.Errorf("%w: major version expected '%s', got '%s'",
+			ErrorMismatchVersionedTag, expectedMajor, major)
 	}
 
 	expectedMinor, err := minorVersion(expectedTag)
@@ -466,7 +473,8 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 		}
 
 		if minor != expectedMinor {
-			return ErrorMismatchVersionedTag
+			return fmt.Errorf("%w: minor version expected '%s', got '%s'",
+				ErrorMismatchVersionedTag, expectedMinor, minor)
 		}
 	}
 
@@ -479,7 +487,8 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 		}
 
 		if patch != expectedPatch {
-			return ErrorMismatchVersionedTag
+			return fmt.Errorf("%w: patch version expected '%s', got '%s'",
+				ErrorMismatchVersionedTag, expectedPatch, patch)
 		}
 	}
 
