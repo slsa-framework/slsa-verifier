@@ -46,6 +46,7 @@ const (
 
 // TODO: remove builder.yml
 var trustedReusableWorkflows = map[string]bool{
+	"slsa-framework/slsa-github-generator/.github/workflows/slsa2_provenance.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
 }
