@@ -46,8 +46,10 @@ const (
 
 // TODO: remove builder.yml
 var trustedReusableWorkflows = map[string]bool{
+	"slsa-framework/slsa-github-generator/.github/workflows/slsa2_provenance.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
+	"slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml": true,
 }
 
 var (
@@ -442,15 +444,19 @@ func VerifyTag(env *dsselib.Envelope, expectedTag string) error {
 }
 
 func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
+	// Validate and canonicalize the provenance tag.
 	if !semver.IsValid(expectedTag) {
 		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
 	}
 
+	// Retrieve, validate and canonicalize the provenance tag.
+	// Note: prerelease is validated as part of patch validation
+	// and must be equal. Build is discarded as per https://semver.org/:
+	// "Build metadata MUST be ignored when determining version precedence",
 	tag, err := getTag(env)
 	if err != nil {
 		return err
 	}
-
 	semTag := semver.Canonical(strings.TrimPrefix(tag, "refs/tags/"))
 	if !semver.IsValid(semTag) {
 		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
@@ -501,7 +507,11 @@ func minorVersion(v string) (string, error) {
 }
 
 func patchVersion(v string) (string, error) {
-	return extractFromVersion(v, 2)
+	patch, err := extractFromVersion(v, 2)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSuffix(patch, semver.Build(v)), nil
 }
 
 func extractFromVersion(v string, i int) (string, error) {

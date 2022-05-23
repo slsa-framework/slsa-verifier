@@ -474,6 +474,140 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			tag:  "v1.2.0",
 		},
 		{
+			name: "tag v1.2 match v1.2.0+123",
+			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:  "v1.2.0+123",
+		},
+		{
+			name:     "invalid v1.2+123",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.2+123",
+			expected: ErrorInvalidSemver,
+		},
+		{
+			name:     "invalid v1.2-alpha",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.2-alpha",
+			expected: ErrorInvalidSemver,
+		},
+		{
+			name:     "invalid v1-alpha",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1-alpha",
+			expected: ErrorInvalidSemver,
+		},
+		{
+			name:     "invalid v1+123",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1+123",
+			expected: ErrorInvalidSemver,
+		},
+		{
+			name:     "invalid v1-alpha+123",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1-alpha+123",
+			expected: ErrorInvalidSemver,
+		},
+		{
+			name:     "invalid v1.2-alpha+123",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.2-alpha+123",
+			expected: ErrorInvalidSemver,
+		},
+		{
+			name: "tag v1.2.3-alpha match v1.2.3-alpha",
+			path: "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			tag:  "v1.2.3-alpha",
+		},
+		{
+			name:     "tag v1.2.3-alpha no match v1.2.3",
+			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			tag:      "v1.2.3",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1.2.3-alpha+123 match v1.2.3-alpha",
+			path: "./testdata/dsse-v1.2.3-alpha+123-tag.intoto.jsonl",
+			tag:  "v1.2.3-alpha",
+		},
+		{
+			name: "tag v1.2.3-alpha+123 match v1.2.3-alpha+123",
+			path: "./testdata/dsse-v1.2.3-alpha+123-tag.intoto.jsonl",
+			tag:  "v1.2.3-alpha+123",
+		},
+		{
+			name: "tag v1.2.3-alpha+123 match v1.2.3-alpha+456",
+			path: "./testdata/dsse-v1.2.3-alpha+123-tag.intoto.jsonl",
+			tag:  "v1.2.3-alpha+456",
+		},
+		{
+			name: "tag v1.2.3-alpha match v1.2.3-alpha+123",
+			path: "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			tag:  "v1.2.3-alpha+123",
+		},
+		{
+			name:     "tag v1.2.3-alpha no match v1.2.3-beta+123",
+			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			tag:      "v1.2.3-beta+123",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2.3+123 no match v1.2.3-alpha+123",
+			path:     "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			tag:      "v1.2.3-alpha+123",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2.3+123 no match v1.2.3-alpha",
+			path:     "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			tag:      "v1.2.3-alpha",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1.2.3+123 match v1.2.3+123",
+			path: "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			tag:  "v1.2.3+123",
+		},
+		{
+			name: "tag v1.2.3+123 match v1.2.3",
+			path: "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			tag:  "v1.2.3",
+		},
+		{
+			name: "tag v1.2.3+123 match v1.2.3+456",
+			path: "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			tag:  "v1.2.3+456",
+		},
+		{
+			name:     "tag v1.2.3 no match v1.2.3-aplha",
+			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:      "v1.2.3-alpha",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2.3-alpha no match v1.2.3-beta",
+			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			tag:      "v1.2.3-beta",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name:     "tag v1.2 no match v1.2.3-beta",
+			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			tag:      "v1.2.3-beta",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
+			name: "tag v1.2.3 match v1.2.3+123",
+			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			tag:  "v1.2.3+123",
+		},
+		{
+			name:     "tag v1.2 no match v1.2.0-aplha+123",
+			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			tag:      "v1.2.0-alpha+123",
+			expected: ErrorMismatchVersionedTag,
+		},
+		{
 			name:     "tag v1.2 no match v2",
 			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
 			tag:      "v2",
@@ -517,6 +651,12 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name: "tag v1 match v1.0.0",
 			path: "./testdata/dsse-v1-tag.intoto.jsonl",
 			tag:  "v1.0.0",
+		},
+		{
+			name:     "invalid v1-alpha",
+			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			tag:      "v1-alpha",
+			expected: ErrorInvalidSemver,
 		},
 	}
 	for _, tt := range tests {
