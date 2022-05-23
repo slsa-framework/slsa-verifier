@@ -451,8 +451,8 @@ func VerifyVersionedTag(env *dsselib.Envelope, expectedTag string) error {
 
 	// Retrieve, validate and canonicalize the provenance tag.
 	// Note: prerelease is validated as part of patch validation
-	// and must be equal. Build is discarded as part of canonicalization
-	// and patch verification.
+	// and must be equal. Build is discarded as per https://semver.org/:
+	// "Build metadata MUST be ignored when determining version precedence",
 	tag, err := getTag(env)
 	if err != nil {
 		return err
