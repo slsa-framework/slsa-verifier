@@ -45,11 +45,13 @@ const (
 )
 
 // TODO: remove builder.yml
+var trustedBuilderRepository = "laurentsimon/slsa-github-generator"
+
 var trustedReusableWorkflows = map[string]bool{
 	"slsa-framework/slsa-github-generator/.github/workflows/slsa2_provenance.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
-	"slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml": true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
 }
 
 var (
@@ -62,6 +64,7 @@ var (
 	ErrorMismatchVersionedTag = errors.New("tag used to generate the binary does not match provenance")
 	ErrorInvalidSemver        = errors.New("invalid semantic version")
 	errorInvalidVersion       = errors.New("invalid version")
+	errorInvalidRef           = errors.New("invalid ref")
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -383,12 +386,20 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 		return errors.New("malformed URI for workflow")
 	}
 
-	if _, ok := trustedReusableWorkflows[strings.Trim(workflowPath[0], "/")]; !ok {
-		return errors.New("untrusted reuseable workflow")
+	// Trusted workflow verification by name.
+	reusableWorkflowName := strings.Trim(workflowPath[0], "/")
+	if _, ok := trustedReusableWorkflows[reusableWorkflowName]; !ok {
+		return fmt.Errorf("untrusted reusable workflow: %s", reusableWorkflowName)
 	}
 
+	// Verify the ref.
+	if err := verifyTrustedBuilderRef(id, strings.Trim(workflowPath[1], "/")); err != nil {
+		return err
+	}
+
+	// Issue verification.
 	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
-		return errors.New("untrusted token issuer")
+		return fmt.Errorf("untrusted token issuer: %s", id.Issuer)
 	}
 
 	// The caller repository in the x509 extension is not fully qualified. It only contains
@@ -399,6 +410,35 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 			expectedSource, id.CallerRepository)
 	}
 
+	return nil
+}
+
+// Only allow `@refs/heads/main` for the builder, so that we can use the pre-build
+// builder binary generated during release. For other projects,
+// we only allow semnatic versions that map to a release.
+func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
+	// TODO: update
+	// if strings.EqualFold("refs/heads/main", pin) &&
+	// 	id.CallerRepository != "slsa-framework/slsa-github-generator" {
+	// 	return fmt.Errorf("invalid trusted workflow pin: %s", pin)
+	// }
+	if id.CallerRepository == trustedBuilderRepository &&
+		strings.EqualFold("refs/heads/feat/fastbuilds", ref) {
+		return nil
+	}
+
+	if !strings.HasPrefix(ref, "refs/tags/") {
+		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", errorInvalidRef, ref)
+	}
+
+	// Valid semver of the form vX.Y.Z with no metadata.
+	pin := strings.TrimPrefix(ref, "refs/tags/")
+	if !(semver.IsValid(pin) &&
+		len(strings.Split(pin, ".")) == 3 &&
+		semver.Prerelease(pin) == "" &&
+		semver.Build(pin) == "") {
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", errorInvalidRef, pin)
+	}
 	return nil
 }
 

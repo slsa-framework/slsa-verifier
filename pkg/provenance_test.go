@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
@@ -346,6 +347,115 @@ func Test_VerifyTag(t *testing.T) {
 			err = VerifyTag(env, tt.tag)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
+func Test_verifyTrustedBuilderRef(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		callerRepo string
+		builderRef string
+		expected   error
+	}{
+		// trusted repo.
+		{
+			name:       "main allowed for builder",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/heads/feat/fastbuilds",
+		},
+		{
+			name:       "full semver for builder",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/tags/v1.2.3",
+		},
+		{
+			name:       "no patch semver for other repos",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/tags/v1.2",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "no min semver for other repos",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/tags/v1",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver with prerelease for other repos",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/tags/v1.2.3-alpha",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver with build for other repos",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/tags/v1.2.3+123",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver with build/prerelease for other repos",
+			callerRepo: trustedBuilderRepository,
+			builderRef: "refs/tags/v1.2.3-alpha+123",
+			expected:   errorInvalidRef,
+		},
+		// Other repos.
+		{
+			name:       "main not allowed for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/heads/feat/fastbuilds",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/tags/v1.2.3",
+		},
+		{
+			name:       "no patch semver for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/tags/v1.2",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "no min semver for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/tags/v1",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver with prerelease for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/tags/v1.2.3-alpha",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver with build for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/tags/v1.2.3+123",
+			expected:   errorInvalidRef,
+		},
+		{
+			name:       "full semver with build/prerelease for other repos",
+			callerRepo: "some/repo",
+			builderRef: "refs/tags/v1.2.3-alpha+123",
+			expected:   errorInvalidRef,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			wf := WorkflowIdentity{
+				CallerRepository: tt.callerRepo,
+			}
+
+			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
