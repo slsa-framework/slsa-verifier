@@ -361,11 +361,10 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		expected   error
 	}{
 		// Trusted repo.
-		// TODO(revert) use main in 2 places
 		{
 			name:       "main allowed for builder",
 			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/heads/feat/fastbuilds",
+			builderRef: "refs/heads/main",
 		},
 		{
 			name:       "full semver for builder",
@@ -406,7 +405,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		{
 			name:       "main not allowed for other repos",
 			callerRepo: "some/repo",
-			builderRef: "refs/heads/feat/fastbuilds",
+			builderRef: "refs/heads/main",
 			expected:   errorInvalidRef,
 		},
 		{
