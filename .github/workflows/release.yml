@@ -8,8 +8,7 @@ on:
 permissions: read-all
 
 jobs:
-  # Go builder.
-  go-builder:
+  builder:
     permissions:
       id-token: write # For signing.
       contents: write # For asset uploads.
