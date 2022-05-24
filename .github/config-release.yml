@@ -10,4 +10,4 @@ flags:
 
 goos: linux
 goarch: amd64
-binary: slsa-verifier-go-{{ .Os }}-{{ .Arch }}
+binary: slsa-verifier-{{ .Os }}-{{ .Arch }}
