@@ -360,7 +360,8 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		builderRef string
 		expected   error
 	}{
-		// trusted repo.
+		// Trusted repo.
+		// TODO(revert) use main in 2 places
 		{
 			name:       "main allowed for builder",
 			callerRepo: trustedBuilderRepository,

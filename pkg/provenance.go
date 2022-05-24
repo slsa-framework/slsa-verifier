@@ -44,9 +44,9 @@ const (
 	certOidcIssuer   = "https://token.actions.githubusercontent.com"
 )
 
-// TODO: remove builder.yml
-var trustedBuilderRepository = "laurentsimon/slsa-github-generator"
+var trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 
+// TODO: remove old builders.
 var trustedReusableWorkflows = map[string]bool{
 	"slsa-framework/slsa-github-generator/.github/workflows/slsa2_provenance.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
@@ -414,16 +414,11 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 }
 
 // Only allow `@refs/heads/main` for the builder, so that we can use the pre-build
-// builder binary generated during release. For other projects,
-// we only allow semnatic versions that map to a release.
+// builder binary generated during release (release happen at main). For other projects,
+// we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	// TODO: update
-	// if strings.EqualFold("refs/heads/main", pin) &&
-	// 	id.CallerRepository != "slsa-framework/slsa-github-generator" {
-	// 	return fmt.Errorf("invalid trusted workflow pin: %s", pin)
-	// }
 	if id.CallerRepository == trustedBuilderRepository &&
-		strings.EqualFold("refs/heads/feat/fastbuilds", ref) {
+		strings.EqualFold("refs/heads/main", ref) {
 		return nil
 	}
 
