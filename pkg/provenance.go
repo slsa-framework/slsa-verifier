@@ -418,9 +418,9 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 	return nil
 }
 
-// Only allow `@refs/heads/main` for the builder, so that we can use the pre-build
-// builder binary generated during release (release happen at main). For other projects,
-// we only allow semantic versions that map to a release.
+// Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.
+// This lets us use the pre-build builder binary generated during release (release happen at main).
+// For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	if (id.CallerRepository == trustedBuilderRepository ||
 		id.CallerRepository == e2eTestRepository) &&
