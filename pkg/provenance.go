@@ -58,16 +58,18 @@ var trustedReusableWorkflows = map[string]bool{
 }
 
 var (
-	ErrorInvalidDssePayload   = errors.New("invalid DSSE envelope payload")
-	errorRekorSearch          = errors.New("error searching rekor entries")
-	errorMismatchHash         = errors.New("binary artifact hash does not match provenance subject")
-	ErrorMismatchBranch       = errors.New("branch used to generate the binary does not match provenance")
-	ErrorMismatchRepository   = errors.New("repository used to generate the binary does not match provenance")
-	ErrorMismatchTag          = errors.New("tag used to generate the binary does not match provenance")
-	ErrorMismatchVersionedTag = errors.New("tag used to generate the binary does not match provenance")
-	ErrorInvalidSemver        = errors.New("invalid semantic version")
-	errorInvalidVersion       = errors.New("invalid version")
-	errorInvalidRef           = errors.New("invalid ref")
+	ErrorInvalidDssePayload      = errors.New("invalid DSSE envelope payload")
+	errorRekorSearch             = errors.New("error searching rekor entries")
+	errorMismatchHash            = errors.New("binary artifact hash does not match provenance subject")
+	ErrorMismatchBranch          = errors.New("branch used to generate the binary does not match provenance")
+	ErrorMismatchRepository      = errors.New("repository used to generate the binary does not match provenance")
+	ErrorMismatchTag             = errors.New("tag used to generate the binary does not match provenance")
+	ErrorMismatchVersionedTag    = errors.New("tag used to generate the binary does not match provenance")
+	ErrorInvalidSemver           = errors.New("invalid semantic version")
+	errorInvalidVersion          = errors.New("invalid version")
+	errorInvalidRef              = errors.New("invalid ref")
+	errorMalformedWorkflowURI    = errors.New("malformed URI for workflow")
+	errUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -386,13 +388,13 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return errors.New("malformed URI for workflow")
+		return fmt.Errorf("%w: %s", errorMalformedWorkflowURI, id.JobWobWorkflowRef)
 	}
 
 	// Trusted workflow verification by name.
 	reusableWorkflowName := strings.Trim(workflowPath[0], "/")
 	if _, ok := trustedReusableWorkflows[reusableWorkflowName]; !ok {
-		return fmt.Errorf("untrusted reusable workflow: %s", reusableWorkflowName)
+		return fmt.Errorf("%w: %s", errUntrustedReusableWorkflow, reusableWorkflowName)
 	}
 
 	// Verify the ref.
