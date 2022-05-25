@@ -44,7 +44,10 @@ const (
 	certOidcIssuer   = "https://token.actions.githubusercontent.com"
 )
 
-var trustedBuilderRepository = "slsa-framework/slsa-github-generator"
+var (
+	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
+	e2eTestRepository        = "slsa-framework/example-package"
+)
 
 // TODO: remove old builders.
 var trustedReusableWorkflows = map[string]bool{
@@ -417,7 +420,8 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 // builder binary generated during release (release happen at main). For other projects,
 // we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	if id.CallerRepository == trustedBuilderRepository &&
+	if (id.CallerRepository == trustedBuilderRepository ||
+		id.CallerRepository == e2eTestRepository) &&
 		strings.EqualFold("refs/heads/main", ref) {
 		return nil
 	}
