@@ -69,7 +69,8 @@ var (
 	errorInvalidVersion            = errors.New("invalid version")
 	errorInvalidRef                = errors.New("invalid ref")
 	errorMalformedWorkflowURI      = errors.New("malformed URI for workflow")
-	errorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
+	ErrorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
+	ErrorNoValidRekorEntries       = errors.New("could not find a matching valid signature entry")
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -343,7 +344,7 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		return cert, nil
 	}
 
-	return nil, errors.New("could not find a matching signature entry")
+	return nil, ErrorNoValidRekorEntries
 }
 
 func getExtension(cert *x509.Certificate, oid string) string {
@@ -394,7 +395,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 	// Trusted workflow verification by name.
 	reusableWorkflowName := strings.Trim(workflowPath[0], "/")
 	if _, ok := trustedReusableWorkflows[reusableWorkflowName]; !ok {
-		return fmt.Errorf("%w: %s", errorUntrustedReusableWorkflow, reusableWorkflowName)
+		return fmt.Errorf("%w: %s", ErrorUntrustedReusableWorkflow, reusableWorkflowName)
 	}
 
 	// Verify the ref.
