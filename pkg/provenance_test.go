@@ -55,7 +55,7 @@ func Test_GetRekorEntries(t *testing.T) {
 			res: searchResult{
 				err: index.NewSearchIndexDefault(500),
 			},
-			expected: errorRekorSearch,
+			expected: ErrorRekorSearch,
 		},
 		{
 			name:         "no rekor entries found",
@@ -66,7 +66,7 @@ func Test_GetRekorEntries(t *testing.T) {
 					Payload: []string{},
 				},
 			},
-			expected: errorRekorSearch,
+			expected: ErrorRekorSearch,
 		},
 		{
 			name:         "valid rekor entries found",

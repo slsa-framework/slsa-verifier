@@ -64,7 +64,7 @@ var (
 	ErrorMismatchTag               = errors.New("tag used to generate the binary does not match provenance")
 	ErrorMismatchVersionedTag      = errors.New("tag used to generate the binary does not match provenance")
 	ErrorInvalidSemver             = errors.New("invalid semantic version")
-	errorRekorSearch               = errors.New("error searching rekor entries")
+	ErrorRekorSearch               = errors.New("error searching rekor entries")
 	errorMismatchHash              = errors.New("binary artifact hash does not match provenance subject")
 	errorInvalidVersion            = errors.New("invalid version")
 	errorInvalidRef                = errors.New("invalid ref")
@@ -106,11 +106,11 @@ func GetRekorEntries(rClient *client.Rekor, artifactHash string) ([]string, erro
 	params.Query = &models.SearchIndex{Hash: fmt.Sprintf("sha256:%v", artifactHash)}
 	resp, err := rClient.Index.SearchIndex(params)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", errorRekorSearch, err.Error())
+		return nil, fmt.Errorf("%w: %s", ErrorRekorSearch, err.Error())
 	}
 
 	if len(resp.Payload) == 0 {
-		return nil, fmt.Errorf("%w: no matching entries found", errorRekorSearch)
+		return nil, fmt.Errorf("%w: no matching entries found", ErrorRekorSearch)
 	}
 
 	return resp.GetPayload(), nil
