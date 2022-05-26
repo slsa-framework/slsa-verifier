@@ -286,6 +286,12 @@ func Test_runVerify(t *testing.T) {
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		// TODO(laurent): add tests for special cases of buidlers' ref.
+		{
+			name:     "rekor upload bypassed",
+			artifact: "./testdata/binary-linux-amd64-no-tlog-upload",
+			source:   "github.com/asraa/slsa-on-github-test",
+			err:      pkg.ErrorRekorSearch,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
