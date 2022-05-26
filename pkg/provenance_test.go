@@ -187,7 +187,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    errUntrustedReusableWorkflow,
+			err:    errorUntrustedReusableWorkflow,
 		},
 		{
 			name: "untrusted job workflow ref for general repos",
