@@ -292,6 +292,18 @@ func Test_runVerify(t *testing.T) {
 			source:   "github.com/asraa/slsa-on-github-test",
 			err:      pkg.ErrorRekorSearch,
 		},
+		{
+			name:     "malicious: untrusted builder",
+			artifact: "./testdata/binary-linux-amd64-untrusted-builder",
+			source:   "github.com/asraa/slsa-on-github-test",
+			err:      pkg.ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "malicious: invalid signature expired certificate",
+			artifact: "./testdata/binary-linux-amd64-expired-cert",
+			source:   "github.com/asraa/slsa-on-github-test",
+			err:      pkg.ErrorNoValidRekorEntries,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
