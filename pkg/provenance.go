@@ -44,24 +44,32 @@ const (
 	certOidcIssuer   = "https://token.actions.githubusercontent.com"
 )
 
-// TODO: remove builder.yml
+var (
+	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
+	e2eTestRepository        = "slsa-framework/example-package"
+)
+
+// TODO: remove old builders.
 var trustedReusableWorkflows = map[string]bool{
-	"slsa-framework/slsa-github-generator/.github/workflows/slsa2_provenance.yml": true,
+	trustedBuilderRepository + "/.github/workflows/slsa2_provenance.yml":          true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
 	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
-	"slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml": true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
 }
 
 var (
-	ErrorInvalidDssePayload   = errors.New("invalid DSSE envelope payload")
-	errorRekorSearch          = errors.New("error searching rekor entries")
-	errorMismatchHash         = errors.New("binary artifact hash does not match provenance subject")
-	ErrorMismatchBranch       = errors.New("branch used to generate the binary does not match provenance")
-	ErrorMismatchRepository   = errors.New("repository used to generate the binary does not match provenance")
-	ErrorMismatchTag          = errors.New("tag used to generate the binary does not match provenance")
-	ErrorMismatchVersionedTag = errors.New("tag used to generate the binary does not match provenance")
-	ErrorInvalidSemver        = errors.New("invalid semantic version")
-	errorInvalidVersion       = errors.New("invalid version")
+	ErrorInvalidDssePayload        = errors.New("invalid DSSE envelope payload")
+	ErrorMismatchBranch            = errors.New("branch used to generate the binary does not match provenance")
+	ErrorMismatchRepository        = errors.New("repository used to generate the binary does not match provenance")
+	ErrorMismatchTag               = errors.New("tag used to generate the binary does not match provenance")
+	ErrorMismatchVersionedTag      = errors.New("tag used to generate the binary does not match provenance")
+	ErrorInvalidSemver             = errors.New("invalid semantic version")
+	errorRekorSearch               = errors.New("error searching rekor entries")
+	errorMismatchHash              = errors.New("binary artifact hash does not match provenance subject")
+	errorInvalidVersion            = errors.New("invalid version")
+	errorInvalidRef                = errors.New("invalid ref")
+	errorMalformedWorkflowURI      = errors.New("malformed URI for workflow")
+	errorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -380,15 +388,23 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return errors.New("malformed URI for workflow")
+		return fmt.Errorf("%w: %s", errorMalformedWorkflowURI, id.JobWobWorkflowRef)
 	}
 
-	if _, ok := trustedReusableWorkflows[strings.Trim(workflowPath[0], "/")]; !ok {
-		return errors.New("untrusted reuseable workflow")
+	// Trusted workflow verification by name.
+	reusableWorkflowName := strings.Trim(workflowPath[0], "/")
+	if _, ok := trustedReusableWorkflows[reusableWorkflowName]; !ok {
+		return fmt.Errorf("%w: %s", errorUntrustedReusableWorkflow, reusableWorkflowName)
 	}
 
+	// Verify the ref.
+	if err := verifyTrustedBuilderRef(id, strings.Trim(workflowPath[1], "/")); err != nil {
+		return err
+	}
+
+	// Issue verification.
 	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
-		return errors.New("untrusted token issuer")
+		return fmt.Errorf("untrusted token issuer: %s", id.Issuer)
 	}
 
 	// The caller repository in the x509 extension is not fully qualified. It only contains
@@ -399,6 +415,31 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
 			expectedSource, id.CallerRepository)
 	}
 
+	return nil
+}
+
+// Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.
+// This lets us use the pre-build builder binary generated during release (release happen at main).
+// For other projects, we only allow semantic versions that map to a release.
+func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
+	if (id.CallerRepository == trustedBuilderRepository ||
+		id.CallerRepository == e2eTestRepository) &&
+		strings.EqualFold("refs/heads/main", ref) {
+		return nil
+	}
+
+	if !strings.HasPrefix(ref, "refs/tags/") {
+		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", errorInvalidRef, ref)
+	}
+
+	// Valid semver of the form vX.Y.Z with no metadata.
+	pin := strings.TrimPrefix(ref, "refs/tags/")
+	if !(semver.IsValid(pin) &&
+		len(strings.Split(pin, ".")) == 3 &&
+		semver.Prerelease(pin) == "" &&
+		semver.Build(pin) == "") {
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", errorInvalidRef, pin)
+	}
 	return nil
 }
 
