@@ -5,6 +5,7 @@ This is a  document to describe the release process for the verifier.
 ---
 
 - [Publish release](#publish-release)
+- [Verify provenance](#verify-provenance)
 - [Update documentation](#update-documentation)
 - [Update builders](#update-builders)
 - [Announce](#announce)
@@ -23,7 +24,7 @@ Click `Publish release`.
 
 This will trigger a release workflow: wait until it completes and generates the binary and the provenance.
 
-## Update documentation
+## Verify provenance
 
 Follow the steps:
 
@@ -39,7 +40,11 @@ $ go run . -artifact-path slsa-verifier-linux-amd64 -provenance slsa-verifier-li
 
 If the provenance verification fails, abort. Otherwise, continue.
 
-3. Compute the hash of the binary. One of the following commands will do:
+## Update documentation
+
+Follow these steps:
+
+1. Compute the hash of the binary. One of the following commands will do:
 ```
 $ cat slsa-verifier-linux-amd64.intoto.jsonl | jq -r '.payload' | base64 -d | jq -r '.subject[0].digest.sha256'
 ```
@@ -48,7 +53,7 @@ or
 $ sha256sum slsa-verifier-linux-amd64
 ```
 
-4. Update the verifier hash in the documentation:
+2. Update the verifier hash in the documentation:
 
 Add an additional entry at the top of [SHA256SUM.md](./SHa256SUM.md):
 
@@ -59,7 +64,7 @@ Add an additional entry at the top of [SHA256SUM.md](./SHa256SUM.md):
 
 Update the latest version in the [README.md](./README.md).
 
-Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verificattion succeeds
+3. Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verificattion succeeds
 and the hash in the pull request matches the one computed on the binary. You cna use [#slsa-framework/slsa-github-generator#113](https://github.com/slsa-framework/slsa-github-generator/pull/113) as example.
 
 ## Update builders
