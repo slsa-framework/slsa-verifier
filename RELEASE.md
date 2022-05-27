@@ -48,11 +48,16 @@ $ sha256sum slsa-verifier-linux-amd64
 
 If the provenance verification fails, abort. Otherwise, continue.
 
-4. Send a pull request with an additional entry at the top of [SHA256SUM.md](./SHa256SUM.md):
+4. Update the verifier hash in the documentation:
+
+Add an additional entry at the top of [SHA256SUM.md](./SHa256SUM.md):
+
 ```
 # vX.Y.Z - https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z
 <the-hash>  slsa-verifier-linux-amd64
 ```
+
+Update the latest version in the [README.md](./README.md).
 
 In the pull request description, explain the steps to verify the hash update.
 

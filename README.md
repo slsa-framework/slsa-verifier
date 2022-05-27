@@ -3,6 +3,10 @@ This repository contains the implementation for verifying [SLSA provenance](http
 
 ***Note: This is a beta release and we are looking for your feedback. The official 1.0 release should come out in the next few weeks.*** 
 ________
+[Installation](#installation)
+- [Compilation from source](#compilation-from-source)
+- [Download the binary](#download-the-binary)
+
 [Verification of provenance](#verification-of-provenance)
 - [Available options](#available-options)
 - [Example](#example)
@@ -11,6 +15,31 @@ ________
 - [Blog posts](#blog-posts)
 - [Specifications](#specifications)
 ________
+
+## Installation
+
+You have two options to install the verifier.
+
+### Compilation from source
+
+```
+$ git clone git@github.com:slsa-framework/slsa-verifier.git
+$ git checkout tags/v0.0.1
+$ go run . <options>
+```
+
+### Download the binary
+
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v0.0.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v0.0.1)
+
+Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
+
+Verify the checksum:
+
+```
+$ cat SHA256SUM.md | sha256sum -c --strict
+  slsa-verifier-linux-amd64: OK
+```
 
 ## Verification of Provenance
 
