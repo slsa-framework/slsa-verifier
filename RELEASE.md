@@ -62,8 +62,8 @@ $ sha256sum slsa-verifier-linux-amd64
 
 3. Update the latest version in the [README.md](./README.md).
 
-4. Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verificattion succeeds
-and the hash in the pull request matches the one computed on the binary. You cna use [#slsa-framework/slsa-github-generator#113](https://github.com/slsa-framework/slsa-github-generator/pull/113) as example.
+4. Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verification succeeds
+and the hash in the pull request matches the one computed on the binary. You can use [#slsa-framework/slsa-github-generator#113](https://github.com/slsa-framework/slsa-github-generator/pull/113) as example.
 
 ## Update builders
 
