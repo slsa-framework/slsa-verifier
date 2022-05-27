@@ -24,7 +24,7 @@ You have two options to install the verifier.
 
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ git checkout tags/v0.0.1
+$ cd slsa-verifier && git checkout tags/v0.0.1
 $ go run . <options>
 ```
 
