@@ -53,7 +53,7 @@ If the provenance verification fails, abort. Otherwise, continue.
 Add an additional entry at the top of [SHA256SUM.md](./SHa256SUM.md):
 
 ```
-# vX.Y.Z - https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z
+### vX.Y.Z - https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z
 <the-hash>  slsa-verifier-linux-amd64
 ```
 
