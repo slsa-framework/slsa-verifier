@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/google/trillian v1.4.1
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
-	github.com/secure-systems-lab/go-securesystemslib v0.3.1
+	github.com/secure-systems-lab/go-securesystemslib v0.4.0
 	github.com/sigstore/rekor v0.4.1-0.20220114213500-23f583409af3
 	github.com/sigstore/sigstore v1.2.1-0.20220401110139-0e610e39782f
 )
