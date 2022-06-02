@@ -38,7 +38,7 @@ $ (Optional: git checkout tags/v1.0.0)
 $ go run . -artifact-path slsa-verifier-linux-amd64 -provenance slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag vX.Y.Z
 ```
 
-If the provenance verification fails, abort. Otherwise, continue.
+If the provenance verification fails, delete the release and the tag. Otherwise, continue.
 
 ## Update documentation
 
