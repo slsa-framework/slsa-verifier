@@ -36,7 +36,7 @@ Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob
 Verify the checksum:
 
 ```
-$ cat SHA256SUM.md | sha256sum -c --strict
+$ sha256sum -c --strict SHA256SUM.md
   slsa-verifier-linux-amd64: OK
 ```
 

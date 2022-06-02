@@ -34,7 +34,7 @@ Follow the steps:
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier
-$ (Optional: git checkout tags/v1.0.0)
+# $ (Optional: git checkout tags/v1.0.0)
 $ go run . -artifact-path slsa-verifier-linux-amd64 -provenance slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag vX.Y.Z
 ```
 
@@ -53,7 +53,7 @@ or
 $ sha256sum slsa-verifier-linux-amd64
 ```
 
-2. Add an additional entry at the top of [SHA256SUM.md](./SHa256SUM.md):
+2. Add an additional entry at the top of [SHA256SUM.md](./SHA256SUM.md):
 
 ```
 ### [vX.Y.Z](https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z)
