@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -92,7 +93,14 @@ func verify(ctx context.Context,
 		return err
 	}
 
-	fmt.Printf("verified SLSA provenance produced at \n %s\n", b)
+	fmt.Fprintf(os.Stderr, "verified SLSA provenance produced at \n %s\n", b)
+
+	// Print verified provenance to stdout.
+	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return fmt.Errorf("%w: %s", pkg.ErrorInvalidDssePayload, "decoding payload")
+	}
+	fmt.Fprintf(os.Stdout, string(pyld))
 	return nil
 }
 
@@ -130,7 +138,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	fmt.Println("successfully verified SLSA provenance")
+	fmt.Fprintf(os.Stderr, "successfully verified SLSA provenance")
 }
 
 func isFlagPassed(name string) bool {
