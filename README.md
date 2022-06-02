@@ -78,8 +78,12 @@ verified SLSA provenance produced at
         "trigger": "workflow_dispatch",
         "issuer": "https://token.actions.githubusercontent.com"
 }
+{"_type":"https://in-toto.io/Statement/v0.1","predicateType":"https://slsa.dev/provenance/v0.2","subject":[{"name":"binary-linux-amd64","digest":{"sha256":"723ccb85318bc8b1a9dd29340612ce1268cd3418d70f68e775edbdc16d1d9158"}}],"predicate":{...}}
 successfully verified SLSA provenance
 ```
+
+The verified in-toto statement is written to stdout and can be used to pipe into policy engines. 
+
 ## Technical design
 
 ### Blog post
