@@ -285,12 +285,11 @@ func Test_runVerify(t *testing.T) {
 			pversiontag: pString("v3.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
-		// TODO(laurent): add tests for special cases of buidlers' ref.
 		{
-			name:     "rekor upload bypassed",
-			artifact: "./testdata/binary-linux-amd64-no-tlog-upload",
-			source:   "github.com/asraa/slsa-on-github-test",
-			err:      pkg.ErrorRekorSearch,
+			name:     "e2e test repository verified with builder at head",
+			artifact: "./testdata/binary-linux-amd64-e2e-builder-repo",
+			source:   "github.com/slsa-framework/example-package",
+			branch:   "main",
 		},
 		{
 			name:     "malicious: untrusted builder",
