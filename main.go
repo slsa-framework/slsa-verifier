@@ -90,7 +90,7 @@ func verify(ctx context.Context,
 	if err != nil {
 		return fmt.Errorf("%w: %s", pkg.ErrorInvalidDssePayload, "decoding payload")
 	}
-	fmt.Fprintf(os.Stdout, string(pyld))
+	fmt.Fprintf(os.Stdout, "%s\n", string(pyld))
 	return nil
 }
 
@@ -128,7 +128,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	fmt.Fprintf(os.Stderr, "successfully verified SLSA provenance")
+	fmt.Fprintf(os.Stderr, "successfully verified SLSA provenance\n")
 }
 
 func isFlagPassed(name string) bool {

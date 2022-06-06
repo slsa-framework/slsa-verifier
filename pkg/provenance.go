@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -338,7 +339,6 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 	for _, uuid := range uuids {
 		entry, err := verifyTlogEntry(ctx, rClient, uuid)
 		if err != nil {
-			fmt.Printf(err.Error())
 			continue
 		}
 		cert, err := extractCert(entry)
@@ -363,7 +363,7 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 			continue
 		}
 		// success!
-		fmt.Printf("Verified against tlog entry %d\n", *entry.LogIndex)
+		fmt.Fprintf(os.Stderr, "Verified against tlog entry %d\n", *entry.LogIndex)
 		return cert, nil
 	}
 
