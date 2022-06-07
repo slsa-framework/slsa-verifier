@@ -52,10 +52,8 @@ var (
 
 // TODO: remove old builders.
 var trustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/slsa2_provenance.yml":          true,
-	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
-	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
+	trustedBuilderRepository + "/.github/workflows/slsa2_provenance.yml": true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml": true,
 }
 
 var (
