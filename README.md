@@ -21,6 +21,13 @@ You have two options to install the verifier.
 
 ### Compilation from source
 
+#### Option 1: Install via go
+```
+$ go install github.com/slsa-framework/slsa-verifier@v1.0.0
+$ slsa-verifier <options>
+```
+
+#### Option 2: Compile manually
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier && git checkout tags/v0.0.1
