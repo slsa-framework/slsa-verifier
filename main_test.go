@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/slsa-framework/slsa-verifier/pkg"
@@ -19,8 +20,8 @@ func pString(s string) *string {
 	return &s
 }
 
-// Versions of the builders to test
-var generatorVersions = []string{"v0.0.2"}
+// Versions of the builders to test.
+var generatorVersions = []string{"v0.0.2", "v1.0.0"}
 
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
@@ -32,6 +33,11 @@ func Test_runVerify(t *testing.T) {
 		ptag        *string
 		pversiontag *string
 		err         error
+		// noversion is a special case where we are not testing all builder versions
+		// for example, testdata for the builder at head in trusted repo workflows
+		// or testdata from malicious untrusted builders.
+		// When true, this does not iterate over all builder versions.
+		noversion bool
 	}{
 		{
 			name:     "valid main branch default",
@@ -60,7 +66,7 @@ func Test_runVerify(t *testing.T) {
 		{
 			name:     "wrong source prepend A",
 			artifact: "binary-linux-amd64-workflow_dispatch",
-			source:   "Agithub.com/laurentsimon/slsa-verifier-test-gen",
+			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
 			err:      pkg.ErrorMismatchRepository,
 		},
 		{
@@ -291,29 +297,33 @@ func Test_runVerify(t *testing.T) {
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
-			name:     "e2e test repository verified with builder at head",
-			artifact: "binary-linux-amd64-e2e-builder-repo",
-			source:   "github.com/slsa-framework/example-package",
-			branch:   "main",
+			name:      "e2e test repository verified with builder at head",
+			artifact:  "binary-linux-amd64-e2e-builder-repo",
+			source:    "github.com/slsa-framework/example-package",
+			branch:    "main",
+			noversion: true,
 		},
 		// Malicious builders and workflows.
 		{
-			name:     "rekor upload bypassed",
-			artifact: "binary-linux-amd64-no-tlog-upload",
-			source:   "github.com/slsa-framework/example-package",
-			err:      pkg.ErrorRekorSearch,
+			name:      "rekor upload bypassed",
+			artifact:  "binary-linux-amd64-no-tlog-upload",
+			source:    "github.com/slsa-framework/example-package",
+			err:       pkg.ErrorRekorSearch,
+			noversion: true,
 		},
 		{
-			name:     "malicious: untrusted builder",
-			artifact: "binary-linux-amd64-untrusted-builder",
-			source:   "github.com/slsa-framework/example-package",
-			err:      pkg.ErrorUntrustedReusableWorkflow,
+			name:      "malicious: untrusted builder",
+			artifact:  "binary-linux-amd64-untrusted-builder",
+			source:    "github.com/slsa-framework/example-package",
+			err:       pkg.ErrorUntrustedReusableWorkflow,
+			noversion: true,
 		},
 		{
-			name:     "malicious: invalid signature expired certificate",
-			artifact: "binary-linux-amd64-expired-cert",
-			source:   "github.com/slsa-framework/example-package",
-			err:      pkg.ErrorNoValidRekorEntries,
+			name:      "malicious: invalid signature expired certificate",
+			artifact:  "binary-linux-amd64-expired-cert",
+			source:    "github.com/slsa-framework/example-package",
+			err:       pkg.ErrorNoValidRekorEntries,
+			noversion: true,
 		},
 	}
 	for _, tt := range tests {
@@ -321,13 +331,18 @@ func Test_runVerify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			for _, v := range generatorVersions {
+			checkVersions := generatorVersions
+			if tt.noversion {
+				checkVersions = []string{""}
+			}
+
+			for _, v := range checkVersions {
 				branch := tt.branch
 				if branch == "" {
 					branch = "main"
 				}
 
-				artifactPath = fmt.Sprintf("./testdata/%v/%s", v, tt.artifact)
+				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/%v/%s", v, tt.artifact))
 				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				err := runVerify(artifactPath,
@@ -339,7 +354,6 @@ func Test_runVerify(t *testing.T) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 				}
 			}
-
 		})
 	}
 }
