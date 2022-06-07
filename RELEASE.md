@@ -8,6 +8,7 @@ This is a  document to describe the release process for the verifier.
 - [Verify provenance](#verify-provenance)
 - [Update documentation](#update-documentation)
 - [Update builders](#update-builders)
+- [Add tests for new builder release version](#update-tests)
 - [Announce](#announce)
 
 ---
@@ -70,3 +71,7 @@ and the hash in the pull request matches the one computed on the binary. You can
 Send a similar pull request to update the hash and version of the verifier for the workflow [slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31](https://github.com/slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31). Explain the steps to verify the hash. If the pull request for the verifier is already merged, you can simply point to it instead.
 
 Note: you need not cut a release for the generator, unless the verifier has important changes that are required for the builders to work properly.
+
+## Update tests
+
+Whenever a new release of the builders is published, create a new versioned subfolder under `/testdata` to ensure that the verifier can verify old builder versions. You will need to pull `workflow_dispatch` provenance from this [workflow](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.workflow_dispatch.main.config-noldflags.slsa3.yml) of the e2e test repository, and push a tag of the form vX and vX.Y to trigger this [workflow](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets.major.slsa3.yml).

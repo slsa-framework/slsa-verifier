@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/slsa-framework/slsa-verifier/pkg"
@@ -18,6 +19,9 @@ func pString(s string) *string {
 	return &s
 }
 
+// Versions of the builders to test
+var generatorVersions = []string{"v0.0.2"}
+
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -31,284 +35,284 @@ func Test_runVerify(t *testing.T) {
 	}{
 		{
 			name:     "valid main branch default",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
+			artifact: "binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
 		},
 		{
 			name:     "valid main branch set",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
+			artifact: "binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
 			branch:   "main",
 		},
 		{
 			name:     "wrong branch master",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
+			artifact: "binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
 			branch:   "master",
 			err:      pkg.ErrorMismatchBranch,
 		},
 		{
 			name:     "wrong source append A",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
+			artifact: "binary-linux-amd64-workflow_dispatch",
 			source:   "github.com/laurentsimon/slsa-verifier-test-genA",
 			err:      pkg.ErrorMismatchRepository,
 		},
 		{
 			name:     "wrong source prepend A",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
+			artifact: "binary-linux-amd64-workflow_dispatch",
 			source:   "Agithub.com/laurentsimon/slsa-verifier-test-gen",
 			err:      pkg.ErrorMismatchRepository,
 		},
 		{
 			name:     "wrong source middle A",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
+			artifact: "binary-linux-amd64-workflow_dispatch",
 			source:   "github.com/Alaurentsimon/slsa-verifier-test-gen",
 			err:      pkg.ErrorMismatchRepository,
 		},
 		{
 			name:     "tag no match empty tag workflow_dispatch",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
+			artifact: "binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
 			ptag:     pString("v1.2.3"),
 			err:      pkg.ErrorMismatchTag,
 		},
 		{
 			name:        "versioned tag no match empty tag workflow_dispatch",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-workflow_dispatch",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
+			artifact:    "binary-linux-amd64-workflow_dispatch",
+			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
 			err:         pkg.ErrorInvalidSemver,
 		},
+		// Provenance contains tag = v13.0.30.
 		{
-			name:     "tag v1.2.3 no match v1.2.4",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
-			ptag:     pString("v1.2.3"),
+			name:     "tag v31.0.29 no match v13.0.30",
+			artifact: "binary-linux-amd64-push-v13.0.30",
+			source:   "github.com/slsa-framework/example-package",
+			ptag:     pString("v13.0.29"),
 			err:      pkg.ErrorMismatchTag,
 		},
 		{
-			name:     "tag v1.2 no match v1.2.4",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
-			ptag:     pString("v1.2"),
+			name:     "tag v13.0 no match v13.0.30",
+			artifact: "binary-linux-amd64-push-v13.0.30",
+			source:   "github.com/slsa-framework/example-package",
+			ptag:     pString("v13.0"),
 			err:      pkg.ErrorMismatchTag,
 		},
 		{
-			name:     "tag v1 no match v1.2.4",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:   "github.com/laurentsimon/slsa-verifier-test-gen",
-			ptag:     pString("v1"),
+			name:     "tag v13 no match v13.0.30",
+			artifact: "binary-linux-amd64-push-v13.0.30",
+			source:   "github.com/slsa-framework/example-package",
+			ptag:     pString("v13"),
 			err:      pkg.ErrorMismatchTag,
 		},
-		// Provenance contains tag = v1.2.4.
 		{
-			name:        "versioned v1.2.4 match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.2.4"),
+			name:        "versioned v13.0.30 match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13.0.30"),
 		},
 		{
-			name:        "versioned v1.2 match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.2"),
+			name:        "versioned v13.0 match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13.0"),
 		},
 		{
-			name:        "versioned v1 match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1"),
+			name:        "versioned v13 match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13"),
 		},
 		{
-			name:        "versioned v2 no match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
+			name:        "versioned v2 no match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v2"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v0 no match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
+			name:        "versioned v0 no match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v0"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v1.3 no match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.3"),
+			name:        "versioned v13.1 no match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v1.1 no match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.1"),
+			name:        "versioned v12.9 no match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v12.9"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v1.2.3 no match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.2.3"),
+			name:        "versioned v13.0.29 no match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13.0.29"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v1.2.5 no match push-v1.2.4",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v1.2.4",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.2.5"),
+			name:        "versioned v13.0.31 no match push-v13.0.30",
+			artifact:    "binary-linux-amd64-push-v13.0.30",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13.0.31"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
-		// Provenance contains tag = v2.
+		// Provenance contains tag = v14.
 		{
-			name:        "versioned v2 match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2"),
+			name:        "versioned v14 match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14"),
 		},
 		{
-			name:        "versioned v2.0 match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.0"),
+			name:        "versioned v14.0 match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.0"),
 		},
 		{
-			name:        "versioned v2.1 no match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.1"),
-			err:         pkg.ErrorMismatchVersionedTag,
-		},
-		{
-			name:        "versioned v1 no match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1"),
+			name:        "versioned v14.1 no match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v3 no match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v3"),
+			name:        "versioned v13 no match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v1.2 no match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1.2"),
+			name:        "versioned v15 no match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v15"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v3 no match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v3"),
+			name:        "versioned v13.2 no match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13.2"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v0 no match push-v2",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
+			name:        "versioned v15 no match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v15"),
+			err:         pkg.ErrorMismatchVersionedTag,
+		},
+		{
+			name:        "versioned v0 no match push-v14",
+			artifact:    "binary-linux-amd64-push-v14",
+			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v0"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
-		// Provenance contains tag = v2.5.
+		// Provenance contains tag = v14.2. )2.5
 		{
-			name:        "versioned v2.5 match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.5"),
+			name:        "versioned v14.2 match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.2"),
 		},
 		{
-			name:        "versioned v2.5.1 match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.5.1"),
+			name:        "versioned v14.2.1 match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.2.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v2.5.3 match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.5.3"),
+			name:        "versioned v14.2.3 match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.2.3"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v2 match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2"),
+			name:        "versioned v14 match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14"),
 		},
 		{
-			name:        "versioned v2.4 no match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.4"),
+			name:        "versioned v14.1 no match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v2.4.1 no match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.4.1"),
+			name:        "versioned v14.1.1 no match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.1.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v2.4.5 no match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v2.4.5"),
+			name:        "versioned v14.3.1 no match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v14.3.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v1 no match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v1"),
+			name:        "versioned v13 no match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v13"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v3 no match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v3"),
+			name:        "versioned v15 no match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v15"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		{
-			name:        "versioned v3.1 no match push-v2.5",
-			artifact:    "./testdata/v0.0.2/binary-linux-amd64-push-v2.5",
-			source:      "github.com/laurentsimon/slsa-verifier-test-gen",
-			pversiontag: pString("v3.1"),
+			name:        "versioned v15.1 no match push-v14.2",
+			artifact:    "binary-linux-amd64-push-v14.2",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v15.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
 			name:     "e2e test repository verified with builder at head",
-			artifact: "./testdata/binary-linux-amd64-e2e-builder-repo",
+			artifact: "binary-linux-amd64-e2e-builder-repo",
 			source:   "github.com/slsa-framework/example-package",
 			branch:   "main",
 		},
 		// Malicious builders and workflows.
 		{
 			name:     "rekor upload bypassed",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-no-tlog-upload",
-			source:   "github.com/asraa/slsa-on-github-test",
+			artifact: "binary-linux-amd64-no-tlog-upload",
+			source:   "github.com/slsa-framework/example-package",
 			err:      pkg.ErrorRekorSearch,
 		},
 		{
 			name:     "malicious: untrusted builder",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-untrusted-builder",
-			source:   "github.com/asraa/slsa-on-github-test",
+			artifact: "binary-linux-amd64-untrusted-builder",
+			source:   "github.com/slsa-framework/example-package",
 			err:      pkg.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name:     "malicious: invalid signature expired certificate",
-			artifact: "./testdata/v0.0.2/binary-linux-amd64-expired-cert",
-			source:   "github.com/asraa/slsa-on-github-test",
+			artifact: "binary-linux-amd64-expired-cert",
+			source:   "github.com/slsa-framework/example-package",
 			err:      pkg.ErrorNoValidRekorEntries,
 		},
 	}
@@ -317,19 +321,25 @@ func Test_runVerify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			branch := tt.branch
-			if branch == "" {
-				branch = "main"
+			for _, v := range generatorVersions {
+				branch := tt.branch
+				if branch == "" {
+					branch = "main"
+				}
+
+				artifactPath = fmt.Sprintf("./testdata/%v/%s", v, tt.artifact)
+				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
+
+				err := runVerify(artifactPath,
+					provenancePath,
+					tt.source, branch,
+					tt.ptag, tt.pversiontag)
+
+				if !errCmp(err, tt.err) {
+					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				}
 			}
 
-			err := runVerify(tt.artifact,
-				tt.artifact+".intoto.jsonl",
-				tt.source, branch,
-				tt.ptag, tt.pversiontag)
-
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
-			}
 		})
 	}
 }
