@@ -50,12 +50,9 @@ var (
 	e2eTestRepository        = "slsa-framework/example-package"
 )
 
-// TODO: remove old builders.
 var trustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/slsa2_provenance.yml":          true,
-	"slsa-framework/slsa-github-generator-go/.github/workflows/slsa3_builder.yml": true,
-	"slsa-framework/slsa-github-generator-go/.github/workflows/builder.yml":       true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
+	trustedBuilderRepository + "/.github/workflows/slsa2_provenance.yml": true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml": true,
 }
 
 var (
@@ -298,6 +295,29 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 	}
 
 	return certs[0], err
+}
+
+// VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
+// and the signing certificate given the provenance and artifact hash.
+func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, provenance []byte, artifactHash string) (*dsselib.Envelope, *x509.Certificate, error) {
+	// Get Rekor entries corresponding to the binary artifact in the provenance.
+	uuids, err := GetRekorEntries(rClient, artifactHash)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	env, err := EnvelopeFromBytes(provenance)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Verify the provenance and return the signing certificate.
+	cert, err := FindSigningCertificate(ctx, uuids, *env, rClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return env, cert, nil
 }
 
 // FindSigningCertificate finds and verifies a matching signing certificate from a list of Rekor entry UUIDs.

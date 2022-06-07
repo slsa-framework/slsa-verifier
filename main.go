@@ -36,36 +36,33 @@ func verify(ctx context.Context,
 		return err
 	}
 
-	// Get Rekor entries corresponding to the binary artifact in the provenance.
-	uuids, err := pkg.GetRekorEntries(rClient, artifactHash)
+	/* Verify signature on the intoto attestation. */
+	env, cert, err := pkg.VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
 	if err != nil {
 		return err
 	}
 
-	env, err := pkg.EnvelopeFromBytes(provenance)
-	if err != nil {
-		return err
-	}
-
-	// Verify the provenance and return the signing certificate.
-	cert, err := pkg.FindSigningCertificate(ctx, uuids, *env, rClient)
-	if err != nil {
-		return err
-	}
-
+	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := pkg.GetWorkflowInfoFromCertificate(cert)
 	if err != nil {
 		return err
 	}
 
-	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := pkg.VerifyProvenance(env, artifactHash); err != nil {
+	b, err := json.MarshalIndent(workflowInfo, "", "\t")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "verified signature on SLSA provenance produced at \n %s\n", b)
+
+	/* Verify properties of the SLSA provenance. */
+	// Verify the workflow identity.
+	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
 		return err
 	}
 
-	// Verify the workflow identity.
-	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
+	// Unpack and verify info in the provenance, including the Subject Digest.
+	if err := pkg.VerifyProvenance(env, artifactHash); err != nil {
 		return err
 	}
 
@@ -87,13 +84,6 @@ func verify(ctx context.Context,
 			return err
 		}
 	}
-
-	b, err := json.MarshalIndent(workflowInfo, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintf(os.Stderr, "verified SLSA provenance produced at \n %s\n", b)
 
 	// Print verified provenance to stdout.
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
