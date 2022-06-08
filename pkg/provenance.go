@@ -359,8 +359,15 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		if err := cosign.CheckExpiry(cert, it); err != nil {
 			continue
 		}
+		uuid, err := cosign.ComputeLeafHash(entry)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error computing leaf hash for tlog entry at index: %d\n", *entry.LogIndex)
+			continue
+		}
+
 		// success!
-		fmt.Fprintf(os.Stderr, "Verified against tlog entry %d\n", *entry.LogIndex)
+		url := fmt.Sprintf("%v/%v/%v", defaultRekorAddr, "api/v1/log/entries", hex.EncodeToString(uuid))
+		fmt.Fprintf(os.Stderr, "Verified signature against tlog entry index %d at URL: %s\n", *entry.LogIndex, url)
 		return cert, nil
 	}
 

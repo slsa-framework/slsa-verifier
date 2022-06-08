@@ -61,6 +61,8 @@ $ go run . --help
     	path to an artifact to verify
   -branch string
     	expected branch the binary was compiled from (default "main")
+  -print-provenance
+    	output the verified provenance
   -provenance string
     	path to a provenance file
   -source string
@@ -74,22 +76,20 @@ $ go run . --help
 ### Example
 
 ```bash
-$ go run . --artifact-path ~/Downloads/binary-linux-amd64 --provenance ~/Downloads/binary-linux-amd64.intoto.jsonl --source github.com/origin/repo
-
-Verified against tlog entry 1544571
-verified SLSA provenance produced at 
+$ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.0.0
+Verified signature against tlog entry index 2592016 at URL: https://rekor.sigstore.dev/api/v1/log/entries/d77621eaf1de74592546f773192f49ed995e8b12f2e5eeed02057ae32b24aa95
+Signing certificate information:
  {
-        "caller": "origin/repo",
-        "commit": "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-        "job_workflow_ref": "/slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml",
-        "trigger": "workflow_dispatch",
-        "issuer": "https://token.actions.githubusercontent.com"
+	"caller": "slsa-framework/slsa-verifier",
+	"commit": "c1b6db643d6134285dc929206fdcfa3712a877eb",
+	"job_workflow_ref": "/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v0.0.1",
+	"trigger": "push",
+	"issuer": "https://token.actions.githubusercontent.com"
 }
-{"_type":"https://in-toto.io/Statement/v0.1","predicateType":"https://slsa.dev/provenance/v0.2","subject":[{"name":"binary-linux-amd64","digest":{"sha256":"723ccb85318bc8b1a9dd29340612ce1268cd3418d70f68e775edbdc16d1d9158"}}],"predicate":{...}}
-successfully verified SLSA provenance
+PASSED: Verified SLSA provenance
 ```
 
-The verified in-toto statement is written to stdout and can be used to pipe into policy engines. 
+The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines. 
 
 ## Technical design
 
