@@ -17,13 +17,13 @@ import (
 )
 
 var (
-	provenancePath   string
-	artifactPath     string
-	source           string
-	branch           string
-	tag              string
-	versiontag       string
-	outputProvenance bool
+	provenancePath  string
+	artifactPath    string
+	source          string
+	branch          string
+	tag             string
+	versiontag      string
+	printProvenance bool
 )
 
 var defaultRekorAddr = "https://rekor.sigstore.dev"
@@ -97,7 +97,7 @@ func main() {
 	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
 	flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
-	flag.BoolVar(&outputProvenance, "output-provenance", false, "output the verified provenance")
+	flag.BoolVar(&printProvenance, "print-provenance", false, "print the verified provenance to std out")
 	flag.Parse()
 
 	if provenancePath == "" || artifactPath == "" || source == "" {
@@ -128,7 +128,7 @@ func main() {
 
 	fmt.Fprintf(os.Stderr, "PASSED: Verified SLSA provenance\n")
 
-	if outputProvenance {
+	if printProvenance {
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 }

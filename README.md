@@ -61,7 +61,7 @@ $ go run . --help
     	path to an artifact to verify
   -branch string
     	expected branch the binary was compiled from (default "main")
-  -output-provenance
+  -print-provenance
     	output the verified provenance
   -provenance string
     	path to a provenance file
@@ -89,7 +89,7 @@ Signing certificate information:
 PASSED: Verified SLSA provenance
 ```
 
-The verified in-toto statement may be written to stdout with the `--output-provenance` flag to pipe into policy engines. 
+The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines. 
 
 ## Technical design
 
