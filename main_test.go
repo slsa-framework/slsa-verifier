@@ -345,7 +345,7 @@ func Test_runVerify(t *testing.T) {
 				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/%v/%s", v, tt.artifact))
 				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				err := runVerify(artifactPath,
+				_, err := runVerify(artifactPath,
 					provenancePath,
 					tt.source, branch,
 					tt.ptag, tt.pversiontag)
