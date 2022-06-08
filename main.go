@@ -17,12 +17,13 @@ import (
 )
 
 var (
-	provenancePath string
-	artifactPath   string
-	source         string
-	branch         string
-	tag            string
-	versiontag     string
+	provenancePath  string
+	artifactPath    string
+	source          string
+	branch          string
+	tag             string
+	versiontag      string
+	printProvenance bool
 )
 
 var defaultRekorAddr = "https://rekor.sigstore.dev"
@@ -30,68 +31,63 @@ var defaultRekorAddr = "https://rekor.sigstore.dev"
 func verify(ctx context.Context,
 	provenance []byte, artifactHash, source, branch string,
 	tag, versiontag *string,
-) error {
+) ([]byte, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	/* Verify signature on the intoto attestation. */
 	env, cert, err := pkg.VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := pkg.GetWorkflowInfoFromCertificate(cert)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	b, err := json.MarshalIndent(workflowInfo, "", "\t")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "verified signature on SLSA provenance produced at \n %s\n", b)
+	fmt.Fprintf(os.Stderr, "Signing certificate information:\n %s\n", b)
 
 	/* Verify properties of the SLSA provenance. */
 	// Verify the workflow identity.
 	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Unpack and verify info in the provenance, including the Subject Digest.
 	if err := pkg.VerifyProvenance(env, artifactHash); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Verify the branch.
 	if err := pkg.VerifyBranch(env, branch); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Verify the tag.
 	if tag != nil {
 		if err := pkg.VerifyTag(env, *tag); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	// Verify the versioned tag.
 	if versiontag != nil {
 		if err := pkg.VerifyVersionedTag(env, *versiontag); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	// Print verified provenance to stdout.
-	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
-	if err != nil {
-		return fmt.Errorf("%w: %s", pkg.ErrorInvalidDssePayload, "decoding payload")
-	}
-	fmt.Fprintf(os.Stdout, "%s\n", string(pyld))
-	return nil
+	// Return verified provenance.
+	return base64.StdEncoding.DecodeString(env.Payload)
 }
 
 func main() {
@@ -101,6 +97,7 @@ func main() {
 	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
 	flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+	flag.BoolVar(&printProvenance, "print-provenance", false, "print the verified provenance to std out")
 	flag.Parse()
 
 	if provenancePath == "" || artifactPath == "" || source == "" {
@@ -122,13 +119,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := runVerify(artifactPath, provenancePath, source, branch,
-		ptag, pversiontag); err != nil {
-		fmt.Fprintf(os.Stderr, "verification failed: %v\n", err)
+	verifiedProvenance, err := runVerify(artifactPath, provenancePath, source, branch,
+		ptag, pversiontag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
 	}
 
-	fmt.Fprintf(os.Stderr, "successfully verified SLSA provenance\n")
+	fmt.Fprintf(os.Stderr, "PASSED: Verified SLSA provenance\n")
+
+	if printProvenance {
+		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
+	}
 }
 
 func isFlagPassed(name string) bool {
@@ -143,7 +145,7 @@ func isFlagPassed(name string) bool {
 
 func runVerify(artifactPath, provenancePath, source, branch string,
 	ptag, pversiontag *string,
-) error {
+) ([]byte, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
 		log.Fatal(err)
@@ -152,7 +154,7 @@ func runVerify(artifactPath, provenancePath, source, branch string,
 
 	provenance, err := os.ReadFile(provenancePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	h := sha256.New()
