@@ -619,17 +619,27 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 	return i, nil
 }
 
-func getBaseRef(environment map[string]interface{}) (string, error) {
-	baseRef, err := getAsString(environment, "github_base_ref")
+func getTargetCommittish(payload map[string]interface{}) (string, error) {
+	// For a release event, we look for release.target_commitish.
+	releasePayload, ok := payload["release"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "release absent from payload")
+	}
+
+	release, ok := releasePayload.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type releasePayload")
+	}
+
+	branch, err := getAsString(release, "target_commitish")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: %s", err, "target_commitish not present")
 	}
 
-	// This `base_ref` seems to always be "".
-	if baseRef != "" {
-		return baseRef, nil
-	}
+	return "refs/heads/" + branch, nil
+}
 
+func getBranchForTag(environment map[string]interface{}) (string, error) {
 	// Look at the event payload instead.
 	// We don't do that for all triggers because the payload
 	// is event-specific; and only the `push` event seems to have a `base_ref``.
@@ -638,7 +648,8 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 		return "", err
 	}
 
-	if eventName != "push" {
+	if eventName != "release" &&
+		eventName != "push" {
 		return "", nil
 	}
 
@@ -652,7 +663,13 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
 	}
 
-	return getAsString(payload, "base_ref")
+	// For push events, get the `base_ref`.
+	if eventName == "push" {
+		return getAsString(payload, "base_ref")
+	}
+
+	// Fro release events, get `release.target_commitish`.
+	return getTargetCommittish(payload)
 }
 
 // Get tag from the provenance invocation parameters.
@@ -714,7 +731,7 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 	case "branch":
 		return getAsString(environment, "github_ref")
 	case "tag":
-		return getBaseRef(environment)
+		return getBranchForTag(environment)
 	default:
 		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
 			"unknown ref type", refType)
