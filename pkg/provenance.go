@@ -619,6 +619,20 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 	return i, nil
 }
 
+func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
+	eventPayload, ok := environment["github_event_payload"]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
+	}
+
+	payload, ok := eventPayload.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	}
+
+	return payload, nil
+}
+
 func getBaseRef(environment map[string]interface{}) (string, error) {
 	baseRef, err := getAsString(environment, "github_base_ref")
 	if err != nil {
@@ -642,14 +656,9 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 		return "", nil
 	}
 
-	eventPayload, ok := environment["github_event_payload"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
-	}
-
-	payload, ok := eventPayload.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	payload, err := getEventPayload(environment)
+	if err != nil {
+		return "", err
 	}
 
 	return getAsString(payload, "base_ref")
@@ -665,14 +674,9 @@ func getTargetCommittish(environment map[string]interface{}) (string, error) {
 		return "", nil
 	}
 
-	eventPayload, ok := environment["github_event_payload"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
-	}
-
-	payload, ok := eventPayload.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	payload, err := getEventPayload(environment)
+	if err != nil {
+		return "", err
 	}
 
 	// For a release event, we look for release.target_commitish.
