@@ -619,6 +619,20 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 	return i, nil
 }
 
+func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
+	eventPayload, ok := environment["github_event_payload"]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
+	}
+
+	payload, ok := eventPayload.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	}
+
+	return payload, nil
+}
+
 func getBaseRef(environment map[string]interface{}) (string, error) {
 	baseRef, err := getAsString(environment, "github_base_ref")
 	if err != nil {
@@ -632,7 +646,7 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 
 	// Look at the event payload instead.
 	// We don't do that for all triggers because the payload
-	// is event-specific; and only the `push` event seems to have a `base_ref``.
+	// is event-specific; and only the `push` event seems to have a `base_ref`.
 	eventName, err := getAsString(environment, "github_event_name")
 	if err != nil {
 		return "", err
@@ -642,17 +656,57 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 		return "", nil
 	}
 
-	eventPayload, ok := environment["github_event_payload"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
-	}
-
-	payload, ok := eventPayload.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	payload, err := getEventPayload(environment)
+	if err != nil {
+		return "", err
 	}
 
 	return getAsString(payload, "base_ref")
+}
+
+func getTargetCommittish(environment map[string]interface{}) (string, error) {
+	eventName, err := getAsString(environment, "github_event_name")
+	if err != nil {
+		return "", err
+	}
+
+	if eventName != "release" {
+		return "", nil
+	}
+
+	payload, err := getEventPayload(environment)
+	if err != nil {
+		return "", err
+	}
+
+	// For a release event, we look for release.target_commitish.
+	releasePayload, ok := payload["release"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "release absent from payload")
+	}
+
+	release, ok := releasePayload.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type releasePayload")
+	}
+
+	branch, err := getAsString(release, "target_commitish")
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", err, "target_commitish not present")
+	}
+
+	return "refs/heads/" + branch, nil
+}
+
+func getBranchForTag(environment map[string]interface{}) (string, error) {
+	// First try the base_ref.
+	branch, err := getBaseRef(environment)
+	if branch != "" || err != nil {
+		return branch, err
+	}
+
+	// Second try the target comittish.
+	return getTargetCommittish(environment)
 }
 
 // Get tag from the provenance invocation parameters.
@@ -714,7 +768,7 @@ func getBranch(env *dsselib.Envelope) (string, error) {
 	case "branch":
 		return getAsString(environment, "github_ref")
 	case "tag":
-		return getBaseRef(environment)
+		return getBranchForTag(environment)
 	default:
 		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
 			"unknown ref type", refType)

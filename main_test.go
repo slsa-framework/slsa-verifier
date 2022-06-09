@@ -226,7 +226,7 @@ func Test_runVerify(t *testing.T) {
 			pversiontag: pString("v0"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
-		// Provenance contains tag = v14.2. )2.5
+		// Provenance contains tag = v14.2
 		{
 			name:        "versioned v14.2 match push-v14.2",
 			artifact:    "binary-linux-amd64-push-v14.2",
