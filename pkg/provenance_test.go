@@ -353,9 +353,14 @@ func Test_VerifyBranch(t *testing.T) {
 			expected: ErrorInvalidDssePayload,
 		},
 		{
-			name:   "tag branch2",
+			name:   "tag branch2 push trgger",
 			path:   "./testdata/dsse-branch2-tag.intoto.jsonl",
 			branch: "branch2",
+		},
+		{
+			name:   "v10.0.1 release trigger",
+			path:   "./testdata/dsse-v10.0.1-release.intoto.jsonl",
+			branch: "main",
 		},
 	}
 	for _, tt := range tests {

@@ -619,7 +619,62 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 	return i, nil
 }
 
-func getTargetCommittish(payload map[string]interface{}) (string, error) {
+func getBaseRef(environment map[string]interface{}) (string, error) {
+	baseRef, err := getAsString(environment, "github_base_ref")
+	if err != nil {
+		return "", err
+	}
+
+	// This `base_ref` seems to always be "".
+	if baseRef != "" {
+		return baseRef, nil
+	}
+
+	// Look at the event payload instead.
+	// We don't do that for all triggers because the payload
+	// is event-specific; and only the `push` event seems to have a `base_ref`.
+	eventName, err := getAsString(environment, "github_event_name")
+	if err != nil {
+		return "", err
+	}
+
+	if eventName != "push" {
+		return "", nil
+	}
+
+	eventPayload, ok := environment["github_event_payload"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
+	}
+
+	payload, ok := eventPayload.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	}
+
+	return getAsString(payload, "base_ref")
+}
+
+func getTargetCommittish(environment map[string]interface{}) (string, error) {
+	eventName, err := getAsString(environment, "github_event_name")
+	if err != nil {
+		return "", err
+	}
+
+	if eventName != "release" {
+		return "", nil
+	}
+
+	eventPayload, ok := environment["github_event_payload"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
+	}
+
+	payload, ok := eventPayload.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+	}
+
 	// For a release event, we look for release.target_commitish.
 	releasePayload, ok := payload["release"]
 	if !ok {
@@ -640,36 +695,14 @@ func getTargetCommittish(payload map[string]interface{}) (string, error) {
 }
 
 func getBranchForTag(environment map[string]interface{}) (string, error) {
-	// Look at the event payload instead.
-	// We don't do that for all triggers because the payload
-	// is event-specific; and only the `push` event seems to have a `base_ref``.
-	eventName, err := getAsString(environment, "github_event_name")
-	if err != nil {
-		return "", err
+	// First try the base_ref.
+	branch, err := getBaseRef(environment)
+	if branch != "" || err != nil {
+		return branch, err
 	}
 
-	if eventName != "release" &&
-		eventName != "push" {
-		return "", nil
-	}
-
-	eventPayload, ok := environment["github_event_payload"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
-	}
-
-	payload, ok := eventPayload.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
-	}
-
-	// For push events, get the `base_ref`.
-	if eventName == "push" {
-		return getAsString(payload, "base_ref")
-	}
-
-	// Fro release events, get `release.target_commitish`.
-	return getTargetCommittish(payload)
+	// Second try the target comittish.
+	return getTargetCommittish(environment)
 }
 
 // Get tag from the provenance invocation parameters.
