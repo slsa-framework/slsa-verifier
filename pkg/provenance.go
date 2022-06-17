@@ -40,6 +40,7 @@ import (
 	intotod "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
 	"github.com/sigstore/rekor/pkg/util"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 )
 
 const (
@@ -135,7 +136,7 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, artifactHash string, provena
 	// Use intoto attestation to find rekor entry UUIDs.
 	params := entries.NewSearchLogQueryParams()
 	searchLogQuery := models.SearchLogQuery{}
-	certPem, err := GetCertFromEnvelope([]byte(provenance))
+	certPem, err := envelope.GetCertFromEnvelope([]byte(provenance))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting certificate from provenance: %w", err)
 	}
