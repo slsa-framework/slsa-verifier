@@ -166,6 +166,8 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, artifactHash string, provena
 		if _, err := verifyTlogEntry(context.Background(), rClient, uuid, e); err != nil {
 			return nil, nil, fmt.Errorf("error verifying tlog entry: %w", err)
 		}
+		url := fmt.Sprintf("%v/%v/%v", defaultRekorAddr, "api/v1/log/entries", uuid)
+		fmt.Fprintf(os.Stderr, "Verified signature against tlog entry index %d at URL: %s\n", *e.LogIndex, url)
 	}
 
 	env, err := EnvelopeFromBytes(provenance)
@@ -379,7 +381,7 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, prove
 		return env, cert, nil
 	}
 
-	// Fallback on using the redis search index
+	// Fallback on using the redis search index to get matching UUIDs.
 	uuids, err := GetRekorEntries(rClient, artifactHash)
 	if err != nil {
 		return nil, nil, err
