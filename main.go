@@ -38,7 +38,7 @@ func verify(ctx context.Context,
 	}
 
 	/* Verify signature on the intoto attestation. */
-	env, cert, err := pkg.VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
+	env, cert, err := pkg.VerifyProvenanceSignature(ctx, provenance, artifactHash, rClient.Index, rClient.Tlog, rClient.Entries)
 	if err != nil {
 		return nil, err
 	}

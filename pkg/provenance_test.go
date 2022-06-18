@@ -88,7 +88,7 @@ func Test_GetRekorEntries(t *testing.T) {
 			var mClient client.Rekor
 			mClient.Index = &MockIndexClient{result: tt.res}
 
-			_, err := GetRekorEntries(&mClient, tt.artifactHash)
+			_, err := GetRekorEntries(mClient.Index, tt.artifactHash)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
