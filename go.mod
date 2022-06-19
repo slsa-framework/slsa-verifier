@@ -1,6 +1,6 @@
 module github.com/slsa-framework/slsa-verifier
 
-go 1.17
+go 1.18
 
 require (
 	github.com/docker/go v1.5.1-1
