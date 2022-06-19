@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/golang/mock v1.6.0
 	github.com/sigstore/cosign v1.7.2
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 )

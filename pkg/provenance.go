@@ -29,7 +29,6 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/cosign/bundle"
-	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/entries"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
 	"github.com/sigstore/rekor/pkg/generated/client/tlog"
@@ -99,11 +98,11 @@ func getSha256Digest(env *dsselib.Envelope) (string, error) {
 }
 
 // GetRekorEntries finds all entry UUIDs by the digest of the artifact binary.
-func GetRekorEntries(rClient *client.Rekor, artifactHash string) ([]string, error) {
+func GetRekorEntries(rClient index.ClientService, artifactHash string) ([]string, error) {
 	// Use search index to find rekor entry UUIDs that match Subject Digest.
 	params := index.NewSearchIndexParams()
 	params.Query = &models.SearchIndex{Hash: fmt.Sprintf("sha256:%v", artifactHash)}
-	resp, err := rClient.Index.SearchIndex(params)
+	resp, err := rClient.SearchIndex(params)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrorRekorSearch, err.Error())
 	}
@@ -115,9 +114,9 @@ func GetRekorEntries(rClient *client.Rekor, artifactHash string) ([]string, erro
 	return resp.GetPayload(), nil
 }
 
-func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
+func verifyRootHash(ctx context.Context, clientService tlog.ClientService, proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
 	infoParams := tlog.NewGetLogInfoParamsWithContext(ctx)
-	result, err := rekorClient.Tlog.GetLogInfo(infoParams)
+	result, err := clientService.GetLogInfo(infoParams)
 	if err != nil {
 		return err
 	}
@@ -152,7 +151,7 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 		consistencyParams.FirstSize = proof.TreeSize // Root hash at the time the proof was returned
 		consistencyParams.LastSize = int64(sth.Size) // Root hash verified with rekor pubkey
 
-		consistencyProof, err := rekorClient.Tlog.GetLogProof(consistencyParams)
+		consistencyProof, err := clientService.GetLogProof(consistencyParams)
 		if err != nil {
 			return err
 		}
@@ -174,11 +173,11 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 	return nil
 }
 
-func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string) (*models.LogEntryAnon, error) {
+func verifyTlogEntry(ctx context.Context, clientService entries.ClientService, tlog tlog.ClientService, uuid string) (*models.LogEntryAnon, error) {
 	params := entries.NewGetLogEntryByUUIDParamsWithContext(ctx)
 	params.EntryUUID = uuid
 
-	lep, err := rekorClient.Entries.GetLogEntryByUUID(params)
+	lep, err := clientService.GetLogEntryByUUID(params)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +217,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	var entryVerError error
 	for _, pubKey := range pubs {
 		// Verify inclusion against the signed tree head
-		entryVerError = verifyRootHash(ctx, rekorClient, e.Verification.InclusionProof, pubKey.PubKey)
+		entryVerError = verifyRootHash(ctx, tlog, e.Verification.InclusionProof, pubKey.PubKey)
 		if entryVerError == nil {
 			break
 		}
@@ -299,9 +298,10 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
-func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, provenance []byte, artifactHash string) (*dsselib.Envelope, *x509.Certificate, error) {
+func VerifyProvenanceSignature(ctx context.Context, provenance []byte, artifactHash string,
+	index index.ClientService, tlog tlog.ClientService, entries entries.ClientService) (*dsselib.Envelope, *x509.Certificate, error) {
 	// Get Rekor entries corresponding to the binary artifact in the provenance.
-	uuids, err := GetRekorEntries(rClient, artifactHash)
+	uuids, err := GetRekorEntries(index, artifactHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -312,7 +312,7 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, prove
 	}
 
 	// Verify the provenance and return the signing certificate.
-	cert, err := FindSigningCertificate(ctx, uuids, *env, rClient)
+	cert, err := FindSigningCertificate(ctx, uuids, *env, tlog, entries)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -321,7 +321,8 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, prove
 }
 
 // FindSigningCertificate finds and verifies a matching signing certificate from a list of Rekor entry UUIDs.
-func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dsselib.Envelope, rClient *client.Rekor) (*x509.Certificate, error) {
+func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dsselib.Envelope,
+	tlog tlog.ClientService, entries entries.ClientService) (*x509.Certificate, error) {
 	attBytes, err := cjson.MarshalCanonical(dssePayload)
 	if err != nil {
 		return nil, err
@@ -334,7 +335,7 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 	//   * Check signature expiration against IntegratedTime in entry.
 	//   * If all succeed, return the signing certificate.
 	for _, uuid := range uuids {
-		entry, err := verifyTlogEntry(ctx, rClient, uuid)
+		entry, err := verifyTlogEntry(ctx, entries, tlog, uuid)
 		if err != nil {
 			continue
 		}
@@ -396,7 +397,7 @@ type WorkflowIdentity struct {
 	Issuer string `json:"issuer"`
 }
 
-// GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
+// GetWorkflowInfoFromCertificate gets the workflow identity from the Fulcio authenticated content.
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
 		return nil, errors.New("missing URI information from certificate")
