@@ -1637,6 +1637,8 @@ github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic
 github.com/sivchari/tenv v1.4.7/go.mod h1:5nF+bITvkebQVanjU6IuMbvIot/7ReNsUV7I5NbprB0=
 github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 h1:JIAuq3EEf9cgbU6AtGPK4CTG3Zf6CKMNqf0MHTggAUA=
 github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966/go.mod h1:sUM3LWHvSMaG192sy56D9F7CNvL7jUJVXoqM1QKLnog=
+github.com/slsa-framework/slsa-github-generator v1.0.1-0.20220620171932-8897a8c9a0fc h1:ma59DoPLKpxYKeh9lSWKtl+lpMH7MiBD0KAi5hnW9kQ=
+github.com/slsa-framework/slsa-github-generator v1.0.1-0.20220620171932-8897a8c9a0fc/go.mod h1:vw7xGJ7M0g+5Nuw132CA4PI3mPWmvW1VzAGTruAReTY=
 github.com/slsa-framework/slsa-github-generator v1.1.1-0.20220617181308-cb8f03b209bb h1:+MJddNTrgsFfjC4mWPlHHH1HMbAoQB/BVEsWmmSc/9Q=
 github.com/slsa-framework/slsa-github-generator v1.1.1-0.20220617181308-cb8f03b209bb/go.mod h1:vw7xGJ7M0g+5Nuw132CA4PI3mPWmvW1VzAGTruAReTY=
 github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262/go.mod h1:MyOHs9Po2fbM1LHej6sBUT8ozbxmMOFG+E+rx/GSGuc=
