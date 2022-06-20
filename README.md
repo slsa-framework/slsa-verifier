@@ -23,20 +23,20 @@ You have two options to install the verifier.
 
 #### Option 1: Install via go
 ```
-$ go install github.com/slsa-framework/slsa-verifier@v1.0.0
+$ go install github.com/slsa-framework/slsa-verifier@v1.1.0
 $ slsa-verifier <options>
 ```
 
 #### Option 2: Compile manually
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout tags/v0.0.1
+$ cd slsa-verifier && git checkout v1.1.0
 $ go run . <options>
 ```
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.0.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.0.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.0)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
@@ -76,13 +76,13 @@ $ go run . --help
 ### Example
 
 ```bash
-$ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.0.0
-Verified signature against tlog entry index 2592016 at URL: https://rekor.sigstore.dev/api/v1/log/entries/d77621eaf1de74592546f773192f49ed995e8b12f2e5eeed02057ae32b24aa95
+$ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.1.0
+Verified signature against tlog entry index 2721439 at URL: https://rekor.sigstore.dev/api/v1/log/entries/0bfb8005ef0ccb0bdddc073072ceef03225b7e749eab97fb862b1cdfbe72b353
 Signing certificate information:
  {
 	"caller": "slsa-framework/slsa-verifier",
-	"commit": "c1b6db643d6134285dc929206fdcfa3712a877eb",
-	"job_workflow_ref": "/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v0.0.1",
+	"commit": "5875b0a74f4c04e1f123a3ad81d6c7c5a86860ce",
+	"job_workflow_ref": "/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.1.0",
 	"trigger": "push",
 	"issuer": "https://token.actions.githubusercontent.com"
 }
