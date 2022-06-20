@@ -1,3 +1,6 @@
+### [v1.1.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.0)
+14360688de2d294e9cda7b9074ab7dcf02d5c38f2874f6c95d4ad46e300c3e53 slsa-verifier-linux-amd64
+
 ### [v1.0.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.0.0)
 2aeaea90f65d20570b57aaf3fadcb2d23dd5c1edbf1432e0addc17624681a269 slsa-verifier-linux-amd64
 
