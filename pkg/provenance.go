@@ -287,7 +287,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	}
 
 	// Verify the root hash against the current Signed Entry Tree Head
-	pubs, err := cosign.GetRekorPubs(ctx)
+	pubs, err := cosign.GetRekorPubs(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", err, "unable to fetch Rekor public keys from TUF repository")
 	}
@@ -425,8 +425,12 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 			continue
 		}
 
+		roots, err := fulcio.GetRoots()
+		if err != nil {
+			continue
+		}
 		co := &cosign.CheckOpts{
-			RootCerts:      fulcio.GetRoots(),
+			RootCerts:      roots,
 			CertOidcIssuer: certOidcIssuer,
 		}
 		verifier, err := cosign.ValidateAndUnpackCert(cert, co)
