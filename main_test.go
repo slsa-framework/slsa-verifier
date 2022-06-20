@@ -323,7 +323,7 @@ func Test_runVerify(t *testing.T) {
 			name:      "malicious: invalid signature expired certificate",
 			artifact:  "binary-linux-amd64-expired-cert",
 			source:    "github.com/slsa-framework/example-package",
-			err:       pkg.ErrorNoValidRekorEntries,
+			err:       pkg.ErrorRekorSearch,
 			noversion: true,
 		},
 	}
