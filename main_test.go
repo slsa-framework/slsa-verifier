@@ -21,7 +21,8 @@ func pString(s string) *string {
 }
 
 // Versions of the builders to test.
-var generatorVersions = []string{"v0.0.2", "v1.0.0"}
+// TODO: Test v0.0.2.
+var generatorVersions = []string{"v1.0.0"}
 
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
