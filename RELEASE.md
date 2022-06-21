@@ -63,7 +63,7 @@ $ sha256sum slsa-verifier-linux-amd64
 3. Update the latest version in the [README.md](./README.md):
 
 ```shell
-$ sed -i "s/v1.0.0/v1.1.1/g" ./README.md
+$ sed -i "s/slsa-verifier@v1.0.0/slsa-verifier@v1.1.1/g" ./README.md
 ```
 
 4. Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verification succeeds
