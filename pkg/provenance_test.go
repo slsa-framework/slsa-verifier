@@ -129,9 +129,21 @@ func Test_VerifyProvenance(t *testing.T) {
 			expected:     errorMismatchHash,
 		},
 		{
-			name:         "valid rekor entries found",
+			name:         "valid entry",
 			path:         "./testdata/dsse-valid.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+		{
+			name:         "valid entry multiple subjects last entry",
+			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
+			artifactHash: "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+		{
+			name:         "valid multiple subjects second entry",
+			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
+			artifactHash: "02e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     nil,
 		},
 	}
