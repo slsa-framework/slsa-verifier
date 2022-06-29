@@ -34,7 +34,7 @@ Follow the steps:
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier
-# $ (Optional: git checkout tags/v1.0.0)
+# $ (Optional: git checkout tags/v1.1.1)
 $ go run . -artifact-path slsa-verifier-linux-amd64 -provenance slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag vX.Y.Z
 ```
 
