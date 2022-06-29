@@ -30,13 +30,13 @@ $ slsa-verifier <options>
 #### Option 2: Compile manually
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v1.1.0
+$ cd slsa-verifier && git checkout v1.1.1
 $ go run . <options>
 ```
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.1)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
@@ -76,13 +76,13 @@ $ go run . --help
 ### Example
 
 ```bash
-$ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.1.0
-Verified signature against tlog entry index 2721439 at URL: https://rekor.sigstore.dev/api/v1/log/entries/0bfb8005ef0ccb0bdddc073072ceef03225b7e749eab97fb862b1cdfbe72b353
+$ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.1.1
+Verified signature against tlog entry index 2727751 at URL: https://rekor.sigstore.dev/api/v1/log/entries/8f3d898ef17d9c4c028fe3da09fb786c900bf786361e75432f325b4848fdba24
 Signing certificate information:
  {
 	"caller": "slsa-framework/slsa-verifier",
 	"commit": "5875b0a74f4c04e1f123a3ad81d6c7c5a86860ce",
-	"job_workflow_ref": "/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.1.0",
+	"job_workflow_ref": "/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.1.1",
 	"trigger": "push",
 	"issuer": "https://token.actions.githubusercontent.com"
 }
