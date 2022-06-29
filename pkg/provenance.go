@@ -92,25 +92,34 @@ func intotoEntry(certPem []byte, provenance []byte) (*intotod.V001Entry, error) 
 	}, nil
 }
 
-// Get SHA256 Subject Digest from the provenance statement.
-func getSha256Digest(env *dsselib.Envelope) (string, error) {
+// Verify SHA256 Subject Digest from the provenance statement.
+func verifySha256Digest(env *dsselib.Envelope, expectedHash string) error {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "decoding payload")
+		return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "decoding payload")
 	}
 	prov := &intoto.ProvenanceStatement{}
 	if err := json.Unmarshal([]byte(pyld), prov); err != nil {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
+		return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
 	}
+
 	if len(prov.Subject) == 0 {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no subjects")
+		return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no subjects")
 	}
-	digestSet := prov.Subject[0].Digest
-	hash, exists := digestSet["sha256"]
-	if !exists {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no sha256 subject digest")
+
+	for _, subject := range prov.Subject {
+		digestSet := subject.Digest
+		hash, exists := digestSet["sha256"]
+		if !exists {
+			return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no sha256 subject digest")
+		}
+
+		if strings.EqualFold(hash, expectedHash) {
+			return nil
+		}
 	}
-	return hash, nil
+
+	return fmt.Errorf("expected hash '%s' not found: %w", expectedHash, errorMismatchHash)
 }
 
 // GetRekorEntries finds all entry UUIDs by the digest of the artifact binary.
@@ -182,7 +191,6 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, artifactHash string, provena
 	}
 	if len(certs) != 1 {
 		return nil, nil, fmt.Errorf("error unmarshaling certificate from pem")
-
 	}
 
 	return env, certs[0], nil
@@ -558,16 +566,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 }
 
 func VerifyProvenance(env *dsselib.Envelope, expectedHash string) error {
-	hash, err := getSha256Digest(env)
-	if err != nil {
-		return err
-	}
-
-	if !strings.EqualFold(hash, expectedHash) {
-		return fmt.Errorf("expected hash '%s', got '%s': %w", expectedHash, hash, errorMismatchHash)
-	}
-
-	return nil
+	return verifySha256Digest(env, expectedHash)
 }
 
 func VerifyBranch(env *dsselib.Envelope, expectedBranch string) error {
