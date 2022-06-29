@@ -146,6 +146,12 @@ func Test_VerifyProvenance(t *testing.T) {
 			artifactHash: "02e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     nil,
 		},
+		{
+			name:         "multiple subjects invalid hash",
+			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
+			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     errorMismatchHash,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
