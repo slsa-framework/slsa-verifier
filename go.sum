@@ -1630,6 +1630,8 @@ github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 h1:JIAuq3EE
 github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966/go.mod h1:sUM3LWHvSMaG192sy56D9F7CNvL7jUJVXoqM1QKLnog=
 github.com/slsa-framework/slsa-github-generator v1.0.1-0.20220620171932-8897a8c9a0fc h1:ma59DoPLKpxYKeh9lSWKtl+lpMH7MiBD0KAi5hnW9kQ=
 github.com/slsa-framework/slsa-github-generator v1.0.1-0.20220620171932-8897a8c9a0fc/go.mod h1:vw7xGJ7M0g+5Nuw132CA4PI3mPWmvW1VzAGTruAReTY=
+github.com/slsa-framework/slsa-github-generator v1.1.1 h1:uB3t5Nal0TOt64Poy7c0xiOPnw/nJSGQJaKn1NDs3bc=
+github.com/slsa-framework/slsa-github-generator v1.1.1/go.mod h1:vw7xGJ7M0g+5Nuw132CA4PI3mPWmvW1VzAGTruAReTY=
 github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262/go.mod h1:MyOHs9Po2fbM1LHej6sBUT8ozbxmMOFG+E+rx/GSGuc=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=
 github.com/smartystreets/assertions v1.0.0/go.mod h1:kHHU4qYBaI3q23Pp3VPrmWhuIUrLW/7eUrw0BU5VaoM=
