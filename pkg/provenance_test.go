@@ -30,7 +30,8 @@ type MockIndexClient struct {
 	result searchResult
 }
 
-func (m *MockIndexClient) SearchIndex(params *index.SearchIndexParams, opts ...index.ClientOption) (*index.SearchIndexOK, error) {
+func (m *MockIndexClient) SearchIndex(params *index.SearchIndexParams,
+	opts ...index.ClientOption) (*index.SearchIndexOK, error) {
 	return m.result.resp, m.result.err
 }
 
