@@ -1612,6 +1612,8 @@ github.com/sigstore/fulcio v0.1.2-0.20220114150912-86a2036f9bc7 h1:XE7A9lJ+wYhmU
 github.com/sigstore/fulcio v0.1.2-0.20220114150912-86a2036f9bc7/go.mod h1:ANQivY/lfOp9hN92S813LEthkm/kit96hzeIF3SNoZA=
 github.com/sigstore/rekor v0.8.2 h1:EjKptG+F5LXQM6H/bHHVhm6pT+zuAuwKhHqR3sDO3gE=
 github.com/sigstore/rekor v0.8.2/go.mod h1:N5EhbXF8pZRGNbtLiyAkCvaW6O3PRNa6NKLwzN/3Scw=
+github.com/sigstore/rekor v0.9.0 h1:4h6Z+PHBoDOxnVnmFldqKlDA+RN/xsuhpA7BSje+W0I=
+github.com/sigstore/rekor v0.9.0/go.mod h1:ulCPpuSiKMhxMoYC4UOhJEObskh5tV6sXOdRwjGnvG0=
 github.com/sigstore/sigstore v1.1.0/go.mod h1:gDpcHw4VwpoL5C6N1Ud1YtBsc+ikRDwDelDlWRyYoE8=
 github.com/sigstore/sigstore v1.2.1-0.20220614141825-9c0e2e247545 h1:S6ZnBcLFZNdB6mw8QnjLgtGU1myK+X0UPpRwJ71/Z/o=
 github.com/sigstore/sigstore v1.2.1-0.20220614141825-9c0e2e247545/go.mod h1:xr0T+0gIaZyrmWtC99G8llLi1izy70nZpgVp+C1jb5k=
