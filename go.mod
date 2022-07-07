@@ -6,7 +6,7 @@ require (
 	github.com/docker/go v1.5.1-1
 	github.com/go-openapi/runtime v0.24.1
 	github.com/google/go-cmp v0.5.8
-	github.com/google/trillian v1.4.1
+	github.com/google/trillian v1.4.1 // indirect
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0
 	github.com/sigstore/rekor v0.9.0
@@ -18,6 +18,7 @@ require (
 	github.com/go-openapi/swag v0.21.1
 	github.com/sigstore/cosign v1.9.1-0.20220617081120-5e261dc13b11
 	github.com/slsa-framework/slsa-github-generator v1.1.1
+	github.com/transparency-dev/merkle v0.0.1
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 )
 
@@ -169,7 +170,6 @@ require (
 	github.com/theupdateframework/go-tuf v0.3.0 // indirect
 	github.com/titanous/rocacheck v0.0.0-20171023193734-afe73141d399 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
-	github.com/transparency-dev/merkle v0.0.1 // indirect
 	github.com/urfave/cli v1.22.7 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/xanzy/go-gitlab v0.68.0 // indirect
