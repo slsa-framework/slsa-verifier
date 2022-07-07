@@ -15,18 +15,19 @@ import (
 	"strings"
 	"time"
 
+	merkleproof "github.com/transparency-dev/merkle/proof"
+
 	"golang.org/x/mod/semver"
 
 	cjson "github.com/docker/go/canonical/json"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/google/trillian/merkle/logverifier"
-	"github.com/google/trillian/merkle/rfc6962"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/dsse"
+	"github.com/transparency-dev/merkle/rfc6962"
 
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/pkg/cosign"
@@ -244,8 +245,8 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 			}
 			hashes = append(hashes, b)
 		}
-		v := logverifier.New(rfc6962.DefaultHasher)
-		if err := v.VerifyConsistencyProof(*proof.TreeSize, int64(sth.Size), rootHash, sth.Hash, hashes); err != nil {
+		if err := merkleproof.VerifyConsistency(rfc6962.DefaultHasher,
+			uint64(*proof.TreeSize), sth.Size, hashes, rootHash, sth.Hash); err != nil {
 			return err
 		}
 	} else if *proof.TreeSize > int64(sth.Size) {
@@ -312,8 +313,9 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	}
 
 	// Verify the entry's inclusion
-	v := logverifier.New(rfc6962.DefaultHasher)
-	if err := v.VerifyInclusionProof(*e.Verification.InclusionProof.LogIndex, *e.Verification.InclusionProof.TreeSize, hashes, rootHash, leafHash); err != nil {
+	if err := merkleproof.VerifyInclusion(rfc6962.DefaultHasher,
+		uint64(*e.Verification.InclusionProof.LogIndex),
+		uint64(*e.Verification.InclusionProof.TreeSize), leafHash, hashes, rootHash); err != nil {
 		return nil, fmt.Errorf("%w: %s", err, "verifying inclusion proof")
 	}
 

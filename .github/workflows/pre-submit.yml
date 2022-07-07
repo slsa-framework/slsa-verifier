@@ -24,3 +24,6 @@ jobs:
           go build -mod=vendor
           # Tests
           go test -mod=vendor -v ./...
+          # go mod tidy
+          go mod tidy
+          
