@@ -17,7 +17,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/go-openapi/swag v0.21.1
 	github.com/sigstore/cosign v1.9.1-0.20220617081120-5e261dc13b11
-	github.com/slsa-framework/slsa-github-generator v1.0.1-0.20220620171932-8897a8c9a0fc
+	github.com/slsa-framework/slsa-github-generator v1.1.1
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 )
 
