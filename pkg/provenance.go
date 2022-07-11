@@ -34,6 +34,7 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/client/index"
 	"github.com/sigstore/rekor/pkg/generated/client/tlog"
 	"github.com/sigstore/rekor/pkg/generated/models"
+	"github.com/sigstore/rekor/pkg/sharding"
 	"github.com/sigstore/rekor/pkg/types"
 	intotod "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
 	"github.com/sigstore/rekor/pkg/util"
@@ -174,9 +175,9 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 	return nil
 }
 
-func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string) (*models.LogEntryAnon, error) {
+func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, entryUUID string) (*models.LogEntryAnon, error) {
 	params := entries.NewGetLogEntryByUUIDParamsWithContext(ctx)
-	params.EntryUUID = uuid
+	params.EntryUUID = entryUUID
 
 	lep, err := rekorClient.Entries.GetLogEntryByUUID(params)
 	if err != nil {
@@ -186,7 +187,19 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	if len(lep.Payload) != 1 {
 		return nil, errors.New("UUID value can not be extracted")
 	}
-	e := lep.Payload[params.EntryUUID]
+
+	uuid, err := sharding.GetUUIDFromIDString(params.EntryUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var e models.LogEntryAnon
+	for k, entry := range lep.Payload {
+		if k != uuid {
+			return nil, errors.New("expected matching UUID")
+		}
+		e = entry
+	}
 	if e.Verification == nil || e.Verification.InclusionProof == nil {
 		return nil, errors.New("inclusion proof not provided")
 	}
@@ -204,7 +217,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	if err != nil {
 		return nil, errors.New("error decoding hex encoded root hash")
 	}
-	leafHash, err := hex.DecodeString(params.EntryUUID)
+	leafHash, err := hex.DecodeString(uuid)
 	if err != nil {
 		return nil, errors.New("error decoding hex encoded leaf hash")
 	}
