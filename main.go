@@ -93,11 +93,14 @@ func verify(ctx context.Context,
 func main() {
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
-	flag.StringVar(&source, "source", "", "expected source repository that should have produced the binary, e.g. github.com/some/repo")
+	flag.StringVar(&source, "source", "",
+		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
 	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
-	flag.StringVar(&versiontag, "versioned-tag", "", "[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
-	flag.BoolVar(&printProvenance, "print-provenance", false, "print the verified provenance to std out")
+	flag.StringVar(&versiontag, "versioned-tag", "",
+		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+	flag.BoolVar(&printProvenance, "print-provenance", false,
+		"print the verified provenance to std out")
 	flag.Parse()
 
 	if provenancePath == "" || artifactPath == "" || source == "" {
@@ -159,7 +162,7 @@ func runVerify(artifactPath, provenancePath, source, branch string,
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	ctx := context.Background()
