@@ -281,7 +281,7 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, entry
 		e = entry
 	}
 
-	return verifyTlogEntry(ctx, rekorClient, params.EntryUUID, e)
+	return verifyTlogEntry(ctx, rekorClient, uuid, e)
 }
 
 func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string, e models.LogEntryAnon) (*models.LogEntryAnon, error) {
