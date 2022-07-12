@@ -22,7 +22,7 @@ func pString(s string) *string {
 
 // Versions of the builders to test.
 // TODO: Test v0.0.2.
-var generatorVersions = []string{"v1.1.1"}
+var generatorVersions = []string{"v0.0.2", "v1.1.1"}
 
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
@@ -324,6 +324,14 @@ func Test_runVerify(t *testing.T) {
 			artifact:  "binary-linux-amd64-expired-cert",
 			source:    "github.com/slsa-framework/example-package",
 			err:       pkg.ErrorNoValidRekorEntries,
+			noversion: true,
+		},
+		// Regression test of sharded UUID
+		{
+			name:      "regression: sharded uuids",
+			artifact:  "binary-linux-amd64-sharded",
+			source:    "github.com/slsa-framework/slsa-verifier",
+			branch:    "release/v1.0",
 			noversion: true,
 		},
 	}
