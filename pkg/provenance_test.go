@@ -1,103 +1,23 @@
 package pkg
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/go-openapi/runtime"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
-	"github.com/sigstore/rekor/pkg/generated/client"
-	"github.com/sigstore/rekor/pkg/generated/client/index"
+	intoto "github.com/in-toto/in-toto-golang/in_toto"
 )
 
-type searchResult struct {
-	resp *index.SearchIndexOK
-	err  error
-}
-
-func envelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
-	env = &dsselib.Envelope{}
-	err = json.Unmarshal(payload, env)
-	return
-}
-
-type MockIndexClient struct {
-	result searchResult
-}
-
-func (m *MockIndexClient) SearchIndex(params *index.SearchIndexParams,
-	opts ...index.ClientOption) (*index.SearchIndexOK, error) {
-	return m.result.resp, m.result.err
-}
-
-func (m *MockIndexClient) SetTransport(transport runtime.ClientTransport) {
-}
-
-func errCmp(e1, e2 error) bool {
-	return errors.Is(e1, e2) || errors.Is(e2, e1)
-}
-
-func Test_GetRekorEntries(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name         string
-		artifactHash string
-		res          searchResult
-		expected     error
-	}{
-		{
-			name:         "rekor search result error",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			res: searchResult{
-				err: index.NewSearchIndexDefault(500),
-			},
-			expected: ErrorRekorSearch,
-		},
-		{
-			name:         "no rekor entries found",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			res: searchResult{
-				err: nil,
-				resp: &index.SearchIndexOK{
-					Payload: []string{},
-				},
-			},
-			expected: ErrorRekorSearch,
-		},
-		{
-			name:         "valid rekor entries found",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			res: searchResult{
-				err: nil,
-				resp: &index.SearchIndexOK{
-					Payload: []string{"39d5109436c43dad92897d50f3b271aa456382875a922b28fedef9038b8f683a"},
-				},
-			},
-			expected: nil,
-		},
+func provenanceFromBytes(payload []byte) (*intoto.ProvenanceStatement, error) {
+	env, err := EnvelopeFromBytes(payload)
+	if err != nil {
+		return nil, err
 	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			var mClient client.Rekor
-			mClient.Index = &MockIndexClient{result: tt.res}
-
-			_, err := GetRekorEntries(&mClient, tt.artifactHash)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-		})
-	}
+	return provenanceFromEnv(env)
 }
 
-func Test_VerifyProvenance(t *testing.T) {
+func Test_VerifySha256Subject(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -163,186 +83,14 @@ func Test_VerifyProvenance(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
-			env, err := envelopeFromBytes(content)
+			prov, err := provenanceFromBytes(content)
 			if err != nil {
-				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+				panic(fmt.Errorf("provenanceFromBytes: %w", err))
 			}
 
-			err = VerifyProvenance(env, tt.artifactHash)
+			err = verifySha256Digest(prov, tt.artifactHash)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-		})
-	}
-}
-
-func Test_VerifyWorkflowIdentity(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name     string
-		workflow *WorkflowIdentity
-		source   string
-		err      error
-	}{
-		{
-			name: "invalid job workflow ref",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: "random/workflow/ref",
-				Trigger:           "workflow_dispatch",
-				Issuer:            "https://token.actions.githubusercontent.com",
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    errorMalformedWorkflowURI,
-		},
-		{
-			name: "untrusted job workflow ref",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: "/malicious/slsa-go/.github/workflows/builder.yml@refs/heads/main",
-				Trigger:           "workflow_dispatch",
-				Issuer:            "https://token.actions.githubusercontent.com",
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    ErrorUntrustedReusableWorkflow,
-		},
-		{
-			name: "untrusted job workflow ref for general repos",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
-				Trigger:           "workflow_dispatch",
-				Issuer:            "https://bad.issuer.com",
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
-		},
-		{
-			name: "valid main ref for trusted builder",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  trustedBuilderRepository,
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
-				Trigger:           "workflow_dispatch",
-				Issuer:            "https://token.actions.githubusercontent.com",
-			},
-			source: trustedBuilderRepository,
-		},
-		{
-			name: "valid main ref for e2e test",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  e2eTestRepository,
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: e2eTestRepository,
-		},
-		{
-			name: "unexpected source for e2e test",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  e2eTestRepository,
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "malicious/source",
-			err:    ErrorMismatchRepository,
-		},
-		{
-			name: "valid main ref for builder",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  trustedBuilderRepository,
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "malicious/source",
-			err:    ErrorMismatchRepository,
-		},
-		{
-			name: "unexpected source",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "malicious/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    ErrorMismatchRepository,
-		},
-		{
-			name: "valid workflow identity",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "asraa/slsa-on-github-test",
-		},
-		{
-			name: "invalid workflow identity with prerelease",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3-alpha",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
-		},
-		{
-			name: "invalid workflow identity with build",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3+123",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
-		},
-		{
-			name: "invalid workflow identity with metadata",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3-alpha+123",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
-		},
-		{
-			name: "valid workflow identity with fully qualified source",
-			workflow: &WorkflowIdentity{
-				CallerRepository:  "asraa/slsa-on-github-test",
-				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				Trigger:           "workflow_dispatch",
-				Issuer:            certOidcIssuer,
-			},
-			source: "github.com/asraa/slsa-on-github-test",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			err := VerifyWorkflowIdentity(tt.workflow, tt.source)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -391,12 +139,12 @@ func Test_VerifyBranch(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
-			env, err := envelopeFromBytes(content)
+			prov, err := provenanceFromBytes(content)
 			if err != nil {
-				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+				panic(fmt.Errorf("provenanceFromBytes: %w", err))
 			}
 
-			err = VerifyBranch(env, tt.branch)
+			err = VerifyBranch(prov, tt.branch)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -442,164 +190,14 @@ func Test_VerifyTag(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
-			env, err := envelopeFromBytes(content)
+			prov, err := provenanceFromBytes(content)
 			if err != nil {
-				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+				panic(fmt.Errorf("provenanceFromBytes: %w", err))
 			}
 
-			err = VerifyTag(env, tt.tag)
+			err = VerifyTag(prov, tt.tag)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-		})
-	}
-}
-
-func Test_verifyTrustedBuilderRef(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name       string
-		callerRepo string
-		builderRef string
-		expected   error
-	}{
-		// Trusted repo.
-		{
-			name:       "main allowed for builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/heads/main",
-		},
-		{
-			name:       "full semver for builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/tags/v1.2.3",
-		},
-		{
-			name:       "no patch semver for other builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/tags/v1.2",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "no min semver for builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/tags/v1",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with prerelease for builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/tags/v1.2.3-alpha",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with build for builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/tags/v1.2.3+123",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with build/prerelease for builder",
-			callerRepo: trustedBuilderRepository,
-			builderRef: "refs/tags/v1.2.3-alpha+123",
-			expected:   errorInvalidRef,
-		},
-		// E2e tests repo.
-		{
-			name:       "main allowed for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/heads/main",
-		},
-		{
-			name:       "full semver for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/tags/v1.2.3",
-		},
-		{
-			name:       "no patch semver for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/tags/v1.2",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "no min semver for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/tags/v1",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with prerelease for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/tags/v1.2.3-alpha",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with build for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/tags/v1.2.3+123",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with build/prerelease for test repo",
-			callerRepo: e2eTestRepository,
-			builderRef: "refs/tags/v1.2.3-alpha+123",
-			expected:   errorInvalidRef,
-		},
-		// Other repos.
-		{
-			name:       "main not allowed for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/heads/main",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/tags/v1.2.3",
-		},
-		{
-			name:       "no patch semver for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/tags/v1.2",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "no min semver for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/tags/v1",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with prerelease for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/tags/v1.2.3-alpha",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with build for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/tags/v1.2.3+123",
-			expected:   errorInvalidRef,
-		},
-		{
-			name:       "full semver with build/prerelease for other repos",
-			callerRepo: "some/repo",
-			builderRef: "refs/tags/v1.2.3-alpha+123",
-			expected:   errorInvalidRef,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			wf := WorkflowIdentity{
-				CallerRepository: tt.callerRepo,
-			}
-
-			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -922,12 +520,12 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
-			env, err := envelopeFromBytes(content)
+			prov, err := provenanceFromBytes(content)
 			if err != nil {
-				panic(fmt.Errorf("envelopeFromBytes: %w", err))
+				panic(fmt.Errorf("provenanceFromBytes: %w", err))
 			}
 
-			err = VerifyVersionedTag(env, tt.tag)
+			err = VerifyVersionedTag(prov, tt.tag)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}

@@ -29,9 +29,7 @@ var (
 var defaultRekorAddr = "https://rekor.sigstore.dev"
 
 func verify(ctx context.Context,
-	provenance []byte, artifactHash, source, branch string,
-	tag, versiontag *string,
-) ([]byte, error) {
+	provenance []byte, artifactHash, source string, provenanceOpts *pkg.ProvenanceOpts) ([]byte, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
 		return nil, err
@@ -56,34 +54,15 @@ func verify(ctx context.Context,
 	}
 	fmt.Fprintf(os.Stderr, "Signing certificate information:\n %s\n", b)
 
-	/* Verify properties of the SLSA provenance. */
 	// Verify the workflow identity.
 	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
 		return nil, err
 	}
 
+	/* Verify properties of the SLSA provenance. */
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := pkg.VerifyProvenance(env, artifactHash); err != nil {
+	if err := pkg.VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, err
-	}
-
-	// Verify the branch.
-	if err := pkg.VerifyBranch(env, branch); err != nil {
-		return nil, err
-	}
-
-	// Verify the tag.
-	if tag != nil {
-		if err := pkg.VerifyTag(env, *tag); err != nil {
-			return nil, err
-		}
-	}
-
-	// Verify the versioned tag.
-	if versiontag != nil {
-		if err := pkg.VerifyVersionedTag(env, *versiontag); err != nil {
-			return nil, err
-		}
 	}
 
 	// Return verified provenance.
@@ -117,13 +96,12 @@ func main() {
 		pversiontag = &versiontag
 	}
 
-	if pversiontag != nil && ptag != nil {
+	if ptag != nil && pversiontag != nil {
 		fmt.Fprintf(os.Stderr, "'version' and 'tag' options cannot be used together\n")
 		os.Exit(1)
 	}
 
-	verifiedProvenance, err := runVerify(artifactPath, provenancePath, source, branch,
-		ptag, pversiontag)
+	verifiedProvenance, err := runVerify(artifactPath, provenancePath, source, branch, ptag, pversiontag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -146,9 +124,7 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(artifactPath, provenancePath, source, branch string,
-	ptag, pversiontag *string,
-) ([]byte, error) {
+func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversiontag *string) ([]byte, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
 		log.Fatal(err)
@@ -164,10 +140,17 @@ func runVerify(artifactPath, provenancePath, source, branch string,
 	if _, err := io.Copy(h, f); err != nil {
 		log.Panic(err)
 	}
+	artifactHash := hex.EncodeToString(h.Sum(nil))
+
+	provenanceOpts := &pkg.ProvenanceOpts{
+		ExpectedBranch:       branch,
+		ExpectedDigest:       artifactHash,
+		ExpectedVersionedTag: pversiontag,
+		ExpectedTag:          ptag,
+	}
 
 	ctx := context.Background()
 	return verify(ctx, provenance,
-		hex.EncodeToString(h.Sum(nil)),
-		source, branch,
-		ptag, pversiontag)
+		artifactHash,
+		source, provenanceOpts)
 }
