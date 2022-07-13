@@ -17,7 +17,6 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/google/trillian/merkle/logverifier"
 	"github.com/google/trillian/merkle/rfc6962"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
@@ -28,6 +27,7 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/client/index"
 	"github.com/sigstore/rekor/pkg/generated/client/tlog"
 	"github.com/sigstore/rekor/pkg/generated/models"
+	"github.com/sigstore/rekor/pkg/sharding"
 	"github.com/sigstore/rekor/pkg/types"
 	intotod "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
 	"github.com/sigstore/rekor/pkg/util"
@@ -35,13 +35,14 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
+	"github.com/transparency-dev/merkle/proof"
 )
 
 const (
 	defaultRekorAddr = "https://rekor.sigstore.dev"
 )
 
-func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
+func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, eproof *models.InclusionProof, pub *ecdsa.PublicKey) error {
 	infoParams := tlog.NewGetLogInfoParamsWithContext(ctx)
 	result, err := rekorClient.Tlog.GetLogInfo(infoParams)
 	if err != nil {
@@ -64,25 +65,25 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 		return errors.New("signature on tree head did not verify")
 	}
 
-	rootHash, err := hex.DecodeString(*proof.RootHash)
+	rootHash, err := hex.DecodeString(*eproof.RootHash)
 	if err != nil {
 		return errors.New("error decoding root hash in inclusion proof")
 	}
 
-	if *proof.TreeSize == int64(sth.Size) {
+	if *eproof.TreeSize == int64(sth.Size) {
 		if !bytes.Equal(rootHash, sth.Hash) {
 			return errors.New("root hash returned from server does not match inclusion proof hash")
 		}
-	} else if *proof.TreeSize < int64(sth.Size) {
+	} else if *eproof.TreeSize < int64(sth.Size) {
 		consistencyParams := tlog.NewGetLogProofParamsWithContext(ctx)
-		consistencyParams.FirstSize = proof.TreeSize // Root hash at the time the proof was returned
-		consistencyParams.LastSize = int64(sth.Size) // Root hash verified with rekor pubkey
+		consistencyParams.FirstSize = eproof.TreeSize // Root hash at the time the proof was returned
+		consistencyParams.LastSize = int64(sth.Size)  // Root hash verified with rekor pubkey
 
 		consistencyProof, err := rekorClient.Tlog.GetLogProof(consistencyParams)
 		if err != nil {
 			return err
 		}
-		hashes := [][]byte{}
+		var hashes [][]byte
 		for _, h := range consistencyProof.Payload.Hashes {
 			b, err := hex.DecodeString(h)
 			if err != nil {
@@ -90,19 +91,19 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 			}
 			hashes = append(hashes, b)
 		}
-		v := logverifier.New(rfc6962.DefaultHasher)
-		if err := v.VerifyConsistencyProof(*proof.TreeSize, int64(sth.Size), rootHash, sth.Hash, hashes); err != nil {
+		if err := proof.VerifyConsistency(rfc6962.DefaultHasher,
+			uint64(*eproof.TreeSize), sth.Size, hashes, rootHash, sth.Hash); err != nil {
 			return err
 		}
-	} else if *proof.TreeSize > int64(sth.Size) {
+	} else if *eproof.TreeSize > int64(sth.Size) {
 		return errors.New("inclusion proof returned a tree size larger than the verified tree size")
 	}
 	return nil
 }
 
-func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, uuid string) (*models.LogEntryAnon, error) {
+func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, entryUUID string) (*models.LogEntryAnon, error) {
 	params := entries.NewGetLogEntryByUUIDParamsWithContext(ctx)
-	params.EntryUUID = uuid
+	params.EntryUUID = entryUUID
 
 	lep, err := rekorClient.Entries.GetLogEntryByUUID(params)
 	if err != nil {
@@ -112,8 +113,21 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, uuid 
 	if len(lep.Payload) != 1 {
 		return nil, errors.New("UUID value can not be extracted")
 	}
-	e := lep.Payload[params.EntryUUID]
-	return verifyTlogEntry(ctx, rekorClient, params.EntryUUID, e)
+
+	uuid, err := sharding.GetUUIDFromIDString(params.EntryUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var e models.LogEntryAnon
+	for k, entry := range lep.Payload {
+		if k != uuid {
+			return nil, errors.New("expected matching UUID")
+		}
+		e = entry
+	}
+
+	return verifyTlogEntry(ctx, rekorClient, uuid, e)
 }
 
 func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string, e models.LogEntryAnon) (*models.LogEntryAnon, error) {
@@ -121,7 +135,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 		return nil, errors.New("inclusion proof not provided")
 	}
 
-	hashes := [][]byte{}
+	var hashes [][]byte
 	for _, h := range e.Verification.InclusionProof.Hashes {
 		hb, err := hex.DecodeString(h)
 		if err != nil {
@@ -158,8 +172,9 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	}
 
 	// Verify the entry's inclusion
-	v := logverifier.New(rfc6962.DefaultHasher)
-	if err := v.VerifyInclusionProof(*e.Verification.InclusionProof.LogIndex, *e.Verification.InclusionProof.TreeSize, hashes, rootHash, leafHash); err != nil {
+	if err := proof.VerifyInclusion(rfc6962.DefaultHasher,
+		uint64(*e.Verification.InclusionProof.LogIndex),
+		uint64(*e.Verification.InclusionProof.TreeSize), leafHash, hashes, rootHash); err != nil {
 		return nil, fmt.Errorf("%w: %s", err, "verifying inclusion proof")
 	}
 
@@ -173,7 +188,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 
 	var setVerError error
 	for _, pubKey := range pubs {
-		setVerError = cosign.VerifySET(payload, []byte(e.Verification.SignedEntryTimestamp), pubKey.PubKey)
+		setVerError = cosign.VerifySET(payload, e.Verification.SignedEntryTimestamp, pubKey.PubKey)
 		// Return once the SET is verified successfully.
 		if setVerError == nil {
 			break
@@ -262,7 +277,7 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, provenance []byte) (*dsselib
 	// Use intoto attestation to find rekor entry UUIDs.
 	params := entries.NewSearchLogQueryParams()
 	searchLogQuery := models.SearchLogQuery{}
-	certPem, err := envelope.GetCertFromEnvelope([]byte(provenance))
+	certPem, err := envelope.GetCertFromEnvelope(provenance)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting certificate from provenance: %w", err)
 	}
