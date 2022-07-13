@@ -25,7 +25,7 @@ func pString(s string) *string {
 var generatorVersions = []string{"v0.0.2", "v1.1.1"}
 
 func Test_runVerify(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	tests := []struct {
 		name        string
 		artifact    string
@@ -354,7 +354,7 @@ func Test_runVerify(t *testing.T) {
 				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/%v/%s", v, tt.artifact))
 				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				_, err := runVerify(artifactPath,
+				_, err := runVerify("", artifactPath,
 					provenancePath,
 					tt.source, branch,
 					tt.ptag, tt.pversiontag)
