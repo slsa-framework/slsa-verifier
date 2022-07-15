@@ -21,10 +21,9 @@ func pString(s string) *string {
 }
 
 // Versions of the builders to test.
-// TODO: Test v0.0.2.
-var generatorVersions = []string{"v0.0.2", "v1.1.1"}
+var golangGeneratorVersions = []string{"v0.0.2", "v1.1.1"}
 
-func Test_runVerify(t *testing.T) {
+func Test_runVerifyGo(t *testing.T) {
 	// t.Parallel()
 	tests := []struct {
 		name        string
@@ -340,7 +339,7 @@ func Test_runVerify(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// t.Parallel()
 
-			checkVersions := generatorVersions
+			checkVersions := golangGeneratorVersions
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
@@ -351,7 +350,7 @@ func Test_runVerify(t *testing.T) {
 					branch = "main"
 				}
 
-				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/%v/%s", v, tt.artifact))
+				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/go/%v/%s", v, tt.artifact))
 				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				_, err := runVerify("", artifactPath,
