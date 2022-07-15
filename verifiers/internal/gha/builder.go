@@ -18,9 +18,16 @@ var (
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
 )
 
+<<<<<<< HEAD:verifiers/internal/gha/builder.go
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml": true,
 	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":        true,
+=======
+var trustedReusableWorkflows = map[string]bool{
+	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":   true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
+	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
+>>>>>>> d733abe (add testing folder):pkg/builder.go
 }
 
 var defaultContainerTrustedReusableWorkflows = map[string]bool{
