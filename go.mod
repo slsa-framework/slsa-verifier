@@ -6,7 +6,7 @@ require (
 	github.com/docker/go v1.5.1-1
 	github.com/go-openapi/runtime v0.24.1
 	github.com/google/go-cmp v0.5.8
-	github.com/google/trillian v1.4.1 // indirect
+	github.com/google/trillian v1.4.1
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0
 	github.com/sigstore/rekor v0.9.1
@@ -14,7 +14,7 @@ require (
 )
 
 require (
-	github.com/go-openapi/strfmt v0.21.2
+	github.com/go-openapi/strfmt v0.21.3
 	github.com/go-openapi/swag v0.21.1
 	github.com/sigstore/cosign v1.9.1-0.20220617081120-5e261dc13b11
 	github.com/slsa-framework/slsa-github-generator v1.1.1
@@ -186,7 +186,7 @@ require (
 	go.etcd.io/etcd/server/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/tests/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/v3 v3.5.4 // indirect
-	go.mongodb.org/mongo-driver v1.8.3 // indirect
+	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opentelemetry.io/contrib v1.6.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0 // indirect
 	go.opentelemetry.io/otel v0.20.0 // indirect
@@ -200,7 +200,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9 // indirect
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
