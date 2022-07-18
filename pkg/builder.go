@@ -16,8 +16,9 @@ var (
 )
 
 var trustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml": true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":        true,
+	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":   true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
+	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
 // VerifyWorkflowIdentity verifies the signing certificate information
