@@ -4,6 +4,7 @@
     "config:base"
   ],
   "schedule": ["every weekend"],
+  // See options in https://docs.renovatebot.com/configuration-options.
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
