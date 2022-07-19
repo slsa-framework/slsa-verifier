@@ -1,0 +1,35 @@
+name: Go-Dependency-Submission
+on:
+  push:
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  go-action-detection:
+    # The API requires write permission on the repository to submit dependencies
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b  # v3
+
+      - name: setup-go
+        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923  # v3
+        with:
+          go-version: ">=1.18.0"
+
+      - name: Run snapshot action
+        uses: actions/go-dependency-submission@0a044ad723e1648c6941b4a31632076c6f853ce1  # v1
+        with:
+          # Required: Define the repo path to the go.mod file used by the
+          # build target
+          go-mod-path: ./go.mod
+          #
+          # Optional: Define the path of a build target (a file with a
+          # `main()` function) If not defined, this Action will collect all
+          # dependencies used by all build targets for the module, which may
+          # include Go dependencies used by tests and tooling.
+          go-build-target: ./main.go
