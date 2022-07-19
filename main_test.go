@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -21,8 +22,11 @@ func pString(s string) *string {
 }
 
 // Versions of the builders to test.
-// TODO: Test v0.0.2.
-var generatorVersions = []string{"v0.0.2", "v1.1.1"}
+// TODO: Enable v1.0.0 for go builder
+var generatorVersions = map[string][]string{
+	"v0.0.2": {"go"},
+	"v1.1.1": {"go"},
+	"v1.2.0": {"generic"}}
 
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
@@ -339,8 +343,35 @@ func Test_runVerify(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			// t.Parallel()
+			getBuildersAndVersions := func() []string {
+				res := []string{}
+				builders := []string{}
+				testdataDir, err := ioutil.ReadDir("./testdata")
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, f := range testdataDir {
+					if f.IsDir() {
+						// These are the builder subfolders
+						builders = append(builders, f.Name())
+					}
+				}
+				for _, builder := range builders {
+					builderDir, err := ioutil.ReadDir(fmt.Sprintf("./testdata/%s", builder))
+					if err != nil {
+						t.Fatal(err)
+					}
+					for _, f := range builderDir {
+						if f.IsDir() {
+							// These are the supported versions of the builder
+							res = append(res, fmt.Sprintf("%s/%s", builder, f.Name()))
+						}
+					}
+				}
+				return res
+			}
 
-			checkVersions := generatorVersions
+			checkVersions := getBuildersAndVersions()
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
