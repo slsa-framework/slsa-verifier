@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	cjson "github.com/docker/go/canonical/json"
@@ -168,7 +169,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 		}
 	}
 	if entryVerError != nil {
-		return nil, fmt.Errorf("%w: %s", err, "error verifying root hash")
+		return nil, fmt.Errorf("%w: %s", entryVerError, "error verifying root hash")
 	}
 
 	// Verify the entry's inclusion
@@ -341,18 +342,25 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 	//   * Verify dsse envelope signature against signing certificate.
 	//   * Check signature expiration against IntegratedTime in entry.
 	//   * If all succeed, return the signing certificate.
+	var errs []string
 	for _, uuid := range uuids {
 		entry, err := verifyTlogEntryByUUID(ctx, rClient, uuid)
 		if err != nil {
+			// this is unexpected, hold on to this error.
+			errs = append(errs, fmt.Sprintf("%s: verifying tlog entry %s", err, uuid))
 			continue
 		}
 		cert, err := extractCert(entry)
 		if err != nil {
+			// this is unexpected, hold on to this error.
+			errs = append(errs, fmt.Sprintf("%s: extracting certificate from %s", err, uuid))
 			continue
 		}
 
 		roots, err := fulcio.GetRoots()
 		if err != nil {
+			// this is unexpected, hold on to this error.
+			errs = append(errs, fmt.Sprintf("%s: retrieving fulcio root", err))
 			continue
 		}
 		co := &cosign.CheckOpts{
@@ -383,5 +391,5 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		return cert, nil
 	}
 
-	return nil, ErrorNoValidRekorEntries
+	return nil, fmt.Errorf("%w: got unexpected errors %s", ErrorNoValidRekorEntries, strings.Join(errs, ", "))
 }
