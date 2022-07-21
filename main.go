@@ -58,6 +58,9 @@ func verify(ctx context.Context,
 		return nil, err
 	}
 
+	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
+		workflowInfo.JobWobWorkflowRef,
+		workflowInfo.CallerHash)
 	// Return verified provenance.
 	return base64.StdEncoding.DecodeString(env.Payload)
 }
