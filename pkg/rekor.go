@@ -169,7 +169,7 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 		}
 	}
 	if entryVerError != nil {
-		return nil, fmt.Errorf("%w: %s", err, "error verifying root hash")
+		return nil, fmt.Errorf("%w: %s", entryVerError, "error verifying root hash")
 	}
 
 	// Verify the entry's inclusion
