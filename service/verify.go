@@ -1,25 +1,30 @@
 package main
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
+	"github.com/slsa-framework/slsa-verifier/cmd"
+	"github.com/slsa-framework/slsa-verifier/verification"
 )
 
 var errInvalid = errors.New("invalid")
 
 type v1Query struct {
-	Source         string            `json:"source"`
-	Tag            string            `json:"tag"`
-	VersionedTag   string            `json:"versionedTag"`
-	ArtifactHash   string            `json:"artifactHash"`
-	DsseEnvelope   *dsselib.Envelope `json:"provenanceContent"`
-	showProvenance bool              `json:"showProvenance"`
+	// Compulsory fields.
+	Source       string `json:"source"`
+	ArtifactHash string `json:"artifactHash"`
+	DsseEnvelope string `json:"provenanceContent"`
+	// Optional fields.
+	Tag             *string `json:"tag"`
+	Branch          *string `json:"branch"`
+	VersionedTag    *string `json:"versionedTag"`
+	PrintProvenance *bool   `json:"printProvenance"`
 }
 
 type validation string
@@ -30,9 +35,9 @@ var (
 )
 
 type v1Result struct {
-	Error           *string                     `json:"error,omitempty"`
-	Validation      validation                  `json:"validation"`
-	IntotoStatement *intoto.ProvenanceStatement `json:"provenanceContent,omitempty"`
+	Error           *string    `json:"error,omitempty"`
+	Validation      validation `json:"validation"`
+	IntotoStatement *string    `json:"provenanceContent,omitempty"`
 }
 
 func VerifyHandlerV1(w http.ResponseWriter, r *http.Request) {
@@ -47,8 +52,6 @@ func VerifyHandlerV1(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// w.WriteHeader(http.StatusOK)
 }
 
 func toStringPtr(e error) *string {
@@ -77,6 +80,12 @@ func (r *v1Result) withValidation(v validation) *v1Result {
 	return r
 }
 
+func (r *v1Result) withIntotoStatement(c []byte) *v1Result {
+	b := base64.StdEncoding.EncodeToString(c)
+	r.IntotoStatement = &b
+	return r
+}
+
 func verifyHandlerV1(r *http.Request) *v1Result {
 	results := v1ResultNew()
 
@@ -98,11 +107,28 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 	}
 
 	// Run the verification.
-
-	if query.showProvenance {
+	branch := "main"
+	if query.Branch != nil {
+		branch = *query.Branch
+	}
+	provenanceOpts := &verification.ProvenanceOpts{
+		ExpectedBranch:       branch,
+		ExpectedDigest:       query.ArtifactHash,
+		ExpectedVersionedTag: query.VersionedTag,
+		ExpectedTag:          query.Tag,
 	}
 
-	// TODO:Write the response.
+	ctx := context.Background()
+	p, err := cmd.Verify(ctx, []byte(query.DsseEnvelope),
+		query.ArtifactHash, query.Source, provenanceOpts)
+	if err != nil {
+		return results.withError(err)
+	}
+
+	if query.PrintProvenance != nil && *query.PrintProvenance {
+		results = results.withIntotoStatement(p)
+	}
+
 	return results.withValidation(validationSuccess)
 }
 
@@ -112,6 +138,12 @@ func queryFromString(content []byte) (*v1Query, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	env, err := base64.StdEncoding.DecodeString(query.DsseEnvelope)
+	if err != nil {
+		return nil, fmt.Errorf("%w: decoding payload", errInvalid)
+	}
+	query.DsseEnvelope = string(env)
 	return &query, nil
 }
 
@@ -124,11 +156,11 @@ func (q *v1Query) validate() error {
 		return fmt.Errorf("%w: empty artifactHash", errInvalid)
 	}
 
-	if q.DsseEnvelope == nil {
+	if q.DsseEnvelope == "" {
 		return fmt.Errorf("%w: empty dsseEnvelope", errInvalid)
 	}
 
-	if q.Tag != "" && q.VersionedTag != "" {
+	if q.Tag != nil && q.VersionedTag != nil {
 		return fmt.Errorf("%w: tag and versionedTag are mutually exclusive", errInvalid)
 	}
 
