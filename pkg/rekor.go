@@ -244,6 +244,9 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 }
 
 func intotoEntry(certPem []byte, provenance []byte) (*intotod.V001Entry, error) {
+	if len(certPem) == 0 {
+		return nil, fmt.Errorf("no signing certificate found in intoto envelope")
+	}
 	cert := strfmt.Base64(certPem)
 	return &intotod.V001Entry{
 		IntotoObj: models.IntotoV001Schema{
