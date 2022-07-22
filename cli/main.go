@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -11,8 +10,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
-	"github.com/slsa-framework/slsa-verifier/pkg"
+	"github.com/slsa-framework/slsa-verifier/cmd"
+	"github.com/slsa-framework/slsa-verifier/verification"
 )
 
 var (
@@ -24,46 +23,6 @@ var (
 	versiontag      string
 	printProvenance bool
 )
-
-var defaultRekorAddr = "https://rekor.sigstore.dev"
-
-func verify(ctx context.Context,
-	provenance []byte, artifactHash, source string, provenanceOpts *pkg.ProvenanceOpts) ([]byte, error) {
-	rClient, err := rekor.NewClient(defaultRekorAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	/* Verify signature on the intoto attestation. */
-	env, cert, err := pkg.VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
-	if err != nil {
-		return nil, err
-	}
-
-	/* Verify properties of the signing identity. */
-	// Get the workflow info given the certificate information.
-	workflowInfo, err := pkg.GetWorkflowInfoFromCertificate(cert)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify the workflow identity.
-	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
-		return nil, err
-	}
-
-	/* Verify properties of the SLSA provenance. */
-	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := pkg.VerifyProvenance(env, provenanceOpts); err != nil {
-		return nil, err
-	}
-
-	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.JobWobWorkflowRef,
-		workflowInfo.CallerHash)
-	// Return verified provenance.
-	return base64.StdEncoding.DecodeString(env.Payload)
-}
 
 func main() {
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
@@ -138,7 +97,7 @@ func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversi
 	}
 	artifactHash := hex.EncodeToString(h.Sum(nil))
 
-	provenanceOpts := &pkg.ProvenanceOpts{
+	provenanceOpts := &verification.ProvenanceOpts{
 		ExpectedBranch:       branch,
 		ExpectedDigest:       artifactHash,
 		ExpectedVersionedTag: pversiontag,
@@ -146,7 +105,7 @@ func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversi
 	}
 
 	ctx := context.Background()
-	return verify(ctx, provenance,
+	return cmd.Verify(ctx, provenance,
 		artifactHash,
 		source, provenanceOpts)
 }

@@ -1,4 +1,4 @@
-package pkg
+package verification
 
 import (
 	"errors"
@@ -20,7 +20,8 @@ type MockIndexClient struct {
 }
 
 func (m *MockIndexClient) SearchIndex(params *index.SearchIndexParams,
-	opts ...index.ClientOption) (*index.SearchIndexOK, error) {
+	opts ...index.ClientOption,
+) (*index.SearchIndexOK, error) {
 	return m.result.resp, m.result.err
 }
 
