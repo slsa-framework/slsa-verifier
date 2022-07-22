@@ -78,14 +78,7 @@ $ go run . --help
 ```bash
 $ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.1.1
 Verified signature against tlog entry index 2727751 at URL: https://rekor.sigstore.dev/api/v1/log/entries/8f3d898ef17d9c4c028fe3da09fb786c900bf786361e75432f325b4848fdba24
-Signing certificate information:
- {
-	"caller": "slsa-framework/slsa-verifier",
-	"commit": "5875b0a74f4c04e1f123a3ad81d6c7c5a86860ce",
-	"job_workflow_ref": "/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.1.1",
-	"trigger": "push",
-	"issuer": "https://token.actions.githubusercontent.com"
-}
+Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.1.0 at commit 76a59d8413f27259b97298da91bbb6511fc775d1
 PASSED: Verified SLSA provenance
 ```
 
