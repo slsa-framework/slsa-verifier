@@ -24,12 +24,12 @@ jobs:
           # Build cli
           cd cli
           go build -mod=vendor
-          cd
+          cd ../
 
           # Builder service
           cd service
           go build -mod=vendor
-          cd
+          cd ../
 
           # Tests
           go test -mod=vendor -v ./...
