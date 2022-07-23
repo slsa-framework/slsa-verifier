@@ -2,7 +2,7 @@
 
 This document is WIP.
 
-Command to run the serivce locally:
+Command to run the service locally:
 
 ```bash
 $ docker build -f service/Dockerfile .
