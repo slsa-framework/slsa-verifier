@@ -1,4 +1,4 @@
-package pkg
+package verification
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
-
 	"github.com/sigstore/rekor/pkg/generated/client"
 )
 

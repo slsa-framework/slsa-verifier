@@ -1,4 +1,4 @@
-package pkg
+package verification
 
 // ProvenanceOpts are the options for checking provenance information.
 type ProvenanceOpts struct {
