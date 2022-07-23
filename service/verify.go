@@ -35,6 +35,7 @@ var (
 )
 
 type v1Result struct {
+	Version         uint       `json:"version"`
 	Error           *string    `json:"error,omitempty"`
 	Validation      validation `json:"validation"`
 	IntotoStatement *string    `json:"provenanceContent,omitempty"`
@@ -64,6 +65,7 @@ func toStringPtr(e error) *string {
 
 func v1ResultNew() *v1Result {
 	return &v1Result{
+		Version:         1,
 		Error:           nil,
 		Validation:      validationFailure,
 		IntotoStatement: nil,
