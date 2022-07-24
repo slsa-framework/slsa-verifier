@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/slsa-framework/slsa-verifier/pkg"
+	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -43,6 +44,10 @@ func Test_runVerify(t *testing.T) {
 		// or testdata from malicious untrusted builders.
 		// When true, this does not iterate over all builder versions.
 		noversion bool
+		// minversion is a special case to test a newly added feature into a builder
+		minversion string
+		// specifying builders will restrict builders to only the specified ones.
+		builders []string
 	}{
 		{
 			name:     "valid main branch default",
@@ -300,6 +305,21 @@ func Test_runVerify(t *testing.T) {
 			pversiontag: pString("v15.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
+		// Multiple subjects in version v1.2.0+
+		{
+			name:       "multiple subject first match",
+			artifact:   "binary-linux-amd64-multi-subject-first",
+			source:     "github.com/slsa-framework/example-package",
+			minversion: "v1.2.0",
+			builders:   []string{"generic"},
+		},
+		{
+			name:       "multiple subject second match",
+			artifact:   "binary-linux-amd64-multi-subject-second",
+			source:     "github.com/slsa-framework/example-package",
+			minversion: "v1.2.0",
+			builders:   []string{"generic"},
+		},
 		// Special case of the e2e test repository building builder from head.
 		{
 			name:      "e2e test repository verified with builder at head",
@@ -343,17 +363,19 @@ func Test_runVerify(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			// t.Parallel()
-			getBuildersAndVersions := func() []string {
+			getBuildersAndVersions := func(minversion string, ttBuilders []string) []string {
 				res := []string{}
-				builders := []string{}
-				testdataDir, err := ioutil.ReadDir("./testdata")
-				if err != nil {
-					t.Fatal(err)
-				}
-				for _, f := range testdataDir {
-					if f.IsDir() {
-						// These are the builder subfolders
-						builders = append(builders, f.Name())
+				builders := tt.builders
+				if len(builders) == 0 {
+					testdataDir, err := ioutil.ReadDir("./testdata")
+					if err != nil {
+						t.Fatal(err)
+					}
+					for _, f := range testdataDir {
+						if f.IsDir() {
+							// These are the builder subfolders
+							builders = append(builders, f.Name())
+						}
 					}
 				}
 				for _, builder := range builders {
@@ -362,7 +384,7 @@ func Test_runVerify(t *testing.T) {
 						t.Fatal(err)
 					}
 					for _, f := range builderDir {
-						if f.IsDir() {
+						if f.IsDir() && semver.Compare(minversion, f.Name()) <= 0 {
 							// These are the supported versions of the builder
 							res = append(res, fmt.Sprintf("%s/%s", builder, f.Name()))
 						}
@@ -371,7 +393,7 @@ func Test_runVerify(t *testing.T) {
 				return res
 			}
 
-			checkVersions := getBuildersAndVersions()
+			checkVersions := getBuildersAndVersions(tt.minversion, tt.builders)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
