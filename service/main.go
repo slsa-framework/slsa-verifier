@@ -16,7 +16,7 @@ func main() {
 	r.HandleFunc("/v1/verify", VerifyHandlerV1).Methods(http.MethodPost)
 	http.Handle("/", r)
 
-	address := "127.0.0.1:8000"
+	address := ":8000"
 	fmt.Printf("Starting HTTP server on %v ...\n", address)
 	srv := &http.Server{
 		Handler: r,
