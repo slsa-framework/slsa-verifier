@@ -29,6 +29,8 @@ var generatorVersions = map[string][]string{
 	"v1.1.1": {"go"},
 	"v1.2.0": {"generic"}}
 
+const TEST_DIR = "./testdata"
+
 func Test_runVerify(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -367,9 +369,9 @@ func Test_runVerify(t *testing.T) {
 				res := []string{}
 				builders := tt.builders
 				if len(builders) == 0 {
-					testdataDir, err := ioutil.ReadDir("./testdata")
+					testdataDir, err := ioutil.ReadDir(TEST_DIR)
 					if err != nil {
-						t.Fatal(err)
+						t.Error(err)
 					}
 					for _, f := range testdataDir {
 						if f.IsDir() {
@@ -379,14 +381,16 @@ func Test_runVerify(t *testing.T) {
 					}
 				}
 				for _, builder := range builders {
-					builderDir, err := ioutil.ReadDir(fmt.Sprintf("./testdata/%s", builder))
+					builderDir, err := ioutil.ReadDir(filepath.Join(TEST_DIR, builder))
 					if err != nil {
-						t.Fatal(err)
+						t.Error(err)
 					}
 					for _, f := range builderDir {
+						// Builder subfolders are semantic version strings.
+						// Compare if a min version is given.
 						if f.IsDir() && semver.Compare(minversion, f.Name()) <= 0 {
 							// These are the supported versions of the builder
-							res = append(res, fmt.Sprintf("%s/%s", builder, f.Name()))
+							res = append(res, filepath.Join(builder, f.Name()))
 						}
 					}
 				}
@@ -404,7 +408,7 @@ func Test_runVerify(t *testing.T) {
 					branch = "main"
 				}
 
-				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/%v/%s", v, tt.artifact))
+				artifactPath = filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				_, err := runVerify(artifactPath,
