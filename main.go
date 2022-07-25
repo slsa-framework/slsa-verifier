@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -48,12 +47,6 @@ func verify(ctx context.Context,
 		return nil, err
 	}
 
-	b, err := json.MarshalIndent(workflowInfo, "", "\t")
-	if err != nil {
-		return nil, err
-	}
-	fmt.Fprintf(os.Stderr, "Signing certificate information:\n %s\n", b)
-
 	// Verify the workflow identity.
 	if err := pkg.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
 		return nil, err
@@ -65,6 +58,9 @@ func verify(ctx context.Context,
 		return nil, err
 	}
 
+	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
+		workflowInfo.JobWobWorkflowRef,
+		workflowInfo.CallerHash)
 	// Return verified provenance.
 	return base64.StdEncoding.DecodeString(env.Payload)
 }
