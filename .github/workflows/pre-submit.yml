@@ -20,16 +20,12 @@ jobs:
           set -euo pipefail
 
           go mod vendor
-          
+
           # Build cli
-          cd cli
-          go build -mod=vendor
-          cd ../
+          go build -mod=vendor -o cli/cli ./cli/
 
           # Builder service
-          cd service
-          go build -mod=vendor
-          cd ../
+          go build -mod=vendor -o service/service ./service/
 
           # Tests
           go test -mod=vendor -v ./...
