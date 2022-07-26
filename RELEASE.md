@@ -46,7 +46,7 @@ This will trigger a release workflow: wait until it completes and generates the 
 
 Follow the steps:
 
-1. Download the binary and provenance from https://github.com/slsa-verifier/slsa-verifier/releases/tag/vX.Y.Z
+1. Download the binary and provenance from https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z
 
 2. Clone the slsa-verifier repo, compile and verify the provenance:
 ```
