@@ -1,4 +1,4 @@
-package cmd
+package verification
 
 import (
 	"context"
@@ -7,13 +7,10 @@ import (
 	"os"
 
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
-	"github.com/slsa-framework/slsa-verifier/verification"
 )
 
-var defaultRekorAddr = "https://rekor.sigstore.dev"
-
 func Verify(ctx context.Context,
-	provenance []byte, artifactHash, source string, provenanceOpts *verification.ProvenanceOpts,
+	provenance []byte, artifactHash, source string, provenanceOpts *ProvenanceOpts,
 ) ([]byte, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
@@ -21,26 +18,26 @@ func Verify(ctx context.Context,
 	}
 
 	/* Verify signature on the intoto attestation. */
-	env, cert, err := verification.VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
+	env, cert, err := VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
 	if err != nil {
 		return nil, err
 	}
 
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
-	workflowInfo, err := verification.GetWorkflowInfoFromCertificate(cert)
+	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
 	if err != nil {
 		return nil, err
 	}
 
 	// Verify the workflow identity.
-	if err := verification.VerifyWorkflowIdentity(workflowInfo, source); err != nil {
+	if err := VerifyWorkflowIdentity(workflowInfo, source); err != nil {
 		return nil, err
 	}
 
 	/* Verify properties of the SLSA provenance. */
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := verification.VerifyProvenance(env, provenanceOpts); err != nil {
+	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, err
 	}
 

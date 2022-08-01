@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/cmd"
 	"github.com/slsa-framework/slsa-verifier/verification"
 )
 
@@ -105,7 +104,7 @@ func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversi
 	}
 
 	ctx := context.Background()
-	return cmd.Verify(ctx, provenance,
+	return verification.Verify(ctx, provenance,
 		artifactHash,
 		source, provenanceOpts)
 }
