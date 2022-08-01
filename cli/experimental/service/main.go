@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
+	"github.com/slsa-framework/slsa-verifier/experimental/rest"
 )
 
 func main() {
 	r := mux.NewRouter().StrictSlash(true)
 
 	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
-	r.HandleFunc("/v1/verify", VerifyHandlerV1).Methods(http.MethodPost)
+	r.HandleFunc("/v1/verify", rest.VerifyHandlerV1).Methods(http.MethodPost)
 	http.Handle("/", r)
 
 	address := ":8000"

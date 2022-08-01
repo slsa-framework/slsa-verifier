@@ -23,20 +23,20 @@ You have two options to install the verifier.
 
 #### Option 1: Install via go
 ```
-$ go install github.com/slsa-framework/slsa-verifier@v1.2.0
+$ go install github.com/slsa-framework/slsa-verifier@v1.2.1
 $ slsa-verifier <options>
 ```
 
 #### Option 2: Compile manually
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v1.2.0
+$ cd slsa-verifier && git checkout v1.2.1
 $ go run . <options>
 ```
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.2)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 

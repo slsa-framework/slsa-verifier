@@ -22,10 +22,10 @@ jobs:
           go mod vendor
 
           # Build cli
-          go build -mod=vendor -o cli/cli ./cli/
+          go build -mod=vendor -o slsa-verifier ./cli/slsa-verifier/main.go
 
           # Builder service
-          go build -mod=vendor -o service/service ./service/
+          go build -mod=vendor -o service ./cli/experimental/service/main.go
 
           # Tests
           go test -mod=vendor -v ./...
