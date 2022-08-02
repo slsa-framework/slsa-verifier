@@ -11,9 +11,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
-	"github.com/google/go-containerregistry/pkg/name"
+	crname "github.com/google/go-containerregistry/pkg/name"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/slsa-framework/slsa-verifier/pkg"
@@ -149,12 +151,18 @@ func runVerify(ociImageRef, artifactPath, provenancePath, source, branch string,
 
 	ctx := context.Background()
 	if ociImageRef != "" {
-		ref, err := name.ParseReference(ociImageRef)
+		ref, err := crname.ParseReference(ociImageRef)
 		if err != nil {
 			return nil, err
 		}
 		// Run container verification.
-		atts, _, err := cosign.VerifyImageAttestations(ctx, ref, &cosign.CheckOpts{})
+		roots, err := fulcio.GetRoots()
+		if err != nil {
+			return nil, err
+		}
+		atts, _, err := cosign.VerifyImageAttestations(ctx, ref, &cosign.CheckOpts{
+			RootCerts: roots,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -173,6 +181,11 @@ func runVerify(ociImageRef, artifactPath, provenancePath, source, branch string,
 			}
 			envAndCerts = append(envAndCerts, &envAndCert{env, cert})
 		}
+
+		// Get the digest of the image.
+		digest := ref.Context().Digest(ref.Identifier())
+		artifactHash = strings.TrimPrefix(digest.DigestStr(), "sha256:")
+
 	} else {
 		// Run blob verification.
 		f, err := os.Open(artifactPath)
