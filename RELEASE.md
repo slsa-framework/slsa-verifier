@@ -14,7 +14,25 @@ This is a  document to describe the release process for the verifier.
 
 ## Publish release
 
+Major and minor releases are released directly from the `main` branch. Patch versions are released from the `release/vX.Y` branch.
+
+### New major or minor release
+
 Create a new tag for the official generator via [slsa-framework/slsa-verifier/releases/new](https://github.com/slsa-framework/slsa-verifier/releases/new). 
+
+Use a "canonical" semantic version without metadata `vX.Y.Z`.
+
+Set the title to `vX.Y.Z`.
+
+Click `Publish release`.
+
+This will trigger a release workflow: wait until it completes and generates the binary and the provenance.
+
+From the repository landing page, use the branch drop-down to create a branch from the tagged release with the format `release/vX.Y`. This will be used for backporting critical fixes and releases patch versions.
+
+### New patch release
+
+Critical patch fixes are released from the `release/vX.Y` branch. Once the backported fix has been merged, create a new tag for the official generator via [slsa-framework/slsa-verifier/releases/new](https://github.com/slsa-framework/slsa-verifier/releases/new). Use the `release/vX.Y` branch as the Target.
 
 Use a "canonical" semantic version without metadata `vX.Y.Z`.
 
@@ -28,7 +46,7 @@ This will trigger a release workflow: wait until it completes and generates the 
 
 Follow the steps:
 
-1. Download the binary and provenance from https://github.com/slsa-verifier/slsa-verifier/releases/tag/vX.Y.Z
+1. Download the binary and provenance from https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z
 
 2. Clone the slsa-verifier repo, compile and verify the provenance:
 ```
@@ -37,6 +55,8 @@ $ cd slsa-verifier
 # $ (Optional: git checkout tags/v1.1.1)
 $ go run . -artifact-path slsa-verifier-linux-amd64 -provenance slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag vX.Y.Z
 ```
+
+You should include the `-branch release/vX.Y` for patch version releases.
 
 If the provenance verification fails, delete the release and the tag. Otherwise, continue.
 

@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/slsa-framework/slsa-verifier/pkg"
+	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -20,10 +22,9 @@ func pString(s string) *string {
 	return &s
 }
 
-// Versions of the builders to test.
-var golangGeneratorVersions = []string{"v0.0.2", "v1.1.1"}
+const TEST_DIR = "./testdata"
 
-func Test_runVerifyGo(t *testing.T) {
+func Test_runVerifyGoAndGeneric(t *testing.T) {
 	// t.Parallel()
 	tests := []struct {
 		name        string
@@ -38,6 +39,10 @@ func Test_runVerifyGo(t *testing.T) {
 		// or testdata from malicious untrusted builders.
 		// When true, this does not iterate over all builder versions.
 		noversion bool
+		// minversion is a special case to test a newly added feature into a builder
+		minversion string
+		// specifying builders will restrict builders to only the specified ones.
+		builders []string
 	}{
 		{
 			name:     "valid main branch default",
@@ -295,6 +300,21 @@ func Test_runVerifyGo(t *testing.T) {
 			pversiontag: pString("v15.1"),
 			err:         pkg.ErrorMismatchVersionedTag,
 		},
+		// Multiple subjects in version v1.2.0+
+		{
+			name:       "multiple subject first match",
+			artifact:   "binary-linux-amd64-multi-subject-first",
+			source:     "github.com/slsa-framework/example-package",
+			minversion: "v1.2.0",
+			builders:   []string{"generic"},
+		},
+		{
+			name:       "multiple subject second match",
+			artifact:   "binary-linux-amd64-multi-subject-second",
+			source:     "github.com/slsa-framework/example-package",
+			minversion: "v1.2.0",
+			builders:   []string{"generic"},
+		},
 		// Special case of the e2e test repository building builder from head.
 		{
 			name:      "e2e test repository verified with builder at head",
@@ -338,8 +358,32 @@ func Test_runVerifyGo(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			// t.Parallel()
+			getBuildersAndVersions := func(minversion string, ttBuilders []string) []string {
+				res := []string{}
+				builders := tt.builders
+				if len(builders) == 0 {
+					// This tests both generic and go
+					builders = []string{"go", "generic"}
+				}
+				// Get versions for each builder.
+				for _, builder := range builders {
+					builderDir, err := ioutil.ReadDir(filepath.Join(TEST_DIR, builder))
+					if err != nil {
+						t.Error(err)
+					}
+					for _, f := range builderDir {
+						// Builder subfolders are semantic version strings.
+						// Compare if a min version is given.
+						if f.IsDir() && semver.Compare(minversion, f.Name()) <= 0 {
+							// These are the supported versions of the builder
+							res = append(res, filepath.Join(builder, f.Name()))
+						}
+					}
+				}
+				return res
+			}
 
-			checkVersions := golangGeneratorVersions
+			checkVersions := getBuildersAndVersions(tt.minversion, tt.builders)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
@@ -350,7 +394,7 @@ func Test_runVerifyGo(t *testing.T) {
 					branch = "main"
 				}
 
-				artifactPath = filepath.Clean(fmt.Sprintf("./testdata/go/%v/%s", v, tt.artifact))
+				artifactPath = filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath = fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				_, err := runVerify("", artifactPath,
