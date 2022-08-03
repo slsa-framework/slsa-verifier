@@ -25,7 +25,7 @@ var (
 )
 
 func main() {
-	flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID")
+	flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
 	flag.StringVar(&source, "source", "",

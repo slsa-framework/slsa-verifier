@@ -31,8 +31,6 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	}
 
 	// Trusted workflow verification by name.
-	// The caller repository in the x509 extension is not fully qualified. It only contains
-	// {org}/{repository}.
 	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
 	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath, builderOpts.ExpectedID)
 	if err != nil {
