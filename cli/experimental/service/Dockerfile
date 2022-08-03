@@ -3,9 +3,7 @@ WORKDIR /src
 ENV CGO_ENABLED=0
 COPY . ./
 RUN go mod vendor
-RUN cd service && \
-    go build -trimpath -ldflags "-s -w -extldflags=-static" -mod=vendor && \
-    mv service ../slsa-verifier
+RUN go build -o slsa-verifier -trimpath -ldflags "-s -w -extldflags=-static" -mod=vendor ./cli/experimental/service/main.go
 
 # For testing.
 # COPY ./service/service slsa-verifier

@@ -23,7 +23,7 @@ You have two options to install the verifier.
 
 #### Option 1: Install via go
 ```
-$ go install github.com/slsa-framework/slsa-verifier@v1.2.1
+$ go install github.com/slsa-framework/slsa-verifier@v1.2.0
 $ slsa-verifier <options>
 ```
 
