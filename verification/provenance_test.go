@@ -208,6 +208,42 @@ func Test_verifySourceURI(t *testing.T) {
 			sourceURI: "git+https://github.com/some/repo",
 		},
 		{
+			name: "match source no git",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "https://github.com/some/repo",
+		},
+		{
+			name: "match source no git+https",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "github.com/some/repo",
+		},
+		{
 			name: "mismatch materials configSource tag",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{

@@ -47,16 +47,22 @@ func verifyBuilderID(prov *intoto.ProvenanceStatement, builderID string) error {
 	return nil
 }
 
-// Verify source URI in provenance statement.
-func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string) error {
-	// Verify source from ConfigSource field.
-	source := expectedSourceURI
-	if !strings.HasPrefix(source, "git+https://") {
+func asURI(s string) string {
+	source := s
+	if !strings.HasPrefix(source, "https://") &&
+		!strings.HasPrefix(source, "git+") {
 		source = "git+https://" + source
 	}
 	if !strings.HasPrefix(source, "git+") {
 		source = "git+" + source
 	}
+
+	return source
+}
+
+// Verify source URI in provenance statement.
+func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string) error {
+	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
 	if !strings.HasPrefix(source, "git+https://github.com/") {
@@ -64,6 +70,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 			source)
 	}
 
+	// Verify source from ConfigSource field.
 	configURI, err := sourceFromURI(prov.Predicate.Invocation.ConfigSource.URI)
 	if err != nil {
 		return err
