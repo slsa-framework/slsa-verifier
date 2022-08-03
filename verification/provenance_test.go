@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 )
 
 func provenanceFromBytes(payload []byte) (*intoto.ProvenanceStatement, error) {
@@ -89,6 +90,269 @@ func Test_VerifySha256Subject(t *testing.T) {
 			}
 
 			err = verifySha256Digest(prov, tt.artifactHash)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
+func Test_verifySourceURI(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		prov      *intoto.ProvenanceStatement
+		sourceURI string
+		expected  error
+	}{
+		{
+			name: "source has no @",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMalformedURI,
+		},
+		{
+			name: "empty materials",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorInvalidDssePayload,
+		},
+		{
+			name: "empty configSource",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMalformedURI,
+		},
+		{
+			name: "empty uri materials",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMalformedURI,
+		},
+		{
+			name: "no tag uri materials",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMalformedURI,
+		},
+		{
+			name: "no tag uri configSource",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMalformedURI,
+		},
+		{
+			name: "match source",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+		},
+		{
+			name: "mismatch materials configSource tag",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.4",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorInvalidDssePayload,
+		},
+		{
+			name: "mismatch materials configSource org",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/other/repo@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMismatchSource,
+		},
+		{
+			name: "mismatch materials configSource name",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/other@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://github.com/some/repo",
+			expected:  ErrorMismatchSource,
+		},
+		{
+			name: "not github.com repo",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://not-github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://not-github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "git+https://not-github.com/some/repo",
+			expected:  ErrorInvalidDssePayload,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := verifySourceURI(tt.prov, tt.sourceURI)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
+func Test_verifyBuilderID(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		prov     *intoto.ProvenanceStatement
+		id       string
+		expected error
+	}{
+		{
+			name: "id has no @",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Builder: slsa.ProvenanceBuilder{
+						ID: "some/builderID",
+					},
+				},
+			},
+			id:       "some/builderID",
+			expected: ErrorMalformedURI,
+		},
+		{
+			name: "same builderID",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Builder: slsa.ProvenanceBuilder{
+						ID: "some/builderID@v1.2.3",
+					},
+				},
+			},
+			id: "some/builderID",
+		},
+		{
+			name: "mismatch builderID",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Builder: slsa.ProvenanceBuilder{
+						ID: "tome/builderID@v1.2.3",
+					},
+				},
+			},
+			id:       "some/builderID",
+			expected: ErrorMismatchBuilderID,
+		},
+		{
+			name:     "empty builderID",
+			prov:     &intoto.ProvenanceStatement{},
+			id:       "some/builderID",
+			expected: ErrorMalformedURI,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := verifyBuilderID(tt.prov, tt.id)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}

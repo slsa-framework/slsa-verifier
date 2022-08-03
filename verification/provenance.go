@@ -34,6 +34,82 @@ func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement,
 	return
 }
 
+// Verify Builder ID in provenance statement.
+func verifyBuilderID(prov *intoto.ProvenanceStatement, builderID string) error {
+	id, err := sourceFromURI(prov.Predicate.Builder.ID)
+	if err != nil {
+		return err
+	}
+	if !strings.EqualFold(id, builderID) {
+		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", ErrorMismatchBuilderID,
+			builderID, id)
+	}
+	return nil
+}
+
+// Verify source URI in provenance statement.
+func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string) error {
+	// Verify source from ConfigSource field.
+	source := expectedSourceURI
+	if !strings.HasPrefix(source, "git+https://") {
+		source = "git+https://" + source
+	}
+	if !strings.HasPrefix(source, "git+") {
+		source = "git+" + source
+	}
+
+	// We expect github.com URIs only.
+	if !strings.HasPrefix(source, "git+https://github.com/") {
+		return fmt.Errorf("%w: expected source github.com repository '%s'", ErrorInvalidDssePayload,
+			source)
+	}
+
+	configURI, err := sourceFromURI(prov.Predicate.Invocation.ConfigSource.URI)
+	if err != nil {
+		return err
+	}
+	if !strings.EqualFold(configURI, source) {
+		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", ErrorMismatchSource,
+			source, prov.Predicate.Invocation.ConfigSource.URI)
+	}
+
+	// Verify source from material section.
+	if len(prov.Predicate.Materials) == 0 {
+		return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no material")
+	}
+	materialURI, err := sourceFromURI(prov.Predicate.Materials[0].URI)
+	if err != nil {
+		return err
+	}
+	if !strings.EqualFold(materialURI, source) {
+		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", ErrorMismatchSource,
+			source, prov.Predicate.Materials[0].URI)
+	}
+
+	// Last, verify that both fields match.
+	// We use the full URI to match on the tag as well.
+	if !strings.EqualFold(prov.Predicate.Invocation.ConfigSource.URI, prov.Predicate.Materials[0].URI) {
+		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
+			ErrorInvalidDssePayload,
+			prov.Predicate.Invocation.ConfigSource.URI, prov.Predicate.Materials[0].URI)
+	}
+
+	return nil
+}
+
+func sourceFromURI(uri string) (string, error) {
+	if uri == "" {
+		return "", fmt.Errorf("%w: empty uri", ErrorMalformedURI)
+	}
+
+	r := strings.SplitN(uri, "@", 2)
+	if len(r) < 2 {
+		return "", fmt.Errorf("%w: %s", ErrorMalformedURI,
+			uri)
+	}
+	return r[0], nil
+}
+
 // Verify SHA256 Subject Digest from the provenance statement.
 func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) error {
 	if len(prov.Subject) == 0 {
@@ -85,32 +161,44 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, prove
 	return env, cert, nil
 }
 
-func VerifyProvenance(env *dsselib.Envelope, opts *ProvenanceOpts) error {
+func VerifyProvenance(env *dsselib.Envelope, builderID string,
+	provenanceOpts *ProvenanceOpts,
+) error {
 	prov, err := provenanceFromEnv(env)
 	if err != nil {
 		return err
 	}
 
+	// Verify Builder ID.
+	if err := verifyBuilderID(prov, builderID); err != nil {
+		return err
+	}
+
+	// Verify source.
+	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI); err != nil {
+		return err
+	}
+
 	// Verify subject digest.
-	if err := verifySha256Digest(prov, opts.ExpectedDigest); err != nil {
+	if err := verifySha256Digest(prov, provenanceOpts.ExpectedDigest); err != nil {
 		return err
 	}
 
 	// Verify the branch.
-	if err := VerifyBranch(prov, opts.ExpectedBranch); err != nil {
+	if err := VerifyBranch(prov, provenanceOpts.ExpectedBranch); err != nil {
 		return err
 	}
 
 	// Verify the tag.
-	if opts.ExpectedTag != nil {
-		if err := VerifyTag(prov, *opts.ExpectedTag); err != nil {
+	if provenanceOpts.ExpectedTag != nil {
+		if err := VerifyTag(prov, *provenanceOpts.ExpectedTag); err != nil {
 			return err
 		}
 	}
 
 	// Verify the versioned tag.
-	if opts.ExpectedVersionedTag != nil {
-		if err := VerifyVersionedTag(prov, *opts.ExpectedVersionedTag); err != nil {
+	if provenanceOpts.ExpectedVersionedTag != nil {
+		if err := VerifyVersionedTag(prov, *provenanceOpts.ExpectedVersionedTag); err != nil {
 			return err
 		}
 	}

@@ -10,10 +10,12 @@ import (
 func Test_VerifyWorkflowIdentity(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		workflow *WorkflowIdentity
-		source   string
-		err      error
+		name      string
+		workflow  *WorkflowIdentity
+		buildOpts *BuilderOpts
+		builderID string
+		source    string
+		err       error
 	}{
 		{
 			name: "invalid job workflow ref",
@@ -25,7 +27,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    errorMalformedWorkflowURI,
+			err:    ErrorMalformedURI,
 		},
 		{
 			name: "untrusted job workflow ref",
@@ -83,7 +85,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "malicious/source",
-			err:    ErrorMismatchRepository,
+			err:    ErrorMismatchSource,
 		},
 		{
 			name: "valid main ref for builder",
@@ -94,7 +96,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "malicious/source",
-			err:    ErrorMismatchRepository,
+			err:    ErrorMismatchSource,
 		},
 		{
 			name: "unexpected source",
@@ -106,7 +108,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    ErrorMismatchRepository,
+			err:    ErrorMismatchSource,
 		},
 		{
 			name: "valid workflow identity",
@@ -171,9 +173,76 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			err := VerifyWorkflowIdentity(tt.workflow, tt.source)
+			// TODO: builderID
+			_, err := VerifyWorkflowIdentity(tt.workflow, tt.buildOpts, tt.source)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			}
+		})
+	}
+}
+
+func asStringPointer(s string) *string {
+	return &s
+}
+
+func Test_verifyTrustedBuilderID(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		id       *string
+		path     string
+		expected error
+	}{
+		{
+			name: "default trusted",
+			path: trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
+		},
+		{
+			name: "valid ID for GitHub builder",
+			path: "some/repo/someBuilderID",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID"),
+		},
+		{
+			name:     "non GitHub builder ID",
+			path:     "some/repo/someBuilderID",
+			id:       asStringPointer("https://not-github.com/some/repo/someBuilderID"),
+			expected: ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "mismatch org GitHub",
+			path:     "some/repo/someBuilderID",
+			id:       asStringPointer("https://github.com/other/repo/someBuilderID"),
+			expected: ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "mismatch name GitHub",
+			path:     "some/repo/someBuilderID",
+			id:       asStringPointer("https://github.com/some/other/someBuilderID"),
+			expected: ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "mismatch id GitHub",
+			path:     "some/repo/someBuilderID",
+			id:       asStringPointer("https://github.com/some/repo/ID"),
+			expected: ErrorUntrustedReusableWorkflow,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			id, err := verifyTrustedBuilderID(tt.path, tt.id)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+			}
+			if err != nil {
+				return
+			}
+			expectedID := "https://github.com/" + tt.path
+			if id != expectedID {
+				t.Errorf(cmp.Diff(id, expectedID))
 			}
 		})
 	}

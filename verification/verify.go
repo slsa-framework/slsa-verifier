@@ -9,8 +9,12 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 )
 
-func Verify(ctx context.Context,
-	provenance []byte, artifactHash, source string, provenanceOpts *ProvenanceOpts,
+var defaultRekorAddr = "https://rekor.sigstore.dev"
+
+func verify(ctx context.Context,
+	provenance []byte, artifactHash, source string,
+	provenanceOpts *ProvenanceOpts,
+	builderOpts *BuilderOpts,
 ) ([]byte, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
@@ -31,13 +35,15 @@ func Verify(ctx context.Context,
 	}
 
 	// Verify the workflow identity.
-	if err := VerifyWorkflowIdentity(workflowInfo, source); err != nil {
+	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
+		provenanceOpts.ExpectedSourceURI)
+	if err != nil {
 		return nil, err
 	}
 
 	/* Verify properties of the SLSA provenance. */
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := VerifyProvenance(env, provenanceOpts); err != nil {
+	if err := VerifyProvenance(env, builderID, provenanceOpts); err != nil {
 		return nil, err
 	}
 
