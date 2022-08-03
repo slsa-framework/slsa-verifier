@@ -76,6 +76,35 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			source: e2eTestRepository,
 		},
 		{
+			name: "valid main ref for e2e test - match builderID",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  e2eTestRepository,
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				Trigger:           "workflow_dispatch",
+				Issuer:            certOidcIssuer,
+			},
+			source: e2eTestRepository,
+			buildOpts: &BuilderOpts{
+				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
+			},
+		},
+		{
+			name: "valid main ref for e2e test - mismatch builderID",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  e2eTestRepository,
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				Trigger:           "workflow_dispatch",
+				Issuer:            certOidcIssuer,
+			},
+			source: e2eTestRepository,
+			buildOpts: &BuilderOpts{
+				ExpectedID: asStringPointer("some-other-builderID"),
+			},
+			err: ErrorUntrustedReusableWorkflow,
+		},
+		{
 			name: "unexpected source for e2e test",
 			workflow: &WorkflowIdentity{
 				CallerRepository:  e2eTestRepository,
@@ -120,6 +149,35 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
+		},
+		{
+			name: "valid workflow identity - match builderID",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+				Trigger:           "workflow_dispatch",
+				Issuer:            certOidcIssuer,
+			},
+			source: "asraa/slsa-on-github-test",
+			buildOpts: &BuilderOpts{
+				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
+			},
+		},
+		{
+			name: "valid workflow identity - mismatch builderID",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+				Trigger:           "workflow_dispatch",
+				Issuer:            certOidcIssuer,
+			},
+			source: "asraa/slsa-on-github-test",
+			buildOpts: &BuilderOpts{
+				ExpectedID: asStringPointer("some-other-builderID"),
+			},
+			err: ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name: "invalid workflow identity with prerelease",
@@ -168,13 +226,45 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			},
 			source: "github.com/asraa/slsa-on-github-test",
 		},
+		{
+			name: "valid workflow identity with fully qualified source - match builderID",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+				Trigger:           "workflow_dispatch",
+				Issuer:            certOidcIssuer,
+			},
+			source: "github.com/asraa/slsa-on-github-test",
+			buildOpts: &BuilderOpts{
+				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
+			},
+		},
+		{
+			name: "valid workflow identity with fully qualified source - mismatch builderID",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+				Trigger:           "workflow_dispatch",
+				Issuer:            certOidcIssuer,
+			},
+			source: "github.com/asraa/slsa-on-github-test",
+			buildOpts: &BuilderOpts{
+				ExpectedID: asStringPointer("some-other-builderID"),
+			},
+			err: ErrorUntrustedReusableWorkflow,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			// TODO: builderID
-			_, err := VerifyWorkflowIdentity(tt.workflow, tt.buildOpts, tt.source)
+			opts := tt.buildOpts
+			if opts == nil {
+				opts = &BuilderOpts{}
+			}
+			_, err := VerifyWorkflowIdentity(tt.workflow, opts, tt.source)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
