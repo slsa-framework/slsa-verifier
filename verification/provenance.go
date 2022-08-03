@@ -168,16 +168,14 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, prove
 	return env, cert, nil
 }
 
-func VerifyProvenance(env *dsselib.Envelope, builderID string,
-	provenanceOpts *ProvenanceOpts,
-) error {
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *ProvenanceOpts) error {
 	prov, err := provenanceFromEnv(env)
 	if err != nil {
 		return err
 	}
 
 	// Verify Builder ID.
-	if err := verifyBuilderID(prov, builderID); err != nil {
+	if err := verifyBuilderID(prov, *provenanceOpts.ExpectedBuilderID); err != nil {
 		return err
 	}
 
