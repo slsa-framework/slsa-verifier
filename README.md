@@ -30,7 +30,7 @@ $ slsa-verifier <options>
 #### Option 2: Compile manually
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v1.2.1
+$ cd slsa-verifier && git checkout v1.2.0
 $ go run . <options>
 ```
 
