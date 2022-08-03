@@ -9,9 +9,7 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 )
 
-var defaultRekorAddr = "https://rekor.sigstore.dev"
-
-func verify(ctx context.Context,
+func Verify(ctx context.Context,
 	provenance []byte, artifactHash, source string,
 	provenanceOpts *ProvenanceOpts,
 	builderOpts *BuilderOpts,
@@ -43,7 +41,8 @@ func verify(ctx context.Context,
 
 	/* Verify properties of the SLSA provenance. */
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := VerifyProvenance(env, builderID, provenanceOpts); err != nil {
+	provenanceOpts.ExpectedBuilderID = &builderID
+	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, err
 	}
 
