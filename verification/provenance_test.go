@@ -244,6 +244,25 @@ func Test_verifySourceURI(t *testing.T) {
 			sourceURI: "github.com/some/repo",
 		},
 		{
+			name: "match source no repo",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Invocation: slsa.ProvenanceInvocation{
+						ConfigSource: slsa.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsa.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+				},
+			},
+			sourceURI: "some/repo",
+			expected:  ErrorMalformedURI,
+		},
+		{
 			name: "mismatch materials configSource tag",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{
@@ -317,7 +336,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://not-github.com/some/repo",
-			expected:  ErrorInvalidDssePayload,
+			expected:  ErrorMalformedURI,
 		},
 	}
 	for _, tt := range tests {

@@ -66,7 +66,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 
 	// We expect github.com URIs only.
 	if !strings.HasPrefix(source, "git+https://github.com/") {
-		return fmt.Errorf("%w: expected source github.com repository '%s'", ErrorInvalidDssePayload,
+		return fmt.Errorf("%w: expected source github.com repository '%s'", ErrorMalformedURI,
 			source)
 	}
 
