@@ -10,7 +10,7 @@ import (
 )
 
 func Verify(ctx context.Context,
-	provenance []byte, artifactHash, source string,
+	provenance []byte, artifactHash string,
 	provenanceOpts *ProvenanceOpts,
 	builderOpts *BuilderOpts,
 ) ([]byte, error) {

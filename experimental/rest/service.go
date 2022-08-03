@@ -20,6 +20,7 @@ type v1Query struct {
 	ArtifactHash string `json:"artifactHash"`
 	DsseEnvelope string `json:"provenanceContent"`
 	// Optional fields.
+	BuilderID       *string `json:"builderID"`
 	Tag             *string `json:"tag"`
 	Branch          *string `json:"branch"`
 	VersionedTag    *string `json:"versionedTag"`
@@ -113,15 +114,20 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 		branch = *query.Branch
 	}
 	provenanceOpts := &verification.ProvenanceOpts{
+		ExpectedSourceURI:    query.Source,
 		ExpectedBranch:       branch,
 		ExpectedDigest:       query.ArtifactHash,
 		ExpectedVersionedTag: query.VersionedTag,
 		ExpectedTag:          query.Tag,
 	}
 
+	builderOpts := &verification.BuilderOpts{
+		ExpectedID: query.BuilderID,
+	}
+
 	ctx := context.Background()
 	p, err := verification.Verify(ctx, []byte(query.DsseEnvelope),
-		query.ArtifactHash, query.Source, provenanceOpts)
+		query.ArtifactHash, provenanceOpts, builderOpts)
 	if err != nil {
 		return results.withError(err)
 	}
@@ -164,6 +170,8 @@ func (q *v1Query) validate() error {
 	if q.Tag != nil && q.VersionedTag != nil {
 		return fmt.Errorf("%w: tag and versionedTag are mutually exclusive", errInvalid)
 	}
+
+	// BuilderID is optional, so not additional validation needed.
 
 	return nil
 }

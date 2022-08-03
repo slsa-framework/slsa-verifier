@@ -116,6 +116,5 @@ func runVerify(artifactPath, provenancePath, source, branch string, builderID, p
 
 	ctx := context.Background()
 	return verification.Verify(ctx, provenance,
-		artifactHash,
-		source, provenanceOpts, builderOpts)
+		artifactHash, provenanceOpts, builderOpts)
 }
