@@ -1,4 +1,4 @@
-package verification
+package gha
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
 func provenanceFromBytes(payload []byte) (*intoto.ProvenanceStatement, error) {
@@ -30,25 +32,25 @@ func Test_VerifySha256Subject(t *testing.T) {
 			name:         "invalid dsse: not SLSA predicate",
 			path:         "./testdata/dsse-not-slsa.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     ErrorInvalidDssePayload,
+			expected:     serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name:         "invalid dsse: nil subject",
 			path:         "./testdata/dsse-no-subject.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     ErrorInvalidDssePayload,
+			expected:     serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name:         "invalid dsse: no sha256 subject digest",
 			path:         "./testdata/dsse-no-subject-hash.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     ErrorInvalidDssePayload,
+			expected:     serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name:         "mismatched artifact hash with env",
 			path:         "./testdata/dsse-valid.intoto.jsonl",
 			artifactHash: "1ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     errorMismatchHash,
+			expected:     serrors.ErrorMismatchHash,
 		},
 		{
 			name:         "valid entry",
@@ -72,7 +74,7 @@ func Test_VerifySha256Subject(t *testing.T) {
 			name:         "multiple subjects invalid hash",
 			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
 			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     errorMismatchHash,
+			expected:     serrors.ErrorMismatchHash,
 		},
 	}
 	for _, tt := range tests {
@@ -117,7 +119,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 		{
 			name: "empty materials",
@@ -131,7 +133,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorInvalidDssePayload,
+			expected:  serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name: "empty configSource",
@@ -145,7 +147,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 		{
 			name: "empty uri materials",
@@ -159,7 +161,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 		{
 			name: "no tag uri materials",
@@ -173,7 +175,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 		{
 			name: "no tag uri configSource",
@@ -187,7 +189,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 		{
 			name: "match source",
@@ -260,7 +262,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 		{
 			name: "mismatch materials configSource tag",
@@ -279,7 +281,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorInvalidDssePayload,
+			expected:  serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name: "mismatch materials configSource org",
@@ -298,7 +300,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMismatchSource,
+			expected:  serrors.ErrorMismatchSource,
 		},
 		{
 			name: "mismatch materials configSource name",
@@ -317,7 +319,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
-			expected:  ErrorMismatchSource,
+			expected:  serrors.ErrorMismatchSource,
 		},
 		{
 			name: "not github.com repo",
@@ -336,7 +338,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://not-github.com/some/repo",
-			expected:  ErrorMalformedURI,
+			expected:  serrors.ErrorMalformedURI,
 		},
 	}
 	for _, tt := range tests {
@@ -370,7 +372,7 @@ func Test_verifyBuilderID(t *testing.T) {
 				},
 			},
 			id:       "some/builderID",
-			expected: ErrorMalformedURI,
+			expected: serrors.ErrorMalformedURI,
 		},
 		{
 			name: "same builderID",
@@ -399,7 +401,7 @@ func Test_verifyBuilderID(t *testing.T) {
 			name:     "empty builderID",
 			prov:     &intoto.ProvenanceStatement{},
 			id:       "some/builderID",
-			expected: ErrorMalformedURI,
+			expected: serrors.ErrorMalformedURI,
 		},
 	}
 	for _, tt := range tests {
@@ -436,7 +438,7 @@ func Test_VerifyBranch(t *testing.T) {
 		{
 			name:     "invalid ref type",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: ErrorInvalidDssePayload,
+			expected: serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name:   "tag branch2 push trigger",
@@ -492,7 +494,7 @@ func Test_VerifyTag(t *testing.T) {
 		{
 			name:     "invalid ref type",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: ErrorInvalidDssePayload,
+			expected: serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name: "tag vslsa1",
@@ -551,7 +553,7 @@ func Test_VerifyVersionedTag(t *testing.T) {
 		{
 			name:     "invalid ref",
 			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: ErrorInvalidDssePayload,
+			expected: serrors.ErrorInvalidDssePayload,
 			tag:      "v1.2.3",
 		},
 		{

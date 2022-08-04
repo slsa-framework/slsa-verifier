@@ -1,10 +1,12 @@
-package verification
+package gha
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
 func Test_VerifyWorkflowIdentity(t *testing.T) {
@@ -15,7 +17,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 		buildOpts *BuilderOpts
 		builderID string
 		source    string
-		err       error
+		err       serrors.Error
 	}{
 		{
 			name: "invalid job workflow ref",
@@ -27,7 +29,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    ErrorMalformedURI,
+			err:    serrors.ErrorMalformedURI,
 		},
 		{
 			name: "untrusted job workflow ref",
@@ -39,7 +41,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    ErrorUntrustedReusableWorkflow,
+			err:    serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name: "untrusted job workflow ref for general repos",
@@ -51,7 +53,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            "https://bad.issuer.com",
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
+			err:    serrors.ErrorInvalidRef,
 		},
 		{
 			name: "valid main ref for trusted builder",
@@ -102,7 +104,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
 			},
-			err: ErrorUntrustedReusableWorkflow,
+			err: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name: "unexpected source for e2e test",
@@ -114,7 +116,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "malicious/source",
-			err:    ErrorMismatchSource,
+			err:    serrors.ErrorMismatchSource,
 		},
 		{
 			name: "valid main ref for builder",
@@ -125,7 +127,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "malicious/source",
-			err:    ErrorMismatchSource,
+			err:    serrors.ErrorMismatchSource,
 		},
 		{
 			name: "unexpected source",
@@ -137,7 +139,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    ErrorMismatchSource,
+			err:    serrors.ErrorMismatchSource,
 		},
 		{
 			name: "valid workflow identity",
@@ -177,7 +179,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
 			},
-			err: ErrorUntrustedReusableWorkflow,
+			err: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name: "invalid workflow identity with prerelease",
@@ -189,7 +191,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
+			err:    serrors.ErrorInvalidRef,
 		},
 		{
 			name: "invalid workflow identity with build",
@@ -201,7 +203,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
+			err:    serrors.ErrorInvalidRef,
 		},
 		{
 			name: "invalid workflow identity with metadata",
@@ -213,7 +215,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			err:    errorInvalidRef,
+			err:    serrors.ErrorInvalidRef,
 		},
 		{
 			name: "valid workflow identity with fully qualified source",
@@ -253,7 +255,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
 			},
-			err: ErrorUntrustedReusableWorkflow,
+			err: serrors.ErrorUntrustedReusableWorkflow,
 		},
 	}
 	for _, tt := range tests {
@@ -266,7 +268,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			}
 			_, err := VerifyWorkflowIdentity(tt.workflow, opts, tt.source)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.serrors.Errorf(cmp.Diff(err, tt.err, cmpopts.Equateserrors.Errors()))
 			}
 		})
 	}
@@ -282,7 +284,7 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		name     string
 		id       *string
 		path     string
-		expected error
+		expected serrors.Error
 	}{
 		{
 			name: "default trusted",
@@ -297,25 +299,25 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			name:     "non GitHub builder ID",
 			path:     "some/repo/someBuilderID",
 			id:       asStringPointer("https://not-github.com/some/repo/someBuilderID"),
-			expected: ErrorUntrustedReusableWorkflow,
+			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name:     "mismatch org GitHub",
 			path:     "some/repo/someBuilderID",
 			id:       asStringPointer("https://github.com/other/repo/someBuilderID"),
-			expected: ErrorUntrustedReusableWorkflow,
+			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name:     "mismatch name GitHub",
 			path:     "some/repo/someBuilderID",
 			id:       asStringPointer("https://github.com/some/other/someBuilderID"),
-			expected: ErrorUntrustedReusableWorkflow,
+			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name:     "mismatch id GitHub",
 			path:     "some/repo/someBuilderID",
 			id:       asStringPointer("https://github.com/some/repo/ID"),
-			expected: ErrorUntrustedReusableWorkflow,
+			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 	}
 	for _, tt := range tests {
@@ -325,14 +327,14 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 
 			id, err := verifyTrustedBuilderID(tt.path, tt.id)
 			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.serrors.Errorf(cmp.Diff(err, tt.expected, cmpopts.Equateserrors.Errors()))
 			}
 			if err != nil {
 				return
 			}
 			expectedID := "https://github.com/" + tt.path
 			if id != expectedID {
-				t.Errorf(cmp.Diff(id, expectedID))
+				t.serrors.Errorf(cmp.Diff(id, expectedID))
 			}
 		})
 	}
@@ -344,7 +346,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		name       string
 		callerRepo string
 		builderRef string
-		expected   error
+		expected   serrors.Error
 	}{
 		// Trusted repo.
 		{
@@ -361,31 +363,31 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			name:       "no patch semver for other builder",
 			callerRepo: trustedBuilderRepository,
 			builderRef: "refs/tags/v1.2",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "no min semver for builder",
 			callerRepo: trustedBuilderRepository,
 			builderRef: "refs/tags/v1",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with prerelease for builder",
 			callerRepo: trustedBuilderRepository,
 			builderRef: "refs/tags/v1.2.3-alpha",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build for builder",
 			callerRepo: trustedBuilderRepository,
 			builderRef: "refs/tags/v1.2.3+123",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build/prerelease for builder",
 			callerRepo: trustedBuilderRepository,
 			builderRef: "refs/tags/v1.2.3-alpha+123",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		// E2e tests repo.
 		{
@@ -402,38 +404,38 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			name:       "no patch semver for test repo",
 			callerRepo: e2eTestRepository,
 			builderRef: "refs/tags/v1.2",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "no min semver for test repo",
 			callerRepo: e2eTestRepository,
 			builderRef: "refs/tags/v1",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with prerelease for test repo",
 			callerRepo: e2eTestRepository,
 			builderRef: "refs/tags/v1.2.3-alpha",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build for test repo",
 			callerRepo: e2eTestRepository,
 			builderRef: "refs/tags/v1.2.3+123",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build/prerelease for test repo",
 			callerRepo: e2eTestRepository,
 			builderRef: "refs/tags/v1.2.3-alpha+123",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		// Other repos.
 		{
 			name:       "main not allowed for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/heads/main",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver for other repos",
@@ -444,31 +446,31 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			name:       "no patch semver for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "no min semver for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with prerelease for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2.3-alpha",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2.3+123",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build/prerelease for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2.3-alpha+123",
-			expected:   errorInvalidRef,
+			expected:   serrors.ErrorInvalidRef,
 		},
 	}
 	for _, tt := range tests {
@@ -482,7 +484,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
 			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.serrors.Errorf(cmp.Diff(err, tt.expected, cmpopts.Equateserrors.Errors()))
 			}
 		})
 	}

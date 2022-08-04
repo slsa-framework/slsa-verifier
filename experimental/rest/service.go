@@ -9,7 +9,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/slsa-framework/slsa-verifier/verification"
+	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers"
 )
 
 var errInvalid = errors.New("invalid")
@@ -113,7 +114,7 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 	if query.Branch != nil {
 		branch = *query.Branch
 	}
-	provenanceOpts := &verification.ProvenanceOpts{
+	provenanceOpts := &options.ProvenanceOpts{
 		ExpectedSourceURI:    query.Source,
 		ExpectedBranch:       branch,
 		ExpectedDigest:       query.ArtifactHash,
@@ -121,12 +122,12 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 		ExpectedTag:          query.Tag,
 	}
 
-	builderOpts := &verification.BuilderOpts{
+	builderOpts := &options.BuilderOpts{
 		ExpectedID: query.BuilderID,
 	}
 
 	ctx := context.Background()
-	p, err := verification.Verify(ctx, []byte(query.DsseEnvelope),
+	p, err := verifiers.Verify(ctx, []byte(query.DsseEnvelope),
 		query.ArtifactHash, provenanceOpts, builderOpts)
 	if err != nil {
 		return results.withError(err)

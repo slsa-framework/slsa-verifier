@@ -1,4 +1,4 @@
-package verification
+package gha
 
 import (
 	"context"
@@ -14,6 +14,9 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	"github.com/slsa-framework/slsa-verifier/options"
 )
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
@@ -25,11 +28,11 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement, err error) {
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "decoding payload")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "decoding payload")
 	}
 	prov = &intoto.ProvenanceStatement{}
 	if err := json.Unmarshal(pyld, prov); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "unmarshalling json")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "unmarshalling json")
 	}
 	return
 }
@@ -66,7 +69,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 
 	// We expect github.com URIs only.
 	if !strings.HasPrefix(source, "git+https://github.com/") {
-		return fmt.Errorf("%w: expected source github.com repository '%s'", ErrorMalformedURI,
+		return fmt.Errorf("%w: expected source github.com repository '%s'", serrors.ErrorMalformedURI,
 			source)
 	}
 
@@ -82,7 +85,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 
 	// Verify source from material section.
 	if len(prov.Predicate.Materials) == 0 {
-		return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no material")
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
 	}
 	materialURI, err := sourceFromURI(prov.Predicate.Materials[0].URI)
 	if err != nil {
@@ -97,7 +100,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	// We use the full URI to match on the tag as well.
 	if prov.Predicate.Invocation.ConfigSource.URI != prov.Predicate.Materials[0].URI {
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
-			ErrorInvalidDssePayload,
+			serrors.ErrorInvalidDssePayload,
 			prov.Predicate.Invocation.ConfigSource.URI, prov.Predicate.Materials[0].URI)
 	}
 
@@ -106,12 +109,12 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 
 func sourceFromURI(uri string) (string, error) {
 	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", ErrorMalformedURI)
+		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
 	r := strings.SplitN(uri, "@", 2)
 	if len(r) < 2 {
-		return "", fmt.Errorf("%w: %s", ErrorMalformedURI,
+		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
 	return r[0], nil
@@ -120,14 +123,14 @@ func sourceFromURI(uri string) (string, error) {
 // Verify SHA256 Subject Digest from the provenance statement.
 func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) error {
 	if len(prov.Subject) == 0 {
-		return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no subjects")
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
 	}
 
 	for _, subject := range prov.Subject {
 		digestSet := subject.Digest
 		hash, exists := digestSet["sha256"]
 		if !exists {
-			return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no sha256 subject digest")
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no sha256 subject digest")
 		}
 
 		if hash != expectedHash {
@@ -135,7 +138,7 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 		}
 	}
 
-	return fmt.Errorf("expected hash '%s' not found: %w", expectedHash, errorMismatchHash)
+	return fmt.Errorf("expected hash '%s' not found: %w", expectedHash, serrors.ErrorMismatchHash)
 }
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
@@ -168,7 +171,7 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, prove
 	return env, cert, nil
 }
 
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *ProvenanceOpts) error {
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
 	prov, err := provenanceFromEnv(env)
 	if err != nil {
 		return err
@@ -219,7 +222,7 @@ func VerifyBranch(prov *intoto.ProvenanceStatement, expectedBranch string) error
 
 	expectedBranch = "refs/heads/" + expectedBranch
 	if !strings.EqualFold(branch, expectedBranch) {
-		return fmt.Errorf("expected branch '%s', got '%s': %w", expectedBranch, branch, ErrorMismatchBranch)
+		return fmt.Errorf("expected branch '%s', got '%s': %w", expectedBranch, branch, serrors.ErrorMismatchBranch)
 	}
 
 	return nil
@@ -233,7 +236,7 @@ func VerifyTag(prov *intoto.ProvenanceStatement, expectedTag string) error {
 
 	expectedTag = "refs/tags/" + expectedTag
 	if !strings.EqualFold(tag, expectedTag) {
-		return fmt.Errorf("expected tag '%s', got '%s': %w", expectedTag, tag, ErrorMismatchTag)
+		return fmt.Errorf("expected tag '%s', got '%s': %w", expectedTag, tag, serrors.ErrorMismatchTag)
 	}
 
 	return nil
@@ -242,7 +245,7 @@ func VerifyTag(prov *intoto.ProvenanceStatement, expectedTag string) error {
 func VerifyVersionedTag(prov *intoto.ProvenanceStatement, expectedTag string) error {
 	// Validate and canonicalize the provenance tag.
 	if !semver.IsValid(expectedTag) {
-		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
+		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
 	}
 
 	// Retrieve, validate and canonicalize the provenance tag.
@@ -255,7 +258,7 @@ func VerifyVersionedTag(prov *intoto.ProvenanceStatement, expectedTag string) er
 	}
 	semTag := semver.Canonical(strings.TrimPrefix(tag, "refs/tags/"))
 	if !semver.IsValid(semTag) {
-		return fmt.Errorf("%s: %w", expectedTag, ErrorInvalidSemver)
+		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
 	}
 
 	// Major should always be the same.
@@ -263,7 +266,7 @@ func VerifyVersionedTag(prov *intoto.ProvenanceStatement, expectedTag string) er
 	major := semver.Major(semTag)
 	if major != expectedMajor {
 		return fmt.Errorf("%w: major version expected '%s', got '%s'",
-			ErrorMismatchVersionedTag, expectedMajor, major)
+			serrors.ErrorMismatchVersionedTag, expectedMajor, major)
 	}
 
 	expectedMinor, err := minorVersion(expectedTag)
@@ -276,7 +279,7 @@ func VerifyVersionedTag(prov *intoto.ProvenanceStatement, expectedTag string) er
 
 		if minor != expectedMinor {
 			return fmt.Errorf("%w: minor version expected '%s', got '%s'",
-				ErrorMismatchVersionedTag, expectedMinor, minor)
+				serrors.ErrorMismatchVersionedTag, expectedMinor, minor)
 		}
 	}
 
@@ -290,7 +293,7 @@ func VerifyVersionedTag(prov *intoto.ProvenanceStatement, expectedTag string) er
 
 		if patch != expectedPatch {
 			return fmt.Errorf("%w: patch version expected '%s', got '%s'",
-				ErrorMismatchVersionedTag, expectedPatch, patch)
+				serrors.ErrorMismatchVersionedTag, expectedPatch, patch)
 		}
 	}
 
@@ -313,7 +316,7 @@ func patchVersion(v string) (string, error) {
 func extractFromVersion(v string, i int) (string, error) {
 	parts := strings.Split(v, ".")
 	if len(parts) <= i {
-		return "", fmt.Errorf("%s: %w", v, ErrorInvalidSemver)
+		return "", fmt.Errorf("%s: %w", v, serrors.ErrorInvalidSemver)
 	}
 	return parts[i], nil
 }
@@ -321,13 +324,13 @@ func extractFromVersion(v string, i int) (string, error) {
 func getAsString(environment map[string]interface{}, field string) (string, error) {
 	value, ok := environment[field]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
 			fmt.Sprintf("environment type for %s", field))
 	}
 
 	i, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "environment type string")
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "environment type string")
 	}
 	return i, nil
 }
@@ -335,12 +338,12 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
 	eventPayload, ok := environment["github_event_payload"]
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type event payload")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type event payload")
 	}
 
 	payload, ok := eventPayload.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type payload")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type payload")
 	}
 
 	return payload, nil
@@ -395,12 +398,12 @@ func getTargetCommittish(environment map[string]interface{}) (string, error) {
 	// For a release event, we look for release.target_commitish.
 	releasePayload, ok := payload["release"]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "release absent from payload")
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "release absent from payload")
 	}
 
 	release, ok := releasePayload.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type releasePayload")
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type releasePayload")
 	}
 
 	branch, err := getAsString(release, "target_commitish")
@@ -426,7 +429,7 @@ func getBranchForTag(environment map[string]interface{}) (string, error) {
 func getTag(prov *intoto.ProvenanceStatement) (string, error) {
 	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type")
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
 
 	refType, err := getAsString(environment, "github_ref_type")
@@ -440,7 +443,7 @@ func getTag(prov *intoto.ProvenanceStatement) (string, error) {
 	case "tag":
 		return getAsString(environment, "github_ref")
 	default:
-		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }
@@ -449,7 +452,7 @@ func getTag(prov *intoto.ProvenanceStatement) (string, error) {
 func getBranch(prov *intoto.ProvenanceStatement) (string, error) {
 	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "parameters type")
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
 
 	refType, err := getAsString(environment, "github_ref_type")
@@ -463,7 +466,7 @@ func getBranch(prov *intoto.ProvenanceStatement) (string, error) {
 	case "tag":
 		return getBranchForTag(environment)
 	default:
-		return "", fmt.Errorf("%w: %s %s", ErrorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }

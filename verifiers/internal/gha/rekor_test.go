@@ -1,4 +1,4 @@
-package verification
+package gha
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
 type searchResult struct {
@@ -46,7 +48,7 @@ func Test_GetRekorEntries(t *testing.T) {
 			res: searchResult{
 				err: index.NewSearchIndexDefault(500),
 			},
-			expected: ErrorRekorSearch,
+			expected: serrors.ErrorRekorSearch,
 		},
 		{
 			name:         "no rekor entries found",
@@ -57,7 +59,7 @@ func Test_GetRekorEntries(t *testing.T) {
 					Payload: []string{},
 				},
 			},
-			expected: ErrorRekorSearch,
+			expected: serrors.ErrorRekorSearch,
 		},
 		{
 			name:         "valid rekor entries found",

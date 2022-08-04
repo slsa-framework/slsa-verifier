@@ -10,7 +10,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/verification"
+	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers"
 )
 
 var (
@@ -102,7 +103,7 @@ func runVerify(artifactPath, provenancePath, source, branch string, builderID, p
 	}
 	artifactHash := hex.EncodeToString(h.Sum(nil))
 
-	provenanceOpts := &verification.ProvenanceOpts{
+	provenanceOpts := &options.ProvenanceOpts{
 		ExpectedSourceURI:    source,
 		ExpectedBranch:       branch,
 		ExpectedDigest:       artifactHash,
@@ -110,11 +111,11 @@ func runVerify(artifactPath, provenancePath, source, branch string, builderID, p
 		ExpectedTag:          ptag,
 	}
 
-	builderOpts := &verification.BuilderOpts{
+	builderOpts := &options.BuilderOpts{
 		ExpectedID: builderID,
 	}
 
 	ctx := context.Background()
-	return verification.Verify(ctx, provenance,
+	return verifiers.Verify(ctx, provenance,
 		artifactHash, provenanceOpts, builderOpts)
 }

@@ -1,18 +1,42 @@
-package verification
+package gha
 
 import (
 	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
+
+	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/register"
 )
 
-func Verify(ctx context.Context,
+const VerifierName = "GHA"
+
+//nolint:gochecknoinits
+func init() {
+	register.RegisterVerifier(VerifierName, GHAVerifierNew())
+}
+
+type GHAVerifier struct{}
+
+func GHAVerifierNew() *GHAVerifier {
+	return &GHAVerifier{}
+}
+
+// Match a BuilderID.
+func (v *GHAVerifier) Match(builderID string) bool {
+	// This builder only supports builders defined on GitHub.
+	return strings.HasPrefix(builderID, "https://github.com/")
+}
+
+// Verify provenance.
+func (v *GHAVerifier) Verify(ctx context.Context,
 	provenance []byte, artifactHash string,
-	provenanceOpts *ProvenanceOpts,
-	builderOpts *BuilderOpts,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
 ) ([]byte, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {

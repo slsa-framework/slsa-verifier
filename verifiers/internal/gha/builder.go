@@ -1,4 +1,4 @@
-package verification
+package gha
 
 import (
 	"crypto/x509"
@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"golang.org/x/mod/semver"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	"github.com/slsa-framework/slsa-verifier/options"
 )
 
 var (
@@ -22,12 +25,12 @@ var defaultTrustedReusableWorkflows = map[string]bool{
 
 // VerifyWorkflowIdentity verifies the signing certificate information
 func VerifyWorkflowIdentity(id *WorkflowIdentity,
-	builderOpts *BuilderOpts, source string,
+	builderOpts *options.BuilderOpts, source string,
 ) (string, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return "", fmt.Errorf("%w: workflow uri: %s", ErrorMalformedURI, id.JobWobWorkflowRef)
+		return "", fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.JobWobWorkflowRef)
 	}
 
 	// Trusted workflow verification by name.
@@ -52,7 +55,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	expectedSource := strings.TrimPrefix(source, "git+https://")
 	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
 	if !strings.EqualFold(id.CallerRepository, expectedSource) {
-		return "", fmt.Errorf("%w: expected source '%s', got '%s'", ErrorMismatchSource,
+		return "", fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
 			expectedSource, id.CallerRepository)
 	}
 
@@ -63,14 +66,14 @@ func verifyTrustedBuilderID(path string, builderID *string) (string, error) {
 	// No builder ID provided by user: use the default trusted workflows.
 	if builderID == nil || *builderID == "" {
 		if _, ok := defaultTrustedReusableWorkflows[path]; !ok {
-			return "", fmt.Errorf("%w: %s", ErrorUntrustedReusableWorkflow, path)
+			return "", fmt.Errorf("%w: %s", serrors.ErrorUntrustedReusableWorkflow, path)
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
 		url := "https://github.com/" + path
 		if !strings.EqualFold(url, *builderID) {
-			return "", fmt.Errorf("%w: expected buildID '%s', got '%s'", ErrorUntrustedReusableWorkflow,
+			return "", fmt.Errorf("%w: expected buildID '%s', got '%s'", serrors.ErrorUntrustedReusableWorkflow,
 				*builderID, url)
 		}
 	}
@@ -89,7 +92,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	}
 
 	if !strings.HasPrefix(ref, "refs/tags/") {
-		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", errorInvalidRef, ref)
+		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", serrors.ErrorInvalidRef, ref)
 	}
 
 	// Valid semver of the form vX.Y.Z with no metadata.
@@ -98,7 +101,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 		len(strings.Split(pin, ".")) == 3 &&
 		semver.Prerelease(pin) == "" &&
 		semver.Build(pin) == "") {
-		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", errorInvalidRef, pin)
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
 	}
 	return nil
 }
