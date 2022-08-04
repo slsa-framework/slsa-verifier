@@ -129,7 +129,7 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no sha256 subject digest")
 		}
 
-		if hash != expectedHash {
+		if hash == expectedHash {
 			return nil
 		}
 	}
