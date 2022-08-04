@@ -39,6 +39,7 @@ type v1Result struct {
 	Version         uint       `json:"version"`
 	Error           *string    `json:"error,omitempty"`
 	Validation      validation `json:"validation"`
+	BuilderID       string     `json:"builderID"`
 	IntotoStatement *string    `json:"provenanceContent,omitempty"`
 }
 
@@ -80,6 +81,11 @@ func (r *v1Result) withError(e error) *v1Result {
 
 func (r *v1Result) withValidation(v validation) *v1Result {
 	r.Validation = v
+	return r
+}
+
+func (r *v1Result) withBuilderID(id string) *v1Result {
+	r.BuilderID = id
 	return r
 }
 
@@ -127,7 +133,7 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 	}
 
 	ctx := context.Background()
-	p, err := verifiers.Verify(ctx, []byte(query.DsseEnvelope),
+	p, builderID, err := verifiers.Verify(ctx, []byte(query.DsseEnvelope),
 		query.ArtifactHash, provenanceOpts, builderOpts)
 	if err != nil {
 		return results.withError(err)
@@ -137,7 +143,7 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 		results = results.withIntotoStatement(p)
 	}
 
-	return results.withValidation(validationSuccess)
+	return results.withBuilderID(builderID).withValidation(validationSuccess)
 }
 
 func queryFromString(content []byte) (*v1Query, error) {

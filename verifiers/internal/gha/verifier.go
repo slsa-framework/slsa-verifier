@@ -28,7 +28,7 @@ func GHAVerifierNew() *GHAVerifier {
 
 // Match a BuilderID.
 func (v *GHAVerifier) Match(builderID string) bool {
-	// This builder only supports builders defined on GitHub.
+	// This verifier only supports builders defined on GitHub.
 	return strings.HasPrefix(builderID, "https://github.com/")
 }
 
@@ -37,42 +37,43 @@ func (v *GHAVerifier) Verify(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, error) {
+) ([]byte, string, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	/* Verify signature on the intoto attestation. */
 	env, cert, err := VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Verify the workflow identity.
 	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
 		provenanceOpts.ExpectedSourceURI)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	/* Verify properties of the SLSA provenance. */
 	// Unpack and verify info in the provenance, including the Subject Digest.
 	provenanceOpts.ExpectedBuilderID = &builderID
 	if err := VerifyProvenance(env, provenanceOpts); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
 		workflowInfo.JobWobWorkflowRef,
 		workflowInfo.CallerHash)
 	// Return verified provenance.
-	return base64.StdEncoding.DecodeString(env.Payload)
+	r, err := base64.StdEncoding.DecodeString(env.Payload)
+	return r, builderID, err
 }

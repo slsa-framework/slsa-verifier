@@ -17,7 +17,7 @@ type SLSAVerifier interface {
 		provenance []byte, artifactHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
-	) ([]byte, error)
+	) ([]byte, string, error)
 }
 
 func RegisterVerifier(name string, verifier SLSAVerifier) {

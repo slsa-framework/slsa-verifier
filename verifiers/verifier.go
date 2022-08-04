@@ -15,8 +15,9 @@ func Verify(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, error) {
-	// If a builder is passed as entry, find the right verifier.
+) ([]byte, string, error) {
+	// If user provids a builderID, find the right verifier
+	// based on its ID.
 	if builderOpts.ExpectedID != nil &&
 		*builderOpts.ExpectedID != "" {
 		for _, v := range register.SLSAVerifiers {
@@ -26,7 +27,7 @@ func Verify(ctx context.Context,
 			}
 		}
 		// No builder found.
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorVerifierNotSupported, *builderOpts.ExpectedID)
+		return nil, "", fmt.Errorf("%w: %s", serrors.ErrorVerifierNotSupported, *builderOpts.ExpectedID)
 	}
 
 	// By default, try the GHA builders.

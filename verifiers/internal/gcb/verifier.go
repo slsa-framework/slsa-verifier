@@ -23,7 +23,7 @@ func GCBVerifierNew() *GCBVerifier {
 
 // Match a BuilderID.
 func (v *GCBVerifier) Match(builderID string) bool {
-	// This builder only supports builders defined on GitHub.
+	// This verifier only supports the GCB builders.
 	return strings.HasPrefix(builderID, "https://cloudbuild.googleapis.com/GoogleHostedWorker@")
 }
 
@@ -32,6 +32,6 @@ func (v *GCBVerifier) Verify(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, error) {
-	return nil, nil
+) ([]byte, string, error) {
+	return nil, "todo", nil
 }
