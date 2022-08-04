@@ -40,7 +40,7 @@ func verifyBuilderID(prov *intoto.ProvenanceStatement, builderID string) error {
 	if err != nil {
 		return err
 	}
-	if !strings.EqualFold(id, builderID) {
+	if id != builderID {
 		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", ErrorMismatchBuilderID,
 			builderID, id)
 	}
@@ -75,7 +75,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	if err != nil {
 		return err
 	}
-	if !strings.EqualFold(configURI, source) {
+	if configURI != source {
 		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", ErrorMismatchSource,
 			source, prov.Predicate.Invocation.ConfigSource.URI)
 	}
@@ -88,14 +88,14 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	if err != nil {
 		return err
 	}
-	if !strings.EqualFold(materialURI, source) {
+	if materialURI != source {
 		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", ErrorMismatchSource,
 			source, prov.Predicate.Materials[0].URI)
 	}
 
 	// Last, verify that both fields match.
 	// We use the full URI to match on the tag as well.
-	if !strings.EqualFold(prov.Predicate.Invocation.ConfigSource.URI, prov.Predicate.Materials[0].URI) {
+	if prov.Predicate.Invocation.ConfigSource.URI != prov.Predicate.Materials[0].URI {
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			ErrorInvalidDssePayload,
 			prov.Predicate.Invocation.ConfigSource.URI, prov.Predicate.Materials[0].URI)
@@ -130,7 +130,7 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 			return fmt.Errorf("%w: %s", ErrorInvalidDssePayload, "no sha256 subject digest")
 		}
 
-		if strings.EqualFold(hash, expectedHash) {
+		if hash != expectedHash {
 			return nil
 		}
 	}
