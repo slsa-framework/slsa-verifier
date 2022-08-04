@@ -16,5 +16,5 @@ var (
 	ErrorInvalidRef                = errors.New("invalid ref")
 	ErrorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
 	ErrorNoValidRekorEntries       = errors.New("could not find a matching valid signature entry")
-	ErrorVerifierNotSupported      = errors.New("no verifier found for builder")
+	ErrorVerifierNotSupported      = errors.New("no verifier support the builder")
 )
