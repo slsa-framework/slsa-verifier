@@ -406,6 +406,7 @@ func Test_verifyBuilderID(t *testing.T) {
 				},
 			},
 			id: "some/builderID@v1.2.4",
+			// TODO(#189): this should fail.
 		},
 		{
 			name: "mismatch builderID",
