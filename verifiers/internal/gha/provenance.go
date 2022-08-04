@@ -75,7 +75,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 		return err
 	}
 	if configURI != source {
-		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", ErrorMismatchSource,
+		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", serrors.ErrorMismatchSource,
 			source, prov.Predicate.Invocation.ConfigSource.URI)
 	}
 
@@ -88,7 +88,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 		return err
 	}
 	if materialURI != source {
-		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", ErrorMismatchSource,
+		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", serrors.ErrorMismatchSource,
 			source, prov.Predicate.Materials[0].URI)
 	}
 
