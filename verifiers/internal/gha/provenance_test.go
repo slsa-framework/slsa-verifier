@@ -386,6 +386,28 @@ func Test_verifyBuilderID(t *testing.T) {
 			id: "some/builderID",
 		},
 		{
+			name: "same builderID full match",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Builder: slsa.ProvenanceBuilder{
+						ID: "some/builderID@v1.2.3",
+					},
+				},
+			},
+			id: "some/builderID@v1.2.3",
+		},
+		{
+			name: "same builderID mismatch version",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Builder: slsa.ProvenanceBuilder{
+						ID: "some/builderID@v1.2.3",
+					},
+				},
+			},
+			id: "some/builderID@v1.2.4",
+		},
+		{
 			name: "mismatch builderID",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{

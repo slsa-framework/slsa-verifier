@@ -60,7 +60,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	}
 
 	// Return the builder and its tag.
-	return builderID + "@" + workflowPath[1], nil
+	return builderID, nil
 }
 
 func verifyTrustedBuilderID(path string, builderID *string) (string, error) {
@@ -73,7 +73,7 @@ func verifyTrustedBuilderID(path string, builderID *string) (string, error) {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
 		url := "https://github.com/" + path
-		if !strings.EqualFold(url, *builderID) {
+		if url != *builderID {
 			return "", fmt.Errorf("%w: expected buildID '%s', got '%s'", serrors.ErrorUntrustedReusableWorkflow,
 				*builderID, url)
 		}

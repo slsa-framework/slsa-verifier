@@ -39,9 +39,20 @@ func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement,
 
 // Verify Builder ID in provenance statement.
 func verifyBuilderID(prov *intoto.ProvenanceStatement, builderID string) error {
-	if prov.Predicate.Builder.ID != builderID {
+	// Check that the BuilderID is well-formed.
+	provid, err := sourceFromURI(prov.Predicate.Builder.ID, false)
+	if err != nil {
+		return err
+	}
+	// Note: builderID does not contain the tag.
+	// TODO(#189): support cases where user wants to match on the full builderID, including the tag.
+	bid, err := sourceFromURI(builderID, true)
+	if err != nil {
+		return err
+	}
+	if provid != bid {
 		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
-			builderID, prov.Predicate.Builder.ID)
+			bid, provid)
 	}
 	return nil
 }
@@ -70,7 +81,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	}
 
 	// Verify source from ConfigSource field.
-	configURI, err := sourceFromURI(prov.Predicate.Invocation.ConfigSource.URI)
+	configURI, err := sourceFromURI(prov.Predicate.Invocation.ConfigSource.URI, false)
 	if err != nil {
 		return err
 	}
@@ -83,7 +94,7 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	if len(prov.Predicate.Materials) == 0 {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
 	}
-	materialURI, err := sourceFromURI(prov.Predicate.Materials[0].URI)
+	materialURI, err := sourceFromURI(prov.Predicate.Materials[0].URI, false)
 	if err != nil {
 		return err
 	}
@@ -103,13 +114,17 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	return nil
 }
 
-func sourceFromURI(uri string) (string, error) {
+func sourceFromURI(uri string, allowNotTag bool) (string, error) {
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
 	r := strings.SplitN(uri, "@", 2)
-	if len(r) < 2 {
+	if len(r) < 2 && !allowNotTag {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
+			uri)
+	}
+	if len(r) < 1 {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
