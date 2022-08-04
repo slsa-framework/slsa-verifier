@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"testing"
 
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
+	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/pkg/oci"
+	"github.com/sigstore/cosign/pkg/oci/layout"
 	"github.com/slsa-framework/slsa-verifier/pkg"
 
 	"github.com/google/go-cmp/cmp"
@@ -363,5 +369,59 @@ func Test_runVerifyGo(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestContainerVerification(t *testing.T) {
+	runContainerVerification = func(ctx context.Context, path string) ([]oci.Signature, string, error) {
+		roots, err := fulcio.GetRoots()
+		if err != nil {
+			return nil, "", err
+		}
+
+		atts, _, err := cosign.VerifyLocalImageAttestations(ctx, path, &cosign.CheckOpts{
+			RootCerts: roots,
+		})
+		if err != nil {
+			return nil, "", err
+		}
+		se, err := layout.SignedImageIndex(path)
+		if err != nil {
+			return nil, "", err
+		}
+
+		var h v1.Hash
+		// Verify either an image index or image.
+		ii, err := se.SignedImageIndex(v1.Hash{})
+		if err != nil {
+			return nil, "", err
+		}
+		i, err := se.SignedImage(v1.Hash{})
+		if err != nil {
+			return nil, "", err
+		}
+		switch {
+		case ii != nil:
+			h, err = ii.Digest()
+			if err != nil {
+				return nil, "", err
+			}
+		case i != nil:
+			h, err = i.Digest()
+			if err != nil {
+				return nil, "", err
+			}
+		default:
+			return nil, "", err
+		}
+		return atts, h.Hex, err
+	}
+
+	_, err := runVerify("./testdata/container/v1.2.0/container_schedule_main", artifactPath,
+		provenancePath,
+		"github.com/slsa-framework/example-package", "main",
+		nil, nil)
+	if err != nil {
+		t.Errorf(err.Error())
 	}
 }

@@ -1,0 +1,21 @@
+{
+   "schemaVersion": 2,
+   "manifests": [
+      {
+         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+         "size": 737,
+         "digest": "sha256:93e556b16d8be1283f3825aa0ee595250649f56e70e18a3089d92ba29cd81e85",
+         "annotations": {
+            "kind": "dev.cosignproject.cosign/image"
+         }
+      },
+      {
+         "mediaType": "application/vnd.oci.image.manifest.v1+json",
+         "size": 6866,
+         "digest": "sha256:336812f231b77c31d7c61b985933f25e7554725f6f585c5c875f08fe43fdbac8",
+         "annotations": {
+            "kind": "dev.cosignproject.cosign/atts"
+         }
+      }
+   ]
+}
