@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
 func errCmp(e1, e2 error) bool {
