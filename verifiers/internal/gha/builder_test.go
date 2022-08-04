@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	"github.com/slsa-framework/slsa-verifier/options"
 )
 
 func Test_VerifyWorkflowIdentity(t *testing.T) {
@@ -14,10 +15,10 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 	tests := []struct {
 		name      string
 		workflow  *WorkflowIdentity
-		buildOpts *BuilderOpts
+		buildOpts *options.BuilderOpts
 		builderID string
 		source    string
-		err       serrors.Error
+		err       error
 	}{
 		{
 			name: "invalid job workflow ref",
@@ -87,7 +88,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: e2eTestRepository,
-			buildOpts: &BuilderOpts{
+			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
 		},
@@ -101,7 +102,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: e2eTestRepository,
-			buildOpts: &BuilderOpts{
+			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
 			},
 			err: serrors.ErrorUntrustedReusableWorkflow,
@@ -162,7 +163,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			buildOpts: &BuilderOpts{
+			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
 		},
@@ -176,7 +177,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
-			buildOpts: &BuilderOpts{
+			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
 			},
 			err: serrors.ErrorUntrustedReusableWorkflow,
@@ -238,7 +239,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "github.com/asraa/slsa-on-github-test",
-			buildOpts: &BuilderOpts{
+			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
 		},
@@ -252,7 +253,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source: "github.com/asraa/slsa-on-github-test",
-			buildOpts: &BuilderOpts{
+			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
 			},
 			err: serrors.ErrorUntrustedReusableWorkflow,
@@ -264,11 +265,11 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			t.Parallel()
 			opts := tt.buildOpts
 			if opts == nil {
-				opts = &BuilderOpts{}
+				opts = &options.BuilderOpts{}
 			}
 			_, err := VerifyWorkflowIdentity(tt.workflow, opts, tt.source)
 			if !errCmp(err, tt.err) {
-				t.serrors.Errorf(cmp.Diff(err, tt.err, cmpopts.Equateserrors.Errors()))
+				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -284,7 +285,7 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		name     string
 		id       *string
 		path     string
-		expected serrors.Error
+		expected error
 	}{
 		{
 			name: "default trusted",
@@ -327,14 +328,14 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 
 			id, err := verifyTrustedBuilderID(tt.path, tt.id)
 			if !errCmp(err, tt.expected) {
-				t.serrors.Errorf(cmp.Diff(err, tt.expected, cmpopts.Equateserrors.Errors()))
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 			if err != nil {
 				return
 			}
 			expectedID := "https://github.com/" + tt.path
 			if id != expectedID {
-				t.serrors.Errorf(cmp.Diff(id, expectedID))
+				t.Errorf(cmp.Diff(id, expectedID))
 			}
 		})
 	}
@@ -346,7 +347,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		name       string
 		callerRepo string
 		builderRef string
-		expected   serrors.Error
+		expected   error
 	}{
 		// Trusted repo.
 		{
@@ -484,7 +485,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
 			if !errCmp(err, tt.expected) {
-				t.serrors.Errorf(cmp.Diff(err, tt.expected, cmpopts.Equateserrors.Errors()))
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
