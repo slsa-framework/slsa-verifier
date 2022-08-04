@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	verifiedProvenance, err := runVerify(artifactPath, provenancePath, source,
+	verifiedProvenance, _, err := runVerify(artifactPath, provenancePath, source,
 		branch, pbuilderID, ptag, pversiontag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
@@ -85,7 +85,9 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(artifactPath, provenancePath, source, branch string, builderID, ptag, pversiontag *string) ([]byte, error) {
+func runVerify(artifactPath, provenancePath, source, branch string,
+	builderID, ptag, pversiontag *string,
+) ([]byte, string, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
 		log.Fatal(err)
