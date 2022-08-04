@@ -19,7 +19,7 @@ type ProvenanceOpts struct {
 	ExpectedVersionedTag *string
 
 	// ExpectedBuilderID is the expected builder ID.
-	ExpectedBuilderID *string
+	ExpectedBuilderID string
 }
 
 // BuildOpts are the options for checking the builder.

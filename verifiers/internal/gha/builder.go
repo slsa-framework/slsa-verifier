@@ -59,7 +59,8 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 			expectedSource, id.CallerRepository)
 	}
 
-	return builderID, nil
+	// Return the builder and its tag.
+	return builderID + "@" + workflowPath[1], nil
 }
 
 func verifyTrustedBuilderID(path string, builderID *string) (string, error) {

@@ -39,13 +39,9 @@ func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement,
 
 // Verify Builder ID in provenance statement.
 func verifyBuilderID(prov *intoto.ProvenanceStatement, builderID string) error {
-	id, err := sourceFromURI(prov.Predicate.Builder.ID)
-	if err != nil {
-		return err
-	}
-	if id != builderID {
-		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", ErrorMismatchBuilderID,
-			builderID, id)
+	if prov.Predicate.Builder.ID != builderID {
+		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
+			builderID, prov.Predicate.Builder.ID)
 	}
 	return nil
 }
@@ -178,7 +174,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	}
 
 	// Verify Builder ID.
-	if err := verifyBuilderID(prov, *provenanceOpts.ExpectedBuilderID); err != nil {
+	if err := verifyBuilderID(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 		return err
 	}
 

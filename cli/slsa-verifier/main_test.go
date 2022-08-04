@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
@@ -43,6 +41,7 @@ func Test_runVerify(t *testing.T) {
 		ptag        *string
 		pversiontag *string
 		pbuilderID  *string
+		builderID   string
 		err         error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
@@ -344,6 +343,7 @@ func Test_runVerify(t *testing.T) {
 			minversion: "v1.2.0",
 			builders:   []string{"generic"},
 			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
+			builderID:  "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@refs/heads/main",
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
@@ -352,6 +352,7 @@ func Test_runVerify(t *testing.T) {
 			source:    "github.com/slsa-framework/example-package",
 			branch:    "main",
 			noversion: true,
+			builderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
 		},
 		// Malicious builders and workflows.
 		{
@@ -434,13 +435,21 @@ func Test_runVerify(t *testing.T) {
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				_, _, err := runVerify(artifactPath,
+				_, builderID, err := runVerify(artifactPath,
 					provenancePath,
 					tt.source, branch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag)
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				}
+
+				if err != nil {
+					return
+				}
+
+				if tt.builderID != "" && builderID != tt.builderID {
+					t.Errorf(cmp.Diff(builderID, tt.builderID))
 				}
 			}
 		})

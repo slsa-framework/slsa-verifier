@@ -65,7 +65,7 @@ func (v *GHAVerifier) Verify(ctx context.Context,
 
 	/* Verify properties of the SLSA provenance. */
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	provenanceOpts.ExpectedBuilderID = &builderID
+	provenanceOpts.ExpectedBuilderID = builderID
 	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, "", err
 	}

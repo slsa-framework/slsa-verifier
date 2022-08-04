@@ -65,7 +65,8 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
-			source: trustedBuilderRepository,
+			source:    trustedBuilderRepository,
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
 		},
 		{
 			name: "valid main ref for e2e test",
@@ -76,7 +77,8 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
-			source: e2eTestRepository,
+			source:    e2eTestRepository,
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
 		},
 		{
 			name: "valid main ref for e2e test - match builderID",
@@ -91,6 +93,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
 		},
 		{
 			name: "valid main ref for e2e test - mismatch builderID",
@@ -116,8 +119,9 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
-			source: "malicious/source",
-			err:    serrors.ErrorMismatchSource,
+			source:    "malicious/source",
+			err:       serrors.ErrorMismatchSource,
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
 		},
 		{
 			name: "valid main ref for builder",
@@ -151,7 +155,8 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
-			source: "asraa/slsa-on-github-test",
+			source:    "asraa/slsa-on-github-test",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 		},
 		{
 			name: "valid workflow identity - match builderID",
@@ -166,6 +171,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 		},
 		{
 			name: "valid workflow identity - mismatch builderID",
@@ -191,8 +197,9 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
-			source: "asraa/slsa-on-github-test",
-			err:    serrors.ErrorInvalidRef,
+			source:    "asraa/slsa-on-github-test",
+			err:       serrors.ErrorInvalidRef,
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3-alpha",
 		},
 		{
 			name: "invalid workflow identity with build",
@@ -227,7 +234,8 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
-			source: "github.com/asraa/slsa-on-github-test",
+			source:    "github.com/asraa/slsa-on-github-test",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 		},
 		{
 			name: "valid workflow identity with fully qualified source - match builderID",
@@ -242,6 +250,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 		},
 		{
 			name: "valid workflow identity with fully qualified source - mismatch builderID",
@@ -267,9 +276,15 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			if opts == nil {
 				opts = &options.BuilderOpts{}
 			}
-			_, err := VerifyWorkflowIdentity(tt.workflow, opts, tt.source)
+			id, err := VerifyWorkflowIdentity(tt.workflow, opts, tt.source)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			}
+			if err != nil {
+				return
+			}
+			if id != tt.builderID {
+				t.Errorf(cmp.Diff(id, tt.builderID))
 			}
 		})
 	}
