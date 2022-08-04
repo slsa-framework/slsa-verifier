@@ -24,9 +24,7 @@ var defaultTrustedReusableWorkflows = map[string]bool{
 }
 
 // VerifyWorkflowIdentity verifies the signing certificate information
-func VerifyWorkflowIdentity(id *WorkflowIdentity,
-	builderOpts *options.BuilderOpts, source string,
-) (string, error) {
+func VerifyWorkflowIdentity(id *WorkflowIdentity, builderOpts *options.BuilderOpts, source string) (string, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
