@@ -18,6 +18,7 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/slsa-framework/slsa-verifier/pkg"
 )
 
@@ -144,6 +145,23 @@ type envAndCert struct {
 	cert *x509.Certificate
 }
 
+var runContainerVerification = func(ctx context.Context, ociImageRef string) ([]oci.Signature, string, error) {
+	roots, err := fulcio.GetRoots()
+	if err != nil {
+		return nil, "", err
+	}
+	ref, err := crname.ParseReference(ociImageRef)
+	if err != nil {
+		return nil, "", err
+	}
+	atts, _, err := cosign.VerifyImageAttestations(ctx, ref, &cosign.CheckOpts{
+		RootCerts: roots,
+	})
+	digest := ref.Context().Digest(ref.Identifier()).DigestStr()
+
+	return atts, digest, err
+}
+
 func runVerify(ociImageRef, artifactPath, provenancePath, source, branch string, ptag, pversiontag *string) ([][]byte, error) {
 	// A list of verified envelope and certificates.
 	var envAndCerts []*envAndCert
@@ -151,18 +169,8 @@ func runVerify(ociImageRef, artifactPath, provenancePath, source, branch string,
 
 	ctx := context.Background()
 	if ociImageRef != "" {
-		ref, err := crname.ParseReference(ociImageRef)
-		if err != nil {
-			return nil, err
-		}
 		// Run container verification.
-		roots, err := fulcio.GetRoots()
-		if err != nil {
-			return nil, err
-		}
-		atts, _, err := cosign.VerifyImageAttestations(ctx, ref, &cosign.CheckOpts{
-			RootCerts: roots,
-		})
+		atts, digest, err := runContainerVerification(ctx, ociImageRef)
 		if err != nil {
 			return nil, err
 		}
@@ -183,8 +191,7 @@ func runVerify(ociImageRef, artifactPath, provenancePath, source, branch string,
 		}
 
 		// Get the digest of the image.
-		digest := ref.Context().Digest(ref.Identifier())
-		artifactHash = strings.TrimPrefix(digest.DigestStr(), "sha256:")
+		artifactHash = strings.TrimPrefix(digest, "sha256:")
 
 	} else {
 		// Run blob verification.
