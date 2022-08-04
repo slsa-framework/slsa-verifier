@@ -345,7 +345,7 @@ func Test_runVerify(t *testing.T) {
 			minversion: "v1.2.0",
 			builders:   []string{"generic"},
 			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
-			builderID:  "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@refs/heads/main",
+			builderID:  "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
@@ -354,7 +354,7 @@ func Test_runVerify(t *testing.T) {
 			source:    "github.com/slsa-framework/example-package",
 			branch:    "main",
 			noversion: true,
-			builderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+			builderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
 		},
 		// Malicious builders and workflows.
 		{
