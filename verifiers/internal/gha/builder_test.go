@@ -66,7 +66,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
 			source:    trustedBuilderRepository,
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid main ref for e2e test",
@@ -78,7 +78,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source:    e2eTestRepository,
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid main ref for e2e test - match builderID",
@@ -93,7 +93,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid main ref for e2e test - mismatch builderID",
@@ -121,7 +121,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			},
 			source:    "malicious/source",
 			err:       serrors.ErrorMismatchSource,
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid main ref for builder",
@@ -156,7 +156,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source:    "asraa/slsa-on-github-test",
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid workflow identity - match builderID",
@@ -171,7 +171,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid workflow identity - mismatch builderID",
@@ -199,7 +199,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			},
 			source:    "asraa/slsa-on-github-test",
 			err:       serrors.ErrorInvalidRef,
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3-alpha",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "invalid workflow identity with build",
@@ -235,7 +235,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 				Issuer:            certOidcIssuer,
 			},
 			source:    "github.com/asraa/slsa-on-github-test",
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid workflow identity with fully qualified source - match builderID",
@@ -250,7 +250,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
 			},
-			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
 		},
 		{
 			name: "valid workflow identity with fully qualified source - mismatch builderID",
