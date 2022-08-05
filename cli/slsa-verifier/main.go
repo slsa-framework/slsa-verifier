@@ -46,6 +46,7 @@ func main() {
 
 	var pbuilderID, ptag, pversiontag *string
 
+	// Note: nil tag, version-tag and builder-id means we ignore them during verification.
 	if isFlagPassed("tag") {
 		ptag = &tag
 	}
