@@ -1,4 +1,4 @@
-package verification
+package gha
 
 import (
 	"crypto/x509"
@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"golang.org/x/mod/semver"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	"github.com/slsa-framework/slsa-verifier/options"
 )
 
 var (
@@ -15,44 +18,66 @@ var (
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
 )
 
-var trustedReusableWorkflows = map[string]bool{
+var defaultTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml": true,
 	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":        true,
 }
 
 // VerifyWorkflowIdentity verifies the signing certificate information
-func VerifyWorkflowIdentity(id *WorkflowIdentity, source string) error {
+func VerifyWorkflowIdentity(id *WorkflowIdentity, builderOpts *options.BuilderOpts, source string) (string, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return fmt.Errorf("%w: %s", errorMalformedWorkflowURI, id.JobWobWorkflowRef)
+		return "", fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.JobWobWorkflowRef)
 	}
 
 	// Trusted workflow verification by name.
-	reusableWorkflowName := strings.Trim(workflowPath[0], "/")
-	if _, ok := trustedReusableWorkflows[reusableWorkflowName]; !ok {
-		return fmt.Errorf("%w: %s", ErrorUntrustedReusableWorkflow, reusableWorkflowName)
+	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
+	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath, builderOpts.ExpectedID)
+	if err != nil {
+		return "", err
 	}
 
 	// Verify the ref.
 	if err := verifyTrustedBuilderRef(id, strings.Trim(workflowPath[1], "/")); err != nil {
-		return err
+		return "", err
 	}
 
 	// Issuer verification.
 	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
-		return fmt.Errorf("untrusted token issuer: %s", id.Issuer)
+		return "", fmt.Errorf("untrusted token issuer: %s", id.Issuer)
 	}
 
 	// The caller repository in the x509 extension is not fully qualified. It only contains
 	// {org}/{repository}.
-	expectedSource := strings.TrimPrefix(source, "github.com/")
+	expectedSource := strings.TrimPrefix(source, "git+https://")
+	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
 	if !strings.EqualFold(id.CallerRepository, expectedSource) {
-		return fmt.Errorf("%w: expected source '%s', got '%s'", ErrorMismatchRepository,
+		return "", fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
 			expectedSource, id.CallerRepository)
 	}
 
-	return nil
+	// Return the builder and its tag.
+	return builderID, nil
+}
+
+func verifyTrustedBuilderID(path string, builderID *string) (string, error) {
+	// No builder ID provided by user: use the default trusted workflows.
+	if builderID == nil || *builderID == "" {
+		if _, ok := defaultTrustedReusableWorkflows[path]; !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorUntrustedReusableWorkflow, path)
+		}
+	} else {
+		// Verify the builderID.
+		// We only accept IDs on github.com.
+		url := "https://github.com/" + path
+		if url != *builderID {
+			return "", fmt.Errorf("%w: expected buildID '%s', got '%s'", serrors.ErrorUntrustedReusableWorkflow,
+				*builderID, url)
+		}
+	}
+
+	return "https://github.com/" + path, nil
 }
 
 // Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.
@@ -66,7 +91,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	}
 
 	if !strings.HasPrefix(ref, "refs/tags/") {
-		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", errorInvalidRef, ref)
+		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", serrors.ErrorInvalidRef, ref)
 	}
 
 	// Valid semver of the form vX.Y.Z with no metadata.
@@ -75,7 +100,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 		len(strings.Split(pin, ".")) == 3 &&
 		semver.Prerelease(pin) == "" &&
 		semver.Build(pin) == "") {
-		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", errorInvalidRef, pin)
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
 	}
 	return nil
 }

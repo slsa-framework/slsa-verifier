@@ -9,7 +9,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/slsa-framework/slsa-verifier/verification"
+	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers"
 )
 
 var errInvalid = errors.New("invalid")
@@ -20,6 +21,7 @@ type v1Query struct {
 	ArtifactHash string `json:"artifactHash"`
 	DsseEnvelope string `json:"provenanceContent"`
 	// Optional fields.
+	BuilderID       *string `json:"builderID"`
 	Tag             *string `json:"tag"`
 	Branch          *string `json:"branch"`
 	VersionedTag    *string `json:"versionedTag"`
@@ -37,6 +39,7 @@ type v1Result struct {
 	Version         uint       `json:"version"`
 	Error           *string    `json:"error,omitempty"`
 	Validation      validation `json:"validation"`
+	BuilderID       string     `json:"builderID"`
 	IntotoStatement *string    `json:"provenanceContent,omitempty"`
 }
 
@@ -81,6 +84,11 @@ func (r *v1Result) withValidation(v validation) *v1Result {
 	return r
 }
 
+func (r *v1Result) withBuilderID(id string) *v1Result {
+	r.BuilderID = id
+	return r
+}
+
 func (r *v1Result) withIntotoStatement(c []byte) *v1Result {
 	b := base64.StdEncoding.EncodeToString(c)
 	r.IntotoStatement = &b
@@ -112,16 +120,21 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 	if query.Branch != nil {
 		branch = *query.Branch
 	}
-	provenanceOpts := &verification.ProvenanceOpts{
+	provenanceOpts := &options.ProvenanceOpts{
+		ExpectedSourceURI:    query.Source,
 		ExpectedBranch:       branch,
 		ExpectedDigest:       query.ArtifactHash,
 		ExpectedVersionedTag: query.VersionedTag,
 		ExpectedTag:          query.Tag,
 	}
 
+	builderOpts := &options.BuilderOpts{
+		ExpectedID: query.BuilderID,
+	}
+
 	ctx := context.Background()
-	p, err := verification.Verify(ctx, []byte(query.DsseEnvelope),
-		query.ArtifactHash, query.Source, provenanceOpts)
+	p, builderID, err := verifiers.Verify(ctx, []byte(query.DsseEnvelope),
+		query.ArtifactHash, provenanceOpts, builderOpts)
 	if err != nil {
 		return results.withError(err)
 	}
@@ -130,7 +143,7 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 		results = results.withIntotoStatement(p)
 	}
 
-	return results.withValidation(validationSuccess)
+	return results.withBuilderID(builderID).withValidation(validationSuccess)
 }
 
 func queryFromString(content []byte) (*v1Query, error) {
@@ -164,6 +177,8 @@ func (q *v1Query) validate() error {
 	if q.Tag != nil && q.VersionedTag != nil {
 		return fmt.Errorf("%w: tag and versionedTag are mutually exclusive", errInvalid)
 	}
+
+	// BuilderID is optional, so not additional validation needed.
 
 	return nil
 }

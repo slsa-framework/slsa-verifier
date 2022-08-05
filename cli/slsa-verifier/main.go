@@ -10,11 +10,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/verification"
+	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers"
 )
 
 var (
 	provenancePath  string
+	builderID       string
 	artifactPath    string
 	source          string
 	branch          string
@@ -24,6 +26,7 @@ var (
 )
 
 func main() {
+	flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
 	flag.StringVar(&source, "source", "",
@@ -41,13 +44,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	var ptag, pversiontag *string
+	var pbuilderID, ptag, pversiontag *string
 
+	// Note: nil tag, version-tag and builder-id means we ignore them during verification.
 	if isFlagPassed("tag") {
 		ptag = &tag
 	}
 	if isFlagPassed("versioned-tag") {
 		pversiontag = &versiontag
+	}
+	if isFlagPassed("builder-id") {
+		pbuilderID = &builderID
 	}
 
 	if ptag != nil && pversiontag != nil {
@@ -55,7 +62,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	verifiedProvenance, err := runVerify(artifactPath, provenancePath, source, branch, ptag, pversiontag)
+	verifiedProvenance, _, err := runVerify(artifactPath, provenancePath, source,
+		branch, pbuilderID, ptag, pversiontag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -78,7 +86,9 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversiontag *string) ([]byte, error) {
+func runVerify(artifactPath, provenancePath, source, branch string,
+	builderID, ptag, pversiontag *string,
+) ([]byte, string, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +97,7 @@ func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversi
 
 	provenance, err := os.ReadFile(provenancePath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	h := sha256.New()
@@ -96,15 +106,19 @@ func runVerify(artifactPath, provenancePath, source, branch string, ptag, pversi
 	}
 	artifactHash := hex.EncodeToString(h.Sum(nil))
 
-	provenanceOpts := &verification.ProvenanceOpts{
+	provenanceOpts := &options.ProvenanceOpts{
+		ExpectedSourceURI:    source,
 		ExpectedBranch:       branch,
 		ExpectedDigest:       artifactHash,
 		ExpectedVersionedTag: pversiontag,
 		ExpectedTag:          ptag,
 	}
 
+	builderOpts := &options.BuilderOpts{
+		ExpectedID: builderID,
+	}
+
 	ctx := context.Background()
-	return verification.Verify(ctx, provenance,
-		artifactHash,
-		source, provenanceOpts)
+	return verifiers.Verify(ctx, provenance,
+		artifactHash, provenanceOpts, builderOpts)
 }
