@@ -9,6 +9,7 @@ import (
 
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
 )
@@ -32,8 +33,8 @@ func (v *GHAVerifier) Match(builderID string) bool {
 	return strings.HasPrefix(builderID, "https://github.com/")
 }
 
-// Verify provenance.
-func (v *GHAVerifier) Verify(ctx context.Context,
+// VerifyArtifact verifies provenance for an artifact.
+func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
@@ -76,4 +77,13 @@ func (v *GHAVerifier) Verify(ctx context.Context,
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
 	return r, builderID, err
+}
+
+// VerifyImage verifies provenance for an OCI image.
+func (v *GHAVerifier) VerifyImage(ctx context.Context,
+	provenance []byte, artifactHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, string, error) {
+	return nil, "todo", serrors.ErrorNotSupported
 }

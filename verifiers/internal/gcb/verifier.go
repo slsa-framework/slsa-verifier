@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	register "github.com/slsa-framework/slsa-verifier/register"
 )
@@ -27,11 +28,20 @@ func (v *GCBVerifier) Match(builderID string) bool {
 	return strings.HasPrefix(builderID, "https://cloudbuild.googleapis.com/GoogleHostedWorker@")
 }
 
-// Verify provenance.
-func (v *GCBVerifier) Verify(ctx context.Context,
+// VerifyArtifact verifies provenance for an artifact.
+func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
-	return nil, "todo", nil
+	return nil, "todo", serrors.ErrorNotSupported
+}
+
+// VerifyImage verifies provenance for an OCI image.
+func (v *GCBVerifier) VerifyImage(ctx context.Context,
+	provenance []byte, artifactHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, string, error) {
+	return nil, "todo", serrors.ErrorNotSupported
 }

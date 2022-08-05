@@ -21,8 +21,8 @@ func Verify(ctx context.Context,
 	if builderOpts.ExpectedID != nil &&
 		*builderOpts.ExpectedID != "" {
 		for _, v := range register.SLSAVerifiers {
-			if v.Match(*builderOpts.ExpectedID) {
-				return v.Verify(ctx, provenance, artifactHash,
+			if v.IsAuthoritativeFor(*builderOpts.ExpectedID) {
+				return v.VerifyArtifact(ctx, provenance, artifactHash,
 					provenanceOpts, builderOpts)
 			}
 		}
@@ -31,6 +31,6 @@ func Verify(ctx context.Context,
 	}
 
 	// By default, try the GHA builders.
-	return register.SLSAVerifiers[gha.VerifierName].Verify(ctx, provenance, artifactHash,
+	return register.SLSAVerifiers[gha.VerifierName].VerifyArtifact(ctx, provenance, artifactHash,
 		provenanceOpts, builderOpts)
 }

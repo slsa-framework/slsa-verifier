@@ -9,11 +9,20 @@ import (
 var SLSAVerifiers = make(map[string]SLSAVerifier)
 
 type SLSAVerifier interface {
-	// Match matches a BuilderID.
-	Match(builderID string) bool
+	// IsAuthoritativeFor checks whether a verifier can
+	// verify provenance for a given builder identified by its
+	// `BuilderID`.
+	IsAuthoritativeFor(builderID string) bool
 
-	// Verify verifies a provenance.
-	Verify(ctx context.Context,
+	// VerifyArtifact verifies a provenance for a supplied artifact.
+	VerifyArtifact(ctx context.Context,
+		provenance []byte, artifactHash string,
+		provenanceOpts *options.ProvenanceOpts,
+		builderOpts *options.BuilderOpts,
+	) ([]byte, string, error)
+
+	// VerifyImage verifies a provenance for a supplied OCI image.
+	VerifyImage(ctx context.Context,
 		provenance []byte, artifactHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
