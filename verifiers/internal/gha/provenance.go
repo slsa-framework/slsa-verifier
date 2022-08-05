@@ -341,9 +341,18 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 
 	i, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "environment type string")
+		return "", fmt.Errorf("%w: %s '%s'", ErrorInvalidDssePayload, "environment type string", field)
 	}
 	return i, nil
+}
+
+func getAsAny(environment map[string]interface{}, field string) (interface{}, error) {
+	value, ok := environment[field]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
+			fmt.Sprintf("environment type for %s", field))
+	}
+	return value, nil
 }
 
 func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
@@ -388,7 +397,18 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 		return "", err
 	}
 
-	return getAsString(payload, "base_ref")
+	value, err := getAsAny(payload, "base_ref")
+	if err != nil {
+		return "", err
+	}
+
+	// The `base_ref` field may be nil if the build was from
+	// a specific commit rather than a branch.
+	i, ok := value.(string)
+	if !ok {
+		return "", nil
+	}
+	return i, nil
 }
 
 func getTargetCommittish(environment map[string]interface{}) (string, error) {
