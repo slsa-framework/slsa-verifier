@@ -341,7 +341,7 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 
 	i, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s '%s'", ErrorInvalidDssePayload, "environment type string", field)
+		return "", fmt.Errorf("%w: %s '%s'", serrors.ErrorInvalidDssePayload, "environment type string", field)
 	}
 	return i, nil
 }
@@ -349,7 +349,7 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 func getAsAny(environment map[string]interface{}, field string) (interface{}, error) {
 	value, ok := environment[field]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
 			fmt.Sprintf("environment type for %s", field))
 	}
 	return value, nil
