@@ -7,6 +7,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	register "github.com/slsa-framework/slsa-verifier/register"
+	_ "github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
 )
 
 const VerifierName = "GCB"
@@ -35,6 +36,13 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
+	// Parse the data.
+
+	// TODO: verify kind: BUILD
+	// TODO: resourceUri against image_summary and subject data
+	// TODO: "build":
+	// TODO: "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
+
 	return nil, "todo", serrors.ErrorNotSupported
 }
 
@@ -44,5 +52,6 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
+	// pubKey := PublicKeysNew()
 	return nil, "todo", serrors.ErrorNotSupported
 }
