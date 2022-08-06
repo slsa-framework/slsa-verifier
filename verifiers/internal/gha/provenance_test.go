@@ -477,7 +477,7 @@ func Test_VerifyBranch(t *testing.T) {
 			name:     "from commit push - no branch",
 			path:     "./testdata/dsse-push-from-commit.intoto.jsonl",
 			branch:   "main",
-			expected: ErrorMismatchBranch,
+			expected: serrors.ErrorMismatchBranch,
 		},
 	}
 	for _, tt := range tests {
