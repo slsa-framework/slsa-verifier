@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	"github.com/slsa-framework/slsa-verifier/options"
@@ -91,7 +90,7 @@ func runVerify(artifactPath, provenancePath, source, branch string,
 ) ([]byte, string, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, "", err
 	}
 	defer f.Close()
 
@@ -102,7 +101,7 @@ func runVerify(artifactPath, provenancePath, source, branch string,
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		log.Panic(err)
+		return nil, "", err
 	}
 	artifactHash := hex.EncodeToString(h.Sum(nil))
 
