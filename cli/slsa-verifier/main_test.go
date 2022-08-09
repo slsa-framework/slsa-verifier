@@ -429,9 +429,10 @@ func Test_runVerify(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
+				var pbranch *string
 				branch := tt.branch
-				if branch == "" {
-					branch = "main"
+				if tt.branch != "" {
+					pbranch = &branch
 				}
 
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
@@ -439,7 +440,7 @@ func Test_runVerify(t *testing.T) {
 
 				_, builderID, err := runVerify(artifactPath,
 					provenancePath,
-					tt.source, branch, tt.pbuilderID,
+					tt.source, pbranch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag)
 
 				if !errCmp(err, tt.err) {
