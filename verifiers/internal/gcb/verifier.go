@@ -69,7 +69,6 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 
 	// TODO: verify kind: BUILD
 	// TODO: resourceUri against image_summary and subject data
-	// TODO: "build":
 	// TODO: "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
 	return prov.GetVerifiedIntotoStatement(), builderID, nil
 }

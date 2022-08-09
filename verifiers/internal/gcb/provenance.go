@@ -142,10 +142,7 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 		return "", serrors.ErrorNoValidSignature
 	}
 
-	// WARNING: this is a temp hack because provenance is malformed.
-	// We should be using verifiedIntotoStatement instead.
-	// statement := self.verifiedIntotoStatementStruct
-	statement := self.gcloudProv.ProvenanceSummary.Provenance[0].Build.IntotoStatement
+	statement := self.verifiedIntotoStatementStruct
 	predicateBuilderID := statement.WrongPredicate.Builder.ID
 
 	// Sanity check the builderID.
@@ -162,6 +159,7 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 	}
 
 	// Valiate that the recipe type is consistent.
+	// WARNING: this is a temp hack because provenance is malformed.
 	if predicateBuilderID != statement.WrongPredicate.Recipe.Type {
 		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			*builderOpts.ExpectedID, predicateBuilderID)
@@ -200,9 +198,7 @@ func (self *GCBProvenance) VerifySourceURI(expectedSourceURI string) error {
 	}
 
 	// WARNING: this is a temp hack because provenance is malformed.
-	// We should be using verifiedIntotoStatement instead.
-	// statement := self.verifiedIntotoStatementStruct
-	statement := self.gcloudProv.ProvenanceSummary.Provenance[0].Build.IntotoStatement
+	statement := self.verifiedIntotoStatementStruct
 	materials := statement.WrongPredicate.Materials
 	if len(materials) == 0 {
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
