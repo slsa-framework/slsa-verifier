@@ -204,8 +204,10 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	}
 
 	// Verify the branch.
-	if err := VerifyBranch(prov, provenanceOpts.ExpectedBranch); err != nil {
-		return err
+	if provenanceOpts.ExpectedBranch != nil {
+		if err := VerifyBranch(prov, *provenanceOpts.ExpectedBranch); err != nil {
+			return err
+		}
 	}
 
 	// Verify the tag.
@@ -404,11 +406,11 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 
 	// The `base_ref` field may be nil if the build was from
 	// a specific commit rather than a branch.
-	i, ok := value.(string)
+	v, ok := value.(string)
 	if !ok {
 		return "", nil
 	}
-	return i, nil
+	return v, nil
 }
 
 func getTargetCommittish(environment map[string]interface{}) (string, error) {

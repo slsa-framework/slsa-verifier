@@ -30,7 +30,7 @@ func main() {
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
 	flag.StringVar(&source, "source", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
-	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
+	flag.StringVar(&branch, "branch", "", "[optional] expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
 	flag.StringVar(&versiontag, "versioned-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
@@ -43,7 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var pbuilderID, ptag, pversiontag *string
+	var pbuilderID, pbranch, ptag, pversiontag *string
 
 	// Note: nil tag, version-tag and builder-id means we ignore them during verification.
 	if isFlagPassed("tag") {
@@ -55,6 +55,9 @@ func main() {
 	if isFlagPassed("builder-id") {
 		pbuilderID = &builderID
 	}
+	if isFlagPassed("branch") {
+		pbranch = &branch
+	}
 
 	if ptag != nil && pversiontag != nil {
 		fmt.Fprintf(os.Stderr, "'version' and 'tag' options cannot be used together\n")
@@ -62,7 +65,7 @@ func main() {
 	}
 
 	verifiedProvenance, _, err := runVerify(artifactPath, provenancePath, source,
-		branch, pbuilderID, ptag, pversiontag)
+		pbranch, pbuilderID, ptag, pversiontag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -85,8 +88,8 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(artifactPath, provenancePath, source, branch string,
-	builderID, ptag, pversiontag *string,
+func runVerify(artifactPath, provenancePath, source string,
+	branch, builderID, ptag, pversiontag *string,
 ) ([]byte, string, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
