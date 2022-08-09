@@ -386,14 +386,14 @@ func Test_runVerify(t *testing.T) {
 		// annotated tags.
 		{
 			name:        "annotated tag",
-			artifact:    "annotated-tag-binary",
+			artifact:    "annotated-tag.tar.gz",
 			source:      "github.com/sethmlarson/python-slsa-release-test",
 			pversiontag: pString("0.1.9"),
 			noversion:   true,
 		},
 		{
 			name:        "no branch",
-			artifact:    "annotated-tag-binary",
+			artifact:    "annotated-tag.tar.gz",
 			source:      "github.com/sethmlarson/python-slsa-release-test",
 			pversiontag: pString("0.1.9"),
 			pbranch:     pString("main"),
