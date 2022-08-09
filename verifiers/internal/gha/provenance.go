@@ -346,7 +346,7 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 	return i, nil
 }
 
-func getAsAny(environment map[string]interface{}, field string) (interface{}, error) {
+func getAsAny(environment map[string]any, field string) (any, error) {
 	value, ok := environment[field]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
