@@ -386,16 +386,16 @@ func Test_runVerify(t *testing.T) {
 		// annotated tags.
 		{
 			name:        "annotated tag",
-			artifact:    "annotated-tag.tar.gz",
-			source:      "github.com/sethmlarson/python-slsa-release-test",
-			pversiontag: pString("0.1.9"),
+			artifact:    "annotated-tag",
+			source:      "github.com/laurentsimon/slsa-on-github-test",
+			pversiontag: pString("v5.0.1"),
 			noversion:   true,
 		},
 		{
 			name:        "no branch",
-			artifact:    "annotated-tag.tar.gz",
-			source:      "github.com/sethmlarson/python-slsa-release-test",
-			pversiontag: pString("0.1.9"),
+			artifact:    "annotated-tag",
+			source:      "github.com/laurentsimon/slsa-on-github-test",
+			pversiontag: pString("v5.0.1"),
 			pbranch:     pString("main"),
 			err:         serrors.ErrorMismatchBranch,
 			noversion:   true,
