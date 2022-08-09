@@ -116,13 +116,9 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 	}
 
 	// Run the verification.
-	branch := "main"
-	if query.Branch != nil {
-		branch = *query.Branch
-	}
 	provenanceOpts := &options.ProvenanceOpts{
 		ExpectedSourceURI:    query.Source,
-		ExpectedBranch:       branch,
+		ExpectedBranch:       query.Branch,
 		ExpectedDigest:       query.ArtifactHash,
 		ExpectedVersionedTag: query.VersionedTag,
 		ExpectedTag:          query.Tag,
