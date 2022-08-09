@@ -1,8 +1,30 @@
 package gha
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+
+	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	slsa01 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
 )
+
+var GCBBuilderIDs = []string{"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"}
+
+type v01IntotoStatement struct {
+	intoto.StatementHeader
+	Predicate      slsa01.ProvenancePredicate `json:"predicate"`
+	WrongPredicate slsa01.ProvenancePredicate `json:"slsaProvenance"`
+}
 
 type gloudProvenance struct {
 	ImageSummary struct {
@@ -12,33 +34,248 @@ type gloudProvenance struct {
 		Repsitory           string `json:"repository"`
 	} `json:"image_summary"`
 	ProvenanceSummary struct {
-		Provenance []struct{} `json:"provenance"`
+		Provenance []struct {
+			Build struct {
+				// TODO: this is untrusted, we should remove it.
+				IntotoStatement v01IntotoStatement `json:"intotoStatement"`
+			} `json:"build"`
+			Kind        string           `json:"kind"`
+			ResourceUri string           `json:"resourceUri"`
+			Envelope    dsselib.Envelope `json:"envelope"`
+		} `json:"provenance"`
 	} `json:"provenance_summary"`
 }
 
-/*
+type GCBProvenance struct {
+	gcloudProv                    *gloudProvenance
+	verifiedIntotoStatementBytes  []byte
+	verifiedIntotoStatementStruct *v01IntotoStatement
+	// Note: may need to support envelope only.
+	// TODO: verified flag?
+}
 
- "kind": "BUILD",
-        "name": "projects/gosst-scare-sandbox/occurrences/ffb703b9-354e-473d-90ab-5e1c86864243",
-        "noteName": "projects/verified-builder/notes/intoto_62632e36-adac-4fc0-b384-bd212f167cab",
-        "resourceUri": "https://us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image@sha256:7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed",
-        "updateTime": "2022-08-03T19:06:50.053076Z"
+// go run cli/slsa-verifier/main.go -artifact-path python/secure_package_template-0.2.0-py3-none-any.whl -provenance verifiers/internal/gcb/testdata/test.intoto.jsonl -source github.com/sethmlarson/python-slsa-release-test -builder-id=https://cloudbuild.googleapis.com/GoogleHostedWorker@0.2
+func ProvenanceFromBytes(payload []byte) (*GCBProvenance, error) {
+	var prov gloudProvenance
+	err := json.Unmarshal(payload, &prov)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal: %w")
+	}
 
-*/
-// }
-// 	"image_summary": {
-// 	  "digest": "sha256:7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed",
-// 	  "fully_qualified_digest": "us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image@sha256:7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed",
-// 	  "registry": "us-west2-docker.pkg.dev",
-// 	  "repository": "quickstart-docker-repo"
-// 	},
-// 	"provenance_summary": {
-// 	  "provenance": [
-// 		{
-// 		  "build": {
+	return &GCBProvenance{
+		gcloudProv: &prov,
+	}, nil
+}
 
-func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
-	// env = &dsselib.Envelope{}
-	// err = json.Unmarshal(payload, env)
-	return
+/*func intotoStatementFromEnv(env *dsselib.Envelope) (*v01IntotoStatement, error) {
+	if env.PayloadType != intoto.PayloadType {
+		return nil, fmt.Errorf("%w: expected payload type '%s', got %s",
+			serrors.ErrorInvalidDssePayload, intoto.PayloadType, env.PayloadType)
+	}
+	payload, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+	var statement v01IntotoStatement
+	if err := json.Unmarshal(payload, &statement); err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+	return &statement, nil
+}*/
+
+func signatureAsRaw(s string) ([]byte, error) {
+	s = strings.ReplaceAll(s, "-", "+")
+	s = strings.ReplaceAll(s, "_", "/")
+	sig, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+	return sig, nil
+}
+
+func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
+	payload, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+	return payload, nil
+}
+
+func (self *GCBProvenance) GetVerifiedIntotoStatement() []byte {
+	return self.verifiedIntotoStatementBytes
+}
+
+func (self *GCBProvenance) VerifyIntotoHeaders() error {
+	// Check that the signature is verified.
+	if self.verifiedIntotoStatementStruct == nil {
+		return serrors.ErrorNoValidSignature
+	}
+
+	statement := self.verifiedIntotoStatementStruct
+	// https://in-toto.io/Statement/v0.1
+	if statement.StatementHeader.Type != intoto.StatementInTotoV01 {
+		return fmt.Errorf("%w: expected statement header type '%s', got '%s'",
+			serrors.ErrorInvalidDssePayload, intoto.StatementInTotoV01, statement.StatementHeader.Type)
+	}
+
+	// https://slsa.dev/provenance/v0.1
+	if statement.StatementHeader.PredicateType != slsa01.PredicateSLSAProvenance {
+		return fmt.Errorf("%w: expected statement predicate type '%s', got '%s'",
+			serrors.ErrorInvalidDssePayload, slsa01.PredicateSLSAProvenance, statement.StatementHeader.PredicateType)
+	}
+
+	return nil
+}
+
+func isValidBuilderID(id string) error {
+	for _, b := range GCBBuilderIDs {
+		if id == b {
+			return nil
+		}
+	}
+	return serrors.ErrorMismatchBuilderID
+}
+
+func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (string, error) {
+	// Check that the signature is verified.
+	if self.verifiedIntotoStatementStruct == nil {
+		return "", serrors.ErrorNoValidSignature
+	}
+
+	// WARNING: this is a temp hack because provenance is malformed.
+	// We should be using verifiedIntotoStatement instead.
+	// statement := self.verifiedIntotoStatementStruct
+	statement := self.gcloudProv.ProvenanceSummary.Provenance[0].Build.IntotoStatement
+	predicateBuilderID := statement.WrongPredicate.Builder.ID
+
+	// Sanity check the builderID.
+	if err := isValidBuilderID(predicateBuilderID); err != nil {
+		return "", err
+	}
+
+	// Validate with user-provided value.
+	if builderOpts != nil && builderOpts.ExpectedID != nil {
+		if *builderOpts.ExpectedID != predicateBuilderID {
+			return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+				*builderOpts.ExpectedID, predicateBuilderID)
+		}
+	}
+
+	// Valiate that the recipe type is consistent.
+	if predicateBuilderID != statement.WrongPredicate.Recipe.Type {
+		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+			*builderOpts.ExpectedID, predicateBuilderID)
+	}
+
+	return predicateBuilderID, nil
+}
+
+func (self *GCBProvenance) VerifyArtifactHash(expectedHash string) error {
+	// Check that the signature is verified.
+	if self.verifiedIntotoStatementStruct == nil {
+		return serrors.ErrorNoValidSignature
+	}
+
+	statement := self.verifiedIntotoStatementStruct
+	for _, subject := range statement.StatementHeader.Subject {
+		digestSet := subject.Digest
+		hash, exists := digestSet["sha256"]
+		if !exists {
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no sha256 subject digest")
+		}
+
+		if hash == expectedHash {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("expected hash '%s' not found: %w", expectedHash, serrors.ErrorMismatchHash)
+}
+
+// Verify source URI in provenance statement.
+func (self *GCBProvenance) VerifySourceURI(expectedSourceURI string) error {
+	// Check that the signature is verified.
+	if self.verifiedIntotoStatementStruct == nil {
+		return serrors.ErrorNoValidSignature
+	}
+
+	// WARNING: this is a temp hack because provenance is malformed.
+	// We should be using verifiedIntotoStatement instead.
+	// statement := self.verifiedIntotoStatementStruct
+	statement := self.gcloudProv.ProvenanceSummary.Provenance[0].Build.IntotoStatement
+	materials := statement.WrongPredicate.Materials
+	if len(materials) == 0 {
+		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
+	}
+	uri := materials[0].URI
+	if !strings.HasPrefix(expectedSourceURI, "https://") {
+		expectedSourceURI = "https://" + expectedSourceURI
+	}
+	if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") {
+		return fmt.Errorf("%w: expected '%s', got '%s'",
+			serrors.ErrorMismatchSource, expectedSourceURI, uri)
+	}
+
+	return nil
+}
+
+func (self *GCBProvenance) VerifySignature() error {
+	if len(self.gcloudProv.ProvenanceSummary.Provenance) == 0 {
+		return fmt.Errorf("%w: no provenance found", serrors.ErrorInvalidDssePayload)
+	}
+	// Assume a single provenance in the array.
+	prov := self.gcloudProv.ProvenanceSummary.Provenance[0]
+
+	// Verify the envelope type. It shoudl be an intoto type.
+	if prov.Envelope.PayloadType != intoto.PayloadType {
+		return fmt.Errorf("%w: expected payload type '%s', got %s",
+			serrors.ErrorInvalidDssePayload, intoto.PayloadType, prov.Envelope.PayloadType)
+	}
+
+	payload, err := payloadFromEnvelope(&prov.Envelope)
+	if err != nil {
+		return err
+	}
+
+	payloadHash := sha256.Sum256(payload)
+
+	var errs []error
+	regex := regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
+	for _, sig := range prov.Envelope.Signatures {
+		match := regex.FindStringSubmatch(sig.KeyID)
+		if len(match) == 2 {
+			// Create a public key instance for this region.
+			region := match[1]
+			pubKey, err := keys.PublicKeyNew(region)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			// Decode the signature.
+			sig, err := signatureAsRaw(sig.Sig)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			// Verify the signature.
+			err = pubKey.VerifySignature(payloadHash, sig)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			var statement v01IntotoStatement
+			if err := json.Unmarshal(payload, &statement); err != nil {
+				return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+			}
+			self.verifiedIntotoStatementStruct = &statement
+			fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
 }

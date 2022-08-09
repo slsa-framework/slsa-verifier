@@ -20,4 +20,7 @@ var (
 	ErrorVerifierNotSupported      = errors.New("no verifier support the builder")
 	ErrorNotSupported              = errors.New("not supported")
 	ErrorInvalidFormat             = errors.New("invalid format")
+	ErrorInvalidPEM                = errors.New("invalid PEM")
+	ErrorInvalidSignature          = errors.New("invalid signature")
+	ErrorNoValidSignature          = errors.New("no valid signature")
 )

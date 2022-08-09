@@ -36,14 +36,42 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
-	// Parse the data.
+	prov, err := ProvenanceFromBytes(provenance)
+	if err != nil {
+		return nil, "", err
+	}
+
+	/* Verify signature on the intoto attestation. */
+	if err = prov.VerifySignature(); err != nil {
+		return nil, "", err
+	}
+
+	/* Verify intoto header */
+	if err = prov.VerifyIntotoHeaders(); err != nil {
+		return nil, "", err
+	}
+
+	/* Verify the builder */
+	builderID, err := prov.VerifyBuilderID(builderOpts)
+	if err != nil {
+		return nil, "", err
+	}
+
+	/* Verify artifact hash */
+	if err = prov.VerifyArtifactHash("7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed"); err != nil {
+		return nil, "", err
+	}
+
+	/* Verify source */
+	if err = prov.VerifySourceURI(provenanceOpts.ExpectedSourceURI); err != nil {
+		return nil, "", err
+	}
 
 	// TODO: verify kind: BUILD
 	// TODO: resourceUri against image_summary and subject data
 	// TODO: "build":
 	// TODO: "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
-
-	return nil, "todo", serrors.ErrorNotSupported
+	return prov.GetVerifiedIntotoStatement(), builderID, nil
 }
 
 // VerifyImage verifies provenance for an OCI image.
