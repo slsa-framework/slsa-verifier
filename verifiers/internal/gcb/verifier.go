@@ -41,36 +41,61 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 		return nil, "", err
 	}
 
-	/* Verify signature on the intoto attestation. */
+	// Verify signature on the intoto attestation.
 	if err = prov.VerifySignature(); err != nil {
 		return nil, "", err
 	}
 
-	/* Verify intoto header */
+	// Verify intoto header.
 	if err = prov.VerifyIntotoHeaders(); err != nil {
 		return nil, "", err
 	}
 
-	/* Verify the builder */
+	// Verify the builder.
 	builderID, err := prov.VerifyBuilderID(builderOpts)
 	if err != nil {
 		return nil, "", err
 	}
 
-	/* Verify artifact hash */
-	if err = prov.VerifyArtifactHash("7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed"); err != nil {
+	// Verify subject digest.
+	if err = prov.VerifySubjectDigest("7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed"); err != nil {
 		return nil, "", err
 	}
 
-	/* Verify source */
+	// Verify source.
 	if err = prov.VerifySourceURI(provenanceOpts.ExpectedSourceURI); err != nil {
 		return nil, "", err
 	}
 
-	// TODO: verify kind: BUILD
-	// TODO: resourceUri against image_summary and subject data
-	// TODO: "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
-	return prov.GetVerifiedIntotoStatement(), builderID, nil
+	// Verify branch.
+	if err = prov.VerifyBranch(provenanceOpts.ExpectedBranch); err != nil {
+		return nil, "", err
+	}
+
+	// Verify the tag.
+	if provenanceOpts.ExpectedTag != nil {
+		if err := prov.VerifyTag(*provenanceOpts.ExpectedTag); err != nil {
+			return nil, "", err
+		}
+	}
+
+	// Verify the versioned tag.
+	if provenanceOpts.ExpectedVersionedTag != nil {
+		if err := prov.VerifyVersionedTag(*provenanceOpts.ExpectedVersionedTag); err != nil {
+			return nil, "", err
+		}
+	}
+
+	// TODO: verify summary information:
+	// - kind: BUILD
+	// - resourceUri against image_summary and subject data
+	// - text is the same as what is verified.
+
+	content, err := prov.GetVerifiedIntotoStatement()
+	if err != nil {
+		return nil, "", err
+	}
+	return content, builderID, nil
 }
 
 // VerifyImage verifies provenance for an OCI image.

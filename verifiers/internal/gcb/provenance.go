@@ -22,8 +22,8 @@ var GCBBuilderIDs = []string{"https://cloudbuild.googleapis.com/GoogleHostedWork
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
-	Predicate      slsa01.ProvenancePredicate `json:"predicate"`
-	WrongPredicate slsa01.ProvenancePredicate `json:"slsaProvenance"`
+	// WARNING: this is a temp hack because provenance is malformed.
+	Predicate slsa01.ProvenancePredicate `json:"slsaProvenance"`
 }
 
 type gloudProvenance struct {
@@ -48,7 +48,6 @@ type gloudProvenance struct {
 
 type GCBProvenance struct {
 	gcloudProv                    *gloudProvenance
-	verifiedIntotoStatementBytes  []byte
 	verifiedIntotoStatementStruct *v01IntotoStatement
 	// Note: may need to support envelope only.
 	// TODO: verified flag?
@@ -66,22 +65,6 @@ func ProvenanceFromBytes(payload []byte) (*GCBProvenance, error) {
 		gcloudProv: &prov,
 	}, nil
 }
-
-/*func intotoStatementFromEnv(env *dsselib.Envelope) (*v01IntotoStatement, error) {
-	if env.PayloadType != intoto.PayloadType {
-		return nil, fmt.Errorf("%w: expected payload type '%s', got %s",
-			serrors.ErrorInvalidDssePayload, intoto.PayloadType, env.PayloadType)
-	}
-	payload, err := base64.StdEncoding.DecodeString(env.Payload)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	var statement v01IntotoStatement
-	if err := json.Unmarshal(payload, &statement); err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	return &statement, nil
-}*/
 
 func signatureAsRaw(s string) ([]byte, error) {
 	s = strings.ReplaceAll(s, "-", "+")
@@ -101,14 +84,28 @@ func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	return payload, nil
 }
 
-func (self *GCBProvenance) GetVerifiedIntotoStatement() []byte {
-	return self.verifiedIntotoStatementBytes
-}
-
-func (self *GCBProvenance) VerifyIntotoHeaders() error {
+func (self *GCBProvenance) isVerified() error {
 	// Check that the signature is verified.
 	if self.verifiedIntotoStatementStruct == nil {
 		return serrors.ErrorNoValidSignature
+	}
+	return nil
+}
+
+func (self *GCBProvenance) GetVerifiedIntotoStatement() ([]byte, error) {
+	if err := self.isVerified(); err != nil {
+		return nil, err
+	}
+	d, err := json.Marshal(self.verifiedIntotoStatementStruct)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+	return d, nil
+}
+
+func (self *GCBProvenance) VerifyIntotoHeaders() error {
+	if err := self.isVerified(); err != nil {
+		return err
 	}
 
 	statement := self.verifiedIntotoStatementStruct
@@ -137,13 +134,12 @@ func isValidBuilderID(id string) error {
 }
 
 func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (string, error) {
-	// Check that the signature is verified.
-	if self.verifiedIntotoStatementStruct == nil {
-		return "", serrors.ErrorNoValidSignature
+	if err := self.isVerified(); err != nil {
+		return "", err
 	}
 
 	statement := self.verifiedIntotoStatementStruct
-	predicateBuilderID := statement.WrongPredicate.Builder.ID
+	predicateBuilderID := statement.Predicate.Builder.ID
 
 	// Sanity check the builderID.
 	if err := isValidBuilderID(predicateBuilderID); err != nil {
@@ -159,8 +155,7 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 	}
 
 	// Valiate that the recipe type is consistent.
-	// WARNING: this is a temp hack because provenance is malformed.
-	if predicateBuilderID != statement.WrongPredicate.Recipe.Type {
+	if predicateBuilderID != statement.Predicate.Recipe.Type {
 		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			*builderOpts.ExpectedID, predicateBuilderID)
 	}
@@ -168,10 +163,9 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 	return predicateBuilderID, nil
 }
 
-func (self *GCBProvenance) VerifyArtifactHash(expectedHash string) error {
-	// Check that the signature is verified.
-	if self.verifiedIntotoStatementStruct == nil {
-		return serrors.ErrorNoValidSignature
+func (self *GCBProvenance) VerifySubjectDigest(expectedHash string) error {
+	if err := self.isVerified(); err != nil {
+		return err
 	}
 
 	statement := self.verifiedIntotoStatementStruct
@@ -192,14 +186,12 @@ func (self *GCBProvenance) VerifyArtifactHash(expectedHash string) error {
 
 // Verify source URI in provenance statement.
 func (self *GCBProvenance) VerifySourceURI(expectedSourceURI string) error {
-	// Check that the signature is verified.
-	if self.verifiedIntotoStatementStruct == nil {
-		return serrors.ErrorNoValidSignature
+	if err := self.isVerified(); err != nil {
+		return err
 	}
 
-	// WARNING: this is a temp hack because provenance is malformed.
 	statement := self.verifiedIntotoStatementStruct
-	materials := statement.WrongPredicate.Materials
+	materials := statement.Predicate.Materials
 	if len(materials) == 0 {
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
 	}
@@ -213,6 +205,18 @@ func (self *GCBProvenance) VerifySourceURI(expectedSourceURI string) error {
 	}
 
 	return nil
+}
+
+func (self *GCBProvenance) VerifyBranch(branch string) error {
+	return fmt.Errorf("%w: GCB branch verification", serrors.ErrorNotSupported)
+}
+
+func (self *GCBProvenance) VerifyTag(tag string) error {
+	return fmt.Errorf("%w: GCB tag verification", serrors.ErrorNotSupported)
+}
+
+func (self *GCBProvenance) VerifyVersionedTag(tag string) error {
+	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
 }
 
 func (self *GCBProvenance) VerifySignature() error {
