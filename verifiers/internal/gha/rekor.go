@@ -1,4 +1,4 @@
-package pkg
+package gha
 
 import (
 	"bytes"
@@ -37,6 +37,8 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	"github.com/transparency-dev/merkle/proof"
+
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
 const (
@@ -265,11 +267,11 @@ func GetRekorEntries(rClient *client.Rekor, artifactHash string) ([]string, erro
 	params.Query = &models.SearchIndex{Hash: fmt.Sprintf("sha256:%v", artifactHash)}
 	resp, err := rClient.Index.SearchIndex(params)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrorRekorSearch, err.Error())
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorSearch, err.Error())
 	}
 
 	if len(resp.Payload) == 0 {
-		return nil, fmt.Errorf("%w: no matching entries found", ErrorRekorSearch)
+		return nil, fmt.Errorf("%w: no matching entries found", serrors.ErrorRekorSearch)
 	}
 
 	return resp.GetPayload(), nil
@@ -300,11 +302,11 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, provenance []byte) (*dsselib
 	params.SetEntry(&searchLogQuery)
 	resp, err := rClient.Entries.SearchLogQuery(params)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s", ErrorRekorSearch, err.Error())
+		return nil, nil, fmt.Errorf("%w: %s", serrors.ErrorRekorSearch, err.Error())
 	}
 
 	if len(resp.GetPayload()) != 1 {
-		return nil, nil, fmt.Errorf("%w: %s", ErrorRekorSearch, "no matching rekor entries")
+		return nil, nil, fmt.Errorf("%w: %s", serrors.ErrorRekorSearch, "no matching rekor entries")
 	}
 
 	logEntry := resp.Payload[0]
@@ -394,5 +396,5 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		return cert, nil
 	}
 
-	return nil, fmt.Errorf("%w: got unexpected errors %s", ErrorNoValidRekorEntries, strings.Join(errs, ", "))
+	return nil, fmt.Errorf("%w: got unexpected errors %s", serrors.ErrorNoValidRekorEntries, strings.Join(errs, ", "))
 }

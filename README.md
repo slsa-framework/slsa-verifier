@@ -36,7 +36,7 @@ $ go run . <options>
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.2)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
