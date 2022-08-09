@@ -8,13 +8,12 @@ import (
 	"os"
 	"strings"
 
-	crname "github.com/google/go-containerregistry/pkg/name"
-
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 
+	"github.com/slsa-framework/slsa-verifier/container"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
 )
@@ -104,37 +103,41 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	if err != nil {
 		return nil, "", err
 	}
-	ref, err := crname.ParseReference(artifactReference)
+	opts := &cosign.CheckOpts{
+		RootCerts: roots,
+	}
+
+	atts, _, err := container.RunCosignImageVerification(ctx,
+		artifactReference, opts)
 	if err != nil {
 		return nil, "", err
 	}
-	atts, _, err := cosign.VerifyImageAttestations(ctx, ref, &cosign.CheckOpts{
-		RootCerts: roots,
-	})
 
 	/* Now verify properties of the attestations */
+	var verifyErr error
+	var builderID string
+	var verifiedProvenance []byte
 	for _, att := range atts {
 		pyld, err := att.Payload()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "")
+			fmt.Fprintf(os.Stderr, "unexpected error getting payload from OCI registry %s", err)
 			continue
 		}
 		env, err := EnvelopeFromBytes(pyld)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "")
+			fmt.Fprintf(os.Stderr, "unexpected error parsing envelope from OCI registry %s", err)
 			continue
 		}
 		cert, err := att.Cert()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "")
+			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
 			continue
 		}
-
-		verifiedProvenance, builderID, err := verifyEnvAndCert(env, cert, provenanceOpts, builderOpts)
-		if err != nil {
+		verifiedProvenance, builderID, verifyErr = verifyEnvAndCert(env, cert, provenanceOpts, builderOpts)
+		if verifyErr == nil {
 			return verifiedProvenance, builderID, nil
 		}
 	}
 
-	return nil, "", fmt.Errorf("No verified matching attestation found")
+	return nil, "", fmt.Errorf("no valid attestations found on OCI registry: %w", verifyErr)
 }
