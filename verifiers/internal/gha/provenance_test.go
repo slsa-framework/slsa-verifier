@@ -473,6 +473,12 @@ func Test_VerifyBranch(t *testing.T) {
 			path:   "./testdata/dsse-v10.0.1-release.intoto.jsonl",
 			branch: "main",
 		},
+		{
+			name:     "from commit push - no branch",
+			path:     "./testdata/dsse-annotated-tag.intoto.jsonl",
+			branch:   "main",
+			expected: serrors.ErrorMismatchBranch,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below

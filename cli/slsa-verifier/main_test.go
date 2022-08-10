@@ -38,7 +38,7 @@ func Test_runVerifyGoAndGeneric(t *testing.T) {
 		name        string
 		artifact    string
 		source      string
-		branch      string
+		pbranch     *string
 		ptag        *string
 		pversiontag *string
 		pbuilderID  *string
@@ -70,14 +70,19 @@ func Test_runVerifyGoAndGeneric(t *testing.T) {
 			name:     "valid main branch set",
 			artifact: "binary-linux-amd64-workflow_dispatch",
 			source:   "github.com/slsa-framework/example-package",
-			branch:   "main",
+			pbranch:  pString("main"),
 		},
 		{
 			name:     "wrong branch master",
 			artifact: "binary-linux-amd64-workflow_dispatch",
 			source:   "github.com/slsa-framework/example-package",
-			branch:   "master",
+			pbranch:  pString("master"),
 			err:      serrors.ErrorMismatchBranch,
+		},
+		{
+			name:     "branch master not verified",
+			artifact: "binary-linux-amd64-workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
 		},
 		{
 			name:     "wrong source append A",
@@ -346,7 +351,7 @@ func Test_runVerifyGoAndGeneric(t *testing.T) {
 			name:      "e2e test repository verified with builder at head",
 			artifact:  "binary-linux-amd64-e2e-builder-repo",
 			source:    "github.com/slsa-framework/example-package",
-			branch:    "main",
+			pbranch:   pString("main"),
 			noversion: true,
 			builderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
 		},
@@ -372,12 +377,29 @@ func Test_runVerifyGoAndGeneric(t *testing.T) {
 			err:       serrors.ErrorNoValidRekorEntries,
 			noversion: true,
 		},
-		// Regression test of sharded UUID
+		// annotated tags.
+		{
+			name:        "annotated tag",
+			artifact:    "annotated-tag",
+			source:      "github.com/laurentsimon/slsa-on-github-test",
+			pversiontag: pString("v5.0.1"),
+			noversion:   true,
+		},
+		{
+			name:        "no branch",
+			artifact:    "annotated-tag",
+			source:      "github.com/laurentsimon/slsa-on-github-test",
+			pversiontag: pString("v5.0.1"),
+			pbranch:     pString("main"),
+			err:         serrors.ErrorMismatchBranch,
+			noversion:   true,
+		},
+		// Regression test of sharded UUID.
 		{
 			name:      "regression: sharded uuids",
 			artifact:  "binary-linux-amd64-sharded",
 			source:    "github.com/slsa-framework/slsa-verifier",
-			branch:    "release/v1.0",
+			pbranch:   pString("release/v1.0"),
 			noversion: true,
 		},
 	}
@@ -416,17 +438,13 @@ func Test_runVerifyGoAndGeneric(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
-				branch := tt.branch
-				if branch == "" {
-					branch = "main"
-				}
 
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				_, builderID, err := runVerify("", artifactPath,
 					provenancePath,
-					tt.source, branch, tt.pbuilderID,
+					tt.source, tt.pbranch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag)
 
 				if !errCmp(err, tt.err) {
@@ -494,7 +512,7 @@ func TestContainerVerification(t *testing.T) {
 		name        string
 		artifact    string
 		source      string
-		branch      string
+		pbranch     *string
 		ptag        *string
 		pversiontag *string
 		pbuilderID  *string
@@ -523,14 +541,14 @@ func TestContainerVerification(t *testing.T) {
 			name:     "valid main branch set",
 			artifact: "container_workflow_dispatch",
 			source:   "github.com/slsa-framework/example-package",
-			branch:   "main",
+			pbranch:  pString("main"),
 		},
 
 		{
 			name:     "wrong branch master",
 			artifact: "container_workflow_dispatch",
 			source:   "github.com/slsa-framework/example-package",
-			branch:   "master",
+			pbranch:  pString("master"),
 			err:      serrors.ErrorMismatchBranch,
 		},
 		{
@@ -594,15 +612,10 @@ func TestContainerVerification(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
-				branch := tt.branch
-				if branch == "" {
-					branch = "main"
-				}
-
 				artifactReference := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 
 				_, builderID, err := runVerify(artifactReference, "", "",
-					tt.source, branch, tt.pbuilderID,
+					tt.source, tt.pbranch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag)
 
 				if !errCmp(err, tt.err) {

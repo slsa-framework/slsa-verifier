@@ -33,7 +33,7 @@ func main() {
 	flag.StringVar(&artifactReference, "artifact-reference", "", "reference to an OCI image to verify")
 	flag.StringVar(&source, "source", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
-	flag.StringVar(&branch, "branch", "main", "expected branch the binary was compiled from")
+	flag.StringVar(&branch, "branch", "", "[optional] expected branch the binary was compiled from")
 	flag.StringVar(&tag, "tag", "", "[optional] expected tag the binary was compiled from")
 	flag.StringVar(&versiontag, "versioned-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
@@ -52,7 +52,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var pbuilderID, ptag, pversiontag *string
+	var pbuilderID, pbranch, ptag, pversiontag *string
 
 	// Note: nil tag, version-tag and builder-id means we ignore them during verification.
 	if isFlagPassed("tag") {
@@ -64,14 +64,17 @@ func main() {
 	if isFlagPassed("builder-id") {
 		pbuilderID = &builderID
 	}
+	if isFlagPassed("branch") {
+		pbranch = &branch
+	}
 
 	if ptag != nil && pversiontag != nil {
 		fmt.Fprintf(os.Stderr, "'version' and 'tag' options cannot be used together\n")
 		os.Exit(1)
 	}
 
-	verifiedProvenance, _, err := runVerify(artifactReference, artifactPath, provenancePath, source,
-		branch, pbuilderID, ptag, pversiontag)
+	verifiedProvenance, _, err := runVerify(artifactReference, artifactPath, provenancePath,
+		source, pbranch, pbuilderID, ptag, pversiontag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -95,8 +98,8 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(artifactReference, artifactPath, provenancePath, source, branch string,
-	builderID, ptag, pversiontag *string,
+func runVerify(artifactReference, artifactPath, provenancePath, source string,
+	branch, builderID, ptag, pversiontag *string,
 ) ([]byte, string, error) {
 	ctx := context.Background()
 
