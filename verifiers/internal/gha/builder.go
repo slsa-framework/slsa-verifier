@@ -18,14 +18,21 @@ var (
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
 )
 
-var defaultTrustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":   true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
+var defaultArtifactTrustedReusableWorkflows = map[string]bool{
+	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml": true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":        true,
+}
+
+var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
 // VerifyWorkflowIdentity verifies the signing certificate information
-func VerifyWorkflowIdentity(id *WorkflowIdentity, builderOpts *options.BuilderOpts, source string) (string, error) {
+// Builder IDs are verified against an expected builder ID provided in the
+// builerOpts, or against the set of defaultBuilders provided.
+func VerifyWorkflowIdentity(id *WorkflowIdentity,
+	builderOpts *options.BuilderOpts, source string,
+	defaultBuilders map[string]bool) (string, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
@@ -34,7 +41,8 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, builderOpts *options.BuilderOp
 
 	// Trusted workflow verification by name.
 	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
-	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath, builderOpts.ExpectedID)
+	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath,
+		builderOpts.ExpectedID, defaultBuilders)
 	if err != nil {
 		return "", err
 	}
@@ -62,11 +70,13 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity, builderOpts *options.BuilderOp
 	return builderID, nil
 }
 
-func verifyTrustedBuilderID(path string, builderID *string) (string, error) {
+// Verifies the builder ID at path against an expected builderID.
+// If an expected builderID is not provided, uses the defaultBuilders.
+func verifyTrustedBuilderID(path string, builderID *string, defaultBuilders map[string]bool) (string, error) {
 	// No builder ID provided by user: use the default trusted workflows.
 	if builderID == nil || *builderID == "" {
-		if _, ok := defaultTrustedReusableWorkflows[path]; !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorUntrustedReusableWorkflow, path)
+		if _, ok := defaultBuilders[path]; !ok {
+			return "", fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, path, builderID == nil)
 		}
 	} else {
 		// Verify the builderID.

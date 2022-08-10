@@ -40,7 +40,7 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 
 // VerifyImage verifies provenance for an OCI image.
 func (v *GCBVerifier) VerifyImage(ctx context.Context,
-	artifactReference string,
+	artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {

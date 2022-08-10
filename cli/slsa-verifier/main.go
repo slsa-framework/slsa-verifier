@@ -9,28 +9,28 @@ import (
 	"io"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/container"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
+	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
 
 var (
-	provenancePath    string
-	builderID         string
-	artifactPath      string
-	artifactReference string
-	source            string
-	branch            string
-	tag               string
-	versiontag        string
-	printProvenance   bool
+	provenancePath  string
+	builderID       string
+	artifactPath    string
+	artifactImage   string
+	source          string
+	branch          string
+	tag             string
+	versiontag      string
+	printProvenance bool
 )
 
 func main() {
 	flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
-	flag.StringVar(&artifactReference, "artifact-reference", "", "reference to an OCI image to verify")
+	flag.StringVar(&artifactImage, "artifact-image", "", "name of the OCI image to verify")
 	flag.StringVar(&source, "source", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
 	flag.StringVar(&branch, "branch", "", "[optional] expected branch the binary was compiled from")
@@ -41,8 +41,14 @@ func main() {
 		"print the verified provenance to std out")
 	flag.Parse()
 
-	if (provenancePath == "" || artifactPath == "") && artifactReference == "" {
-		fmt.Fprintf(os.Stderr, "either 'provenance' and 'artifact-path' or '' must be specified\n")
+	if (provenancePath == "" || artifactPath == "") && artifactImage == "" {
+		fmt.Fprintf(os.Stderr, "either 'provenance' and 'artifact-path' or 'artifact-image' must be specified\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if artifactImage != "" && (provenancePath != "" || artifactPath != "") {
+		fmt.Fprintf(os.Stderr, "'provenance' and 'artifact-path' should not be specified when 'artifact-image' is provided\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -73,7 +79,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	verifiedProvenance, _, err := runVerify(artifactReference, artifactPath, provenancePath,
+	verifiedProvenance, _, err := runVerify(artifactImage, artifactPath, provenancePath,
 		source, pbranch, pbuilderID, ptag, pversiontag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
@@ -98,13 +104,13 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func runVerify(artifactReference, artifactPath, provenancePath, source string,
+func runVerify(artifactImage, artifactPath, provenancePath, source string,
 	branch, builderID, ptag, pversiontag *string,
 ) ([]byte, string, error) {
 	ctx := context.Background()
 
 	// Artifact hash retrieval depends on the artifact type.
-	artifactHash, err := getArtifactHash(artifactReference, artifactPath)
+	artifactHash, err := getArtifactHash(artifactImage, artifactPath)
 	if err != nil {
 		return nil, "", err
 	}
@@ -129,10 +135,10 @@ func runVerify(artifactReference, artifactPath, provenancePath, source string,
 		}
 	}
 
-	return verifiers.Verify(ctx, artifactReference, provenance, artifactHash, provenanceOpts, builderOpts)
+	return verifiers.Verify(ctx, artifactImage, provenance, artifactHash, provenanceOpts, builderOpts)
 }
 
-func getArtifactHash(artifactReference, artifactPath string) (string, error) {
+func getArtifactHash(artifactImage, artifactPath string) (string, error) {
 	if artifactPath != "" {
 		f, err := os.Open(artifactPath)
 		if err != nil {
@@ -146,5 +152,5 @@ func getArtifactHash(artifactReference, artifactPath string) (string, error) {
 		return hex.EncodeToString(h.Sum(nil)), nil
 	}
 	// Retrieve image digest
-	return container.GetImageDigest(artifactReference)
+	return container.GetImageDigest(artifactImage)
 }

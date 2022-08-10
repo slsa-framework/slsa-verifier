@@ -11,7 +11,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gha"
 )
 
-func Verify(ctx context.Context, artifactReference string,
+func Verify(ctx context.Context, artifactImage string,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
@@ -37,8 +37,8 @@ func Verify(ctx context.Context, artifactReference string,
 	}
 
 	// By default, try the GHA builders.
-	if artifactReference != "" {
-		return verifier.VerifyImage(ctx, artifactReference, provenanceOpts, builderOpts)
+	if artifactImage != "" {
+		return verifier.VerifyImage(ctx, artifactImage, provenanceOpts, builderOpts)
 	}
 	return verifier.VerifyArtifact(ctx, provenance, artifactHash,
 		provenanceOpts, builderOpts)
