@@ -94,4 +94,3 @@ and the hash in the pull request matches the one computed on the binary. You can
 Send a similar pull request to update the hash and version of the verifier for the workflow [slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31](https://github.com/slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31). Explain the steps to verify the hash. If the pull request for the verifier is already merged, you can simply point to it instead.
 
 Note: you need not cut a release for the generator, unless the verifier has important changes that are required for the builders to work properly.
-
