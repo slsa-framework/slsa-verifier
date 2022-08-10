@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
+
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"

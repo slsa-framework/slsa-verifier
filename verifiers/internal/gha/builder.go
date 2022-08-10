@@ -18,16 +18,9 @@ var (
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
 )
 
-<<<<<<< HEAD:verifiers/internal/gha/builder.go
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml": true,
 	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":        true,
-=======
-var trustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":   true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":          true,
-	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
->>>>>>> d733abe (add testing folder):pkg/builder.go
 }
 
 var defaultContainerTrustedReusableWorkflows = map[string]bool{
@@ -39,7 +32,8 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 // builerOpts, or against the set of defaultBuilders provided.
 func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	builderOpts *options.BuilderOpts, source string,
-	defaultBuilders map[string]bool) (string, error) {
+	defaultBuilders map[string]bool,
+) (string, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {

@@ -13,7 +13,6 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 
-	"github.com/slsa-framework/slsa-verifier/container"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"
