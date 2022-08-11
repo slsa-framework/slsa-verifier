@@ -24,8 +24,15 @@ var (
 	printProvenance bool
 )
 
+func experimentalEnabled() bool {
+	_, ok := os.LookupEnv("SLSA_VERIFIER_EXPERIMENTAL")
+	return ok
+}
+
 func main() {
-	flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
+	if experimentalEnabled() {
+		flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
+	}
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
 	flag.StringVar(&source, "source", "",
@@ -52,7 +59,7 @@ func main() {
 	if isFlagPassed("versioned-tag") {
 		pversiontag = &versiontag
 	}
-	if isFlagPassed("builder-id") {
+	if experimentalEnabled() && isFlagPassed("builder-id") {
 		pbuilderID = &builderID
 	}
 	if isFlagPassed("branch") {
