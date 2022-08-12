@@ -25,8 +25,7 @@ var (
 )
 
 func experimentalEnabled() bool {
-	_, ok := os.LookupEnv("SLSA_VERIFIER_EXPERIMENTAL")
-	return ok
+	return os.Getenv("SLSA_VERIFIER_EXPERIMENTAL") == "1"
 }
 
 func main() {
