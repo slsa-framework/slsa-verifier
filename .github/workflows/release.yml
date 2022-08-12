@@ -13,7 +13,7 @@ on:
 permissions: read-all
 
 env:
-  GH_TOKEN: ${{ secrets.E2E_GO_TOKEN }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   ISSUE_REPOSITORY: slsa-framework/slsa-verifier
 
 jobs:
