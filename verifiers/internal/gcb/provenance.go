@@ -58,7 +58,7 @@ func ProvenanceFromBytes(payload []byte) (*GCBProvenance, error) {
 	var prov gloudProvenance
 	err := json.Unmarshal(payload, &prov)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal: %w")
+		return nil, fmt.Errorf("json.Unmarshal: %w", err)
 	}
 
 	return &GCBProvenance{
@@ -253,7 +253,7 @@ func (self *GCBProvenance) VerifySignature() error {
 	// Assume a single provenance in the array.
 	prov := self.gcloudProv.ProvenanceSummary.Provenance[0]
 
-	// Verify the envelope type. It shoudl be an intoto type.
+	// Verify the envelope type. It should be an intoto type.
 	if prov.Envelope.PayloadType != intoto.PayloadType {
 		return fmt.Errorf("%w: expected payload type '%s', got %s",
 			serrors.ErrorInvalidDssePayload, intoto.PayloadType, prov.Envelope.PayloadType)
