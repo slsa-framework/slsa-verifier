@@ -36,7 +36,7 @@ func experimentalEnabled() bool {
 }
 
 func (i *workflowInputs) String() string {
-	return "some representation"
+	return fmt.Sprintf("%v", i.kv)
 }
 
 func (i *workflowInputs) Set(value string) error {
@@ -68,7 +68,7 @@ func main() {
 		"print the verified provenance to std out")
 	inputs.kv = make(map[string]string)
 	flag.Var(&inputs, "workflow-input",
-		"[optional] a workflow input provided by a user at trigger time (e.g., workflow_dispatch) in the format 'key=value'.")
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 	flag.Parse()
 
 	if provenancePath == "" || artifactPath == "" || source == "" {
