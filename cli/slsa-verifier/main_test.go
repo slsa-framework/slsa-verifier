@@ -434,6 +434,7 @@ func Test_runVerify(t *testing.T) {
 				"some_bool":       "true",
 				"some_integer":    "321",
 			},
+			err:       serrors.ErrorMismatchWorkflowInputs,
 			noversion: true,
 		},
 		// Regression test of sharded UUID.
