@@ -160,7 +160,34 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 			*builderOpts.ExpectedID, predicateBuilderID)
 	}
 
+	// Validate the recipe argument type.
+	expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
+	args, ok := statement.Predicate.Recipe.Arguments.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
+	}
+	ts, err := getAsString(args, "@type")
+	if err != nil {
+		return "", err
+	}
+	if ts != expectedType {
+		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+			expectedType, ts)
+	}
+
 	return predicateBuilderID, nil
+}
+
+func getAsString(m map[string]interface{}, key string) (string, error) {
+	t, ok := m["@type"]
+	if !ok {
+		return "", fmt.Errorf("%w: '%s' field is absent", serrors.ErrorInvalidDssePayload, key)
+	}
+	ts, ok := t.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: '%s' is not a string", serrors.ErrorInvalidDssePayload, key)
+	}
+	return ts, nil
 }
 
 func (self *GCBProvenance) VerifySubjectDigest(expectedHash string) error {

@@ -2,6 +2,7 @@ package gha
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
@@ -68,8 +69,11 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	}
 
 	// Verify branch.
-	if err = prov.VerifyBranch(provenanceOpts.ExpectedBranch); err != nil {
-		return nil, "", err
+	fmt.Println(provenanceOpts.ExpectedBranch)
+	if provenanceOpts.ExpectedBranch != "" {
+		if err = prov.VerifyBranch(provenanceOpts.ExpectedBranch); err != nil {
+			return nil, "", err
+		}
 	}
 
 	// Verify the tag.
