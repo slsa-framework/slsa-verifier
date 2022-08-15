@@ -20,6 +20,9 @@ type ProvenanceOpts struct {
 
 	// ExpectedBuilderID is the expected builder ID.
 	ExpectedBuilderID string
+
+	// ExpectedWorkflowInputs is a map of key=value onputs.
+	ExpectedWorkflowInputs map[string]string
 }
 
 // BuildOpts are the options for checking the builder.
