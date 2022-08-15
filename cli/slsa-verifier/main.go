@@ -8,10 +8,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
 )
+
+type workflowInputs struct {
+	kv map[string]string
+}
 
 var (
 	provenancePath  string
@@ -21,11 +27,29 @@ var (
 	branch          string
 	tag             string
 	versiontag      string
+	inputs          workflowInputs
 	printProvenance bool
 )
 
 func experimentalEnabled() bool {
 	return os.Getenv("SLSA_VERIFIER_EXPERIMENTAL") == "1"
+}
+
+func (i *workflowInputs) String() string {
+	return fmt.Sprintf("%v", i.kv)
+}
+
+func (i *workflowInputs) Set(value string) error {
+	l := strings.Split(value, "=")
+	if len(l) != 2 {
+		return fmt.Errorf("%w: expected 'key=value' format, got '%s'", serrors.ErrorInvalidFormat, value)
+	}
+	i.kv[l[0]] = l[1]
+	return nil
+}
+
+func (i *workflowInputs) AsMap() map[string]string {
+	return i.kv
 }
 
 func main() {
@@ -42,6 +66,9 @@ func main() {
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 	flag.BoolVar(&printProvenance, "print-provenance", false,
 		"print the verified provenance to std out")
+	inputs.kv = make(map[string]string)
+	flag.Var(&inputs, "workflow-input",
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 	flag.Parse()
 
 	if provenancePath == "" || artifactPath == "" || source == "" {
@@ -71,7 +98,7 @@ func main() {
 	}
 
 	verifiedProvenance, _, err := runVerify(artifactPath, provenancePath, source,
-		pbranch, pbuilderID, ptag, pversiontag)
+		pbranch, pbuilderID, ptag, pversiontag, inputs.AsMap())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -95,7 +122,7 @@ func isFlagPassed(name string) bool {
 }
 
 func runVerify(artifactPath, provenancePath, source string,
-	branch, builderID, ptag, pversiontag *string,
+	branch, builderID, ptag, pversiontag *string, inputs map[string]string,
 ) ([]byte, string, error) {
 	f, err := os.Open(artifactPath)
 	if err != nil {
@@ -115,11 +142,12 @@ func runVerify(artifactPath, provenancePath, source string,
 	artifactHash := hex.EncodeToString(h.Sum(nil))
 
 	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:    source,
-		ExpectedBranch:       branch,
-		ExpectedDigest:       artifactHash,
-		ExpectedVersionedTag: pversiontag,
-		ExpectedTag:          ptag,
+		ExpectedSourceURI:      source,
+		ExpectedBranch:         branch,
+		ExpectedDigest:         artifactHash,
+		ExpectedVersionedTag:   pversiontag,
+		ExpectedTag:            ptag,
+		ExpectedWorkflowInputs: inputs,
 	}
 
 	builderOpts := &options.BuilderOpts{

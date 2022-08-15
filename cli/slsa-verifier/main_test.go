@@ -44,6 +44,7 @@ func Test_runVerify(t *testing.T) {
 		pversiontag *string
 		pbuilderID  *string
 		builderID   string
+		inputs      map[string]string
 		err         error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
@@ -383,7 +384,7 @@ func Test_runVerify(t *testing.T) {
 			err:       serrors.ErrorNoValidRekorEntries,
 			noversion: true,
 		},
-		// annotated tags.
+		// Annotated tags.
 		{
 			name:        "annotated tag",
 			artifact:    "annotated-tag",
@@ -399,6 +400,42 @@ func Test_runVerify(t *testing.T) {
 			pbranch:     pString("main"),
 			err:         serrors.ErrorMismatchBranch,
 			noversion:   true,
+		},
+		// Workflow inputs.
+		{
+			name:     "workflow inputs match",
+			artifact: "workflow-inputs",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"some_integer":    "123",
+			},
+			noversion: true,
+		},
+		{
+			name:     "workflow inputs missing field",
+			artifact: "workflow-inputs",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"missing_field":   "123",
+			},
+			err:       serrors.ErrorMismatchWorkflowInputs,
+			noversion: true,
+		},
+		{
+			name:     "workflow inputs mismatch",
+			artifact: "workflow-inputs",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"some_integer":    "321",
+			},
+			err:       serrors.ErrorMismatchWorkflowInputs,
+			noversion: true,
 		},
 		// Regression test of sharded UUID.
 		{
@@ -458,7 +495,7 @@ func Test_runVerify(t *testing.T) {
 				_, builderID, err := runVerify(artifactPath,
 					provenancePath,
 					tt.source, tt.pbranch, tt.pbuilderID,
-					tt.ptag, tt.pversiontag)
+					tt.ptag, tt.pversiontag, tt.inputs)
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
