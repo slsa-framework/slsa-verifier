@@ -494,7 +494,7 @@ func Test_runVerify(t *testing.T) {
 				_, builderID, err := runVerify(artifactPath,
 					provenancePath,
 					tt.source, tt.pbranch, tt.pbuilderID,
-					tt.ptag, tt.pversiontag)
+					tt.ptag, tt.pversiontag, tt.inputs)
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
