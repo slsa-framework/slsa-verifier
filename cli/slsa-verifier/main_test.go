@@ -65,16 +65,16 @@ func getBuildersAndVersions(t *testing.T,
 func Test_runVerifyArtifactPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name        string
-		artifact    string
-		source      string
-		pbranch     *string
-		ptag        *string
-		pversiontag *string
-		pbuilderID  *string
-		builderID   string
-		inputs      map[string]string
-		err         error
+		name         string
+		artifact     string
+		source       string
+		pbranch      *string
+		ptag         *string
+		pversiontag  *string
+		pbuilderID   *string
+		outBuilderID string
+		inputs       map[string]string
+		err          error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
 		// or testdata from malicious untrusted builders.
@@ -375,7 +375,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			minversion:   "v1.2.0",
 			builders:     []string{"generic"},
 			pbuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
-			outBuilderId: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
+			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
@@ -384,7 +384,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			source:       "github.com/slsa-framework/example-package",
 			pbranch:      pString("main"),
 			noversion:    true,
-			outBuilderId: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
+			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
 		},
 		// Malicious builders and workflows.
 		{
@@ -498,8 +498,8 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 					return
 				}
 
-				if tt.outBuilderId != "" && outBuilderId != tt.outBuilderId {
-					t.Errorf(cmp.Diff(outBuilderId, tt.outBuilderId))
+				if tt.outBuilderID != "" && outBuilderId != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderId, tt.outBuilderID))
 				}
 			}
 		})
@@ -643,7 +643,7 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 
 				_, outBuilderID, err := runVerify(image, "", "",
 					tt.source, tt.pbranch, tt.pbuilderID,
-					tt.ptag, tt.pversiontag)
+					tt.ptag, tt.pversiontag, nil)
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))

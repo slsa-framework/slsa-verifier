@@ -121,9 +121,7 @@ func main() {
 
 	fmt.Fprintf(os.Stderr, "PASSED: Verified SLSA provenance\n")
 	if printProvenance {
-		for _, verified := range verifiedProvenance {
-			fmt.Fprintf(os.Stdout, "%s\n", string(verified))
-		}
+		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 }
 
@@ -136,7 +134,6 @@ func isFlagPassed(name string) bool {
 	})
 	return found
 }
-
 
 func runVerify(artifactImage, artifactPath, provenancePath, source string,
 	branch, builderID, ptag, pversiontag *string, inputs map[string]string,
