@@ -3,13 +3,13 @@ package container
 import (
 	"strings"
 
-	crname "github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/crane"
 )
 
 var GetImageDigest = func(image string) (string, error) {
-	ref, err := crname.ParseReference(image)
+	digest, err := crane.Digest(image)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimPrefix(ref.Context().Digest(ref.Identifier()).DigestStr(), "sha256:"), nil
+	return strings.TrimPrefix(digest, "sha256:"), nil
 }
