@@ -1,4 +1,4 @@
-package gha
+package gcb
 
 import (
 	"context"
@@ -36,6 +36,15 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
+	return nil, "todo", serrors.ErrorNotSupported
+}
+
+// VerifyImage verifies provenance for an OCI image.
+func (v *GCBVerifier) VerifyImage(ctx context.Context,
+	provenance []byte, artifactImage string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, string, error) {
 	prov, err := ProvenanceFromBytes(provenance)
 	if err != nil {
 		return nil, "", err
@@ -58,7 +67,7 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	}
 
 	// Verify subject digest.
-	if err = prov.VerifySubjectDigest("1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd"); err != nil {
+	if err = prov.VerifySubjectDigest(provenanceOpts.ExpectedDigest); err != nil {
 		return nil, "", err
 	}
 
@@ -98,14 +107,4 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 		return nil, "", err
 	}
 	return content, builderID, nil
-}
-
-// VerifyImage verifies provenance for an OCI image.
-func (v *GCBVerifier) VerifyImage(ctx context.Context,
-	artifactImage string,
-	provenanceOpts *options.ProvenanceOpts,
-	builderOpts *options.BuilderOpts,
-) ([]byte, string, error) {
-	// pubKey := PublicKeysNew()
-	return nil, "todo", serrors.ErrorNotSupported
 }

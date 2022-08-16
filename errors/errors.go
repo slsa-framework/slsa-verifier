@@ -13,7 +13,7 @@ var (
 	ErrorMismatchVersionedTag      = errors.New("tag used to generate the binary does not match provenance")
 	ErrorInvalidSemver             = errors.New("invalid semantic version")
 	ErrorRekorSearch               = errors.New("error searching rekor entries")
-	ErrorMismatchHash              = errors.New("binary artifact hash does not match provenance subject")
+	ErrorMismatchHash              = errors.New("artifact hash does not match provenance subject")
 	ErrorInvalidRef                = errors.New("invalid ref")
 	ErrorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
 	ErrorNoValidRekorEntries       = errors.New("could not find a matching valid signature entry")

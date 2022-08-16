@@ -1,4 +1,4 @@
-package gha
+package gcb
 
 import (
 	"crypto/sha256"
@@ -22,8 +22,7 @@ var GCBBuilderIDs = []string{"https://cloudbuild.googleapis.com/GoogleHostedWork
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
-	// WARNING: this is a temp hack because provenance is malformed.
-	Predicate slsa01.ProvenancePredicate `json:"slsaProvenance"`
+	Predicate slsa01.ProvenancePredicate `json:"predicate"`
 }
 
 type gloudProvenance struct {
@@ -37,7 +36,7 @@ type gloudProvenance struct {
 		Provenance []struct {
 			Build struct {
 				// TODO: this is untrusted, we should remove it.
-				IntotoStatement v01IntotoStatement `json:"intotoStatement"`
+				// IntotoStatement v01IntotoStatement `json:"intotoStatement"`
 			} `json:"build"`
 			Kind        string           `json:"kind"`
 			ResourceUri string           `json:"resourceUri"`
@@ -157,7 +156,7 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 	// Valiate that the recipe type is consistent.
 	if predicateBuilderID != statement.Predicate.Recipe.Type {
 		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-			*builderOpts.ExpectedID, predicateBuilderID)
+			predicateBuilderID, statement.Predicate.Recipe.Type)
 	}
 
 	// Validate the recipe argument type.
@@ -170,6 +169,7 @@ func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (st
 	if err != nil {
 		return "", err
 	}
+
 	if ts != expectedType {
 		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			expectedType, ts)

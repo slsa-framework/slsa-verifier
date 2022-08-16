@@ -38,7 +38,7 @@ func Verify(ctx context.Context, artifactImage string,
 
 	// By default, try the GHA builders.
 	if artifactImage != "" {
-		return verifier.VerifyImage(ctx, artifactImage, provenanceOpts, builderOpts)
+		return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
 	}
 	return verifier.VerifyArtifact(ctx, provenance, artifactHash,
 		provenanceOpts, builderOpts)
