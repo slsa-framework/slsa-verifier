@@ -65,15 +65,16 @@ func getBuildersAndVersions(t *testing.T,
 func Test_runVerifyArtifactPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name         string
-		artifact     string
-		source       string
-		pbranch      *string
-		ptag         *string
-		pversiontag  *string
-		pbuilderID   *string
-		outBuilderId string
-		err          error
+		name        string
+		artifact    string
+		source      string
+		pbranch     *string
+		ptag        *string
+		pversiontag *string
+		pbuilderID  *string
+		builderID   string
+		inputs      map[string]string
+		err         error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
 		// or testdata from malicious untrusted builders.
@@ -407,7 +408,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			err:       serrors.ErrorNoValidRekorEntries,
 			noversion: true,
 		},
-		// annotated tags.
+		// Annotated tags.
 		{
 			name:        "annotated tag",
 			artifact:    "annotated-tag",
@@ -423,6 +424,42 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			pbranch:     pString("main"),
 			err:         serrors.ErrorMismatchBranch,
 			noversion:   true,
+		},
+		// Workflow inputs.
+		{
+			name:     "workflow inputs match",
+			artifact: "workflow-inputs",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"some_integer":    "123",
+			},
+			noversion: true,
+		},
+		{
+			name:     "workflow inputs missing field",
+			artifact: "workflow-inputs",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"missing_field":   "123",
+			},
+			err:       serrors.ErrorMismatchWorkflowInputs,
+			noversion: true,
+		},
+		{
+			name:     "workflow inputs mismatch",
+			artifact: "workflow-inputs",
+			source:   "github.com/laurentsimon/slsa-on-github-test",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"some_integer":    "321",
+			},
+			err:       serrors.ErrorMismatchWorkflowInputs,
+			noversion: true,
 		},
 		// Regression test of sharded UUID.
 		{
@@ -451,7 +488,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				_, outBuilderId, err := runVerify("", artifactPath,
 					provenancePath,
 					tt.source, tt.pbranch, tt.pbuilderID,
-					tt.ptag, tt.pversiontag)
+					tt.ptag, tt.pversiontag, tt.inputs)
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))

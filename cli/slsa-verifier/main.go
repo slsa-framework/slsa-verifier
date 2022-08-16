@@ -8,11 +8,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
+
+type workflowInputs struct {
+	kv map[string]string
+}
 
 var (
 	provenancePath  string
@@ -23,11 +29,35 @@ var (
 	branch          string
 	tag             string
 	versiontag      string
+	inputs          workflowInputs
 	printProvenance bool
 )
 
+func experimentalEnabled() bool {
+	return os.Getenv("SLSA_VERIFIER_EXPERIMENTAL") == "1"
+}
+
+func (i *workflowInputs) String() string {
+	return fmt.Sprintf("%v", i.kv)
+}
+
+func (i *workflowInputs) Set(value string) error {
+	l := strings.Split(value, "=")
+	if len(l) != 2 {
+		return fmt.Errorf("%w: expected 'key=value' format, got '%s'", serrors.ErrorInvalidFormat, value)
+	}
+	i.kv[l[0]] = l[1]
+	return nil
+}
+
+func (i *workflowInputs) AsMap() map[string]string {
+	return i.kv
+}
+
 func main() {
-	flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
+	if experimentalEnabled() {
+		flag.StringVar(&builderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
+	}
 	flag.StringVar(&provenancePath, "provenance", "", "path to a provenance file")
 	flag.StringVar(&artifactPath, "artifact-path", "", "path to an artifact to verify")
 	flag.StringVar(&artifactImage, "artifact-image", "", "name of the OCI image to verify")
@@ -39,6 +69,9 @@ func main() {
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 	flag.BoolVar(&printProvenance, "print-provenance", false,
 		"print the verified provenance to std out")
+	inputs.kv = make(map[string]string)
+	flag.Var(&inputs, "workflow-input",
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 	flag.Parse()
 
 	if (provenancePath == "" || artifactPath == "") && artifactImage == "" {
@@ -67,7 +100,7 @@ func main() {
 	if isFlagPassed("versioned-tag") {
 		pversiontag = &versiontag
 	}
-	if isFlagPassed("builder-id") {
+	if experimentalEnabled() && isFlagPassed("builder-id") {
 		pbuilderID = &builderID
 	}
 	if isFlagPassed("branch") {
@@ -79,8 +112,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	verifiedProvenance, _, err := runVerify(artifactImage, artifactPath, provenancePath,
-		source, pbranch, pbuilderID, ptag, pversiontag)
+	verifiedProvenance, _, err := runVerify(artifactImage, artifactPath, provenancePath, source,
+		pbranch, pbuilderID, ptag, pversiontag, inputs.AsMap())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -104,8 +137,9 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
+
 func runVerify(artifactImage, artifactPath, provenancePath, source string,
-	branch, builderID, ptag, pversiontag *string,
+	branch, builderID, ptag, pversiontag *string, inputs map[string]string,
 ) ([]byte, string, error) {
 	ctx := context.Background()
 
@@ -116,11 +150,12 @@ func runVerify(artifactImage, artifactPath, provenancePath, source string,
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:    source,
-		ExpectedBranch:       branch,
-		ExpectedVersionedTag: pversiontag,
-		ExpectedDigest:       artifactHash,
-		ExpectedTag:          ptag,
+		ExpectedSourceURI:      source,
+		ExpectedBranch:         branch,
+		ExpectedDigest:         artifactHash,
+		ExpectedVersionedTag:   pversiontag,
+		ExpectedTag:            ptag,
+		ExpectedWorkflowInputs: inputs,
 	}
 
 	builderOpts := &options.BuilderOpts{

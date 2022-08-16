@@ -23,20 +23,20 @@ You have two options to install the verifier.
 
 #### Option 1: Install via go
 ```
-$ go install github.com/slsa-framework/slsa-verifier@v1.2.0
+$ go install github.com/slsa-framework/slsa-verifier@v1.3.0
 $ slsa-verifier <options>
 ```
 
 #### Option 2: Compile manually
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v1.2.0
-$ go run . <options>
+$ cd slsa-verifier && git checkout v1.3.0
+$ go run ./cli/slsa-verifier <options>
 ```
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.3.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.3.0)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
@@ -55,7 +55,7 @@ Below is a list of options currently supported. Note that signature verification
 
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ go run . --help
+$ go run ./cli/slsa-verifier --help
  Usage of ./slsa-verifier:
   -artifact-path string
     	path to an artifact to verify
@@ -76,9 +76,9 @@ $ go run . --help
 ### Example
 
 ```bash
-$ go run . -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.2.0
-Verified signature against tlog entry index 3027785 at URL: https://rekor.sigstore.dev/api/v1/log/entries/0cdff5b6a013379f9c1c5c6c598ad73c60de5acd969ba70ea2e874098b6e789f
-Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.1.1 at commit fb9aeaf6384fd588e56ad90978fe025b3fd44849
+$ go run ./cli/slsa-verifier -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.3.0
+Verified signature against tlog entry index 3189970 at URL: https://rekor.sigstore.dev/api/v1/log/entries/206071d5ca7a2346e4db4dcb19a648c7f13b4957e655f4382b735894059bd199
+Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.0 at commit 5bb13ef508b2b8ded49f9264d7712f1316830d10
 PASSED: Verified SLSA provenance
 ```
 

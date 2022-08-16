@@ -7,6 +7,7 @@ var (
 	ErrorMismatchBranch            = errors.New("branch used to generate the binary does not match provenance")
 	ErrorMismatchBuilderID         = errors.New("builderID does not match provenance")
 	ErrorMismatchSource            = errors.New("source used to generate the binary does not match provenance")
+	ErrorMismatchWorkflowInputs    = errors.New("workflow input does not match")
 	ErrorMalformedURI              = errors.New("URI is malformed")
 	ErrorMismatchTag               = errors.New("tag used to generate the binary does not match provenance")
 	ErrorMismatchVersionedTag      = errors.New("tag used to generate the binary does not match provenance")
@@ -18,4 +19,5 @@ var (
 	ErrorNoValidRekorEntries       = errors.New("could not find a matching valid signature entry")
 	ErrorVerifierNotSupported      = errors.New("no verifier support the builder")
 	ErrorNotSupported              = errors.New("not supported")
+	ErrorInvalidFormat             = errors.New("invalid format")
 )
