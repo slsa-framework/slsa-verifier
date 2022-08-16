@@ -58,7 +58,7 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	}
 
 	// Verify subject digest.
-	if err = prov.VerifySubjectDigest("7f18ebaa2cd85412e28c5e0b35fba45db1d29476f30ec0897d59242605150aed"); err != nil {
+	if err = prov.VerifySubjectDigest("1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd"); err != nil {
 		return nil, "", err
 	}
 
