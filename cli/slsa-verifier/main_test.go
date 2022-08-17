@@ -1,18 +1,25 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/pkg/oci"
+	"github.com/sigstore/cosign/pkg/oci/layout"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
 
 func errCmp(e1, e2 error) bool {
@@ -23,29 +30,51 @@ func pString(s string) *string {
 	return &s
 }
 
-// Versions of the builders to test.
-// TODO: Enable v1.0.0 for go builder
-var generatorVersions = map[string][]string{
-	"v0.0.2": {"go"},
-	"v1.1.1": {"go"},
-	"v1.2.0": {"generic"},
-}
-
 const TEST_DIR = "./testdata"
 
-func Test_runVerify(t *testing.T) {
+var ARTIFACT_PATH_BUILDERS = []string{"go", "generic"}
+var ARTIFACT_IMAGE_BUILDERS = []string{"generic_container"}
+
+func getBuildersAndVersions(t *testing.T,
+	optionalMinVersion string, specifiedBuilders []string,
+	defaultBuilders []string) []string {
+	res := []string{}
+	builders := specifiedBuilders
+	if len(builders) == 0 {
+		builders = defaultBuilders
+	}
+	// Get versions for each builder.
+	for _, builder := range builders {
+		builderDir, err := ioutil.ReadDir(filepath.Join(TEST_DIR, builder))
+		if err != nil {
+			t.Error(err)
+		}
+		for _, f := range builderDir {
+			// Builder subfolders are semantic version strings.
+			// Compare if a min version is given.
+			if f.IsDir() && (optionalMinVersion == "" ||
+				semver.Compare(optionalMinVersion, f.Name()) <= 0) {
+				// These are the supported versions of the builder
+				res = append(res, filepath.Join(builder, f.Name()))
+			}
+		}
+	}
+	return res
+}
+
+func Test_runVerifyArtifactPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name        string
-		artifact    string
-		source      string
-		pbranch     *string
-		ptag        *string
-		pversiontag *string
-		pbuilderID  *string
-		builderID   string
-		inputs      map[string]string
-		err         error
+		name         string
+		artifact     string
+		source       string
+		pbranch      *string
+		ptag         *string
+		pversiontag  *string
+		pbuilderID   *string
+		outBuilderID string
+		inputs       map[string]string
+		err          error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
 		// or testdata from malicious untrusted builders.
@@ -56,11 +85,6 @@ func Test_runVerify(t *testing.T) {
 		// specifying builders will restrict builders to only the specified ones.
 		builders []string
 	}{
-		{
-			name:     "valid main branch default",
-			artifact: "binary-linux-amd64-workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-		},
 		{
 			name:     "valid main branch default",
 			artifact: "binary-linux-amd64-workflow_dispatch",
@@ -345,22 +369,22 @@ func Test_runVerify(t *testing.T) {
 			builders:   []string{"generic"},
 		},
 		{
-			name:       "multiple subject second match - builderID",
-			artifact:   "binary-linux-amd64-multi-subject-second",
-			source:     "github.com/slsa-framework/example-package",
-			minversion: "v1.2.0",
-			builders:   []string{"generic"},
-			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
-			builderID:  "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
+			name:         "multiple subject second match - builderID",
+			artifact:     "binary-linux-amd64-multi-subject-second",
+			source:       "github.com/slsa-framework/example-package",
+			minversion:   "v1.2.0",
+			builders:     []string{"generic"},
+			pbuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
+			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
-			name:      "e2e test repository verified with builder at head",
-			artifact:  "binary-linux-amd64-e2e-builder-repo",
-			source:    "github.com/slsa-framework/example-package",
-			pbranch:   pString("main"),
-			noversion: true,
-			builderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
+			name:         "e2e test repository verified with builder at head",
+			artifact:     "binary-linux-amd64-e2e-builder-repo",
+			source:       "github.com/slsa-framework/example-package",
+			pbranch:      pString("main"),
+			noversion:    true,
+			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
 		},
 		// Malicious builders and workflows.
 		{
@@ -450,39 +474,8 @@ func Test_runVerify(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			// t.Parallel()
-			getBuildersAndVersions := func(minversion string, ttBuilders []string) []string {
-				res := []string{}
-				builders := tt.builders
-				if len(builders) == 0 {
-					testdataDir, err := ioutil.ReadDir(TEST_DIR)
-					if err != nil {
-						t.Error(err)
-					}
-					for _, f := range testdataDir {
-						if f.IsDir() {
-							// These are the builder subfolders
-							builders = append(builders, f.Name())
-						}
-					}
-				}
-				for _, builder := range builders {
-					builderDir, err := ioutil.ReadDir(filepath.Join(TEST_DIR, builder))
-					if err != nil {
-						t.Error(err)
-					}
-					for _, f := range builderDir {
-						// Builder subfolders are semantic version strings.
-						// Compare if a min version is given.
-						if f.IsDir() && semver.Compare(minversion, f.Name()) <= 0 {
-							// These are the supported versions of the builder
-							res = append(res, filepath.Join(builder, f.Name()))
-						}
-					}
-				}
-				return res
-			}
 
-			checkVersions := getBuildersAndVersions(tt.minversion, tt.builders)
+			checkVersions := getBuildersAndVersions(t, tt.minversion, tt.builders, ARTIFACT_PATH_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
@@ -492,7 +485,7 @@ func Test_runVerify(t *testing.T) {
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				_, builderID, err := runVerify(artifactPath,
+				_, outBuilderId, err := runVerify("", artifactPath,
 					provenancePath,
 					tt.source, tt.pbranch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag, tt.inputs)
@@ -505,8 +498,163 @@ func Test_runVerify(t *testing.T) {
 					return
 				}
 
-				if tt.builderID != "" && builderID != tt.builderID {
-					t.Errorf(cmp.Diff(builderID, tt.builderID))
+				if tt.outBuilderID != "" && outBuilderId != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderId, tt.outBuilderID))
+				}
+			}
+		})
+	}
+}
+
+func Test_runVerifyArtifactImage(t *testing.T) {
+	t.Parallel()
+
+	// Override cosign image verification function for local image testing.
+	container.RunCosignImageVerification = func(ctx context.Context,
+		image string, co *cosign.CheckOpts) ([]oci.Signature, bool, error) {
+		return cosign.VerifyLocalImageAttestations(ctx, image, co)
+	}
+
+	// TODO: Is there a more uniform way of handling getting image digest for both
+	// remote and local images?
+	container.GetImageDigest = func(image string) (string, error) {
+		// This is copied from cosign's VerifyLocalImageAttestation code:
+		// https://github.com/sigstore/cosign/blob/fdceee4825dc5d56b130f3f431aab93137359e79/pkg/cosign/verify.go#L654
+		se, err := layout.SignedImageIndex(image)
+		if err != nil {
+			return "", err
+		}
+
+		var h v1.Hash
+		// Verify either an image index or image.
+		ii, err := se.SignedImageIndex(v1.Hash{})
+		if err != nil {
+			return "", err
+		}
+		i, err := se.SignedImage(v1.Hash{})
+		if err != nil {
+			return "", err
+		}
+		switch {
+		case ii != nil:
+			h, err = ii.Digest()
+			if err != nil {
+				return "", err
+			}
+		case i != nil:
+			h, err = i.Digest()
+			if err != nil {
+				return "", err
+			}
+		default:
+			return "", errors.New("must verify either an image index or image")
+		}
+		return strings.TrimPrefix(h.String(), "sha256:"), nil
+	}
+
+	tests := []struct {
+		name         string
+		artifact     string
+		source       string
+		pbranch      *string
+		ptag         *string
+		pversiontag  *string
+		pbuilderID   *string
+		outBuilderID string
+		err          error
+		// noversion is a special case where we are not testing all builder versions
+		// for example, testdata for the builder at head in trusted repo workflows
+		// or testdata from malicious untrusted builders.
+		// When true, this does not iterate over all builder versions.
+		noversion bool
+	}{
+		{
+			name:     "valid main branch default",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+		},
+		{
+			name:       "valid main branch default - invalid builderID",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
+			err:        serrors.ErrorUntrustedReusableWorkflow,
+		},
+
+		{
+			name:     "valid main branch set",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+			pbranch:  pString("main"),
+		},
+
+		{
+			name:     "wrong branch master",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+			pbranch:  pString("master"),
+			err:      serrors.ErrorMismatchBranch,
+		},
+		{
+			name:     "wrong source append A",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-packageA",
+			err:      serrors.ErrorMismatchSource,
+		},
+		{
+			name:     "wrong source prepend A",
+			artifact: "container_workflow_dispatch",
+			source:   "Agithub.com/slsa-framework/example-package",
+			err:      serrors.ErrorMismatchSource,
+		},
+		{
+			name:     "wrong source middle A",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/Aslsa-framework/example-package",
+			err:      serrors.ErrorMismatchSource,
+		},
+		{
+			name:     "tag no match empty tag workflow_dispatch",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+			ptag:     pString("v1.2.3"),
+			err:      serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch",
+			artifact:    "container_workflow_dispatch",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v1"),
+			err:         serrors.ErrorInvalidSemver,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			checkVersions := getBuildersAndVersions(t, "", nil, ARTIFACT_IMAGE_BUILDERS)
+			if tt.noversion {
+				checkVersions = []string{""}
+			}
+
+			for _, v := range checkVersions {
+				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
+
+				_, outBuilderID, err := runVerify(image, "", "",
+					tt.source, tt.pbranch, tt.pbuilderID,
+					tt.ptag, tt.pversiontag, nil)
+
+				if !errCmp(err, tt.err) {
+					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				}
+
+				if err != nil {
+					return
+				}
+
+				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
 				}
 			}
 		})

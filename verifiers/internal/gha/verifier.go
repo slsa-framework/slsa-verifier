@@ -2,16 +2,20 @@ package gha
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/secure-systems-lab/go-securesystemslib/dsse"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
+	"github.com/sigstore/cosign/pkg/cosign"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
+	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
 
 const VerifierName = "GHA"
@@ -34,23 +38,12 @@ func (v *GHAVerifier) IsAuthoritativeFor(builderID string) bool {
 	return strings.HasPrefix(builderID, "https://github.com/")
 }
 
-// VerifyArtifact verifies provenance for an artifact.
-func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
-	provenance []byte, artifactHash string,
+func verifyEnvAndCert(env *dsse.Envelope,
+	cert *x509.Certificate,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	defaultBuilders map[string]bool,
 ) ([]byte, string, error) {
-	rClient, err := rekor.NewClient(defaultRekorAddr)
-	if err != nil {
-		return nil, "", err
-	}
-
-	/* Verify signature on the intoto attestation. */
-	env, cert, err := VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
-	if err != nil {
-		return nil, "", err
-	}
-
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
@@ -60,7 +53,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 
 	// Verify the workflow identity.
 	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
-		provenanceOpts.ExpectedSourceURI)
+		provenanceOpts.ExpectedSourceURI, defaultBuilders)
 	if err != nil {
 		return nil, "", err
 	}
@@ -80,11 +73,76 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	return r, builderID, err
 }
 
-// VerifyImage verifies provenance for an OCI image.
-func (v *GHAVerifier) VerifyImage(ctx context.Context,
+// VerifyArtifact verifies provenance for an artifact.
+func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
-	return nil, "todo", serrors.ErrorNotSupported
+	rClient, err := rekor.NewClient(defaultRekorAddr)
+	if err != nil {
+		return nil, "", err
+	}
+
+	/* Verify signature on the intoto attestation. */
+	env, cert, err := VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return verifyEnvAndCert(env, cert,
+		provenanceOpts, builderOpts,
+		defaultArtifactTrustedReusableWorkflows)
+}
+
+// VerifyImage verifies provenance for an OCI image.
+func (v *GHAVerifier) VerifyImage(ctx context.Context,
+	artifactImage string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, string, error) {
+	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
+	roots, err := fulcio.GetRoots()
+	if err != nil {
+		return nil, "", err
+	}
+	opts := &cosign.CheckOpts{
+		RootCerts: roots,
+	}
+
+	atts, _, err := container.RunCosignImageVerification(ctx,
+		artifactImage, opts)
+	if err != nil {
+		return nil, "", err
+	}
+
+	/* Now verify properties of the attestations */
+	var verifyErr error
+	var builderID string
+	var verifiedProvenance []byte
+	for _, att := range atts {
+		pyld, err := att.Payload()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unexpected error getting payload from OCI registry %s", err)
+			continue
+		}
+		env, err := EnvelopeFromBytes(pyld)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unexpected error parsing envelope from OCI registry %s", err)
+			continue
+		}
+		cert, err := att.Cert()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
+			continue
+		}
+		verifiedProvenance, builderID, verifyErr = verifyEnvAndCert(env,
+			cert, provenanceOpts, builderOpts,
+			defaultContainerTrustedReusableWorkflows)
+		if verifyErr == nil {
+			return verifiedProvenance, builderID, nil
+		}
+	}
+
+	return nil, "", fmt.Errorf("no valid attestations found on OCI registry: %w", verifyErr)
 }
