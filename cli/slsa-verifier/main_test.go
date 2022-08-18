@@ -18,6 +18,7 @@ import (
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/layout"
 
+	"github.com/slsa-framework/slsa-verifier/container"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
@@ -32,12 +33,15 @@ func pString(s string) *string {
 
 const TEST_DIR = "./testdata"
 
-var ARTIFACT_PATH_BUILDERS = []string{"go", "generic"}
-var ARTIFACT_IMAGE_BUILDERS = []string{"generic_container"}
+var (
+	ARTIFACT_PATH_BUILDERS  = []string{"go", "generic"}
+	ARTIFACT_IMAGE_BUILDERS = []string{"generic_container"}
+)
 
 func getBuildersAndVersions(t *testing.T,
 	optionalMinVersion string, specifiedBuilders []string,
-	defaultBuilders []string) []string {
+	defaultBuilders []string,
+) []string {
 	res := []string{}
 	builders := specifiedBuilders
 	if len(builders) == 0 {
@@ -511,7 +515,8 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 
 	// Override cosign image verification function for local image testing.
 	container.RunCosignImageVerification = func(ctx context.Context,
-		image string, co *cosign.CheckOpts) ([]oci.Signature, bool, error) {
+		image string, co *cosign.CheckOpts,
+	) ([]oci.Signature, bool, error) {
 		return cosign.VerifyLocalImageAttestations(ctx, image, co)
 	}
 
