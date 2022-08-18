@@ -76,6 +76,18 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 		return nil, "", err
 	}
 
+	// Verify metadata.
+	// This is metadata that GCB appends to the DSSE content.
+	if err = prov.VerifyMetadata(provenanceOpts); err != nil {
+		return nil, "", err
+	}
+
+	// Verify the summary.
+	// This is an additional structure that GCB prepends to the provenance.
+	if err = prov.VerifySummary(provenanceOpts); err != nil {
+		return nil, "", err
+	}
+
 	// Verify branch.
 	if provenanceOpts.ExpectedBranch != nil {
 		if err = prov.VerifyBranch(*provenanceOpts.ExpectedBranch); err != nil {

@@ -25,29 +25,31 @@ type v01IntotoStatement struct {
 	Predicate slsa01.ProvenancePredicate `json:"predicate"`
 }
 
+type provenance struct {
+	Build struct {
+		// TODO: compare to verified provenance.
+		// IntotoStatement v01IntotoStatement `json:"intotoStatement"`
+	} `json:"build"`
+	Kind        string           `json:"kind"`
+	ResourceURI string           `json:"resourceUri"`
+	Envelope    dsselib.Envelope `json:"envelope"`
+}
+
 type gloudProvenance struct {
 	ImageSummary struct {
-		Digest              string `json:"digest"`
-		FullQualifiedDigest string `json:"fully_qualified_digest"`
-		Registry            string `json:"registry"`
-		Repsitory           string `json:"repository"`
+		Digest               string `json:"digest"`
+		FullyQualifiedDigest string `json:"fully_qualified_digest"`
+		Registry             string `json:"registry"`
+		Repsitory            string `json:"repository"`
 	} `json:"image_summary"`
 	ProvenanceSummary struct {
-		Provenance []struct {
-			Build struct {
-				// Note: used for testing only. This value is not trusted
-				// and should not be used.
-				// IntotoStatement v01IntotoStatement `json:"intotoStatement"`
-			} `json:"build"`
-			Kind        string           `json:"kind"`
-			ResourceUri string           `json:"resourceUri"`
-			Envelope    dsselib.Envelope `json:"envelope"`
-		} `json:"provenance"`
+		Provenance []provenance `json:"provenance"`
 	} `json:"provenance_summary"`
 }
 
 type GCBProvenance struct {
 	gcloudProv                    *gloudProvenance
+	verifiedProvenance            *provenance
 	verifiedIntotoStatementStruct *v01IntotoStatement
 }
 
@@ -83,7 +85,8 @@ func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 
 func (self *GCBProvenance) isVerified() error {
 	// Check that the signature is verified.
-	if self.verifiedIntotoStatementStruct == nil {
+	if self.verifiedIntotoStatementStruct == nil ||
+		self.verifiedProvenance == nil {
 		return serrors.ErrorNoValidSignature
 	}
 	return nil
@@ -98,6 +101,57 @@ func (self *GCBProvenance) GetVerifiedIntotoStatement() ([]byte, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 	return d, nil
+}
+
+func (self *GCBProvenance) VerifyMetadata(provenanceOpts *options.ProvenanceOpts) error {
+	if err := self.isVerified(); err != nil {
+		return err
+	}
+
+	if provenanceOpts == nil {
+		return nil
+	}
+	prov := self.verifiedProvenance
+
+	if prov.Kind != "BUILD" {
+		return fmt.Errorf("%w: expected kind to be 'BUILD', got %s", serrors.ErrorInvalidFormat, prov.Kind)
+	}
+
+	// Note: this could be verified in `VerifySourceURI`, but it is kept here
+	// because it is not part of the DSSE intoto payload.
+	// The `ResourceURI` is container@sha256:hash, without the tag.
+	// We only verify the URI's sha256 for simplicity.
+	if !strings.HasSuffix(prov.ResourceURI, "@sha256:"+provenanceOpts.ExpectedDigest) {
+		return fmt.Errorf("%w: expected resourceUri '%s', got '%s'",
+			serrors.ErrorMismatchHash, provenanceOpts.ExpectedDigest, prov.ResourceURI)
+	}
+	return nil
+}
+
+func (self *GCBProvenance) VerifySummary(provenanceOpts *options.ProvenanceOpts) error {
+	if err := self.isVerified(); err != nil {
+		return err
+	}
+
+	if provenanceOpts == nil {
+		return nil
+	}
+
+	// Validate the digest.
+	if self.gcloudProv.ImageSummary.Digest != "sha256:"+provenanceOpts.ExpectedDigest {
+		return fmt.Errorf("%w: expected summary digest '%s', got '%s'",
+			serrors.ErrorMismatchHash, provenanceOpts.ExpectedDigest,
+			self.gcloudProv.ImageSummary.Digest)
+	}
+
+	// Validate the qualified digest.
+	if !strings.HasSuffix(self.gcloudProv.ImageSummary.FullyQualifiedDigest,
+		"sha256:"+provenanceOpts.ExpectedDigest) {
+		return fmt.Errorf("%w: expected fully qualifiedd digest '%s', got '%s'",
+			serrors.ErrorMismatchHash, provenanceOpts.ExpectedDigest,
+			self.gcloudProv.ImageSummary.FullyQualifiedDigest)
+	}
+	return nil
 }
 
 func (self *GCBProvenance) VerifyIntotoHeaders() error {
@@ -244,13 +298,7 @@ func (self *GCBProvenance) VerifyVersionedTag(tag string) error {
 	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
 }
 
-func (self *GCBProvenance) VerifySignature() error {
-	if len(self.gcloudProv.ProvenanceSummary.Provenance) == 0 {
-		return fmt.Errorf("%w: no provenance found", serrors.ErrorInvalidDssePayload)
-	}
-	// Assume a single provenance in the array.
-	prov := self.gcloudProv.ProvenanceSummary.Provenance[0]
-
+func (self *GCBProvenance) verifySignatures(prov *provenance) error {
 	// Verify the envelope type. It should be an intoto type.
 	if prov.Envelope.PayloadType != intoto.PayloadType {
 		return fmt.Errorf("%w: expected payload type '%s', got %s",
@@ -297,9 +345,29 @@ func (self *GCBProvenance) VerifySignature() error {
 				return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 			}
 			self.verifiedIntotoStatementStruct = &statement
+			self.verifiedProvenance = prov
 			fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
 			return nil
 		}
+	}
+
+	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
+}
+
+func (self *GCBProvenance) VerifySignature() error {
+	if len(self.gcloudProv.ProvenanceSummary.Provenance) == 0 {
+		return fmt.Errorf("%w: no provenance found", serrors.ErrorInvalidDssePayload)
+	}
+	// Iterate over all provenances available.
+	var errs []error
+	for i := range self.gcloudProv.ProvenanceSummary.Provenance {
+		err := self.verifySignatures(&self.gcloudProv.ProvenanceSummary.Provenance[i])
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		return nil
 	}
 
 	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)

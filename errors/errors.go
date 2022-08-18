@@ -23,4 +23,5 @@ var (
 	ErrorInvalidPEM                = errors.New("invalid PEM")
 	ErrorInvalidSignature          = errors.New("invalid signature")
 	ErrorNoValidSignature          = errors.New("no valid signature")
+	ErrorInternal                  = errors.New("internal error")
 )

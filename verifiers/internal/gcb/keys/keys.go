@@ -56,15 +56,3 @@ func (self *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
 
 	return nil
 }
-
-// TODO: load public keys
-/*func init() {
-
-	pubKey, err := PublicKeyNew("asia-east1")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(string(pubKey.Value))
-}
-*/
