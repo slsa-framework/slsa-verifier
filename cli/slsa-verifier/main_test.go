@@ -378,11 +378,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			minversion:   "v1.2.0",
 			builders:     []string{"generic"},
 			pbuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
-<<<<<<< HEAD
 			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
-=======
-			outBuilderId: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
->>>>>>> 13894e3 (updated comments)
 		},
 		// Special case of the e2e test repository building builder from head.
 		{
@@ -391,11 +387,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			source:       "github.com/slsa-framework/example-package",
 			pbranch:      pString("main"),
 			noversion:    true,
-<<<<<<< HEAD
 			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
-=======
-			outBuilderId: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
->>>>>>> 13894e3 (updated comments)
 		},
 		// Malicious builders and workflows.
 		{
@@ -495,8 +487,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
-
-				_, outBuilderId, err := runVerify("", artifactPath,
+				_, outBuilderID, err := runVerify("", artifactPath,
 					provenancePath,
 					tt.source, tt.pbranch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag, tt.inputs)
@@ -509,13 +500,8 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 					return
 				}
 
-<<<<<<< HEAD
-				if tt.outBuilderID != "" && outBuilderId != tt.outBuilderID {
-					t.Errorf(cmp.Diff(outBuilderId, tt.outBuilderID))
-=======
-				if tt.outBuilderId != "" && outBuilderId != tt.outBuilderId {
-					t.Errorf(cmp.Diff(outBuilderId, tt.outBuilderId))
->>>>>>> 13894e3 (updated comments)
+				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
 				}
 			}
 		})
@@ -527,12 +513,8 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 
 	// Override cosign image verification function for local image testing.
 	container.RunCosignImageVerification = func(ctx context.Context,
-<<<<<<< HEAD
 		image string, co *cosign.CheckOpts,
 	) ([]oci.Signature, bool, error) {
-=======
-		image string, co *cosign.CheckOpts) ([]oci.Signature, bool, error) {
->>>>>>> 13894e3 (updated comments)
 		return cosign.VerifyLocalImageAttestations(ctx, image, co)
 	}
 
