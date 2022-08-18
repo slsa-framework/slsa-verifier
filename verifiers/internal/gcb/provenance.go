@@ -35,7 +35,8 @@ type gloudProvenance struct {
 	ProvenanceSummary struct {
 		Provenance []struct {
 			Build struct {
-				// TODO: this is untrusted, we should remove it.
+				// Note: used for testing only. This value is not trusted
+				// and should not be used.
 				// IntotoStatement v01IntotoStatement `json:"intotoStatement"`
 			} `json:"build"`
 			Kind        string           `json:"kind"`
@@ -48,11 +49,8 @@ type gloudProvenance struct {
 type GCBProvenance struct {
 	gcloudProv                    *gloudProvenance
 	verifiedIntotoStatementStruct *v01IntotoStatement
-	// Note: may need to support envelope only.
-	// TODO: verified flag?
 }
 
-// go run cli/slsa-verifier/main.go -artifact-path python/secure_package_template-0.2.0-py3-none-any.whl -provenance verifiers/internal/gcb/testdata/test.intoto.jsonl -source github.com/sethmlarson/python-slsa-release-test -builder-id=https://cloudbuild.googleapis.com/GoogleHostedWorker@0.2
 func ProvenanceFromBytes(payload []byte) (*GCBProvenance, error) {
 	var prov gloudProvenance
 	err := json.Unmarshal(payload, &prov)
