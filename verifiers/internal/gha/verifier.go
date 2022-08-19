@@ -2,16 +2,20 @@ package gha
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/secure-systems-lab/go-securesystemslib/dsse"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
+	"github.com/sigstore/cosign/pkg/cosign"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
+	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
 
 const VerifierName = "GHA"
@@ -34,6 +38,41 @@ func (v *GHAVerifier) IsAuthoritativeFor(builderID string) bool {
 	return strings.HasPrefix(builderID, "https://github.com/")
 }
 
+func verifyEnvAndCert(env *dsse.Envelope,
+	cert *x509.Certificate,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+	defaultBuilders map[string]bool,
+) ([]byte, string, error) {
+	/* Verify properties of the signing identity. */
+	// Get the workflow info given the certificate information.
+	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Verify the workflow identity.
+	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
+		provenanceOpts.ExpectedSourceURI, defaultBuilders)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Verify properties of the SLSA provenance.
+	// Unpack and verify info in the provenance, including the Subject Digest.
+	provenanceOpts.ExpectedBuilderID = builderID
+	if err := VerifyProvenance(env, provenanceOpts); err != nil {
+		return nil, "", err
+	}
+
+	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
+		workflowInfo.JobWobWorkflowRef,
+		workflowInfo.CallerHash)
+	// Return verified provenance.
+	r, err := base64.StdEncoding.DecodeString(env.Payload)
+	return r, builderID, err
+}
+
 // VerifyArtifact verifies provenance for an artifact.
 func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
@@ -51,40 +90,59 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, "", err
 	}
 
-	/* Verify properties of the signing identity. */
-	// Get the workflow info given the certificate information.
-	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
-	if err != nil {
-		return nil, "", err
-	}
-
-	// Verify the workflow identity.
-	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
-		provenanceOpts.ExpectedSourceURI)
-	if err != nil {
-		return nil, "", err
-	}
-
-	/* Verify properties of the SLSA provenance. */
-	// Unpack and verify info in the provenance, including the Subject Digest.
-	provenanceOpts.ExpectedBuilderID = builderID
-	if err := VerifyProvenance(env, provenanceOpts); err != nil {
-		return nil, "", err
-	}
-
-	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.JobWobWorkflowRef,
-		workflowInfo.CallerHash)
-	// Return verified provenance.
-	r, err := base64.StdEncoding.DecodeString(env.Payload)
-	return r, builderID, err
+	return verifyEnvAndCert(env, cert,
+		provenanceOpts, builderOpts,
+		defaultArtifactTrustedReusableWorkflows)
 }
 
 // VerifyImage verifies provenance for an OCI image.
 func (v *GHAVerifier) VerifyImage(ctx context.Context,
-	provenance []byte, artifactHash string,
+	artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
-	return nil, "todo", serrors.ErrorNotSupported
+	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
+	roots, err := fulcio.GetRoots()
+	if err != nil {
+		return nil, "", err
+	}
+	opts := &cosign.CheckOpts{
+		RootCerts: roots,
+	}
+
+	atts, _, err := container.RunCosignImageVerification(ctx,
+		artifactImage, opts)
+	if err != nil {
+		return nil, "", err
+	}
+
+	/* Now verify properties of the attestations */
+	var verifyErr error
+	var builderID string
+	var verifiedProvenance []byte
+	for _, att := range atts {
+		pyld, err := att.Payload()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unexpected error getting payload from OCI registry %s", err)
+			continue
+		}
+		env, err := EnvelopeFromBytes(pyld)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unexpected error parsing envelope from OCI registry %s", err)
+			continue
+		}
+		cert, err := att.Cert()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
+			continue
+		}
+		verifiedProvenance, builderID, verifyErr = verifyEnvAndCert(env,
+			cert, provenanceOpts, builderOpts,
+			defaultContainerTrustedReusableWorkflows)
+		if verifyErr == nil {
+			return verifiedProvenance, builderID, nil
+		}
+	}
+
+	return nil, "", fmt.Errorf("no valid attestations found on OCI registry: %w", verifyErr)
 }

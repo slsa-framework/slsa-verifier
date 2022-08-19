@@ -129,7 +129,7 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 	}
 
 	ctx := context.Background()
-	p, builderID, err := verifiers.Verify(ctx, []byte(query.DsseEnvelope),
+	p, builderID, err := verifiers.Verify(ctx, "", []byte(query.DsseEnvelope),
 		query.ArtifactHash, provenanceOpts, builderOpts)
 	if err != nil {
 		return results.withError(err)

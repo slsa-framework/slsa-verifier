@@ -11,26 +11,35 @@ import (
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gha"
 )
 
-func Verify(ctx context.Context,
+func Verify(ctx context.Context, artifactImage string,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
-	// If user provids a builderID, find the right verifier
-	// based on its ID.
+	// By default, use the GHA builders
+	verifier := register.SLSAVerifiers[gha.VerifierName]
+
+	// If user provids a builderID, find the right verifier based on its ID.
 	if builderOpts.ExpectedID != nil &&
 		*builderOpts.ExpectedID != "" {
+		foundBuilder := false
 		for _, v := range register.SLSAVerifiers {
 			if v.IsAuthoritativeFor(*builderOpts.ExpectedID) {
-				return v.VerifyArtifact(ctx, provenance, artifactHash,
-					provenanceOpts, builderOpts)
+				foundBuilder = true
+				verifier = v
+				break
 			}
 		}
-		// No builder found.
-		return nil, "", fmt.Errorf("%w: %s", serrors.ErrorVerifierNotSupported, *builderOpts.ExpectedID)
+		if !foundBuilder {
+			// No builder found.
+			return nil, "", fmt.Errorf("%w: %s", serrors.ErrorVerifierNotSupported, *builderOpts.ExpectedID)
+		}
 	}
 
 	// By default, try the GHA builders.
-	return register.SLSAVerifiers[gha.VerifierName].VerifyArtifact(ctx, provenance, artifactHash,
+	if artifactImage != "" {
+		return verifier.VerifyImage(ctx, artifactImage, provenanceOpts, builderOpts)
+	}
+	return verifier.VerifyArtifact(ctx, provenance, artifactHash,
 		provenanceOpts, builderOpts)
 }

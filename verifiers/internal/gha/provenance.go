@@ -224,6 +224,61 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		}
 	}
 
+	// Verify the workflow inputs.
+	if len(provenanceOpts.ExpectedWorkflowInputs) > 0 {
+		if err := VerifyWorkflowInputs(prov, provenanceOpts.ExpectedWorkflowInputs); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func VerifyWorkflowInputs(prov *intoto.ProvenanceStatement, inputs map[string]string) error {
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	}
+
+	// Verify it's a workflow_dispatch trigger.
+	triggerName, err := getAsString(environment, "github_event_name")
+	if err != nil {
+		return err
+	}
+	if triggerName != "workflow_dispatch" {
+		return fmt.Errorf("%w: expected 'workflow_dispatch' trigger, got %s",
+			serrors.ErrorMismatchWorkflowInputs, triggerName)
+	}
+
+	// Assume no nested level.
+	payload, err := getEventPayload(environment)
+	if err != nil {
+		return err
+	}
+
+	payloadInputs, err := getAsAny(payload, "inputs")
+	if err != nil {
+		return fmt.Errorf("%w: error retrieving 'inputs': %v", serrors.ErrorInvalidDssePayload, err)
+	}
+
+	pyldInputs, ok := payloadInputs.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type inputs")
+	}
+
+	// Verify all inputs.
+	for k, v := range inputs {
+		value, err := getAsString(pyldInputs, k)
+		if err != nil {
+			return fmt.Errorf("%w: cannot retrieve value of '%s'", serrors.ErrorMismatchWorkflowInputs, k)
+		}
+
+		if v != value {
+			return fmt.Errorf("%w: expected '%s=%s', got '%s=%s'",
+				serrors.ErrorMismatchWorkflowInputs, k, v, k, value)
+		}
+	}
+
 	return nil
 }
 
