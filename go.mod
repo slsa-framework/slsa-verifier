@@ -15,7 +15,8 @@ require (
 
 require (
 	github.com/go-openapi/strfmt v0.21.3
-	github.com/go-openapi/swag v0.21.1
+	github.com/go-openapi/swag v0.22.3
+	github.com/google/go-containerregistry v0.11.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sigstore/cosign v1.10.1
 	github.com/slsa-framework/slsa-github-generator v1.2.0
@@ -108,7 +109,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/certificate-transparency-go v1.1.3 // indirect
-	github.com/google/go-containerregistry v0.11.0 // indirect
 	github.com/google/go-github/v45 v45.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
