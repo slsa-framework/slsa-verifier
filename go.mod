@@ -10,7 +10,7 @@ require (
 	github.com/in-toto/in-toto-golang v0.3.4-0.20220709202702-fa494aaa0add
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0
 	github.com/sigstore/rekor v0.10.0
-	github.com/sigstore/sigstore v1.3.1
+	github.com/sigstore/sigstore v1.4.0
 )
 
 require (
@@ -41,19 +41,19 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/ThalesIgnite/crypto11 v1.2.5 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/aws/aws-sdk-go-v2 v1.16.7 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.15.14 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.12.9 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.8 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.14 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.8 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.15 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.16.11 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.17.0 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.13 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.12 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.18 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.12 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.19 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.11.12 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.16.9 // indirect
-	github.com/aws/smithy-go v1.12.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.11.16 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.16.13 // indirect
+	github.com/aws/smithy-go v1.12.1 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20220228164355-396b2034c795 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
