@@ -61,7 +61,7 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	}
 
 	// Verify the builder.
-	builderID, err := prov.VerifyBuilderID(builderOpts)
+	builderID, err := prov.VerifyBuilder(builderOpts)
 	if err != nil {
 		return nil, "", err
 	}
@@ -108,11 +108,6 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 			return nil, "", err
 		}
 	}
-
-	// TODO: verify summary information:
-	// - kind: BUILD
-	// - resourceUri against image_summary and subject data
-	// - text is the same as what is verified.
 
 	content, err := prov.GetVerifiedIntotoStatement()
 	if err != nil {
