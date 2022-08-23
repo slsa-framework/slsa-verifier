@@ -47,20 +47,20 @@ type gloudProvenance struct {
 	} `json:"provenance_summary"`
 }
 
-type GCBProvenance struct {
+type Provenance struct {
 	gcloudProv                    *gloudProvenance
 	verifiedProvenance            *provenance
 	verifiedIntotoStatementStruct *v01IntotoStatement
 }
 
-func ProvenanceFromBytes(payload []byte) (*GCBProvenance, error) {
+func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 	var prov gloudProvenance
 	err := json.Unmarshal(payload, &prov)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal: %w", err)
 	}
 
-	return &GCBProvenance{
+	return &Provenance{
 		gcloudProv: &prov,
 	}, nil
 }
@@ -73,7 +73,7 @@ func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	return payload, nil
 }
 
-func (self *GCBProvenance) isVerified() error {
+func (self *Provenance) isVerified() error {
 	// Check that the signature is verified.
 	if self.verifiedIntotoStatementStruct == nil ||
 		self.verifiedProvenance == nil {
@@ -82,7 +82,7 @@ func (self *GCBProvenance) isVerified() error {
 	return nil
 }
 
-func (self *GCBProvenance) GetVerifiedIntotoStatement() ([]byte, error) {
+func (self *Provenance) GetVerifiedIntotoStatement() ([]byte, error) {
 	if err := self.isVerified(); err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (self *GCBProvenance) GetVerifiedIntotoStatement() ([]byte, error) {
 	return d, nil
 }
 
-func (self *GCBProvenance) VerifyMetadata(provenanceOpts *options.ProvenanceOpts) error {
+func (self *Provenance) VerifyMetadata(provenanceOpts *options.ProvenanceOpts) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (self *GCBProvenance) VerifyMetadata(provenanceOpts *options.ProvenanceOpts
 	return nil
 }
 
-func (self *GCBProvenance) VerifySummary(provenanceOpts *options.ProvenanceOpts) error {
+func (self *Provenance) VerifySummary(provenanceOpts *options.ProvenanceOpts) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (self *GCBProvenance) VerifySummary(provenanceOpts *options.ProvenanceOpts)
 	return nil
 }
 
-func (self *GCBProvenance) VerifyIntotoHeaders() error {
+func (self *Provenance) VerifyIntotoHeaders() error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorMismatchBuilderID
 }
 
-func (self *GCBProvenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (string, error) {
+func (self *Provenance) VerifyBuilderID(builderOpts *options.BuilderOpts) (string, error) {
 	if err := self.isVerified(); err != nil {
 		return "", err
 	}
@@ -232,7 +232,7 @@ func getAsString(m map[string]interface{}, key string) (string, error) {
 	return ts, nil
 }
 
-func (self *GCBProvenance) VerifySubjectDigest(expectedHash string) error {
+func (self *Provenance) VerifySubjectDigest(expectedHash string) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (self *GCBProvenance) VerifySubjectDigest(expectedHash string) error {
 }
 
 // Verify source URI in provenance statement.
-func (self *GCBProvenance) VerifySourceURI(expectedSourceURI string) error {
+func (self *Provenance) VerifySourceURI(expectedSourceURI string) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -276,19 +276,19 @@ func (self *GCBProvenance) VerifySourceURI(expectedSourceURI string) error {
 	return nil
 }
 
-func (self *GCBProvenance) VerifyBranch(branch string) error {
+func (self *Provenance) VerifyBranch(branch string) error {
 	return fmt.Errorf("%w: GCB branch verification", serrors.ErrorNotSupported)
 }
 
-func (self *GCBProvenance) VerifyTag(tag string) error {
+func (self *Provenance) VerifyTag(tag string) error {
 	return fmt.Errorf("%w: GCB tag verification", serrors.ErrorNotSupported)
 }
 
-func (self *GCBProvenance) VerifyVersionedTag(tag string) error {
+func (self *Provenance) VerifyVersionedTag(tag string) error {
 	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
 }
 
-func (self *GCBProvenance) verifySignatures(prov *provenance) error {
+func (self *Provenance) verifySignatures(prov *provenance) error {
 	// Verify the envelope type. It should be an intoto type.
 	if prov.Envelope.PayloadType != intoto.PayloadType {
 		return fmt.Errorf("%w: expected payload type '%s', got %s",
@@ -344,7 +344,7 @@ func (self *GCBProvenance) verifySignatures(prov *provenance) error {
 	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
 }
 
-func (self *GCBProvenance) VerifySignature() error {
+func (self *Provenance) VerifySignature() error {
 	if len(self.gcloudProv.ProvenanceSummary.Provenance) == 0 {
 		return fmt.Errorf("%w: no provenance found", serrors.ErrorInvalidDssePayload)
 	}
