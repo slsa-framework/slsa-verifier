@@ -38,10 +38,10 @@ type VerifyArtifactCommand struct {
 	PrintProvenance bool
 }
 
-func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) error {
+func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (string, error) {
 	artifactHash, err := getArtifactHash(artifacts[0])
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
@@ -59,13 +59,13 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) er
 
 	provenance, err := os.ReadFile(c.ProvenancePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	verifiedProvenance, _, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
+	verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
-		return err
+		return "", err
 	}
 
 	fmt.Fprintf(os.Stderr, "PASSED: Verified SLSA provenance\n")
@@ -73,7 +73,7 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) er
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 
-	return nil
+	return outBuilderID, nil
 }
 
 func getArtifactHash(artifactPath string) (string, error) {

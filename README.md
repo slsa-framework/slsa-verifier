@@ -23,7 +23,7 @@ You have two options to install the verifier.
 
 #### Option 1: Install via go
 ```
-$ go install github.com/slsa-framework/slsa-verifier@v1.3.0
+$ go install github.com/slsa-framework/slsa-verifier/cli/slsa-verifier@v1.3.0
 $ slsa-verifier <options>
 ```
 
@@ -49,40 +49,55 @@ $ sha256sum -c --strict SHA256SUM.md
 
 ## Verification of Provenance
 
+We currently support artifact verification (for binary blobs) and container images.
+
 ### Available options
 
-Below is a list of options currently supported. Note that signature verification is handled seamlessly without the need for developers to manipulate public keys.
+Below is a list of options currently supported for binary blobs and container images. Note that signature verification is handled seamlessly without the need for developers to manipulate public keys. See [Available options](#available-options) for details on the options exposed to validate the provenance.
 
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ go run ./cli/slsa-verifier --help
- Usage of ./slsa-verifier:
-  -artifact-path string
-    	path to an artifact to verify
-  -branch string
-    	expected branch the binary was compiled from (default "main")
-  -print-provenance
-    	output the verified provenance
-  -provenance string
-    	path to a provenance file
-  -source string
-    	expected source repository that should have produced the binary, e.g. github.com/some/repo
-  -tag string
-    	[optional] expected tag the binary was compiled from
-  -versioned-tag string
-    	[optional] expected version the binary was compiled from. Uses semantic version to match the tag
+$ go run ./cli/slsa-verifier/ verify-artifact --help
+Verifies SLSA provenance on an artifact blob
+
+Usage:
+  slsa-verifier verify-artifact [flags]
+
+Flags:
+      --branch string            [optional] expected branch the binary was compiled from
+      --builder-id string        EXPERIMENTAL: the unique builder ID who created the provenance
+  -h, --help                     help for verify-artifact
+      --print-provenance         print the verified provenance to std out
+      --provenance-path string   path to a provenance file
+      --source string            expected source repository that should have produced the binary, e.g. github.com/some/repo
+      --tag string               [optional] expected tag the binary was compiled from
+      --versioned-tag string     [optional] expected version the binary was compiled from. Uses semantic version to match the tag
+      --workflow-input map[]     [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events). (default map[])
 ```
 
 ### Example
 
 ```bash
-$ go run ./cli/slsa-verifier -artifact-path ~/Downloads/slsa-verifier-linux-amd64 -provenance ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl -source github.com/slsa-framework/slsa-verifier -tag v1.3.0
+$ go run ./cli/slsa-verifier -provenance-path ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl --source github.com/slsa-framework/slsa-verifier --tag v1.3.0 ~/Downloads/slsa-verifier-linux-amd64 
 Verified signature against tlog entry index 3189970 at URL: https://rekor.sigstore.dev/api/v1/log/entries/206071d5ca7a2346e4db4dcb19a648c7f13b4957e655f4382b735894059bd199
 Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.0 at commit 5bb13ef508b2b8ded49f9264d7712f1316830d10
 PASSED: Verified SLSA provenance
 ```
 
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+
+### Options Details
+
+For provenance created using SLSA GitHub generators:
+
+| Option | Description |
+| --- | ----------- |
+| `source` | Expects a source, for e.g. `github.com/org/repo`. This option verifies that `ConfigSource` and `Materials` of the SLSA provenance contain the expected `source`. |
+| `branch` | Expects a `branch` like `main` or `dev`. Verifies this against the `github_ref` in the SLSA provenance when the `github_ref_type` is a `branch`, or the `base_ref` or `target_commitish` when a `tag`.|
+| `tag` | Verifies against the `github_ref` when the ref type is a `tag`. |
+| `versioned-tag` | Like `tag`, but verifies using semantic versioning. |
+| `workflow-input` | Expects key-value pairs like `key=value`. Verifies against any GitHub triggers when using a `workflow_dispatch`. |
+
 
 ## Technical design
 

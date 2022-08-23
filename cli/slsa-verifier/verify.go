@@ -57,7 +57,8 @@ func verifyArtifactCmd() *cobra.Command {
 				v.BuilderID = &o.BuilderID
 			}
 
-			return v.Exec(cmd.Context(), args)
+			_, err := v.Exec(cmd.Context(), args)
+			return err
 		},
 	}
 
@@ -103,7 +104,8 @@ func verifyImageCmd() *cobra.Command {
 				v.BuilderID = &o.BuilderID
 			}
 
-			return v.Exec(cmd.Context(), args)
+			_, err := v.Exec(cmd.Context(), args)
+			return err
 		},
 	}
 

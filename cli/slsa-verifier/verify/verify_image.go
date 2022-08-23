@@ -37,10 +37,10 @@ type VerifyImageCommand struct {
 	PrintProvenance bool
 }
 
-func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) error {
+func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (string, error) {
 	artifactHash, err := container.GetImageDigest(artifacts[0])
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
@@ -60,14 +60,14 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) error
 	if c.ProvenancePath != nil {
 		provenance, err = os.ReadFile(*c.ProvenancePath)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	verifiedProvenance, _, err := verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
+	verifiedProvenance, outBuilderID, err := verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
-		return err
+		return "", err
 	}
 
 	fmt.Fprintf(os.Stderr, "PASSED: Verified SLSA provenance\n")
@@ -75,5 +75,5 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) error
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 
-	return nil
+	return outBuilderID, nil
 }

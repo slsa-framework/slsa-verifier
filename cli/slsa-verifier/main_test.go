@@ -495,7 +495,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 					Inputs:         tt.inputs,
 				}
 
-				err := cmd.Exec(context.Background(), []string{artifactPath})
+				outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -504,11 +504,11 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				if err != nil {
 					return
 				}
-				/*
-					if tt.outBuilderID != "" && outBuilderId != tt.outBuilderID {
-						t.Errorf(cmp.Diff(outBuilderId, tt.outBuilderID))
-					}
-				*/
+
+				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+				}
+
 			}
 		})
 	}
@@ -657,7 +657,7 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 					VersionTag: tt.pversiontag,
 				}
 
-				err := cmd.Exec(context.Background(), []string{image})
+				outBuilderID, err := cmd.Exec(context.Background(), []string{image})
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -666,11 +666,11 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 				if err != nil {
 					return
 				}
-				/*
-					if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
-						t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
-					}
-				*/
+
+				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+				}
+
 			}
 		})
 	}
