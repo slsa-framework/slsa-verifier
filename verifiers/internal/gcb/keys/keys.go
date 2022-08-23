@@ -16,8 +16,9 @@ import (
 var publicKeys embed.FS
 
 type PublicKey struct {
-	Value  []byte
-	Region string
+	value  []byte
+	pubKey *ecdsa.PublicKey
+	region string
 	// TODO: key type and size
 }
 
@@ -27,31 +28,35 @@ func PublicKeyNew(region string) (*PublicKey, error) {
 		return nil, fmt.Errorf("%w: cannot read key materials", err)
 	}
 
-	return &PublicKey{
-		Value:  content,
-		Region: region,
-	}, nil
-}
-
-func (self *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
-	block, _ := pem.Decode(self.Value)
+	block, _ := pem.Decode(content)
 	if block == nil {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidPEM, self.Value)
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidPEM, content)
 	}
 
 	key, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("x509.ParsePKIXPublicKey: %w", err)
+		return nil, fmt.Errorf("x509.ParsePKIXPublicKey: %w", err)
 	}
 
 	pubKey, ok := key.(*ecdsa.PublicKey)
 	if !ok {
-		return fmt.Errorf("%w: public key not of type ECDSA", err)
+		return nil, fmt.Errorf("%w: public key not of type ECDSA", err)
 	}
 
-	if !ecdsa.VerifyASN1(pubKey, digest[:], sig) {
+	return &PublicKey{
+		value:  content,
+		pubKey: pubKey,
+		region: region,
+	}, nil
+}
+
+func (self *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
+	if self.pubKey == nil {
+		return fmt.Errorf("%w: key is empty", serrors.ErrorInternal)
+	}
+	if !ecdsa.VerifyASN1(self.pubKey, digest[:], sig) {
 		return fmt.Errorf("%w: cannot verify with public key '%v'",
-			serrors.ErrorInvalidSignature, string(self.Region))
+			serrors.ErrorInvalidSignature, string(self.region))
 	}
 
 	return nil

@@ -65,16 +65,6 @@ func ProvenanceFromBytes(payload []byte) (*GCBProvenance, error) {
 	}, nil
 }
 
-func signatureAsRaw(s string) ([]byte, error) {
-	s = strings.ReplaceAll(s, "-", "+")
-	s = strings.ReplaceAll(s, "_", "/")
-	sig, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	return sig, nil
-}
-
 func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	payload, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -327,14 +317,14 @@ func (self *GCBProvenance) verifySignatures(prov *provenance) error {
 			}
 
 			// Decode the signature.
-			sig, err := signatureAsRaw(sig.Sig)
+			rsig, err := base64.RawURLEncoding.DecodeString(sig.Sig)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 
 			// Verify the signature.
-			err = pubKey.VerifySignature(payloadHash, sig)
+			err = pubKey.VerifySignature(payloadHash, rsig)
 			if err != nil {
 				errs = append(errs, err)
 				continue
