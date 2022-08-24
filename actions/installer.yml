@@ -1,0 +1,27 @@
+name: slsa-verifier-installer
+description: 'Installs SLSA verifier and adds it to your PATH'
+branding:
+  icon: 'package'
+  color: 'blue'
+inputs:
+  verifier-release:
+    description: 'slsa-verifier release version to install'
+    required: false
+    default: 'v1.2.0'
+  install-dir:
+    description: 'Absolute path to installation directory'
+    required: false
+    default: '/usr/bin/'
+  use-sudo:
+    description: 'True iff install-dir requires sudo'
+    required: false
+    default: false
+runs:
+  using: "composite"
+  steps:
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+    - run: install_verifier.sh ${{ inputs.verifier-release }} ${{ inputs.install-dir }} ${{ inputs.use-sudo }}
+      shell: bash
+    - run: echo "${{ inputs.install-dir }}" >> $GITHUB_PATH
+      shell: bash
