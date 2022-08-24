@@ -32,7 +32,8 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 // builerOpts, or against the set of defaultBuilders provided.
 func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	builderOpts *options.BuilderOpts, source string,
-	defaultBuilders map[string]bool) (string, error) {
+	defaultBuilders map[string]bool,
+) (string, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {

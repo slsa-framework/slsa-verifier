@@ -26,13 +26,17 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 }
 
 func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement, err error) {
+	if env.PayloadType != "application/vnd.in-toto+json" {
+		return nil, fmt.Errorf("%w: expected payload type 'application/vnd.in-toto+json', got '%s'",
+			serrors.ErrorInvalidDssePayload, env.PayloadType)
+	}
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "decoding payload")
+		return nil, fmt.Errorf("%w: %s:", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 	prov = &intoto.ProvenanceStatement{}
 	if err := json.Unmarshal(pyld, prov); err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "unmarshalling json")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 	return
 }

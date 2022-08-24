@@ -97,7 +97,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 
 // VerifyImage verifies provenance for an OCI image.
 func (v *GHAVerifier) VerifyImage(ctx context.Context,
-	artifactImage string,
+	provenance []byte, artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {

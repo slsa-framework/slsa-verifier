@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
+
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"
@@ -74,14 +75,8 @@ func main() {
 		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 	flag.Parse()
 
-	if (provenancePath == "" || artifactPath == "") && artifactImage == "" {
-		fmt.Fprintf(os.Stderr, "either 'provenance' and 'artifact-path' or 'artifact-image' must be specified\n")
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	if artifactImage != "" && (provenancePath != "" || artifactPath != "") {
-		fmt.Fprintf(os.Stderr, "'provenance' and 'artifact-path' should not be specified when 'artifact-image' is provided\n")
+	if artifactImage != "" && artifactPath != "" {
+		fmt.Fprintf(os.Stderr, "'artifact-image' and 'artifact-path' cannot be specified together\n")
 		flag.Usage()
 		os.Exit(1)
 	}
