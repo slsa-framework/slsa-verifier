@@ -33,12 +33,15 @@ func pString(s string) *string {
 
 const TEST_DIR = "./testdata"
 
-var ARTIFACT_PATH_BUILDERS = []string{"go", "generic"}
-var ARTIFACT_IMAGE_BUILDERS = []string{"generic_container"}
+var (
+	ARTIFACT_PATH_BUILDERS  = []string{"go", "generic"}
+	ARTIFACT_IMAGE_BUILDERS = []string{"generic_container"}
+)
 
 func getBuildersAndVersions(t *testing.T,
 	optionalMinVersion string, specifiedBuilders []string,
-	defaultBuilders []string) []string {
+	defaultBuilders []string,
+) []string {
 	res := []string{}
 	builders := specifiedBuilders
 	if len(builders) == 0 {
@@ -474,6 +477,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
+			// Avoid rate limiting by not running the tests in parallel.
 			// t.Parallel()
 
 			checkVersions := getBuildersAndVersions(t, tt.minversion, tt.builders, ARTIFACT_PATH_BUILDERS)
@@ -519,7 +523,8 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 
 	// Override cosign image verification function for local image testing.
 	container.RunCosignImageVerification = func(ctx context.Context,
-		image string, co *cosign.CheckOpts) ([]oci.Signature, bool, error) {
+		image string, co *cosign.CheckOpts,
+	) ([]oci.Signature, bool, error) {
 		return cosign.VerifyLocalImageAttestations(ctx, image, co)
 	}
 

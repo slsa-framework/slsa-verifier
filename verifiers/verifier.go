@@ -40,7 +40,7 @@ func VerifyImage(ctx context.Context, artifactImage string,
 		return nil, "", err
 	}
 
-	return verifier.VerifyImage(ctx, artifactImage, provenanceOpts, builderOpts)
+	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
 }
 
 func VerifyArtifact(ctx context.Context,
