@@ -88,15 +88,15 @@ The verified in-toto statement may be written to stdout with the `--print-proven
 
 ### Options Details
 
-For provenance created using SLSA GitHub generators:
+The following options are supported for SLSA GitHub builders and generators:
 
 | Option | Description |
 | --- | ----------- |
-| `source` | Expects a source, for e.g. `github.com/org/repo`. This option verifies that `ConfigSource` and `Materials` of the SLSA provenance contain the expected `source`. |
-| `branch` | Expects a `branch` like `main` or `dev`. Verifies this against the `github_ref` in the SLSA provenance when the `github_ref_type` is a `branch`, or the `base_ref` or `target_commitish` when a `tag`.|
-| `tag` | Verifies against the `github_ref` when the ref type is a `tag`. |
+| `source` | Expects a source, for e.g. `github.com/org/repo`. |
+| `branch` | Expects a `branch` like `main` or `dev`. Not supported or all GitHub Workflow triggers. |
+| `tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. Not supported for all triggers. |
 | `versioned-tag` | Like `tag`, but verifies using semantic versioning. |
-| `workflow-input` | Expects key-value pairs like `key=value`. Verifies against any GitHub triggers when using a `workflow_dispatch`. |
+| `workflow-input` | Expects key-value pairs like `key=value` |
 
 
 ## Technical design
