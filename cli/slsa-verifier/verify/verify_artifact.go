@@ -64,11 +64,9 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (s
 
 	verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		return "", err
 	}
 
-	fmt.Fprintf(os.Stderr, "PASSED: Verified SLSA provenance\n")
 	if c.PrintProvenance {
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}

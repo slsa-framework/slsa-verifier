@@ -59,7 +59,7 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
-		"print the verified provenance to std out")
+		"print the verified provenance to stdout")
 
 	cmd.Flags().Var(&o.Inputs, "workflow-input",
 		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")

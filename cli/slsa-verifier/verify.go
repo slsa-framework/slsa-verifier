@@ -17,9 +17,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
 	"github.com/spf13/cobra"
+)
+
+const (
+	SUCCESS = "PASSED: Verified SLSA provenance"
+	FAILURE = "FAILED: SLSA verification failed"
 )
 
 func verifyArtifactCmd() *cobra.Command {
@@ -29,7 +35,7 @@ func verifyArtifactCmd() *cobra.Command {
 		Use: "verify-artifact",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return errors.New("requires a path to an artifact")
+				return errors.New("expects a single path to an artifact")
 			}
 			return nil
 		},
@@ -57,8 +63,13 @@ func verifyArtifactCmd() *cobra.Command {
 				v.BuilderID = &o.BuilderID
 			}
 
-			_, err := v.Exec(cmd.Context(), args)
-			return err
+			if _, err := v.Exec(cmd.Context(), args); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				return err
+			}
+
+			fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+			return nil
 		},
 	}
 
@@ -74,7 +85,7 @@ func verifyImageCmd() *cobra.Command {
 		Use: "verify-image",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return errors.New("requires a path to an image")
+				return errors.New("expects a single path to an image")
 			}
 			return nil
 		},
@@ -104,8 +115,13 @@ func verifyImageCmd() *cobra.Command {
 				v.BuilderID = &o.BuilderID
 			}
 
-			_, err := v.Exec(cmd.Context(), args)
-			return err
+			if _, err := v.Exec(cmd.Context(), args); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				return err
+			}
+
+			fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+			return nil
 		},
 	}
 

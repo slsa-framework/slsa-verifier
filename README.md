@@ -67,7 +67,7 @@ Flags:
       --branch string            [optional] expected branch the binary was compiled from
       --builder-id string        EXPERIMENTAL: the unique builder ID who created the provenance
   -h, --help                     help for verify-artifact
-      --print-provenance         print the verified provenance to std out
+      --print-provenance         print the verified provenance to stdout
       --provenance-path string   path to a provenance file
       --source string            expected source repository that should have produced the binary, e.g. github.com/some/repo
       --tag string               [optional] expected tag the binary was compiled from
@@ -88,15 +88,15 @@ The verified in-toto statement may be written to stdout with the `--print-proven
 
 ### Options Details
 
-The following options are supported for SLSA GitHub builders and generators:
+The following options are supported for [SLSA GitHub builders and generators](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance):
 
 | Option | Description |
 | --- | ----------- |
 | `source` | Expects a source, for e.g. `github.com/org/repo`. |
-| `branch` | Expects a `branch` like `main` or `dev`. Not supported or all GitHub Workflow triggers. |
-| `tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. Not supported for all triggers. |
+| `branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. |
+| `tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. NSupported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. |
 | `versioned-tag` | Like `tag`, but verifies using semantic versioning. |
-| `workflow-input` | Expects key-value pairs like `key=value` |
+| `workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for `workflow_dispatch` triggers. |
 
 
 ## Technical design
