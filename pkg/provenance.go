@@ -357,8 +357,9 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		}
 
 		co := &cosign.CheckOpts{
-			RootCerts:      fulcio.GetRoots(),
-			CertOidcIssuer: certOidcIssuer,
+			RootCerts:         fulcio.GetRoots(),
+			IntermediateCerts: fulcio.GetIntermediates(),
+			CertOidcIssuer:    certOidcIssuer,
 		}
 		verifier, err := cosign.ValidateAndUnpackCert(cert, co)
 		if err != nil {
@@ -376,7 +377,6 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		fmt.Fprintf(os.Stderr, "Verified against tlog entry %d\n", *entry.LogIndex)
 		return cert, nil
 	}
-
 	return nil, ErrorNoValidRekorEntries
 }
 
