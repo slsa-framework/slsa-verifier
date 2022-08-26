@@ -1,6 +1,6 @@
 permissions: read-all
 on:
-  push
+  push:
   schedule:
     - cron: '14 3 * * *'
 
