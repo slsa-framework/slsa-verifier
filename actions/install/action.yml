@@ -16,4 +16,4 @@ runs:
         echo "$HOME/.slsa/bin/$VERIFIER_RELEASE" >> $GITHUB_PATH
       env:
         VERIFIER_RELEASE: "${{ inputs.verifier-release }}"
-        shell: bash
+      shell: bash
