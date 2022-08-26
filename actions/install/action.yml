@@ -11,9 +11,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - env:
-        VERIFIER_RELEASE: "${{ inputs.verifier-release }}"
     - run: |
         $GITHUB_ACTION_PATH/installer.sh $VERIFIER_RELEASE
         echo "$HOME/.slsa/bin/$VERIFIER_RELEASE" >> $GITHUB_PATH
-      shell: bash
+      env:
+        VERIFIER_RELEASE: "${{ inputs.verifier-release }}"
+        shell: bash
