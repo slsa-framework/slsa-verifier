@@ -1,15 +1,10 @@
 #!/bin/bash
 # SLSA verifier install script
 
-shopt -s expand_aliases
-if [ -z "$NO_COLOR" ]; then
-  alias log_info="echo -e \"\033[1;32mINFO\033[0m:\""
-  alias log_error="echo -e \"\033[1;31mERROR\033[0m:\""
-else
-  alias log_info="echo \"INFO:\""
-  alias log_error="echo \"ERROR:\""
-fi
 set -euo pipefail
+shopt -s expand_aliases
+alias log_info="echo \"INFO:\""
+alias log_error="echo \"ERROR:\""
 
 verifier_release="$1"
 install_dir="$HOME/.slsa/bin/${verifier_release}"
