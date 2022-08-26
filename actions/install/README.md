@@ -1,10 +1,10 @@
-# slsa-verifier-installer GitHub Action
+# slsa-verifier setup GitHub Action
 
 This action installs the SLSA verifier so you can verify SLSA provenance in your workflows.
 
-For more information about `slsa-verifier`, refer to the [its documentation](https://github.com/slsa-framework/slsa-verifier#verification-of-provenance).
+For more information about `slsa-verifier`, refer to [its documentation](https://github.com/slsa-framework/slsa-verifier#verification-of-provenance).
 
-For more information about SLSA in general, see https://slsa.dev.
+For more information about SLSA in general, see [https://slsa.dev](https://slsa.dev).
 
 ## Usage
 

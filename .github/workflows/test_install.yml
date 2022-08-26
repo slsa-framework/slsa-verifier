@@ -1,4 +1,8 @@
-on: [push]
+permissions: read-all
+on:
+  push
+  schedule:
+    - cron: '14 3 * * *'
 
 jobs:
   installer_test:

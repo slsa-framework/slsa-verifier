@@ -5,6 +5,7 @@ ________
 [Installation](#installation)
 - [Compilation from source](#compilation-from-source)
 - [Download the binary](#download-the-binary)
+- [Install in a GitHub Workflow](#install-in-a-github-workflow)
 
 [Verification of provenance](#verification-of-provenance)
 - [Available options](#available-options)
@@ -46,6 +47,10 @@ Verify the checksum:
 $ sha256sum -c --strict SHA256SUM.md
   slsa-verifier-linux-amd64: OK
 ```
+
+### Install in a GitHub Workflow
+
+Using the GitHub Action ```slsa-framework/actions/install``` to install ```slsa-verifier``` on a GitHub Workflow. For full details, see [its documentation](https://github.com/slsa-framework/slsa-verifier/actions/install/README.md).
 
 ## Verification of Provenance
 
