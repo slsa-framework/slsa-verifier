@@ -521,7 +521,8 @@ func Test_VerifyTextProvenance(t *testing.T) {
 				}
 
 				if err = json.Unmarshal(patch, &prov.verifiedProvenance.Build.UnverifiedTextIntotoStatement); err != nil {
-					// If we updated a characters that make a non-string fiel invalid, like Time, just ignore it.
+					// If we updated a characters that make a non-string fiel invalid, like Time, unmarshalin will fail,
+					// and we ignore the error.
 					i += 1
 					patch = []byte(strings.Clone(string(cpy)))
 					continue
