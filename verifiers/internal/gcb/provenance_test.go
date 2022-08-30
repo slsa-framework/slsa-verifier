@@ -248,7 +248,7 @@ func Test_VerifySignature(t *testing.T) {
 		{
 			name:     "invalid signature",
 			path:     "./testdata/gcloud-container-invalid-signature-payloadtype.json",
-			expected: serrors.ErrorInvalidDssePayload,
+			expected: serrors.ErrorNoValidSignature,
 		},
 	}
 	for _, tt := range tests {
