@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -165,12 +166,19 @@ func (self *Provenance) VerifyTextProvenance() error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
+
+	// Note: there is an additional field `metadata.buildInvocationId` which
+	// is not part of the specs but is present. This field is currently ignored during comparison.
 	unverifiedTextIntotoStatement := v01IntotoStatement{
 		StatementHeader: self.verifiedProvenance.Build.UnverifiedTextIntotoStatement.StatementHeader,
 		Predicate:       self.verifiedProvenance.Build.UnverifiedTextIntotoStatement.SlsaProvenance,
 	}
 
-	if !cmp.Equal(unverifiedTextIntotoStatement, *self.verifiedIntotoStatement) {
+	// Note: DeepEqual() has problem with time comparisons: https://github.com/onsi/gomega/issues/264
+	// but this shoudl not affect us since both times are supposed to have the the same string and
+	// they are both taken from a strng representation.
+	// We do not use cmp.Equal() because it *can* panic and is intended for unit tests only.
+	if !reflect.DeepEqual(unverifiedTextIntotoStatement, *self.verifiedIntotoStatement) {
 		return fmt.Errorf("%w: diff '%s'", serrors.ErrorMismatchIntoto,
 			cmp.Diff(unverifiedTextIntotoStatement, *self.verifiedIntotoStatement))
 	}
