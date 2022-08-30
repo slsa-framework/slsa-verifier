@@ -11,9 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	// intoto "github.com/in-toto/in-toto-golang/in_toto"
-	// slsa01 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1"
-	// slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 )
@@ -447,10 +444,10 @@ func Test_VerifyTextProvenance(t *testing.T) {
 		alter    bool
 		expected error
 	}{
-		// {
-		// 	name: "valid gcb provenance",
-		// 	path: "./testdata/gcloud-container-github.json",
-		// },
+		{
+			name: "valid gcb provenance",
+			path: "./testdata/gcloud-container-github.json",
+		},
 		{
 			name:     "mismatch subject name",
 			path:     "./testdata/gcloud-container-github.json",
