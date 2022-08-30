@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/google/go-cmp/cmp"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa01 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1"
@@ -25,10 +28,18 @@ type v01IntotoStatement struct {
 	Predicate slsa01.ProvenancePredicate `json:"predicate"`
 }
 
+// The GCB provenance contains a human-readable version of the intoto
+// statement, but it is not compliant with the standard. It uses `slsaProvenance`
+// instead of `predicate`. For backward compatibility, this has not been fixed
+// by the GCB team.
+type v01GCBIntotoStatement struct {
+	intoto.StatementHeader
+	SlsaProvenance slsa01.ProvenancePredicate `json:"slsaProvenance"`
+}
+
 type provenance struct {
 	Build struct {
-		// TODO: compare to verified provenance.
-		// IntotoStatement v01IntotoStatement `json:"intotoStatement"`
+		UnverifiedTextIntotoStatement v01GCBIntotoStatement `json:"intotoStatement"`
 	} `json:"build"`
 	Kind        string           `json:"kind"`
 	ResourceURI string           `json:"resourceUri"`
@@ -146,6 +157,32 @@ func (self *Provenance) VerifySummary(provenanceOpts *options.ProvenanceOpts) er
 			serrors.ErrorMismatchHash, provenanceOpts.ExpectedDigest,
 			self.gcloudProv.ImageSummary.FullyQualifiedDigest)
 	}
+	return nil
+}
+
+// VerifyTextProvenance verifies the text provenance prepended
+// to the provenance.This text mirrors the DSSE payload but is human-readable.
+func (self *Provenance) VerifyTextProvenance() error {
+	if err := self.isVerified(); err != nil {
+		return err
+	}
+
+	// Note: there is an additional field `metadata.buildInvocationId` which
+	// is not part of the specs but is present. This field is currently ignored during comparison.
+	unverifiedTextIntotoStatement := v01IntotoStatement{
+		StatementHeader: self.verifiedProvenance.Build.UnverifiedTextIntotoStatement.StatementHeader,
+		Predicate:       self.verifiedProvenance.Build.UnverifiedTextIntotoStatement.SlsaProvenance,
+	}
+
+	// Note: DeepEqual() has problem with time comparisons: https://github.com/onsi/gomega/issues/264
+	// but this should not affect us since both times are supposed to have the the same string and
+	// they are both taken from a strng representation.
+	// We do not use cmp.Equal() because it *can* panic and is intended for unit tests only.
+	if !reflect.DeepEqual(unverifiedTextIntotoStatement, *self.verifiedIntotoStatement) {
+		return fmt.Errorf("%w: diff '%s'", serrors.ErrorMismatchIntoto,
+			cmp.Diff(unverifiedTextIntotoStatement, *self.verifiedIntotoStatement))
+	}
+
 	return nil
 }
 

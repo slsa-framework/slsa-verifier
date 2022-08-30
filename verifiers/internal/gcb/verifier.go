@@ -88,6 +88,13 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 		return nil, "", err
 	}
 
+	// Verify the text provenance.
+	// This is an additional structure that GCB prepends to the provenance,
+	// intended for humans. It reflect the DSSE payload.
+	if err = prov.VerifyTextProvenance(); err != nil {
+		return nil, "", err
+	}
+
 	// Verify branch.
 	if provenanceOpts.ExpectedBranch != nil {
 		if err = prov.VerifyBranch(*provenanceOpts.ExpectedBranch); err != nil {

@@ -14,6 +14,7 @@ var (
 	ErrorInvalidSemver             = errors.New("invalid semantic version")
 	ErrorRekorSearch               = errors.New("error searching rekor entries")
 	ErrorMismatchHash              = errors.New("artifact hash does not match provenance subject")
+	ErrorMismatchIntoto            = errors.New("verified intoto provenance does not match text provenance")
 	ErrorInvalidRef                = errors.New("invalid ref")
 	ErrorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
 	ErrorNoValidRekorEntries       = errors.New("could not find a matching valid signature entry")
