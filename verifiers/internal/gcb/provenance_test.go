@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+
 	//"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -449,7 +450,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			path: "./testdata/gcloud-container-github.json",
 		},
 		{
-			name:     "mismatch subject name",
+			name:     "mismatch everything",
 			path:     "./testdata/gcloud-container-github.json",
 			alter:    true,
 			expected: serrors.ErrorMismatchIntoto,
@@ -494,7 +495,6 @@ func Test_VerifyTextProvenance(t *testing.T) {
 				// If it's a character that changes the JSON format, ignore it.
 				if _, ok := chars[patch[i]]; ok {
 					i = i + 1
-					fmt.Println("not continue char", string(patch[i:i+10]))
 					continue
 				}
 
