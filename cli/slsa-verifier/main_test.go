@@ -33,8 +33,9 @@ func pString(s string) *string {
 const TEST_DIR = "./testdata"
 
 var (
-	ARTIFACT_PATH_BUILDERS  = []string{"go", "generic"}
-	ARTIFACT_IMAGE_BUILDERS = []string{"generic_container"}
+	GHA_ARTIFACT_PATH_BUILDERS  = []string{"gha_go", "gha_generic"}
+	GHA_ARTIFACT_IMAGE_BUILDERS = []string{"gha_generic_container"}
+	GCB_ARTIFACT_IMAGE_BUILDERS = []string{"gcb_container"}
 )
 
 func getBuildersAndVersions(t *testing.T,
@@ -479,7 +480,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			// Avoid rate limiting by not running the tests in parallel.
 			// t.Parallel()
 
-			checkVersions := getBuildersAndVersions(t, tt.minversion, tt.builders, ARTIFACT_PATH_BUILDERS)
+			checkVersions := getBuildersAndVersions(t, tt.minversion, tt.builders, GHA_ARTIFACT_PATH_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
@@ -509,7 +510,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 	}
 }
 
-func Test_runVerifyArtifactImage(t *testing.T) {
+func Test_runVerifyGHAArtifactImage(t *testing.T) {
 	t.Parallel()
 
 	// Override cosign image verification function for local image testing.
@@ -637,7 +638,7 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			checkVersions := getBuildersAndVersions(t, "", nil, ARTIFACT_IMAGE_BUILDERS)
+			checkVersions := getBuildersAndVersions(t, "", nil, GHA_ARTIFACT_IMAGE_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
@@ -648,6 +649,164 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 				_, outBuilderID, err := runVerify(image, "", "",
 					tt.source, tt.pbranch, tt.pbuilderID,
 					tt.ptag, tt.pversiontag, nil)
+
+				if !errCmp(err, tt.err) {
+					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				}
+
+				if err != nil {
+					return
+				}
+
+				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+				}
+			}
+		})
+	}
+}
+
+func Test_runVerifyGCBArtifactImage(t *testing.T) {
+	t.Parallel()
+
+	// TODO: Is there a more uniform way of handling getting image digest for both
+	// remote and local images?
+	container.GetImageDigest = func(image string) (string, error) {
+		// This is copied from cosign's VerifyLocalImageAttestation code:
+		// https://github.com/sigstore/cosign/blob/fdceee4825dc5d56b130f3f431aab93137359e79/pkg/cosign/verify.go#L654
+		se, err := layout.SignedImageIndex(image)
+		if err != nil {
+			return "", err
+		}
+
+		h, err := se.Digest()
+		if err != nil {
+			return "", err
+		}
+
+		return strings.TrimPrefix(h.String(), "sha256:"), nil
+	}
+
+	builder := "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
+	tests := []struct {
+		name         string
+		artifact     string
+		provenance   string
+		source       string
+		pbuilderID   *string
+		outBuilderID string
+		err          error
+		// noversion is a special case where we are not testing all builder versions
+		// for example, testdata for the builder at head in trusted repo workflows
+		// or testdata from malicious untrusted builders.
+		// When true, this does not iterate over all builder versions.
+		noversion bool
+	}{
+		{
+			name:       "valid main branch default",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+		},
+		{
+			name:       "invalie repo name",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/name",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "invalie org name",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/org/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "invalid cloud git",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "gitlab.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "invalid payload digest",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-payload-digest.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid payload builderid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-payload-builderid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid summary digest",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-summary-digest.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchHash,
+		},
+		{
+			name:       "invalid text digest",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-text-digest.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchIntoto,
+		},
+		{
+			name:       "invalid text build steps",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-text-steps.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchIntoto,
+		},
+		{
+			name:       "invalid metadata kind",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-metadata-kind.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorInvalidFormat,
+		},
+		{
+			name:       "invalid metadata resourceUri sha256",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-mismatch-metadata-urisha256.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchHash,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			checkVersions := getBuildersAndVersions(t, "", nil, GCB_ARTIFACT_IMAGE_BUILDERS)
+			if tt.noversion {
+				checkVersions = []string{""}
+			}
+
+			for _, v := range checkVersions {
+				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
+				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
+
+				_, outBuilderID, err := runVerify(image, "", provenance,
+					tt.source, nil, tt.pbuilderID,
+					nil, nil, nil)
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))

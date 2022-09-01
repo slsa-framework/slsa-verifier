@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	crname "github.com/google/go-containerregistry/pkg/name"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 
 	"github.com/slsa-framework/slsa-verifier/options"
@@ -178,6 +179,32 @@ func getArtifactHash(artifactImage, artifactPath string) (string, error) {
 		}
 		return hex.EncodeToString(h.Sum(nil)), nil
 	}
-	// Retrieve image digest
-	return container.GetImageDigest(artifactImage)
+	// Retrieve the image digest.
+	digest, err := container.GetImageDigest(artifactImage)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorImageHash, err)
+	}
+
+	// Check if the image refers to a file.
+	// If it does, we don't expect users to provide an 'imutable'
+	// reference with `@sha256:xxx`.
+	_, err = os.Stat(artifactImage)
+	if err != nil && !os.IsNotExist(err) {
+		return "", fmt.Errorf("os.Stat(): %w", err)
+	}
+	if !os.IsNotExist(err) {
+		return digest, nil
+	}
+
+	// For image in a registry, only allow immutable images.
+	ref, err := crname.ParseReference(artifactImage)
+	if err != nil {
+		return "", fmt.Errorf("crane.ParseReference(): %w", err)
+	}
+
+	if !strings.HasPrefix(ref.Identifier(), "sha256:") {
+		return "", fmt.Errorf("%w: expected '%s@sha256:%s', got '%s'",
+			serrors.ErrorMutableImage, artifactImage, digest, artifactImage)
+	}
+	return digest, nil
 }
