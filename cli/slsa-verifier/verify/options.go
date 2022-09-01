@@ -48,7 +48,7 @@ var _ Interface = (*VerifyOptions)(nil)
 func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	/* Builder options */
 	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
-		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions).")
 
 	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
 

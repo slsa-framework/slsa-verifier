@@ -96,7 +96,7 @@ The following options are supported for [SLSA GitHub builders and generators](ht
 | `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. |
 | `source-tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. NSupported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. |
 | `source-versioned-tag` | Like `tag`, but verifies using semantic versioning. |
-| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for `workflow_dispatch` triggers. |
+| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for GitHub Actions `workflow_dispatch` triggers. |
 
 
 ## Technical design
