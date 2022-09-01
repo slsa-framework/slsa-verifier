@@ -46,11 +46,13 @@ var _ Interface = (*VerifyOptions)(nil)
 
 // AddFlags implements Interface
 func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
-		"path to a provenance file")
+	/* Builder options */
+	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 
 	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
 
+	/* Source options */
 	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
 
@@ -61,11 +63,12 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 
+	/* Other options */
+	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
+		"path to a provenance file")
+
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"print the verified provenance to stdout")
-
-	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
-		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 
 	cmd.MarkFlagRequired("source-uri")
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
