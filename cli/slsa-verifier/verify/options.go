@@ -29,13 +29,16 @@ type Interface interface {
 
 // VerifyOptions is the top-level options for all `verify` commands.
 type VerifyOptions struct {
+	/* Source requirements */
+	SourceURI        string
+	SourceBranch     string
+	SourceTag        string
+	SourceVersionTag string
+	/* Builder Requirements */
+	BuildWorkflowInputs workflowInputs
+	BuilderID           string
+	/* Other */
 	ProvenancePath  string
-	BuilderID       string
-	Source          string
-	Branch          string
-	Tag             string
-	VersionTag      string
-	Inputs          workflowInputs
 	PrintProvenance bool
 }
 
@@ -48,24 +51,24 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "EXPERIMENTAL: the unique builder ID who created the provenance")
 
-	cmd.Flags().StringVar(&o.Source, "source", "",
+	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
 
-	cmd.Flags().StringVar(&o.Branch, "branch", "", "[optional] expected branch the binary was compiled from")
+	cmd.Flags().StringVar(&o.SourceBranch, "source-branch", "", "[optional] expected branch the binary was compiled from")
 
-	cmd.Flags().StringVar(&o.Tag, "tag", "", "[optional] expected tag the binary was compiled from")
+	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
 
-	cmd.Flags().StringVar(&o.VersionTag, "versioned-tag", "",
+	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"print the verified provenance to stdout")
 
-	cmd.Flags().Var(&o.Inputs, "workflow-input",
+	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
 		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events).")
 
-	cmd.MarkFlagRequired("source")
-	cmd.MarkFlagsMutuallyExclusive("versioned-tag", "tag")
+	cmd.MarkFlagRequired("source-uri")
+	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
 type workflowInputs struct {

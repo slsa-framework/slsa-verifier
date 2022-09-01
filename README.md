@@ -64,21 +64,21 @@ Usage:
   slsa-verifier verify-artifact [flags]
 
 Flags:
-      --branch string            [optional] expected branch the binary was compiled from
-      --builder-id string        EXPERIMENTAL: the unique builder ID who created the provenance
-  -h, --help                     help for verify-artifact
-      --print-provenance         print the verified provenance to stdout
-      --provenance-path string   path to a provenance file
-      --source string            expected source repository that should have produced the binary, e.g. github.com/some/repo
-      --tag string               [optional] expected tag the binary was compiled from
-      --versioned-tag string     [optional] expected version the binary was compiled from. Uses semantic version to match the tag
-      --workflow-input map[]     [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events). (default map[])
+      --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events). (default map[])
+      --builder-id string             EXPERIMENTAL: the unique builder ID who created the provenance
+  -h, --help                          help for verify-artifact
+      --print-provenance              print the verified provenance to stdout
+      --provenance-path string        path to a provenance file
+      --source-branch string          [optional] expected branch the binary was compiled from
+      --source-tag string             [optional] expected tag the binary was compiled from
+      --source-uri string             expected source repository that should have produced the binary, e.g. github.com/some/repo
+      --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
 ### Example
 
 ```bash
-$ go run ./cli/slsa-verifier -provenance-path ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl --source github.com/slsa-framework/slsa-verifier --tag v1.3.0 ~/Downloads/slsa-verifier-linux-amd64 
+$ go run ./cli/slsa-verifier -provenance-path ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl --source-uri github.com/slsa-framework/slsa-verifier --source-tag v1.3.0 ~/Downloads/slsa-verifier-linux-amd64 
 Verified signature against tlog entry index 3189970 at URL: https://rekor.sigstore.dev/api/v1/log/entries/206071d5ca7a2346e4db4dcb19a648c7f13b4957e655f4382b735894059bd199
 Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.0 at commit 5bb13ef508b2b8ded49f9264d7712f1316830d10
 PASSED: Verified SLSA provenance
@@ -92,11 +92,11 @@ The following options are supported for [SLSA GitHub builders and generators](ht
 
 | Option | Description |
 | --- | ----------- |
-| `source` | Expects a source, for e.g. `github.com/org/repo`. |
-| `branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. |
-| `tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. NSupported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. |
-| `versioned-tag` | Like `tag`, but verifies using semantic versioning. |
-| `workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for `workflow_dispatch` triggers. |
+| `source-uri` | Expects a source, for e.g. `github.com/org/repo`. |
+| `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. |
+| `source-tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. NSupported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. |
+| `source-versioned-tag` | Like `tag`, but verifies using semantic versioning. |
+| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for `workflow_dispatch` triggers. |
 
 
 ## Technical design

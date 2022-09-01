@@ -42,19 +42,19 @@ func verifyArtifactCmd() *cobra.Command {
 		Short: "Verifies SLSA provenance on an artifact blob",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := verify.VerifyArtifactCommand{
-				ProvenancePath:  o.ProvenancePath,
-				Source:          o.Source,
-				PrintProvenance: o.PrintProvenance,
-				Inputs:          o.Inputs.AsMap(),
+				ProvenancePath:      o.ProvenancePath,
+				SourceURI:           o.SourceURI,
+				PrintProvenance:     o.PrintProvenance,
+				BuildWorkflowInputs: o.BuildWorkflowInputs.AsMap(),
 			}
-			if cmd.Flags().Changed("branch") {
-				v.Tag = &o.Branch
+			if cmd.Flags().Changed("source-branch") {
+				v.SourceTag = &o.SourceBranch
 			}
-			if cmd.Flags().Changed("tag") {
-				v.Tag = &o.Tag
+			if cmd.Flags().Changed("source-tag") {
+				v.SourceTag = &o.SourceTag
 			}
-			if cmd.Flags().Changed("versioned-tag") {
-				v.VersionTag = &o.VersionTag
+			if cmd.Flags().Changed("source-versioned-tag") {
+				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
 				if !ExperimentalEnabled() {
@@ -92,21 +92,21 @@ func verifyImageCmd() *cobra.Command {
 		Short: "Verifies SLSA provenance on a container image",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := verify.VerifyImageCommand{
-				Source:          o.Source,
-				PrintProvenance: o.PrintProvenance,
-				Inputs:          o.Inputs.AsMap(),
+				SourceURI:           o.SourceURI,
+				PrintProvenance:     o.PrintProvenance,
+				BuildWorkflowInputs: o.BuildWorkflowInputs.AsMap(),
 			}
 			if cmd.Flags().Changed("provenance-path") {
 				v.ProvenancePath = &o.ProvenancePath
 			}
-			if cmd.Flags().Changed("branch") {
-				v.Tag = &o.Branch
+			if cmd.Flags().Changed("source-branch") {
+				v.SourceTag = &o.SourceBranch
 			}
-			if cmd.Flags().Changed("tag") {
-				v.Tag = &o.Tag
+			if cmd.Flags().Changed("source-tag") {
+				v.SourceTag = &o.SourceTag
 			}
-			if cmd.Flags().Changed("versioned-tag") {
-				v.VersionTag = &o.VersionTag
+			if cmd.Flags().Changed("source-versioned-tag") {
+				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
 				if !ExperimentalEnabled() {

@@ -28,14 +28,14 @@ import (
 
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
 type VerifyArtifactCommand struct {
-	ProvenancePath  string
-	BuilderID       *string
-	Source          string
-	Branch          *string
-	Tag             *string
-	VersionTag      *string
-	Inputs          map[string]string
-	PrintProvenance bool
+	ProvenancePath      string
+	BuilderID           *string
+	SourceURI           string
+	SourceBranch        *string
+	SourceTag           *string
+	SourceVersionTag    *string
+	BuildWorkflowInputs map[string]string
+	PrintProvenance     bool
 }
 
 func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (string, error) {
@@ -45,12 +45,12 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (s
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:      c.Source,
-		ExpectedBranch:         c.Branch,
+		ExpectedSourceURI:      c.SourceURI,
+		ExpectedBranch:         c.SourceBranch,
 		ExpectedDigest:         artifactHash,
-		ExpectedVersionedTag:   c.VersionTag,
-		ExpectedTag:            c.Tag,
-		ExpectedWorkflowInputs: c.Inputs,
+		ExpectedVersionedTag:   c.SourceVersionTag,
+		ExpectedTag:            c.SourceTag,
+		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
 	}
 
 	builderOpts := &options.BuilderOpts{

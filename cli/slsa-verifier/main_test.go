@@ -490,13 +490,13 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				cmd := verify.VerifyArtifactCommand{
-					ProvenancePath: provenancePath,
-					Source:         tt.source,
-					Branch:         tt.pbranch,
-					BuilderID:      tt.pbuilderID,
-					Tag:            tt.ptag,
-					VersionTag:     tt.pversiontag,
-					Inputs:         tt.inputs,
+					ProvenancePath:      provenancePath,
+					SourceURI:           tt.source,
+					SourceBranch:        tt.pbranch,
+					BuilderID:           tt.pbuilderID,
+					SourceTag:           tt.ptag,
+					SourceVersionTag:    tt.pversiontag,
+					BuildWorkflowInputs: tt.inputs,
 				}
 
 				outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
@@ -655,11 +655,11 @@ func Test_runVerifyArtifactImage(t *testing.T) {
 				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 
 				cmd := verify.VerifyImageCommand{
-					Source:     tt.source,
-					Branch:     tt.pbranch,
-					BuilderID:  tt.pbuilderID,
-					Tag:        tt.ptag,
-					VersionTag: tt.pversiontag,
+					SourceURI:        tt.source,
+					SourceBranch:     tt.pbranch,
+					BuilderID:        tt.pbuilderID,
+					SourceTag:        tt.ptag,
+					SourceVersionTag: tt.pversiontag,
 				}
 
 				outBuilderID, err := cmd.Exec(context.Background(), []string{image})
