@@ -175,8 +175,8 @@ func (self *Provenance) VerifyTextProvenance() error {
 	}
 
 	// Note: DeepEqual() has problem with time comparisons: https://github.com/onsi/gomega/issues/264
-	// but this should not affect us since both times are supposed to have the the same string and
-	// they are both taken from a strng representation.
+	// but this should not affect us since both times are supposed to have the same string and
+	// they are both taken from a string representation.
 	// We do not use cmp.Equal() because it *can* panic and is intended for unit tests only.
 	if !reflect.DeepEqual(unverifiedTextIntotoStatement, *self.verifiedIntotoStatement) {
 		return fmt.Errorf("%w: diff '%s'", serrors.ErrorMismatchIntoto,
