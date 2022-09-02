@@ -10,6 +10,7 @@ var (
 	ErrorMismatchWorkflowInputs    = errors.New("workflow input does not match")
 	ErrorMalformedURI              = errors.New("URI is malformed")
 	ErrorMismatchTag               = errors.New("tag used to generate the binary does not match provenance")
+	ErrorInvalidRecipe             = errors.New("the recipe is invalid")
 	ErrorMismatchVersionedTag      = errors.New("tag used to generate the binary does not match provenance")
 	ErrorInvalidSemver             = errors.New("invalid semantic version")
 	ErrorRekorSearch               = errors.New("error searching rekor entries")

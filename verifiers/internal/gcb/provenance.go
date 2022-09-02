@@ -21,7 +21,10 @@ import (
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
 )
 
-var GCBBuilderIDs = []string{"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"}
+var GCBBuilderIDs = []string{
+	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+}
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
@@ -218,6 +221,45 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorMismatchBuilderID
 }
 
+func getBuilderVersion(builderID string) (string, error) {
+	parts := strings.Split(builderID, "@")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("%w: '%s'", serrors.ErrorInvalidFormat, parts)
+	}
+	return parts[1], nil
+}
+
+func validateRecipeType(builderID, recipeType string) error {
+	v, err := getBuilderVersion(builderID)
+	if err != nil {
+		return err
+	}
+	switch v {
+	case "v0.2":
+		if builderID != recipeType {
+			return fmt.Errorf("%w: expected '%s', got '%s'",
+				serrors.ErrorInvalidRecipe, builderID, recipeType)
+		}
+	case "v0.3":
+		recipes := []string{
+			"https://cloudbuild.googleapis.com/CloudBuildYaml@",
+			"https://cloudbuild.googleapis.com/CloudBuildSteps@",
+		}
+		for _, r := range recipes {
+			if strings.HasPrefix(recipeType, r) {
+				return nil
+			}
+		}
+		err = fmt.Errorf("%w: expected on of '%s', got '%s'",
+			serrors.ErrorInvalidRecipe, strings.Join(recipes, ","), recipeType)
+	default:
+		err = fmt.Errorf("%w: '%s'",
+			serrors.ErrorInvalidRecipe, recipeType)
+	}
+
+	return err
+}
+
 // VerifyBuilder verifies the builder in the DSSE payload:
 // - in the recipe type
 // - the recipe argument type
@@ -243,10 +285,9 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string,
 		}
 	}
 
-	// Valiate that the recipe type is consistent.
-	if predicateBuilderID != statement.Predicate.Recipe.Type {
-		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-			predicateBuilderID, statement.Predicate.Recipe.Type)
+	// Valiate the recipe type.
+	if err := validateRecipeType(predicateBuilderID, statement.Predicate.Recipe.Type); err != nil {
+		return "", err
 	}
 
 	// Validate the recipe argument type.

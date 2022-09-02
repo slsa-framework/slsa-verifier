@@ -120,10 +120,14 @@ func Test_VerifyBuilder(t *testing.T) {
 			expected: serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:     "mismatch recipe.type",
+			name:     "v0.2 mismatch recipe.type",
 			path:     "./testdata/gcloud-container-invalid-recipe.type.json",
-			expected: serrors.ErrorMismatchBuilderID,
+			expected: serrors.ErrorInvalidRecipe,
 		},
+		// TODO: v02 and v03 from Test_validateRecipeType
+		// use cloud / step in type for v0.2
+		// use hosted for v0.3
+		// use correct cloud or steps in v0.3
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -159,6 +163,61 @@ func Test_VerifyBuilder(t *testing.T) {
 
 			if outBuilderID != tt.builderID {
 				t.Errorf(cmp.Diff(outBuilderID, tt.builderID))
+			}
+		})
+	}
+}
+
+func Test_validateRecipeType(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		builderID  string
+		recipeType string
+		expected   error
+	}{
+		{
+			name:       "valid v0.2 recipe type",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		},
+		{
+			name:       "invalid v0.2 recipe type CloudBuildYaml",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1",
+			expected:   serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:       "invalid v0.2 recipe type CloudBuildSteps",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildSteps@v0.1",
+			expected:   serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:       "valid v0.3 recipe type CloudBuildYaml",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1",
+		},
+		{
+			name:       "valid v0.3 recipe type CloudBuildSteps",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildSteps@v0.1",
+		},
+		{
+			name:       "invalid v0.3 recipe type GoogleHostedWorker",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			expected:   serrors.ErrorInvalidRecipe,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := validateRecipeType(tt.builderID, tt.recipeType)
+			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
