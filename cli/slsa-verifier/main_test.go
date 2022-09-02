@@ -666,12 +666,97 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 	}
 }
 
-func Test_runVerifyGCBArtifactImage(t *testing.T) {
+func Test_GCB_Remote_runVerifyArtifactImage(t *testing.T) {
+	t.Parallel()
+
+	builder := "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
+	tests := []struct {
+		name         string
+		artifact     string
+		provenance   string
+		source       string
+		pbuilderID   *string
+		outBuilderID string
+		err          error
+		// noversion is a special case where we are not testing all builder versions
+		// for example, testdata for the builder at head in trusted repo workflows
+		// or testdata from malicious untrusted builders.
+		// When true, this does not iterate over all builder versions.
+		noversion bool
+	}{
+		{
+			name: "oci valid with tag",
+			// Image us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v14@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd
+			// re-tagged and pushed to docker hub. This image is public.
+			artifact:   "laurentsimon/slsa-gcb-v0.2:test@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+			source:     "github.com/laurentsimon/gcb-tests",
+			provenance: "gcloud-container-github.json",
+			pbuilderID: &builder,
+		},
+		{
+			name:       "oci valid no tag",
+			artifact:   "laurentsimon/slsa-gcb-v0.2@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+			source:     "github.com/laurentsimon/gcb-tests",
+			provenance: "gcloud-container-github.json",
+			pbuilderID: &builder,
+		},
+		{
+			name:       "oci is mutable",
+			artifact:   "index.docker.io/laurentsimon/scorecard",
+			source:     "github.com/laurentsimon/gcb-tests",
+			provenance: "gcloud-container-github.json",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMutableImage,
+		},
+		{
+			name:       "oci mismatch digest",
+			artifact:   "index.docker.io/laurentsimon/scorecard@sha256:d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pbuilderID: &builder,
+			err:        serrors.ErrorMismatchHash,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			checkVersions := getBuildersAndVersions(t, "", nil, GCB_ARTIFACT_IMAGE_BUILDERS)
+			if tt.noversion {
+				checkVersions = []string{""}
+			}
+
+			for _, v := range checkVersions {
+				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
+				image := tt.artifact
+
+				_, outBuilderID, err := runVerify(image, "", provenance,
+					tt.source, nil, tt.pbuilderID,
+					nil, nil, nil)
+
+				if !errCmp(err, tt.err) {
+					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				}
+
+				if err != nil {
+					return
+				}
+
+				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+				}
+			}
+		})
+	}
+}
+
+func Test_GCB_Local_runVerifyLocalGCBArtifactImage(t *testing.T) {
 	t.Parallel()
 
 	// TODO: Is there a more uniform way of handling getting image digest for both
 	// remote and local images?
-	f := func(image string) (string, error) {
+	container.GetImageDigest = func(image string) (string, error) {
 		// This is copied from cosign's VerifyLocalImageAttestation code:
 		// https://github.com/sigstore/cosign/blob/fdceee4825dc5d56b130f3f431aab93137359e79/pkg/cosign/verify.go#L654
 		se, err := layout.SignedImageIndex(image)
@@ -695,7 +780,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		source       string
 		pbuilderID   *string
 		outBuilderID string
-		oci          bool
 		err          error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
@@ -790,32 +874,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchHash,
 		},
-		{
-			name:       "oci valid",
-			artifact:   "us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v14@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
-			oci:        true,
-			source:     "github.com/laurentsimon/gcb-tests",
-			provenance: "gcloud-container-github.json",
-			pbuilderID: &builder,
-		},
-		{
-			name:       "oci is mutable",
-			artifact:   "index.docker.io/laurentsimon/scorecard",
-			oci:        true,
-			source:     "github.com/laurentsimon/gcb-tests",
-			provenance: "gcloud-container-github.json",
-			pbuilderID: &builder,
-			err:        serrors.ErrorMutableImage,
-		},
-		{
-			name:       "oci mismatch digest",
-			artifact:   "index.docker.io/laurentsimon/scorecard@sha256:d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
-			oci:        true,
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
-			err:        serrors.ErrorMismatchHash,
-		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -829,11 +887,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 			for _, v := range checkVersions {
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
-				image := tt.artifact
-				if !tt.oci {
-					image = filepath.Clean(filepath.Join(TEST_DIR, v, image))
-					container.GetImageDigest = f
-				}
+				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 
 				_, outBuilderID, err := runVerify(image, "", provenance,
 					tt.source, nil, tt.pbuilderID,
