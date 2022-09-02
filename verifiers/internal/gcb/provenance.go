@@ -238,10 +238,12 @@ func validateRecipeType(builderID, recipeType string) error {
 	case "v0.2":
 		// In this version, the recipe type should be the same as
 		// the builder ID.
-		if builderID != recipeType {
-			return fmt.Errorf("%w: expected '%s', got '%s'",
-				serrors.ErrorInvalidRecipe, builderID, recipeType)
+		if builderID == recipeType {
+			return nil
 		}
+		err = fmt.Errorf("%w: expected '%s', got '%s'",
+			serrors.ErrorInvalidRecipe, builderID, recipeType)
+
 	case "v0.3":
 		// In this version, two recipe types are allowed, depending how the
 		// build was made. We don't verify the version of the recipes,
