@@ -10,7 +10,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
-var GetImageDigest = func(image string) (string, error) {
+func GetImageDigest(image string) (string, error) {
 	digest, err := crane.Digest(image)
 	if err != nil {
 		return "", fmt.Errorf("%w: crane.Digest(): %v", serrors.ErrorImageHash, err)
