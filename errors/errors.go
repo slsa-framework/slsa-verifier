@@ -24,5 +24,7 @@ var (
 	ErrorInvalidPEM                = errors.New("invalid PEM")
 	ErrorInvalidSignature          = errors.New("invalid signature")
 	ErrorNoValidSignature          = errors.New("no valid signature")
+	ErrorMutableImage              = errors.New("the image is mutable")
+	ErrorImageHash                 = errors.New("cannot retrieve sha256 of image")
 	ErrorInternal                  = errors.New("internal error")
 )
