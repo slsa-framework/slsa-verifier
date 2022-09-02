@@ -124,10 +124,12 @@ func Test_VerifyBuilder(t *testing.T) {
 			path:     "./testdata/gcloud-container-invalid-recipe.type.json",
 			expected: serrors.ErrorInvalidRecipe,
 		},
+		// TODO: add a file built frmo v0.1, and check that it fails with ErrorInvalidBuilderID
 		// TODO: v02 and v03 from Test_validateRecipeType
 		// use cloud / step in type for v0.2
 		// use hosted for v0.3
 		// use correct cloud or steps in v0.3
+		// use random name for v0.3
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -176,6 +178,7 @@ func Test_validateRecipeType(t *testing.T) {
 		recipeType string
 		expected   error
 	}{
+		// v0.2 builder.
 		{
 			name:       "valid v0.2 recipe type",
 			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
@@ -193,6 +196,7 @@ func Test_validateRecipeType(t *testing.T) {
 			recipeType: "https://cloudbuild.googleapis.com/CloudBuildSteps@v0.1",
 			expected:   serrors.ErrorInvalidRecipe,
 		},
+		// v0.3 builder.
 		{
 			name:       "valid v0.3 recipe type CloudBuildYaml",
 			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
@@ -208,6 +212,13 @@ func Test_validateRecipeType(t *testing.T) {
 			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
 			expected:   serrors.ErrorInvalidRecipe,
+		},
+		// No version.
+		{
+			name:       "invalid builder version",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+			expected:   serrors.ErrorInvalidBuilderID,
 		},
 	}
 	for _, tt := range tests {

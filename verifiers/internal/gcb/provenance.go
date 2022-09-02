@@ -218,7 +218,7 @@ func isValidBuilderID(id string) error {
 			return nil
 		}
 	}
-	return serrors.ErrorMismatchBuilderID
+	return serrors.ErrorInvalidBuilderID
 }
 
 func getBuilderVersion(builderID string) (string, error) {
@@ -236,11 +236,16 @@ func validateRecipeType(builderID, recipeType string) error {
 	}
 	switch v {
 	case "v0.2":
+		// In this version, the recipe type should be the same as
+		// the builder ID.
 		if builderID != recipeType {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
 				serrors.ErrorInvalidRecipe, builderID, recipeType)
 		}
 	case "v0.3":
+		// In this version, two recipe types are allowed, depending how the
+		// build was made. We don't verify the version of the recipes,
+		// because it's not super important and would add complexity.
 		recipes := []string{
 			"https://cloudbuild.googleapis.com/CloudBuildYaml@",
 			"https://cloudbuild.googleapis.com/CloudBuildSteps@",
@@ -253,8 +258,8 @@ func validateRecipeType(builderID, recipeType string) error {
 		err = fmt.Errorf("%w: expected on of '%s', got '%s'",
 			serrors.ErrorInvalidRecipe, strings.Join(recipes, ","), recipeType)
 	default:
-		err = fmt.Errorf("%w: '%s'",
-			serrors.ErrorInvalidRecipe, recipeType)
+		err = fmt.Errorf("%w: version '%s'",
+			serrors.ErrorInvalidBuilderID, v)
 	}
 
 	return err

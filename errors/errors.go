@@ -6,6 +6,7 @@ var (
 	ErrorInvalidDssePayload        = errors.New("invalid DSSE envelope payload")
 	ErrorMismatchBranch            = errors.New("branch used to generate the binary does not match provenance")
 	ErrorMismatchBuilderID         = errors.New("builderID does not match provenance")
+	ErrorInvalidBuilderID          = errors.New("builderID is invalid")
 	ErrorMismatchSource            = errors.New("source used to generate the binary does not match provenance")
 	ErrorMismatchWorkflowInputs    = errors.New("workflow input does not match")
 	ErrorMalformedURI              = errors.New("URI is malformed")
