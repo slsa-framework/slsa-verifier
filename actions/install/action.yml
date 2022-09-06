@@ -1,0 +1,19 @@
+name: setup
+description: 'Installs SLSA verifier and adds it to your PATH'
+branding:
+  icon: 'package'
+  color: 'blue'
+inputs:
+  verifier-release:
+    description: 'slsa-verifier release version to install'
+    required: false
+    default: 'v1.3.0'
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        $GITHUB_ACTION_PATH/installer.sh $VERIFIER_RELEASE
+        echo "$HOME/.slsa/bin/$VERIFIER_RELEASE" >> $GITHUB_PATH
+      env:
+        VERIFIER_RELEASE: "${{ inputs.verifier-release }}"
+      shell: bash
