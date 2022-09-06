@@ -120,9 +120,43 @@ func Test_VerifyBuilder(t *testing.T) {
 			expected: serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:     "mismatch recipe.type",
+			name:     "v0.2 mismatch recipe.type",
 			path:     "./testdata/gcloud-container-invalid-recipe.type.json",
-			expected: serrors.ErrorMismatchBuilderID,
+			expected: serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:      "v0.1 invalid builder",
+			path:      "./testdata/gcloud-container-invalid-builderv01.json",
+			builderID: "http://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+			expected:  serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:      "invalid v0.2 recipe type CloudBuildSteps",
+			path:      "./testdata/gcloud-container-invalid-recipetypestepsv02.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			expected:  serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:      "invalid v0.2 recipe type CloudBuildYaml",
+			path:      "./testdata/gcloud-container-invalid-recipetypecloudv02.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			expected:  serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:      "valid v0.3 recipe type CloudBuildSteps",
+			path:      "./testdata/gcloud-container-invalid-recipetypestepsv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		},
+		{
+			name:      "valid v0.3 recipe type CloudBuildYaml",
+			path:      "./testdata/gcloud-container-invalid-recipetypecloudv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		},
+		{
+			name:      "invalid v0.3 recipe type random",
+			path:      "./testdata/gcloud-container-invalid-recipetyperandv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			expected:  serrors.ErrorInvalidRecipe,
 		},
 	}
 	for _, tt := range tests {
@@ -159,6 +193,70 @@ func Test_VerifyBuilder(t *testing.T) {
 
 			if outBuilderID != tt.builderID {
 				t.Errorf(cmp.Diff(outBuilderID, tt.builderID))
+			}
+		})
+	}
+}
+
+func Test_validateRecipeType(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		builderID  string
+		recipeType string
+		expected   error
+	}{
+		// v0.2 builder.
+		{
+			name:       "valid v0.2 recipe type",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		},
+		{
+			name:       "invalid v0.2 recipe type CloudBuildYaml",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1",
+			expected:   serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:       "invalid v0.2 recipe type CloudBuildSteps",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildSteps@v0.1",
+			expected:   serrors.ErrorInvalidRecipe,
+		},
+		// v0.3 builder.
+		{
+			name:       "valid v0.3 recipe type CloudBuildYaml",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1",
+		},
+		{
+			name:       "valid v0.3 recipe type CloudBuildSteps",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			recipeType: "https://cloudbuild.googleapis.com/CloudBuildSteps@v0.1",
+		},
+		{
+			name:       "invalid v0.3 recipe type GoogleHostedWorker",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			expected:   serrors.ErrorInvalidRecipe,
+		},
+		// No version.
+		{
+			name:       "invalid builder version",
+			builderID:  "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+			recipeType: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+			expected:   serrors.ErrorInvalidBuilderID,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := validateRecipeType(tt.builderID, tt.recipeType)
+			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}

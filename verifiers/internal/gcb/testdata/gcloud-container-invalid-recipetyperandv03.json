@@ -1,0 +1,94 @@
+{
+  "image_summary": {
+    "digest": "sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+    "fully_qualified_digest": "us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+    "registry": "us-west2-docker.pkg.dev",
+    "repository": "quickstart-docker-repo"
+  },
+  "provenance_summary": {
+    "provenance": [
+      {
+        "build": {
+          "intotoStatement": {
+            "_type": "https://in-toto.io/Statement/v0.1",
+            "predicateType": "https://slsa.dev/provenance/v0.1",
+            "slsaProvenance": {
+              "builder": {
+                "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
+              },
+              "materials": [
+                {
+                  "uri": "https://github.com/laurentsimon/gcb-tests/commit/fbbb98765e85ad464302dc5977968104d36e455e"
+                }
+              ],
+              "metadata": {
+                "buildFinishedOn": "2022-08-15T22:43:34.366498Z",
+                "buildInvocationId": "b6e052a7-5aa4-41bf-a56b-9bc4e4f3058b",
+                "buildStartedOn": "2022-08-15T22:43:18.700638187Z"
+              },
+              "recipe": {
+                "arguments": {
+                  "@type": "type.googleapis.com/google.devtools.cloudbuild.v1.Build",
+                  "id": "b6e052a7-5aa4-41bf-a56b-9bc4e4f3058b",
+                  "options": {
+                    "dynamicSubstitutions": true,
+                    "logging": "LEGACY",
+                    "pool": {},
+                    "substitutionOption": "ALLOW_LOOSE"
+                  },
+                  "sourceProvenance": {},
+                  "steps": [
+                    {
+                      "args": [
+                        "build",
+                        "-t",
+                        "us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v14",
+                        "."
+                      ],
+                      "name": "gcr.io/cloud-builders/docker",
+                      "pullTiming": {
+                        "endTime": "2022-08-15T22:43:21.662016533Z",
+                        "startTime": "2022-08-15T22:43:21.657262492Z"
+                      },
+                      "status": "SUCCESS",
+                      "timing": {
+                        "endTime": "2022-08-15T22:43:27.056377441Z",
+                        "startTime": "2022-08-15T22:43:21.657262492Z"
+                      }
+                    }
+                  ]
+                },
+                "entryPoint": "cloudbuild.yaml",
+                "type": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
+              }
+            },
+            "subject": [
+              {
+                "digest": {
+                  "sha256": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd"
+                },
+                "name": "https://us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v14"
+              }
+            ]
+          }
+        },
+        "createTime": "2022-08-15T22:43:35.649016Z",
+        "envelope": {
+          "payload": "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJwcmVkaWNhdGUiOiB7CiAgICAiYnVpbGRlciI6IHsKICAgICAgImlkIjogImh0dHBzOi8vY2xvdWRidWlsZC5nb29nbGVhcGlzLmNvbS9Hb29nbGVIb3N0ZWRXb3JrZXJAdjAuMyIKICAgIH0sCiAgICAibWF0ZXJpYWxzIjogWwogICAgICB7CiAgICAgICAgInVyaSI6ICJodHRwczovL2dpdGh1Yi5jb20vbGF1cmVudHNpbW9uL2djYi10ZXN0cy9jb21taXQvZmJiYjk4NzY1ZTg1YWQ0NjQzMDJkYzU5Nzc5NjgxMDRkMzZlNDU1ZSIKICAgICAgfQogICAgXSwKICAgICJtZXRhZGF0YSI6IHsKICAgICAgImJ1aWxkRmluaXNoZWRPbiI6ICIyMDIyLTA4LTE1VDIyOjQzOjM0LjM2NjQ5OFoiLAogICAgICAiYnVpbGRJbnZvY2F0aW9uSWQiOiAiYjZlMDUyYTctNWFhNC00MWJmLWE1NmItOWJjNGU0ZjMwNThiIiwKICAgICAgImJ1aWxkU3RhcnRlZE9uIjogIjIwMjItMDgtMTVUMjI6NDM6MTguNzAwNjM4MTg3WiIKICAgIH0sCiAgICAicmVjaXBlIjogewogICAgICAiYXJndW1lbnRzIjogewogICAgICAgICJAdHlwZSI6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5kZXZ0b29scy5jbG91ZGJ1aWxkLnYxLkJ1aWxkIiwKICAgICAgICAiaWQiOiAiYjZlMDUyYTctNWFhNC00MWJmLWE1NmItOWJjNGU0ZjMwNThiIiwKICAgICAgICAib3B0aW9ucyI6IHsKICAgICAgICAgICJkeW5hbWljU3Vic3RpdHV0aW9ucyI6IHRydWUsCiAgICAgICAgICAibG9nZ2luZyI6ICJMRUdBQ1kiLAogICAgICAgICAgInBvb2wiOiB7fSwKICAgICAgICAgICJzdWJzdGl0dXRpb25PcHRpb24iOiAiQUxMT1dfTE9PU0UiCiAgICAgICAgfSwKICAgICAgICAic291cmNlUHJvdmVuYW5jZSI6IHt9LAogICAgICAgICJzdGVwcyI6IFsKICAgICAgICAgIHsKICAgICAgICAgICAgImFyZ3MiOiBbCiAgICAgICAgICAgICAgImJ1aWxkIiwKICAgICAgICAgICAgICAiLXQiLAogICAgICAgICAgICAgICJ1cy13ZXN0Mi1kb2NrZXIucGtnLmRldi9nb3NzdC1zY2FyZS1zYW5kYm94L3F1aWNrc3RhcnQtZG9ja2VyLXJlcG8vcXVpY2tzdGFydC1pbWFnZTp2MTQiLAogICAgICAgICAgICAgICIuIgogICAgICAgICAgICBdLAogICAgICAgICAgICAibmFtZSI6ICJnY3IuaW8vY2xvdWQtYnVpbGRlcnMvZG9ja2VyIiwKICAgICAgICAgICAgInB1bGxUaW1pbmciOiB7CiAgICAgICAgICAgICAgImVuZFRpbWUiOiAiMjAyMi0wOC0xNVQyMjo0MzoyMS42NjIwMTY1MzNaIiwKICAgICAgICAgICAgICAic3RhcnRUaW1lIjogIjIwMjItMDgtMTVUMjI6NDM6MjEuNjU3MjYyNDkyWiIKICAgICAgICAgICAgfSwKICAgICAgICAgICAgInN0YXR1cyI6ICJTVUNDRVNTIiwKICAgICAgICAgICAgInRpbWluZyI6IHsKICAgICAgICAgICAgICAiZW5kVGltZSI6ICIyMDIyLTA4LTE1VDIyOjQzOjI3LjA1NjM3NzQ0MVoiLAogICAgICAgICAgICAgICJzdGFydFRpbWUiOiAiMjAyMi0wOC0xNVQyMjo0MzoyMS42NTcyNjI0OTJaIgogICAgICAgICAgICB9CiAgICAgICAgICB9CiAgICAgICAgXQogICAgICB9LAogICAgICAiZW50cnlQb2ludCI6ICJjbG91ZGJ1aWxkLnlhbWwiLAogICAgICAidHlwZSI6ICJodHRwczovL2Nsb3VkYnVpbGQuZ29vZ2xlYXBpcy5jb20vQ2xvdWRCdWlsZFlhbUB2MC4xIgogICAgfQogIH0sCiAgInByZWRpY2F0ZVR5cGUiOiAiaHR0cHM6Ly9zbHNhLmRldi9wcm92ZW5hbmNlL3YwLjEiLAogICJzbHNhUHJvdmVuYW5jZSI6IHsKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0dvb2dsZUhvc3RlZFdvcmtlckB2MC4yIgogICAgfSwKICAgICJtYXRlcmlhbHMiOiBbCiAgICAgIHsKICAgICAgICAidXJpIjogImh0dHBzOi8vZ2l0aHViLmNvbS9sYXVyZW50c2ltb24vZ2NiLXRlc3RzL2NvbW1pdC9mYmJiOTg3NjVlODVhZDQ2NDMwMmRjNTk3Nzk2ODEwNGQzNmU0NTVlIgogICAgICB9CiAgICBdLAogICAgIm1ldGFkYXRhIjogewogICAgICAiYnVpbGRGaW5pc2hlZE9uIjogIjIwMjItMDgtMTVUMjI6NDM6MzQuMzY2NDk4WiIsCiAgICAgICJidWlsZEludm9jYXRpb25JZCI6ICJiNmUwNTJhNy01YWE0LTQxYmYtYTU2Yi05YmM0ZTRmMzA1OGIiLAogICAgICAiYnVpbGRTdGFydGVkT24iOiAiMjAyMi0wOC0xNVQyMjo0MzoxOC43MDA2MzgxODdaIgogICAgfSwKICAgICJyZWNpcGUiOiB7CiAgICAgICJhcmd1bWVudHMiOiB7CiAgICAgICAgIkB0eXBlIjogInR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmRldnRvb2xzLmNsb3VkYnVpbGQudjEuQnVpbGQiLAogICAgICAgICJpZCI6ICJiNmUwNTJhNy01YWE0LTQxYmYtYTU2Yi05YmM0ZTRmMzA1OGIiLAogICAgICAgICJvcHRpb25zIjogewogICAgICAgICAgImR5bmFtaWNTdWJzdGl0dXRpb25zIjogdHJ1ZSwKICAgICAgICAgICJsb2dnaW5nIjogIkxFR0FDWSIsCiAgICAgICAgICAicG9vbCI6IHt9LAogICAgICAgICAgInN1YnN0aXR1dGlvbk9wdGlvbiI6ICJBTExPV19MT09TRSIKICAgICAgICB9LAogICAgICAgICJzb3VyY2VQcm92ZW5hbmNlIjoge30sCiAgICAgICAgInN0ZXBzIjogWwogICAgICAgICAgewogICAgICAgICAgICAiYXJncyI6IFsKICAgICAgICAgICAgICAiYnVpbGQiLAogICAgICAgICAgICAgICItdCIsCiAgICAgICAgICAgICAgInVzLXdlc3QyLWRvY2tlci5wa2cuZGV2L2dvc3N0LXNjYXJlLXNhbmRib3gvcXVpY2tzdGFydC1kb2NrZXItcmVwby9xdWlja3N0YXJ0LWltYWdlOnYxNCIsCiAgICAgICAgICAgICAgIi4iCiAgICAgICAgICAgIF0sCiAgICAgICAgICAgICJuYW1lIjogImdjci5pby9jbG91ZC1idWlsZGVycy9kb2NrZXIiLAogICAgICAgICAgICAicHVsbFRpbWluZyI6IHsKICAgICAgICAgICAgICAiZW5kVGltZSI6ICIyMDIyLTA4LTE1VDIyOjQzOjIxLjY2MjAxNjUzM1oiLAogICAgICAgICAgICAgICJzdGFydFRpbWUiOiAiMjAyMi0wOC0xNVQyMjo0MzoyMS42NTcyNjI0OTJaIgogICAgICAgICAgICB9LAogICAgICAgICAgICAic3RhdHVzIjogIlNVQ0NFU1MiLAogICAgICAgICAgICAidGltaW5nIjogewogICAgICAgICAgICAgICJlbmRUaW1lIjogIjIwMjItMDgtMTVUMjI6NDM6MjcuMDU2Mzc3NDQxWiIsCiAgICAgICAgICAgICAgInN0YXJ0VGltZSI6ICIyMDIyLTA4LTE1VDIyOjQzOjIxLjY1NzI2MjQ5MloiCiAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICBdCiAgICAgIH0sCiAgICAgICJlbnRyeVBvaW50IjogImNsb3VkYnVpbGQueWFtbCIsCiAgICAgICJ0eXBlIjogImh0dHBzOi8vY2xvdWRidWlsZC5nb29nbGVhcGlzLmNvbS9Hb29nbGVIb3N0ZWRXb3JrZXJAdjAuMiIKICAgIH0KICB9LAogICJzdWJqZWN0IjogWwogICAgewogICAgICAiZGlnZXN0IjogewogICAgICAgICJzaGEyNTYiOiAiMWEwMzNiMDAyZjg5ZWQyYjhlYTczMzE2MjQ5N2ZiNzBmMWE0MDQ5YTdmODYwMmQ2YTMzNjgyYjRhZDk5MjFmZCIKICAgICAgfSwKICAgICAgIm5hbWUiOiAiaHR0cHM6Ly91cy13ZXN0Mi1kb2NrZXIucGtnLmRldi9nb3NzdC1zY2FyZS1zYW5kYm94L3F1aWNrc3RhcnQtZG9ja2VyLXJlcG8vcXVpY2tzdGFydC1pbWFnZTp2MTQiCiAgICB9CiAgXQp9",
+          "payloadType": "application/vnd.in-toto+json",
+          "signatures": [
+            {
+              "keyid": "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/builtByGCB/cryptoKeyVersions/1",
+              "sig": "MEYCIQD-0xUsdkYnsmKnQL_ndEvXknLfn82zsG-hGyYUd4aYsAIhAP4KSCxN2VPNc-dvfrQIGduMUNmAiHxLttdezqdrSf3F"
+            }
+          ]
+        },
+        "kind": "BUILD",
+        "name": "projects/gosst-scare-sandbox/occurrences/8ce06798-f94d-4772-a224-04e473163790",
+        "noteName": "projects/verified-builder/notes/intoto_b6e052a7-5aa4-41bf-a56b-9bc4e4f3058b",
+        "resourceUri": "https://us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+        "updateTime": "2022-08-15T22:43:35.649016Z"
+      }
+    ]
+  }
+}
