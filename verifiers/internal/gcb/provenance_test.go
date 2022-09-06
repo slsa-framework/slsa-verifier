@@ -124,12 +124,40 @@ func Test_VerifyBuilder(t *testing.T) {
 			path:     "./testdata/gcloud-container-invalid-recipe.type.json",
 			expected: serrors.ErrorInvalidRecipe,
 		},
-		// TODO: add a file built frmo v0.1, and check that it fails with ErrorInvalidBuilderID
-		// TODO: v02 and v03 from Test_validateRecipeType
-		// use cloud / step in type for v0.2
-		// use hosted for v0.3
-		// use correct cloud or steps in v0.3
-		// use random name for v0.3
+		{
+			name:      "v0.1 invalid builder",
+			path:      "./testdata/gcloud-container-invalid-builderv01.json",
+			builderID: "http://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+			expected:  serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:      "invalid v0.2 recipe type CloudBuildSteps",
+			path:      "./testdata/gcloud-container-invalid-recipetypestepsv02.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			expected:  serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:      "invalid v0.2 recipe type CloudBuildYaml",
+			path:      "./testdata/gcloud-container-invalid-recipetypecloudv02.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			expected:  serrors.ErrorInvalidRecipe,
+		},
+		{
+			name:      "valid v0.3 recipe type CloudBuildSteps",
+			path:      "./testdata/gcloud-container-invalid-recipetypestepsv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		},
+		{
+			name:      "valid v0.3 recipe type CloudBuildYaml",
+			path:      "./testdata/gcloud-container-invalid-recipetypecloudv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		},
+		{
+			name:      "invalid v0.3 recipe type random",
+			path:      "./testdata/gcloud-container-invalid-recipetyperandv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			expected:  serrors.ErrorInvalidRecipe,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
