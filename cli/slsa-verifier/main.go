@@ -108,7 +108,7 @@ func main() {
 	}
 
 	verifiedProvenance, _, err := runVerify(artifactImage, artifactPath, provenancePath, source,
-		pbranch, pbuilderID, ptag, pversiontag, inputs.AsMap())
+		pbranch, pbuilderID, ptag, pversiontag, inputs.AsMap(), nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILED: SLSA verification failed: %v\n", err)
 		os.Exit(2)
@@ -130,13 +130,16 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
+type ComputeDigestFn func(string) (string, error)
+
 func runVerify(artifactImage, artifactPath, provenancePath, source string,
 	branch, builderID, ptag, pversiontag *string, inputs map[string]string,
+	fn ComputeDigestFn,
 ) ([]byte, string, error) {
 	ctx := context.Background()
 
 	// Artifact hash retrieval depends on the artifact type.
-	artifactHash, err := getArtifactHash(artifactImage, artifactPath)
+	artifactHash, err := getArtifactHash(artifactImage, artifactPath, fn)
 	if err != nil {
 		return nil, "", err
 	}
@@ -165,7 +168,11 @@ func runVerify(artifactImage, artifactPath, provenancePath, source string,
 	return verifiers.Verify(ctx, artifactImage, provenance, artifactHash, provenanceOpts, builderOpts)
 }
 
-func getArtifactHash(artifactImage, artifactPath string) (string, error) {
+func getArtifactHash(artifactImage, artifactPath string,
+	// This function is used to handle unit tests and adapt
+	// digest computation to local images.
+	fn ComputeDigestFn,
+) (string, error) {
 	if artifactPath != "" {
 		f, err := os.Open(artifactPath)
 		if err != nil {
@@ -178,6 +185,18 @@ func getArtifactHash(artifactImage, artifactPath string) (string, error) {
 		}
 		return hex.EncodeToString(h.Sum(nil)), nil
 	}
-	// Retrieve image digest
-	return container.GetImageDigest(artifactImage)
+	// Retrieve the image digest.
+	if fn == nil {
+		fn = container.GetImageDigest
+	}
+	digest, err := fn(artifactImage)
+	if err != nil {
+		return "", err
+	}
+
+	// Verify that the reference is immutable.
+	if err := container.ValidateArtifactReference(artifactImage, digest); err != nil {
+		return "", err
+	}
+	return digest, nil
 }
