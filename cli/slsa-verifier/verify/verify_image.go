@@ -24,6 +24,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
 
+type ComputeDigestFn func(string) (string, error)
+
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
 type VerifyImageCommand struct {
 	// May be nil if supplied alongside in the registry
@@ -35,18 +37,29 @@ type VerifyImageCommand struct {
 	SourceVersionTag    *string
 	BuildWorkflowInputs map[string]string
 	PrintProvenance     bool
+	DigestFn            ComputeDigestFn
 }
 
 func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (string, error) {
-	artifactHash, err := container.GetImageDigest(artifacts[0])
+	artifactImage := artifacts[0]
+	// Retrieve the image digest.
+	if c.DigestFn == nil {
+		c.DigestFn = container.GetImageDigest
+	}
+	digest, err := c.DigestFn(artifactImage)
 	if err != nil {
+		return "", err
+	}
+
+	// Verify that the reference is immutable.
+	if err := container.ValidateArtifactReference(artifactImage, digest); err != nil {
 		return "", err
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
 		ExpectedSourceURI:      c.SourceURI,
 		ExpectedBranch:         c.SourceBranch,
-		ExpectedDigest:         artifactHash,
+		ExpectedDigest:         digest,
 		ExpectedVersionedTag:   c.SourceVersionTag,
 		ExpectedTag:            c.SourceTag,
 		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
