@@ -12,3 +12,6 @@ goos: linux
 goarch: amd64
 binary: slsa-verifier-{{ .Os }}-{{ .Arch }}
 dir: ./cli/slsa-verifier
+
+ldflags:
+  - "-X version.Version={{ .Version }}"

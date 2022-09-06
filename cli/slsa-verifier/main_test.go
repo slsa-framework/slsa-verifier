@@ -18,6 +18,7 @@ import (
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/layout"
 
+	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/verifiers/container"
 )
@@ -486,13 +487,20 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
-
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
-				_, outBuilderID, err := runVerify("", artifactPath,
-					provenancePath,
-					tt.source, tt.pbranch, tt.pbuilderID,
-					tt.ptag, tt.pversiontag, tt.inputs, nil)
+
+				cmd := verify.VerifyArtifactCommand{
+					ProvenancePath:      provenancePath,
+					SourceURI:           tt.source,
+					SourceBranch:        tt.pbranch,
+					BuilderID:           tt.pbuilderID,
+					SourceTag:           tt.ptag,
+					SourceVersionTag:    tt.pversiontag,
+					BuildWorkflowInputs: tt.inputs,
+				}
+
+				outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -505,6 +513,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
 					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
 				}
+
 			}
 		})
 	}
@@ -646,9 +655,16 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			for _, v := range checkVersions {
 				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 
-				_, outBuilderID, err := runVerify(image, "", "",
-					tt.source, tt.pbranch, tt.pbuilderID,
-					tt.ptag, tt.pversiontag, nil, localDigestComputeFn)
+				cmd := verify.VerifyImageCommand{
+					SourceURI:        tt.source,
+					SourceBranch:     tt.pbranch,
+					BuilderID:        tt.pbuilderID,
+					SourceTag:        tt.ptag,
+					SourceVersionTag: tt.pversiontag,
+					DigestFn:         localDigestComputeFn,
+				}
+
+				outBuilderID, err := cmd.Exec(context.Background(), []string{image})
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -840,15 +856,23 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			for _, v := range checkVersions {
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
 				image := tt.artifact
-				var fn ComputeDigestFn
+				var fn verify.ComputeDigestFn
 				if !tt.oci {
 					image = filepath.Clean(filepath.Join(TEST_DIR, v, image))
 					fn = localDigestComputeFn
 				}
 
-				_, outBuilderID, err := runVerify(image, "", provenance,
-					tt.source, nil, tt.pbuilderID,
-					nil, nil, nil, fn)
+				cmd := verify.VerifyImageCommand{
+					SourceURI:        tt.source,
+					SourceBranch:     nil,
+					BuilderID:        tt.pbuilderID,
+					SourceTag:        nil,
+					SourceVersionTag: nil,
+					DigestFn:         fn,
+					ProvenancePath:   &provenance,
+				}
+
+				outBuilderID, err := cmd.Exec(context.Background(), []string{image})
 
 				if !errCmp(err, tt.err) {
 					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -861,6 +885,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
 					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
 				}
+
 			}
 		})
 	}

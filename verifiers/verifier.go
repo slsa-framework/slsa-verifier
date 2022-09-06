@@ -11,35 +11,48 @@ import (
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gha"
 )
 
-func Verify(ctx context.Context, artifactImage string,
-	provenance []byte, artifactHash string,
-	provenanceOpts *options.ProvenanceOpts,
-	builderOpts *options.BuilderOpts,
-) ([]byte, string, error) {
+func getVerifier(builderOpts *options.BuilderOpts) (register.SLSAVerifier, error) {
 	// By default, use the GHA builders
 	verifier := register.SLSAVerifiers[gha.VerifierName]
 
 	// If user provids a builderID, find the right verifier based on its ID.
 	if builderOpts.ExpectedID != nil &&
 		*builderOpts.ExpectedID != "" {
-		foundBuilder := false
 		for _, v := range register.SLSAVerifiers {
 			if v.IsAuthoritativeFor(*builderOpts.ExpectedID) {
-				foundBuilder = true
-				verifier = v
-				break
+				return v, nil
 			}
 		}
-		if !foundBuilder {
-			// No builder found.
-			return nil, "", fmt.Errorf("%w: %s", serrors.ErrorVerifierNotSupported, *builderOpts.ExpectedID)
-		}
+		// No builder found.
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorVerifierNotSupported, *builderOpts.ExpectedID)
 	}
 
-	// By default, try the GHA builders.
-	if artifactImage != "" {
-		return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
+	return verifier, nil
+}
+
+func VerifyImage(ctx context.Context, artifactImage string,
+	provenance []byte,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, string, error) {
+	verifier, err := getVerifier(builderOpts)
+	if err != nil {
+		return nil, "", err
 	}
+
+	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
+}
+
+func VerifyArtifact(ctx context.Context,
+	provenance []byte, artifactHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, string, error) {
+	verifier, err := getVerifier(builderOpts)
+	if err != nil {
+		return nil, "", err
+	}
+
 	return verifier.VerifyArtifact(ctx, provenance, artifactHash,
 		provenanceOpts, builderOpts)
 }
