@@ -379,8 +379,8 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) err
 			return fmt.Errorf("%w: expected '%s', got '%s'",
 				serrors.ErrorMismatchSource, expectedSourceURI, uri)
 		}
-		// In v0.3, it uses the standard intoto and seperates the commit sha in its own
-		// `digest.sha1` field.`
+		// In v0.3, it uses the standard intoto and has the commit sha in its own
+		// `digest.sha1` field.
 	case "v0.3":
 		if uri != expectedSourceURI {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
