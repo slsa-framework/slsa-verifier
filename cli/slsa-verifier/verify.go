@@ -48,7 +48,7 @@ func verifyArtifactCmd() *cobra.Command {
 				BuildWorkflowInputs: o.BuildWorkflowInputs.AsMap(),
 			}
 			if cmd.Flags().Changed("source-branch") {
-				v.SourceTag = &o.SourceBranch
+				v.SourceBranch = &o.SourceBranch
 			}
 			if cmd.Flags().Changed("source-tag") {
 				v.SourceTag = &o.SourceTag
@@ -100,7 +100,7 @@ func verifyImageCmd() *cobra.Command {
 				v.ProvenancePath = &o.ProvenancePath
 			}
 			if cmd.Flags().Changed("source-branch") {
-				v.SourceTag = &o.SourceBranch
+				v.SourceBranch = &o.SourceBranch
 			}
 			if cmd.Flags().Changed("source-tag") {
 				v.SourceTag = &o.SourceTag
