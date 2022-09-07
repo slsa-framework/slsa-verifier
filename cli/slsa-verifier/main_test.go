@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -703,35 +704,36 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		return strings.TrimPrefix(h.String(), "sha256:"), nil
 	}
 
-	builder := "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2"
+	builder := "https://cloudbuild.googleapis.com/GoogleHostedWorker"
 	tests := []struct {
-		name         string
-		artifact     string
-		oci          bool
-		provenance   string
-		source       string
-		pbuilderID   *string
-		outBuilderID string
-		err          error
+		name           string
+		artifact       string
+		artifactDigest map[string]string
+		remote         bool
+		provenance     string
+		source         string
+		pBuilderID     *string
+		outBuilderID   string
+		err            error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
 		// or testdata from malicious untrusted builders.
 		// When true, this does not iterate over all builder versions.
 		noversion bool
+		// minversion is a special case to test a newly added feature into a builder
+		minversion string
 	}{
 		{
 			name:       "valid main branch default",
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-github.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 		},
 		{
-			name:       "invalie repo name",
+			name:       "invalid repo name",
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-github.json",
 			source:     "github.com/laurentsimon/name",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchSource,
 		},
 		{
@@ -739,7 +741,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-github.json",
 			source:     "github.com/org/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchSource,
 		},
 		{
@@ -747,7 +748,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-github.json",
 			source:     "gitlab.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchSource,
 		},
 		{
@@ -755,7 +755,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-payload-digest.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorNoValidSignature,
 		},
 		{
@@ -763,7 +762,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-payload-builderid.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorNoValidSignature,
 		},
 		{
@@ -771,7 +769,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-summary-digest.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchHash,
 		},
 		{
@@ -779,7 +776,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-text-digest.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchIntoto,
 		},
 		{
@@ -787,7 +783,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-text-steps.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchIntoto,
 		},
 		{
@@ -795,7 +790,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-metadata-kind.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorInvalidFormat,
 		},
 		{
@@ -803,44 +797,53 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-mismatch-metadata-urisha256.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
 			err:        serrors.ErrorMismatchHash,
 		},
 		{
 			name: "oci valid with tag",
-			// Image us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v14@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd
-			// re-tagged and pushed to docker hub. This image is public.
-			artifact:   "laurentsimon/slsa-gcb-v0.2:test@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
-			oci:        true,
+			// Image re-tagged and pushed to docker hub. This image is public.
+			artifact: "laurentsimon/slsa-gcb-%s:test",
+			artifactDigest: map[string]string{
+				"v0.2": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+				"v0.3": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+			},
+			remote:     true,
 			source:     "github.com/laurentsimon/gcb-tests",
 			provenance: "gcloud-container-github.json",
-			pbuilderID: &builder,
 		},
 		{
-			name:       "oci valid no tag",
-			artifact:   "laurentsimon/slsa-gcb-v0.2@sha256:1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
-			oci:        true,
+			name:     "oci mismatch digest",
+			artifact: "index.docker.io/laurentsimon/scorecard",
+			artifactDigest: map[string]string{
+				"v0.2": "d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
+				"v0.3": "d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
+			},
+			remote:     true,
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorMismatchHash,
+		},
+		{
+			name:     "oci valid no tag",
+			artifact: "laurentsimon/slsa-gcb-%s",
+			artifactDigest: map[string]string{
+				"v0.2": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+				"v0.3": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+			},
+			remote:     true,
 			source:     "github.com/laurentsimon/gcb-tests",
 			provenance: "gcloud-container-github.json",
-			pbuilderID: &builder,
 		},
+		// No version.
 		{
 			name:       "oci is mutable",
 			artifact:   "index.docker.io/laurentsimon/scorecard",
-			oci:        true,
+			noversion:  true,
+			remote:     true,
 			source:     "github.com/laurentsimon/gcb-tests",
 			provenance: "gcloud-container-github.json",
-			pbuilderID: &builder,
+			pBuilderID: pString(builder + "@v0.2"),
 			err:        serrors.ErrorMutableImage,
-		},
-		{
-			name:       "oci mismatch digest",
-			artifact:   "index.docker.io/laurentsimon/scorecard@sha256:d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
-			oci:        true,
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/laurentsimon/gcb-tests",
-			pbuilderID: &builder,
-			err:        serrors.ErrorMismatchHash,
 		},
 	}
 	for _, tt := range tests {
@@ -854,18 +857,41 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
+				semver := path.Base(v)
+				builderID := pString(builder + "@" + semver)
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
 				image := tt.artifact
 				var fn verify.ComputeDigestFn
-				if !tt.oci {
+				// Select the right image according to the builder version we are testing.
+				if strings.Contains(image, `%s`) {
+					image = fmt.Sprintf(image, semver)
+				}
+				// Add the sha256 digest to the image name, if provided.
+				if len(tt.artifactDigest) > 0 {
+					digest, ok := tt.artifactDigest[semver]
+					if !ok {
+						panic(fmt.Sprintf("%s not present in artifactDigest %v", semver, tt.artifactDigest))
+					}
+					image = fmt.Sprintf("%s@sha256:%s", image, digest)
+				}
+				// If it is a local image, change the digest computation.
+				if !tt.remote {
 					image = filepath.Clean(filepath.Join(TEST_DIR, v, image))
 					fn = localDigestComputeFn
+				}
+
+				// If builder ID is set, use it.
+				if tt.pBuilderID != nil {
+					if !tt.noversion {
+						panic("builderID set but not noversion option")
+					}
+					builderID = tt.pBuilderID
 				}
 
 				cmd := verify.VerifyImageCommand{
 					SourceURI:        tt.source,
 					SourceBranch:     nil,
-					BuilderID:        tt.pbuilderID,
+					BuilderID:        builderID,
 					SourceTag:        nil,
 					SourceVersionTag: nil,
 					DigestFn:         fn,

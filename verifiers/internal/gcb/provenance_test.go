@@ -265,39 +265,96 @@ func Test_validateRecipeType(t *testing.T) {
 func Test_VerifySourceURI(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		path     string
-		source   string
-		expected error
+		name      string
+		path      string
+		builderID string
+		source    string
+		expected  error
 	}{
+		// // v0.1
+		// {
+		// 	name:      "v0.1 invalid builder id",
+		// 	path:      "./testdata/gcloud-container-github.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.1",
+		// 	source:    "https://github.com/laurentsimon/gcb-tests",
+		// 	expected:  serrors.ErrorInvalidBuilderID,
+		// },
+		// // v0.2
+		// {
+		// 	name:      "v0.2 valid gcb provenance",
+		// 	path:      "./testdata/gcloud-container-github.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		// 	source:    "https://github.com/laurentsimon/gcb-tests",
+		// },
+		// {
+		// 	name:      "v0.2 mismatch name",
+		// 	path:      "./testdata/gcloud-container-github.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		// 	source:    "https://github.com/laurentsimon/gcb-tests2",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:      "v0.2 mismatch org",
+		// 	path:      "./testdata/gcloud-container-github.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		// 	source:    "https://github.com/wrong/gcb-tests",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:      "v0.2 mismatch protocol",
+		// 	path:      "./testdata/gcloud-container-github.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		// 	source:    "http://github.com/laurentsimon/gcb-tests",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:      "v0.2 mismatch full uri",
+		// 	path:      "./testdata/gcloud-container-github.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		// 	source:    "https://github.com/laurentsimon/gcb-tests/commit/fbbb98765e85ad464302dc5977968104d36e455e",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
+		// v0.3
+		// {
+		// 	name:      "v0.3 valid gcb provenance",
+		// 	path:      "./testdata/gcloud-container-github-v03.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		// 	source:    "https://github.com/laurentsimon/gcb-tests",
+		// },
+		// {
+		// 	name:      "v0.3 mismatch name",
+		// 	path:      "./testdata/gcloud-container-github-v03.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		// 	source:    "https://github.com/laurentsimon/gcb-tests2",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:      "v0.3 mismatch org",
+		// 	path:      "./testdata/gcloud-container-github-v03.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+		// 	source:    "https://github.com/wrong/gcb-tests",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:      "v0.3 mismatch protocol",
+		// 	path:      "./testdata/gcloud-container-github-v03.json",
+		// 	builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		// 	source:    "http://github.com/laurentsimon/gcb-tests",
+		// 	expected:  serrors.ErrorMismatchSource,
+		// },
 		{
-			name:   "valid gcb provenance",
-			path:   "./testdata/gcloud-container-github.json",
-			source: "https://github.com/laurentsimon/gcb-tests",
+			name:      "v0.3 mismatch full uri",
+			path:      "./testdata/gcloud-container-github-v03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			source:    "https://github.com/laurentsimon/gcb-tests/commit/fbbb98765e85ad464302dc5977968104d36e455e",
+			expected:  serrors.ErrorMismatchSource,
 		},
 		{
-			name:     "mismatch name",
-			path:     "./testdata/gcloud-container-github.json",
-			source:   "https://github.com/laurentsimon/gcb-tests2",
-			expected: serrors.ErrorMismatchSource,
-		},
-		{
-			name:     "mismatch org",
-			path:     "./testdata/gcloud-container-github.json",
-			source:   "https://github.com/wrong/gcb-tests",
-			expected: serrors.ErrorMismatchSource,
-		},
-		{
-			name:     "mismatch protocol",
-			path:     "./testdata/gcloud-container-github.json",
-			source:   "http://github.com/laurentsimon/gcb-tests",
-			expected: serrors.ErrorMismatchSource,
-		},
-		{
-			name:     "mismatch full uri",
-			path:     "./testdata/gcloud-container-github.json",
-			source:   "https://github.com/laurentsimon/gcb-tests/commit/fbbb98765e85ad464302dc5977968104d36e455e",
-			expected: serrors.ErrorMismatchSource,
+			name:      "v0.3 mismatch full uri uses v0.2 format",
+			path:      "./testdata/gcloud-container-github-v03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			source:    "https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae",
+			expected:  serrors.ErrorMismatchSource,
 		},
 	}
 	for _, tt := range tests {
@@ -319,7 +376,7 @@ func Test_VerifySourceURI(t *testing.T) {
 				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
 			}
 
-			err = prov.VerifySourceURI(tt.source)
+			err = prov.VerifySourceURI(tt.source, tt.builderID)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
