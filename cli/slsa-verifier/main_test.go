@@ -862,6 +862,15 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
 				image := tt.artifact
 				var fn verify.ComputeDigestFn
+
+				// If builder ID is set, use it.
+				if tt.pBuilderID != nil {
+					if !tt.noversion {
+						panic("builderID set but not noversion option")
+					}
+					builderID = tt.pBuilderID
+				}
+
 				// Select the right image according to the builder version we are testing.
 				if strings.Contains(image, `%s`) {
 					image = fmt.Sprintf(image, semver)
@@ -878,14 +887,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 				if !tt.remote {
 					image = filepath.Clean(filepath.Join(TEST_DIR, v, image))
 					fn = localDigestComputeFn
-				}
-
-				// If builder ID is set, use it.
-				if tt.pBuilderID != nil {
-					if !tt.noversion {
-						panic("builderID set but not noversion option")
-					}
-					builderID = tt.pBuilderID
 				}
 
 				cmd := verify.VerifyImageCommand{
