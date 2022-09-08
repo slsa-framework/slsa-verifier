@@ -72,7 +72,7 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	}
 
 	// Verify source.
-	if err = prov.VerifySourceURI(provenanceOpts.ExpectedSourceURI); err != nil {
+	if err = prov.VerifySourceURI(provenanceOpts.ExpectedSourceURI, builderID); err != nil {
 		return nil, "", err
 	}
 

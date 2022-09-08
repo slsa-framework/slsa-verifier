@@ -351,7 +351,7 @@ func (self *Provenance) VerifySubjectDigest(expectedHash string) error {
 }
 
 // Verify source URI in provenance statement.
-func (self *Provenance) VerifySourceURI(expectedSourceURI string) error {
+func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -365,12 +365,33 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI string) error {
 	if !strings.HasPrefix(expectedSourceURI, "https://") {
 		expectedSourceURI = "https://" + expectedSourceURI
 	}
-	if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") {
-		return fmt.Errorf("%w: expected '%s', got '%s'",
-			serrors.ErrorMismatchSource, expectedSourceURI, uri)
+
+	v, err := getBuilderVersion(builderID)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	switch v {
+	case "v0.2":
+		// In v0.2, it uses format
+		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`.
+		if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") {
+			return fmt.Errorf("%w: expected '%s', got '%s'",
+				serrors.ErrorMismatchSource, expectedSourceURI, uri)
+		}
+		// In v0.3, it uses the standard intoto and has the commit sha in its own
+		// `digest.sha1` field.
+	case "v0.3":
+		if uri != expectedSourceURI {
+			return fmt.Errorf("%w: expected '%s', got '%s'",
+				serrors.ErrorMismatchSource, expectedSourceURI, uri)
+		}
+	default:
+		err = fmt.Errorf("%w: version '%s'",
+			serrors.ErrorInvalidBuilderID, v)
+	}
+
+	return err
 }
 
 func (self *Provenance) VerifyBranch(branch string) error {
@@ -383,6 +404,25 @@ func (self *Provenance) VerifyTag(tag string) error {
 
 func (self *Provenance) VerifyVersionedTag(tag string) error {
 	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
+}
+
+func decodeSignature(s string) ([]byte, []error) {
+	var errs []error
+	rsig, err := base64.StdEncoding.DecodeString(s)
+	if err == nil {
+		// No error, return the value.
+		return rsig, nil
+	}
+	errs = append(errs, err)
+
+	rsig, err = base64.URLEncoding.DecodeString(s)
+	if err == nil {
+		// No error, return the value.
+		return rsig, nil
+	}
+	errs = append(errs, err)
+
+	return nil, errs
 }
 
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
@@ -416,9 +456,9 @@ func (self *Provenance) verifySignatures(prov *provenance) error {
 			}
 
 			// Decode the signature.
-			rsig, err := base64.RawURLEncoding.DecodeString(sig.Sig)
+			rsig, es := decodeSignature(sig.Sig)
 			if err != nil {
-				errs = append(errs, err)
+				errs = append(errs, es...)
 				continue
 			}
 

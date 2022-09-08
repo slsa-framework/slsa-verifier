@@ -21,6 +21,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/sigstore/cosign v1.11.1
 	github.com/slsa-framework/slsa-github-generator v1.2.0
+	github.com/spf13/cobra v1.5.0
 	github.com/transparency-dev/merkle v0.0.1
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 )
@@ -168,7 +169,6 @@ require (
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.12.0 // indirect
