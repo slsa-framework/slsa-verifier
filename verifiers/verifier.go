@@ -19,8 +19,12 @@ func getVerifier(builderOpts *options.BuilderOpts) (register.SLSAVerifier, error
 	// If user provids a builderID, find the right verifier based on its ID.
 	if builderOpts.ExpectedID != nil &&
 		*builderOpts.ExpectedID != "" {
+		name, _, err := utils.ParseBuilderID(*builderOpts.ExpectedID, false)
+		if err != nil {
+			return nil, err
+		}
 		for _, v := range register.SLSAVerifiers {
-			if v.IsAuthoritativeFor(*builderOpts.ExpectedID) {
+			if v.IsAuthoritativeFor(name) {
 				return v, nil
 			}
 		}

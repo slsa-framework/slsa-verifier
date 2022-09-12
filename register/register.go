@@ -13,7 +13,7 @@ type SLSAVerifier interface {
 	// IsAuthoritativeFor checks whether a verifier can
 	// verify provenance for a given builder identified by its
 	// `BuilderID`.
-	IsAuthoritativeFor(builderID string) bool
+	IsAuthoritativeFor(builderIDName string) bool
 
 	// VerifyArtifact verifies a provenance for a supplied artifact.
 	VerifyArtifact(ctx context.Context,
