@@ -187,7 +187,7 @@ func Test_Matches(t *testing.T) {
 
 			builderID, err := BuilderIDNew(tt.builderID)
 			if err != nil {
-				panic(fmt.Sprintf("BuilderIDNew: %v", err))
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
 
 			err = builderID.Matches(tt.match)

@@ -228,7 +228,7 @@ func Test_VerifyBuilder(t *testing.T) {
 			}
 
 			if err := outBuilderID.Matches(tt.builderID); err != nil {
-				t.Errorf(fmt.Errorf("matches failed: %w", err))
+				t.Errorf(fmt.Sprintf("matches failed: %v", err))
 			}
 		})
 	}
@@ -292,7 +292,7 @@ func Test_validateRecipeType(t *testing.T) {
 
 			builderID, err := utils.BuilderIDNew(tt.builderID)
 			if err != nil {
-				panic(fmt.Sprintf("BuilderIDNew failed: %v", err))
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
 			err = validateRecipeType(*builderID, tt.recipeType)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
@@ -416,7 +416,11 @@ func Test_VerifySourceURI(t *testing.T) {
 				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
 			}
 
-			err = prov.VerifySourceURI(tt.source, tt.builderID)
+			builderID, err := utils.BuilderIDNew(tt.builderID)
+			if err != nil {
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
+			}
+			err = prov.VerifySourceURI(tt.source, *builderID)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
