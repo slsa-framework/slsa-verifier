@@ -846,7 +846,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			pBuilderID: pString(builder + "@v0.2"),
 			err:        serrors.ErrorMutableImage,
 		},
-		// TODO: add wrong builder ID for all versions.
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
