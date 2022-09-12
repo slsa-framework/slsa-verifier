@@ -21,7 +21,8 @@ import (
 
 	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/verifiers/container"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
 )
 
 func errCmp(e1, e2 error) bool {
@@ -845,6 +846,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			pBuilderID: pString(builder + "@v0.2"),
 			err:        serrors.ErrorMutableImage,
 		},
+		// TODO: add wrong builder ID for all versions.
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -858,7 +860,10 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 			for _, v := range checkVersions {
 				semver := path.Base(v)
-				builderID := pString(builder + "@" + semver)
+				// For each test, we run 2 sub-tests:
+				// 	1. With the the full builderID including the semver
+				//	2. WIth only the name of the builder.
+				builderIDs := []string{builder + "@" + semver, builder}
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
 				image := tt.artifact
 				var fn verify.ComputeDigestFn
@@ -868,7 +873,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 					if !tt.noversion {
 						panic("builderID set but not noversion option")
 					}
-					builderID = tt.pBuilderID
+					builderIDs = []string{*tt.pBuilderID}
 				}
 
 				// Select the right image according to the builder version we are testing.
@@ -889,28 +894,52 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 					fn = localDigestComputeFn
 				}
 
-				cmd := verify.VerifyImageCommand{
-					SourceURI:        tt.source,
-					SourceBranch:     nil,
-					BuilderID:        builderID,
-					SourceTag:        nil,
-					SourceVersionTag: nil,
-					DigestFn:         fn,
-					ProvenancePath:   &provenance,
-				}
+				// We run the test for each builderID, in order to test
+				// a builderID provided by name and one containing both the name
+				// and semver.
+				for _, bid := range builderIDs {
+					cmd := verify.VerifyImageCommand{
+						SourceURI:        tt.source,
+						SourceBranch:     nil,
+						BuilderID:        &bid,
+						SourceTag:        nil,
+						SourceVersionTag: nil,
+						DigestFn:         fn,
+						ProvenancePath:   &provenance,
+					}
 
-				outBuilderID, err := cmd.Exec(context.Background(), []string{image})
+					outBuilderID, err := cmd.Exec(context.Background(), []string{image})
 
-				if !errCmp(err, tt.err) {
-					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
-				}
+					if !errCmp(err, tt.err) {
+						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+					}
 
-				if err != nil {
-					return
-				}
+					if err != nil {
+						return
+					}
 
-				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
-					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+					// Validate against test's expected builderID, if provided.
+					if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
+						t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+					}
+
+					// Validate against builderID we generated automatically.
+					expectedName, expectedVersion, err := utils.ParseBuilderID(bid, false)
+					if err != nil {
+						panic(fmt.Errorf("ParseBuilderID: %w: %s", err, bid))
+					}
+					builderName, builderVersion, err := utils.ParseBuilderID(outBuilderID, true)
+					if err != nil {
+						panic(fmt.Errorf("ParseBuilderID: %w: %s", err, outBuilderID))
+					}
+
+					if expectedName != builderName {
+						t.Errorf(cmp.Diff(expectedName, builderName))
+					}
+					if expectedVersion != "" && expectedVersion != builderVersion {
+						t.Errorf(cmp.Diff(expectedVersion, builderVersion))
+					}
+
 				}
 
 			}

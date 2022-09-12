@@ -19,6 +19,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 )
 
 var GCBBuilderIDs = []string{
@@ -221,16 +222,8 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func getBuilderVersion(builderID string) (string, error) {
-	parts := strings.Split(builderID, "@")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("%w: '%s'", serrors.ErrorInvalidFormat, parts)
-	}
-	return parts[1], nil
-}
-
 func validateRecipeType(builderID, recipeType string) error {
-	v, err := getBuilderVersion(builderID)
+	_, v, err := utils.ParseBuilderID(builderID, true)
 	if err != nil {
 		return err
 	}
@@ -270,7 +263,10 @@ func validateRecipeType(builderID, recipeType string) error {
 // VerifyBuilder verifies the builder in the DSSE payload:
 // - in the recipe type
 // - the recipe argument type
-// - the predicate builder ID
+// - the predicate builder ID.
+//
+//	The builder ID may be of the form `name@vx.y.z` or `name`. When the version is omitted, we accept any
+//	version. When a version is provided, it must be an exact match.
 func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string, error) {
 	if err := self.isVerified(); err != nil {
 		return "", err
@@ -286,9 +282,25 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string,
 
 	// Validate with user-provided value.
 	if builderOpts != nil && builderOpts.ExpectedID != nil {
-		if *builderOpts.ExpectedID != predicateBuilderID {
-			return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-				*builderOpts.ExpectedID, predicateBuilderID)
+		expectedName, expectedVersion, err := utils.ParseBuilderID(*builderOpts.ExpectedID, false)
+		if err != nil {
+			return "", err
+		}
+		builderName, builderVersion, err := utils.ParseBuilderID(predicateBuilderID, true)
+		if err != nil {
+			return "", err
+		}
+
+		// The builder name must always match.
+		if expectedName != builderName {
+			return "", fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+				builderName, builderName)
+		}
+
+		// The builder version must match if the user explicitely provided it.
+		if expectedVersion != "" && expectedVersion != builderVersion {
+			return "", fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+				expectedVersion, builderVersion)
 		}
 	}
 
@@ -366,7 +378,7 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) err
 		expectedSourceURI = "https://" + expectedSourceURI
 	}
 
-	v, err := getBuilderVersion(builderID)
+	_, v, err := utils.ParseBuilderID(builderID, true)
 	if err != nil {
 		return err
 	}

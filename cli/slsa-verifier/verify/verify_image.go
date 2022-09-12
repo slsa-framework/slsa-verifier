@@ -21,7 +21,7 @@ import (
 
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
-	"github.com/slsa-framework/slsa-verifier/verifiers/container"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
 )
 
 type ComputeDigestFn func(string) (string, error)
