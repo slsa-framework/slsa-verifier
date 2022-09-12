@@ -77,8 +77,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 
 	// Temporary code.
 	// TODO: remove `SetName` function once GHA is supported,
-	// and handle the error.
-	bid, _ := utils.BuilderIDNew(builderID)
+	// and use: bid, err := utils.BuilderIDNew(builderID)
+	bid := &utils.BuilderID{}
 	bid.SetName(builderID)
 	return r, bid, nil
 }
