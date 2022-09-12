@@ -80,7 +80,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// and use: bid, err := utils.BuilderIDNew(builderID)
 	bid := &utils.BuilderID{}
 	bid.SetName(builderID)
-	bid.SetVersion(strings.Split(workflowInfo.JobWobWorkflowRef)[1])
+	bid.SetVersion(strings.Split(workflowInfo.JobWobWorkflowRef, "@")[1])
 	return r, bid, nil
 }
 
