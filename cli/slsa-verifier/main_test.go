@@ -861,8 +861,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			for _, v := range checkVersions {
 				semver := path.Base(v)
 				// For each test, we run 2 sub-tests:
-				// 	1. With the the full builderID including the semver
-				//	2. WIth only the name of the builder.
+				// 	1. With the the full builderID including the semver.
+				//	2. With only the name of the builder.
 				builderIDs := []string{builder + "@" + semver, builder}
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
 				image := tt.artifact
