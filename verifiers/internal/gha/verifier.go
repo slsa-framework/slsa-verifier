@@ -76,11 +76,10 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Temporary code.
-	bid, err := utils.BuilderIDNew(builderID)
-	if err != nil {
-		return r, nil, err
-	}
-
+	// TODO: make the variable `Name` private once GHA support is added,
+	// and check the error.
+	bid, _ := utils.BuilderIDNew(builderID)
+	bid.Name = builderID
 	return r, bid, nil
 }
 

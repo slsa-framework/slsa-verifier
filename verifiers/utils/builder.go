@@ -8,7 +8,8 @@ import (
 )
 
 type BuilderID struct {
-	name, version string
+	// TODO: make the variable private once GHA support is added.
+	Name, version string
 }
 
 // BuilderIDNew creates a new BuilderID structure.
