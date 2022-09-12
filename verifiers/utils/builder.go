@@ -61,7 +61,7 @@ func (b *BuilderID) String() string {
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 	parts := strings.Split(id, "@")
 	if len(parts) == 2 {
-		if parts[1] == "" && needVersion {
+		if parts[1] == "" {
 			return "", "", fmt.Errorf("%w: builderID: '%s'",
 				serrors.ErrorInvalidFormat, id)
 		}

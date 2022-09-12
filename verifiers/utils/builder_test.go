@@ -54,6 +54,17 @@ func Test_ParseBuilderID(t *testing.T) {
 			builderID: "some/name@vla@blo",
 			err:       serrors.ErrorInvalidFormat,
 		},
+		{
+			name:        "empty version - need version",
+			builderID:   "some/name@",
+			needVersion: true,
+			err:         serrors.ErrorInvalidFormat,
+		},
+		{
+			name:      "empty version - no need version",
+			builderID: "some/name@",
+			err:       serrors.ErrorInvalidFormat,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -94,6 +105,11 @@ func Test_BuilderIDNew(t *testing.T) {
 			builderID:      "some/name@v1.2.3",
 			builderName:    "some/name",
 			builderVersion: "v1.2.3",
+		},
+		{
+			name:      "empty version",
+			builderID: "some/name@",
+			err:       serrors.ErrorInvalidFormat,
 		},
 		{
 			name:      "too many '@' - need version",
@@ -166,6 +182,12 @@ func Test_Matches(t *testing.T) {
 			builderID: "some/name@v1.2.3",
 			match:     "some/name@v1.2.4",
 			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "invalid empty version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@",
+			err:       serrors.ErrorInvalidFormat,
 		},
 		{
 			name:      "too many '@' - need version",
