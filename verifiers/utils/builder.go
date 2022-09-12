@@ -63,6 +63,10 @@ func (b *BuilderID) SetName(name string) {
 	b.name = name
 }
 
+func (b *BuilderID) SetVersion(version string) {
+	b.version = version
+}
+
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 	parts := strings.Split(id, "@")
 	if len(parts) == 2 {

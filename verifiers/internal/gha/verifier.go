@@ -76,10 +76,11 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Temporary code.
-	// TODO: remove `SetName` function once GHA is supported,
+	// TODO: remove `SetName` and `SetVersion` function once GHA is supported,
 	// and use: bid, err := utils.BuilderIDNew(builderID)
 	bid := &utils.BuilderID{}
 	bid.SetName(builderID)
+	bid.SetVersion(strings.Split(workflowInfo.JobWobWorkflowRef)[1])
 	return r, bid, nil
 }
 
