@@ -8,8 +8,7 @@ import (
 )
 
 type BuilderID struct {
-	// TODO: make the variable private once GHA support is added.
-	Name, version string
+	name, version string
 }
 
 // BuilderIDNew creates a new BuilderID structure.
@@ -57,6 +56,11 @@ func (b *BuilderID) Version() string {
 
 func (b *BuilderID) String() string {
 	return fmt.Sprintf("%s@%s", b.name, b.version)
+}
+
+// TODO: remove this function once GHA is supported.
+func (b *BuilderID) SetName(name string) {
+	b.name = name
 }
 
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
