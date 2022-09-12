@@ -20,25 +20,25 @@ func Test_ParseBuilderID(t *testing.T) {
 		err            error
 	}{
 		{
-			name:           "valid builder with version / need version",
+			name:           "valid builder with version - need version",
 			builderID:      "some/name@v1.2.3",
 			needVersion:    true,
 			builderName:    "some/name",
 			builderVersion: "v1.2.3",
 		},
 		{
-			name:           "valid builder with version / no need version",
+			name:           "valid builder with version - no need version",
 			builderID:      "some/name@v1.2.3",
 			builderName:    "some/name",
 			builderVersion: "v1.2.3",
 		},
 		{
-			name:        "valid builder without version / no need version",
+			name:        "valid builder without version - no need version",
 			builderID:   "some/name",
 			builderName: "some/name",
 		},
 		{
-			name:        "no version ID need version",
+			name:        "no version ID - need version",
 			needVersion: true,
 			err:         serrors.ErrorInvalidFormat,
 		},
