@@ -76,7 +76,11 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Temporary code.
-	bid, _ := utils.BuilderIDNew(builderID)
+	bid, err := utils.BuilderIDNew(builderID)
+	if err != nil {
+		return r, nil, err
+	}
+
 	return r, bid, nil
 }
 
@@ -97,14 +101,9 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, nil, err
 	}
 
-	content, builderID, err := verifyEnvAndCert(env, cert,
+	return verifyEnvAndCert(env, cert,
 		provenanceOpts, builderOpts,
 		defaultArtifactTrustedReusableWorkflows)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return content, builderID, nil
 }
 
 // VerifyImage verifies provenance for an OCI image.
