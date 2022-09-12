@@ -21,6 +21,7 @@ import (
 
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
 )
 
@@ -40,7 +41,7 @@ type VerifyImageCommand struct {
 	DigestFn            ComputeDigestFn
 }
 
-func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (string, error) {
+func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*utils.BuilderID, error) {
 	artifactImage := artifacts[0]
 	// Retrieve the image digest.
 	if c.DigestFn == nil {
@@ -48,12 +49,12 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (stri
 	}
 	digest, err := c.DigestFn(artifactImage)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Verify that the reference is immutable.
 	if err := container.ValidateArtifactReference(artifactImage, digest); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
@@ -73,13 +74,13 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (stri
 	if c.ProvenancePath != nil {
 		provenance, err = os.ReadFile(*c.ProvenancePath)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 
 	verifiedProvenance, outBuilderID, err := verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if c.PrintProvenance {

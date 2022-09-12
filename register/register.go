@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 )
 
 var SLSAVerifiers = make(map[string]SLSAVerifier)
@@ -19,14 +20,14 @@ type SLSAVerifier interface {
 		provenance []byte, artifactHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
-	) ([]byte, string, error)
+	) ([]byte, *utils.BuilderID, error)
 
 	// VerifyImage verifies a provenance for a supplied OCI image.
 	VerifyImage(ctx context.Context,
 		provenance []byte, artifactImage string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
-	) ([]byte, string, error)
+	) ([]byte, *utils.BuilderID, error)
 }
 
 func RegisterVerifier(name string, verifier SLSAVerifier) {

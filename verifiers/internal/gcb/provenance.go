@@ -264,12 +264,9 @@ func validateRecipeType(builderID, recipeType string) error {
 // - in the recipe type
 // - the recipe argument type
 // - the predicate builder ID.
-//
-//	The builder ID may be of the form `name@vx.y.z` or `name`. When the version is omitted, we accept any
-//	version. When a version is provided, it must be an exact match.
-func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string, error) {
+func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.BuilderID, error) {
 	if err := self.isVerified(); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	statement := self.verifiedIntotoStatement
@@ -277,55 +274,43 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string,
 
 	// Sanity check the builderID.
 	if err := isValidBuilderID(predicateBuilderID); err != nil {
-		return "", err
+		return nil, err
+	}
+
+	provBuilderID, err := utils.BuilderIDNew(predicateBuilderID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Validate with user-provided value.
 	if builderOpts != nil && builderOpts.ExpectedID != nil {
-		expectedName, expectedVersion, err := utils.ParseBuilderID(*builderOpts.ExpectedID, false)
-		if err != nil {
-			return "", err
-		}
-		builderName, builderVersion, err := utils.ParseBuilderID(predicateBuilderID, true)
-		if err != nil {
-			return "", err
-		}
-
-		// The builder name must always match.
-		if expectedName != builderName {
-			return "", fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-				builderName, builderName)
-		}
-
-		// The builder version must match if the user explicitely provided it.
-		if expectedVersion != "" && expectedVersion != builderVersion {
-			return "", fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-				expectedVersion, builderVersion)
+		if err := provBuilderID.Matches(*builderOpts.ExpectedID); err != nil {
+			return nil, err
 		}
 	}
 
 	// Valiate the recipe type.
 	if err := validateRecipeType(predicateBuilderID, statement.Predicate.Recipe.Type); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Validate the recipe argument type.
 	expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
 	args, ok := statement.Predicate.Recipe.Arguments.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
+		return nil, fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
 	}
 	ts, err := getAsString(args, "@type")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if ts != expectedType {
-		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+		return nil, fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			expectedType, ts)
 	}
 
-	return predicateBuilderID, nil
+	return provBuilderID, nil
 }
 
 func getAsString(m map[string]interface{}, key string) (string, error) {
@@ -363,7 +348,7 @@ func (self *Provenance) VerifySubjectDigest(expectedHash string) error {
 }
 
 // Verify source URI in provenance statement.
-func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) error {
+func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.BuilderID) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -378,11 +363,8 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) err
 		expectedSourceURI = "https://" + expectedSourceURI
 	}
 
-	_, v, err := utils.ParseBuilderID(builderID, true)
-	if err != nil {
-		return err
-	}
-
+	var err error
+	v := builderID.Version()
 	switch v {
 	case "v0.2":
 		// In v0.2, it uses format

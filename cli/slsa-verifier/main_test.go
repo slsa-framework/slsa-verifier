@@ -21,7 +21,6 @@ import (
 
 	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
 )
 
@@ -512,10 +511,12 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 					return
 				}
 
-				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
-					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+				// Validate against test's expected builderID, if provided.
+				if tt.outBuilderID != "" && tt.outBuilderID != outBuilderID.String() {
+					t.Errorf(cmp.Diff(tt.outBuilderID, outBuilderID.String()))
 				}
 
+				// TODO: verify using Matches().
 			}
 		})
 	}
@@ -676,9 +677,12 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					return
 				}
 
-				if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
-					t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+				// Validate against test's expected builderID, if provided.
+				if tt.outBuilderID != "" && tt.outBuilderID != outBuilderID.String() {
+					t.Errorf(cmp.Diff(tt.outBuilderID, outBuilderID.String()))
 				}
+
+				// TODO: verify using Matches().
 			}
 		})
 	}
@@ -918,29 +922,15 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 					}
 
 					// Validate against test's expected builderID, if provided.
-					if tt.outBuilderID != "" && outBuilderID != tt.outBuilderID {
-						t.Errorf(cmp.Diff(outBuilderID, tt.outBuilderID))
+					if tt.outBuilderID != "" && tt.outBuilderID != outBuilderID.String() {
+						t.Errorf(cmp.Diff(tt.outBuilderID, outBuilderID.String()))
 					}
 
 					// Validate against builderID we generated automatically.
-					expectedName, expectedVersion, err := utils.ParseBuilderID(bid, false)
-					if err != nil {
-						panic(fmt.Errorf("ParseBuilderID: %w: %s", err, bid))
+					if err := outBuilderID.Matches(bid); err != nil {
+						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
-					builderName, builderVersion, err := utils.ParseBuilderID(outBuilderID, true)
-					if err != nil {
-						panic(fmt.Errorf("ParseBuilderID: %w: %s", err, outBuilderID))
-					}
-
-					if expectedName != builderName {
-						t.Errorf(cmp.Diff(expectedName, builderName))
-					}
-					if expectedVersion != "" && expectedVersion != builderVersion {
-						t.Errorf(cmp.Diff(expectedVersion, builderVersion))
-					}
-
 				}
-
 			}
 		})
 	}

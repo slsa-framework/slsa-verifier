@@ -223,20 +223,12 @@ func Test_VerifyBuilder(t *testing.T) {
 				return
 			}
 
-			expectedName, expectedVersion, err := utils.ParseBuilderID(tt.builderID, false)
-			if err != nil {
-				panic(fmt.Errorf("ParseBuilderID: %w: %s", err, tt.builderID))
-			}
-			builderName, builderVersion, err := utils.ParseBuilderID(outBuilderID, true)
-			if err != nil {
-				panic(fmt.Errorf("ParseBuilderID: %w: %s", err, outBuilderID))
+			if outBuilderID == nil {
+				panic("outBuilderID is nil")
 			}
 
-			if expectedName != builderName {
-				t.Errorf(cmp.Diff(expectedName, builderName))
-			}
-			if expectedVersion != "" && expectedVersion != builderVersion {
-				t.Errorf(cmp.Diff(expectedVersion, builderVersion))
+			if err := outBuilderID.Matches(tt.builderID); err != nil {
+				t.Errorf(fmt.Errorf("matches failed: %w", err))
 			}
 		})
 	}

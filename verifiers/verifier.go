@@ -9,6 +9,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/register"
 	_ "github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb"
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gha"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 )
 
 func getVerifier(builderOpts *options.BuilderOpts) (register.SLSAVerifier, error) {
@@ -34,10 +35,10 @@ func VerifyImage(ctx context.Context, artifactImage string,
 	provenance []byte,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, string, error) {
+) ([]byte, *utils.BuilderID, error) {
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
@@ -47,10 +48,10 @@ func VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, string, error) {
+) ([]byte, *utils.BuilderID, error) {
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	return verifier.VerifyArtifact(ctx, provenance, artifactHash,

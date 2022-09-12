@@ -37,8 +37,8 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, string, error) {
-	return nil, "todo", serrors.ErrorNotSupported
+) ([]byte, *utils.BuilderID, error) {
+	return nil, nil, serrors.ErrorNotSupported
 }
 
 // VerifyImage verifies provenance for an OCI image.
@@ -46,81 +46,81 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, string, error) {
+) ([]byte, *utils.BuilderID, error) {
 	prov, err := ProvenanceFromBytes(provenance)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify signature on the intoto attestation.
 	if err = prov.VerifySignature(); err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify intoto header.
 	if err = prov.VerifyIntotoHeaders(); err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify the builder.
 	builderID, err := prov.VerifyBuilder(builderOpts)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify subject digest.
 	if err = prov.VerifySubjectDigest(provenanceOpts.ExpectedDigest); err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify source.
-	if err = prov.VerifySourceURI(provenanceOpts.ExpectedSourceURI, builderID); err != nil {
-		return nil, "", err
+	if err = prov.VerifySourceURI(provenanceOpts.ExpectedSourceURI, *builderID); err != nil {
+		return nil, nil, err
 	}
 
 	// Verify metadata.
 	// This is metadata that GCB appends to the DSSE content.
 	if err = prov.VerifyMetadata(provenanceOpts); err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify the summary.
 	// This is an additional structure that GCB prepends to the provenance.
 	if err = prov.VerifySummary(provenanceOpts); err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify the text provenance.
 	// This is an additional structure that GCB prepends to the provenance,
 	// intended for humans. It reflect the DSSE payload.
 	if err = prov.VerifyTextProvenance(); err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	// Verify branch.
 	if provenanceOpts.ExpectedBranch != nil {
 		if err = prov.VerifyBranch(*provenanceOpts.ExpectedBranch); err != nil {
-			return nil, "", err
+			return nil, nil, err
 		}
 	}
 
 	// Verify the tag.
 	if provenanceOpts.ExpectedTag != nil {
 		if err := prov.VerifyTag(*provenanceOpts.ExpectedTag); err != nil {
-			return nil, "", err
+			return nil, nil, err
 		}
 	}
 
 	// Verify the versioned tag.
 	if provenanceOpts.ExpectedVersionedTag != nil {
 		if err := prov.VerifyVersionedTag(*provenanceOpts.ExpectedVersionedTag); err != nil {
-			return nil, "", err
+			return nil, nil, err
 		}
 	}
 
 	content, err := prov.GetVerifiedIntotoStatement()
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 	return content, builderID, nil
 }
