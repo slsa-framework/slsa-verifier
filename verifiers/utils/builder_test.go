@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -74,6 +75,124 @@ func Test_ParseBuilderID(t *testing.T) {
 
 			if version != tt.builderVersion {
 				t.Errorf(cmp.Diff(version, tt.builderVersion))
+			}
+		})
+	}
+}
+
+func Test_BuilderIDNew(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name           string
+		builderID      string
+		builderName    string
+		builderVersion string
+		err            error
+	}{
+		{
+			name:           "valid",
+			builderID:      "some/name@v1.2.3",
+			builderName:    "some/name",
+			builderVersion: "v1.2.3",
+		},
+		{
+			name:      "too many '@' - need version",
+			builderID: "some/name@vla@blo",
+			err:       serrors.ErrorInvalidFormat,
+		},
+		{
+			name:      "too many '@' - no need version",
+			builderID: "some/name@vla@blo",
+			err:       serrors.ErrorInvalidFormat,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			builderID, err := BuilderIDNew(tt.builderID)
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+
+			if err != nil {
+				return
+			}
+
+			name := builderID.Name()
+			version := builderID.Version()
+			full := builderID.String()
+
+			if name != tt.builderName {
+				t.Errorf(cmp.Diff(tt.builderName, name))
+			}
+			if version != tt.builderVersion {
+				t.Errorf(cmp.Diff(tt.builderVersion, version))
+			}
+			if full != tt.builderID {
+				t.Errorf(cmp.Diff(tt.builderID, full))
+			}
+		})
+	}
+}
+
+func Test_Matches(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		builderID string
+		match     string
+		err       error
+	}{
+		{
+			name:      "match full",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@v1.2.3",
+		},
+		{
+			name:      "match name",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name",
+		},
+		{
+			name:      "mismatch name",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name2",
+			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "mismatch version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@v1.2.4",
+			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "too many '@' - need version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@vla@blo",
+			err:       serrors.ErrorInvalidFormat,
+		},
+		{
+			name:      "too many '@' - no need version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@vla@blo",
+			err:       serrors.ErrorInvalidFormat,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			builderID, err := BuilderIDNew(tt.builderID)
+			if err != nil {
+				panic(fmt.Sprintf("BuilderIDNew: %v", err))
+			}
+
+			err = builderID.Matches(tt.match)
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err))
 			}
 		})
 	}

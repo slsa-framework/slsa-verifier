@@ -139,7 +139,7 @@ func verifyHandlerV1(r *http.Request) *v1Result {
 		results = results.withIntotoStatement(p)
 	}
 
-	return results.withBuilderID(builderID).withValidation(validationSuccess)
+	return results.withBuilderID(builderID.String()).withValidation(validationSuccess)
 }
 
 func queryFromString(content []byte) (*v1Query, error) {

@@ -735,6 +735,29 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			source:     "github.com/laurentsimon/gcb-tests",
 		},
 		{
+			name:       "mismatch input builder version",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pBuilderID: pString(builder + "@v0.4"),
+			err:        serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:       "unsupported builder",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			pBuilderID: pString(builder + "a"),
+			err:        serrors.ErrorVerifierNotSupported,
+		},
+		{
+			name:         "match output builder name",
+			artifact:     "gcloud-container-github",
+			provenance:   "gcloud-container-github.json",
+			source:       "github.com/laurentsimon/gcb-tests",
+			outBuilderID: builder,
+		},
+		{
 			name:       "invalid repo name",
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-github.json",
@@ -873,9 +896,9 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 				// If builder ID is set, use it.
 				if tt.pBuilderID != nil {
-					if !tt.noversion {
-						panic("builderID set but not noversion option")
-					}
+					// if !tt.noversion {
+					// 	panic("builderID set but not noversion option")
+					// }
 					builderIDs = []string{*tt.pBuilderID}
 				}
 
@@ -922,8 +945,10 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 					}
 
 					// Validate against test's expected builderID, if provided.
-					if tt.outBuilderID != "" && tt.outBuilderID != outBuilderID.String() {
-						t.Errorf(cmp.Diff(tt.outBuilderID, outBuilderID.String()))
+					if tt.outBuilderID != "" {
+						if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+							t.Errorf(fmt.Sprintf("matches failed: %v", err))
+						}
 					}
 
 					// Validate against builderID we generated automatically.

@@ -17,6 +17,7 @@ func BuilderIDNew(builderID string) (*BuilderID, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &BuilderID{
 		name:    name,
 		version: version,
@@ -31,13 +32,14 @@ func (b *BuilderID) Matches(builderID string) error {
 	if err != nil {
 		return err
 	}
+
 	if name != b.name {
 		return fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			name, b.name)
 	}
 
 	if version != "" && version != b.version {
-		fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+		return fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			version, b.version)
 	}
 
@@ -59,6 +61,10 @@ func (b *BuilderID) String() string {
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 	parts := strings.Split(id, "@")
 	if len(parts) == 2 {
+		if parts[1] == "" && needVersion {
+			return "", "", fmt.Errorf("%w: builderID: '%s'",
+				serrors.ErrorInvalidFormat, id)
+		}
 		return parts[0], parts[1], nil
 	}
 

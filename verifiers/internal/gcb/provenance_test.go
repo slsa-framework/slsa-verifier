@@ -294,7 +294,7 @@ func Test_validateRecipeType(t *testing.T) {
 			if err != nil {
 				panic(fmt.Sprintf("BuilderIDNew failed: %v", err))
 			}
-			err := validateRecipeType(*builderID, tt.recipeType)
+			err = validateRecipeType(*builderID, tt.recipeType)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
