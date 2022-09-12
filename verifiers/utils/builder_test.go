@@ -39,9 +39,19 @@ func Test_ParseBuilderID(t *testing.T) {
 		},
 		{
 			name:        "no version ID need version",
-			builderID:   "some/name",
 			needVersion: true,
 			err:         serrors.ErrorInvalidFormat,
+		},
+		{
+			name:        "too many '@' - need version",
+			builderID:   "some/name@vla@blo",
+			needVersion: true,
+			err:         serrors.ErrorInvalidFormat,
+		},
+		{
+			name:      "too many '@' - no need version",
+			builderID: "some/name@vla@blo",
+			err:       serrors.ErrorInvalidFormat,
 		},
 	}
 	for _, tt := range tests {
