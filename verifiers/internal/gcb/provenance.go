@@ -222,20 +222,18 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func validateRecipeType(builderID, recipeType string) error {
-	_, v, err := utils.ParseBuilderID(builderID, true)
-	if err != nil {
-		return err
-	}
+func validateRecipeType(builderID utils.BuilderID, recipeType string) error {
+	var err error
+	v := builderID.Version()
 	switch v {
 	case "v0.2":
 		// In this version, the recipe type should be the same as
 		// the builder ID.
-		if builderID == recipeType {
+		if builderID.String() == recipeType {
 			return nil
 		}
 		err = fmt.Errorf("%w: expected '%s', got '%s'",
-			serrors.ErrorInvalidRecipe, builderID, recipeType)
+			serrors.ErrorInvalidRecipe, builderID.String(), recipeType)
 
 	case "v0.3":
 		// In this version, two recipe types are allowed, depending how the
@@ -290,7 +288,7 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.
 	}
 
 	// Valiate the recipe type.
-	if err := validateRecipeType(predicateBuilderID, statement.Predicate.Recipe.Type); err != nil {
+	if err := validateRecipeType(*provBuilderID, statement.Predicate.Recipe.Type); err != nil {
 		return nil, err
 	}
 
