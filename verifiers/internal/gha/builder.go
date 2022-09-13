@@ -80,10 +80,8 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 	var builderID *utils.BuilderID
 	var err error
 	certBuilderName := "https://github.com/" + certPath
-	// Validate the tag.
-	if err := utils.ValidateGitHubTagRef(certTag); err != nil {
-		return nil, err
-	}
+	// WARNING: we don't validate the tag here, because we need to allow
+	// refs/heads/main for e2e tests. See verifyTrustedBuilderRef().
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
 		if _, ok := defaultBuilders[certPath]; !ok {

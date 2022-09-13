@@ -13,6 +13,7 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
 	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
@@ -122,7 +123,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	}
 
 	/* Now verify properties of the attestations */
-	var verifyErr error
+	var errs []error
 	var builderID *utils.BuilderID
 	var verifiedProvenance []byte
 	for _, att := range atts {
@@ -141,13 +142,18 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
 			continue
 		}
-		verifiedProvenance, builderID, verifyErr = verifyEnvAndCert(env,
+		verifiedProvenance, builderID, err = verifyEnvAndCert(env,
 			cert, provenanceOpts, builderOpts,
 			defaultContainerTrustedReusableWorkflows)
-		if verifyErr == nil {
+		if err == nil {
 			return verifiedProvenance, builderID, nil
 		}
+		errs = append(errs, err)
 	}
 
-	return nil, nil, fmt.Errorf("no valid attestations found on OCI registry: %w", verifyErr)
+	// Return the first error.
+	if len(errs) > 0 {
+		return nil, nil, fmt.Errorf("%w: %v", errs[0], errs[1:])
+	}
+	return nil, nil, fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
 }
