@@ -27,6 +27,10 @@ func BuilderIDNew(builderID string) (*BuilderID, error) {
 // Matches matches the builderID string against the reference builderID.
 // If the builderID contains a semver, the full builderID must match.
 // Otherwise, only the name needs to match.
+// `allowRef: true` indicates that the matching need not be an eaxct
+// match. In this case, if the BuilderID version is a GitHub ref
+// `refs/tags/name`, we will consider it equal to user-provided
+// builderID `name`.
 func (b *BuilderID) Matches(builderID string, allowRef bool) error {
 	name, version, err := ParseBuilderID(builderID, false)
 	if err != nil {
