@@ -512,8 +512,10 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				}
 
 				// Validate against test's expected builderID, if provided.
-				if tt.outBuilderID != "" && tt.outBuilderID != outBuilderID.String() {
-					t.Errorf(cmp.Diff(tt.outBuilderID, outBuilderID.String()))
+				if tt.outBuilderID != "" {
+					if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+						t.Errorf(fmt.Sprintf("matches failed: %v", err))
+					}
 				}
 
 				// TODO: verify using Matches().
@@ -678,8 +680,10 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 				}
 
 				// Validate against test's expected builderID, if provided.
-				if tt.outBuilderID != "" && tt.outBuilderID != outBuilderID.String() {
-					t.Errorf(cmp.Diff(tt.outBuilderID, outBuilderID.String()))
+				if tt.outBuilderID != "" {
+					if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+						t.Errorf(fmt.Sprintf("matches failed: %v", err))
+					}
 				}
 
 				// TODO: verify using Matches().
