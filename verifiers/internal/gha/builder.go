@@ -50,7 +50,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 		return nil, err
 	}
 
-	// Verify the ref is a tag.
+	// Verify the ref is a full semantic version tag.
 	if err := verifyTrustedBuilderRef(id, reusableWorkflowTag); err != nil {
 		return nil, err
 	}
@@ -80,8 +80,8 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 	var builderID *utils.BuilderID
 	var err error
 	certBuilderName := "https://github.com/" + certPath
-	// Validate the tag name.
-	if err := utils.ValidateTagName(certTag); err != nil {
+	// Validate the tag.
+	if err := utils.ValidateGitHubTagRef(certTag); err != nil {
 		return nil, err
 	}
 	// No builder ID provided by user: use the default trusted workflows.
@@ -124,7 +124,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	}
 
 	// Extract the pin.
-	pin, err := utils.TagName(ref)
+	pin, err := utils.TagFromGitHubRef(ref)
 	if err != nil {
 		return err
 	}
