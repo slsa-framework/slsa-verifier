@@ -7,13 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	//"time"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 )
 
 // This function sets the statement of the proveannce, as if
@@ -158,6 +157,39 @@ func Test_VerifyBuilder(t *testing.T) {
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 			expected:  serrors.ErrorInvalidRecipe,
 		},
+		{
+			name:      "v0.2 valid builder - name only",
+			path:      "./testdata/gcloud-container-github.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
+		},
+		{
+			name:      "v0.2 mismatch builder - name only",
+			path:      "./testdata/gcloud-container-github.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorke",
+			expected:  serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "v0.3 valid builder CloudBuildSteps - name only",
+			path:      "./testdata/gcloud-container-invalid-recipetypestepsv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
+		},
+		{
+			name:      "v0.3 valid builder CloudBuildYaml - name only",
+			path:      "./testdata/gcloud-container-invalid-recipetypecloudv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
+		},
+		{
+			name:      "v0.3 mismatch builder CloudBuildSteps - name only",
+			path:      "./testdata/gcloud-container-invalid-recipetypestepsv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorke",
+			expected:  serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "v0.3 mismatch CloudBuildYaml - name only",
+			path:      "./testdata/gcloud-container-invalid-recipetypecloudv03.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorke",
+			expected:  serrors.ErrorMismatchBuilderID,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -191,8 +223,12 @@ func Test_VerifyBuilder(t *testing.T) {
 				return
 			}
 
-			if outBuilderID != tt.builderID {
-				t.Errorf(cmp.Diff(outBuilderID, tt.builderID))
+			if outBuilderID == nil {
+				panic("outBuilderID is nil")
+			}
+
+			if err := outBuilderID.Matches(tt.builderID); err != nil {
+				t.Errorf(fmt.Sprintf("matches failed: %v", err))
 			}
 		})
 	}
@@ -254,7 +290,11 @@ func Test_validateRecipeType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateRecipeType(tt.builderID, tt.recipeType)
+			builderID, err := utils.BuilderIDNew(tt.builderID)
+			if err != nil {
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
+			}
+			err = validateRecipeType(*builderID, tt.recipeType)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
@@ -376,7 +416,11 @@ func Test_VerifySourceURI(t *testing.T) {
 				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
 			}
 
-			err = prov.VerifySourceURI(tt.source, tt.builderID)
+			builderID, err := utils.BuilderIDNew(tt.builderID)
+			if err != nil {
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
+			}
+			err = prov.VerifySourceURI(tt.source, *builderID)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}

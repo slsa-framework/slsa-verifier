@@ -19,6 +19,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 )
 
 var GCBBuilderIDs = []string{
@@ -221,28 +222,18 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func getBuilderVersion(builderID string) (string, error) {
-	parts := strings.Split(builderID, "@")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("%w: '%s'", serrors.ErrorInvalidFormat, parts)
-	}
-	return parts[1], nil
-}
-
-func validateRecipeType(builderID, recipeType string) error {
-	v, err := getBuilderVersion(builderID)
-	if err != nil {
-		return err
-	}
+func validateRecipeType(builderID utils.BuilderID, recipeType string) error {
+	var err error
+	v := builderID.Version()
 	switch v {
 	case "v0.2":
 		// In this version, the recipe type should be the same as
 		// the builder ID.
-		if builderID == recipeType {
+		if builderID.String() == recipeType {
 			return nil
 		}
 		err = fmt.Errorf("%w: expected '%s', got '%s'",
-			serrors.ErrorInvalidRecipe, builderID, recipeType)
+			serrors.ErrorInvalidRecipe, builderID.String(), recipeType)
 
 	case "v0.3":
 		// In this version, two recipe types are allowed, depending how the
@@ -270,10 +261,10 @@ func validateRecipeType(builderID, recipeType string) error {
 // VerifyBuilder verifies the builder in the DSSE payload:
 // - in the recipe type
 // - the recipe argument type
-// - the predicate builder ID
-func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string, error) {
+// - the predicate builder ID.
+func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.BuilderID, error) {
 	if err := self.isVerified(); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	statement := self.verifiedIntotoStatement
@@ -281,39 +272,43 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (string,
 
 	// Sanity check the builderID.
 	if err := isValidBuilderID(predicateBuilderID); err != nil {
-		return "", err
+		return nil, err
+	}
+
+	provBuilderID, err := utils.BuilderIDNew(predicateBuilderID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Validate with user-provided value.
 	if builderOpts != nil && builderOpts.ExpectedID != nil {
-		if *builderOpts.ExpectedID != predicateBuilderID {
-			return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-				*builderOpts.ExpectedID, predicateBuilderID)
+		if err := provBuilderID.Matches(*builderOpts.ExpectedID); err != nil {
+			return nil, err
 		}
 	}
 
 	// Valiate the recipe type.
-	if err := validateRecipeType(predicateBuilderID, statement.Predicate.Recipe.Type); err != nil {
-		return "", err
+	if err := validateRecipeType(*provBuilderID, statement.Predicate.Recipe.Type); err != nil {
+		return nil, err
 	}
 
 	// Validate the recipe argument type.
 	expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
 	args, ok := statement.Predicate.Recipe.Arguments.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
+		return nil, fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
 	}
 	ts, err := getAsString(args, "@type")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if ts != expectedType {
-		return "", fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+		return nil, fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			expectedType, ts)
 	}
 
-	return predicateBuilderID, nil
+	return provBuilderID, nil
 }
 
 func getAsString(m map[string]interface{}, key string) (string, error) {
@@ -351,7 +346,7 @@ func (self *Provenance) VerifySubjectDigest(expectedHash string) error {
 }
 
 // Verify source URI in provenance statement.
-func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) error {
+func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.BuilderID) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}
@@ -366,11 +361,8 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI, builderID string) err
 		expectedSourceURI = "https://" + expectedSourceURI
 	}
 
-	v, err := getBuilderVersion(builderID)
-	if err != nil {
-		return err
-	}
-
+	var err error
+	v := builderID.Version()
 	switch v {
 	case "v0.2":
 		// In v0.2, it uses format

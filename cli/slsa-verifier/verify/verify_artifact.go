@@ -24,6 +24,7 @@ import (
 
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/verifiers"
+	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
 )
 
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
@@ -38,10 +39,10 @@ type VerifyArtifactCommand struct {
 	PrintProvenance     bool
 }
 
-func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (string, error) {
+func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.BuilderID, error) {
 	artifactHash, err := getArtifactHash(artifacts[0])
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
@@ -59,12 +60,12 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (s
 
 	provenance, err := os.ReadFile(c.ProvenancePath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if c.PrintProvenance {
