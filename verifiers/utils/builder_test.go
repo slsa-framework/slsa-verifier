@@ -158,6 +158,7 @@ func Test_Matches(t *testing.T) {
 	tests := []struct {
 		name      string
 		builderID string
+		allowRef  bool
 		match     string
 		err       error
 	}{
@@ -201,6 +202,85 @@ func Test_Matches(t *testing.T) {
 			match:     "some/name@vla@blo",
 			err:       serrors.ErrorInvalidFormat,
 		},
+		// Same as above with `allowRef: true`.
+		{
+			name:      "match full",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@v1.2.3",
+			allowRef:  true,
+		},
+		{
+			name:      "match name",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name",
+			allowRef:  true,
+		},
+		{
+			name:      "mismatch name",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name2",
+			allowRef:  true,
+			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "mismatch version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@v1.2.4",
+			allowRef:  true,
+			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "invalid empty version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@",
+			allowRef:  true,
+			err:       serrors.ErrorInvalidFormat,
+		},
+		{
+			name:      "too many '@' - need version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@vla@blo",
+			allowRef:  true,
+			err:       serrors.ErrorInvalidFormat,
+		},
+		{
+			name:      "too many '@' - no need version",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@vla@blo",
+			allowRef:  true,
+			err:       serrors.ErrorInvalidFormat,
+		},
+		// Mismatch of tag length.
+		{
+			name:      "match long tag match short",
+			builderID: "some/name@refs/tags/v1.2.3",
+			match:     "some/name@v1.2.3",
+			allowRef:  true,
+		},
+		{
+			name:      "long tag match short no ref",
+			builderID: "some/name@refs/tags/v1.2.3",
+			match:     "some/name@v1.2.3",
+			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "match long tags",
+			builderID: "some/name@refs/tags/v1.2.3",
+			match:     "some/name@refs/tags/v1.2.3",
+			allowRef:  true,
+		},
+		{
+			name:      "mismatch tag length",
+			builderID: "some/name@refs/tags/v1.2.3",
+			match:     "some/name@v1.2.3",
+			err:       serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:      "mismatch tag length inversed",
+			builderID: "some/name@v1.2.3",
+			match:     "some/name@refs/tags/v1.2.3",
+			err:       serrors.ErrorMismatchBuilderID,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -212,7 +292,7 @@ func Test_Matches(t *testing.T) {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
 
-			err = builderID.Matches(tt.match)
+			err = builderID.Matches(tt.match, tt.allowRef)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}

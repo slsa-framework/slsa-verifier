@@ -282,7 +282,7 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.
 
 	// Validate with user-provided value.
 	if builderOpts != nil && builderOpts.ExpectedID != nil {
-		if err := provBuilderID.Matches(*builderOpts.ExpectedID); err != nil {
+		if err := provBuilderID.Matches(*builderOpts.ExpectedID, false); err != nil {
 			return nil, err
 		}
 	}

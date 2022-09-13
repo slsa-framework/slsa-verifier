@@ -21,6 +21,7 @@ var (
 	ErrorUntrustedReusableWorkflow = errors.New("untrusted reusable workflow")
 	ErrorNoValidRekorEntries       = errors.New("could not find a matching valid signature entry")
 	ErrorVerifierNotSupported      = errors.New("no verifier support the builder")
+	ErrorInvalidOIDCIssuer         = errors.New("invalid OIDC issuer")
 	ErrorNotSupported              = errors.New("not supported")
 	ErrorInvalidFormat             = errors.New("invalid format")
 	ErrorInvalidPEM                = errors.New("invalid PEM")

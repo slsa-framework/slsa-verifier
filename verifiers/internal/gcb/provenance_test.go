@@ -227,7 +227,7 @@ func Test_VerifyBuilder(t *testing.T) {
 				panic("outBuilderID is nil")
 			}
 
-			if err := outBuilderID.Matches(tt.builderID); err != nil {
+			if err := outBuilderID.Matches(tt.builderID, false); err != nil {
 				t.Errorf(fmt.Sprintf("matches failed: %v", err))
 			}
 		})

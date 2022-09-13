@@ -35,11 +35,37 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			err:      serrors.ErrorMalformedURI,
 		},
 		{
-			name: "untrusted job workflow ref",
+			name: "job workflow ref not a tag",
 			workflow: &WorkflowIdentity{
 				CallerRepository:  "asraa/slsa-on-github-test",
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
 				JobWobWorkflowRef: "/malicious/slsa-go/.github/workflows/builder.yml@refs/heads/main",
+				Trigger:           "workflow_dispatch",
+				Issuer:            "https://token.actions.githubusercontent.com",
+			},
+			source:   "asraa/slsa-on-github-test",
+			defaults: defaultArtifactTrustedReusableWorkflows,
+			err:      serrors.ErrorInvalidRef,
+		},
+		{
+			name: "job workflow ref not a long tag",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: "/malicious/slsa-go/.github/workflows/builder.yml@v1.2.3",
+				Trigger:           "workflow_dispatch",
+				Issuer:            "https://token.actions.githubusercontent.com",
+			},
+			source:   "asraa/slsa-on-github-test",
+			defaults: defaultArtifactTrustedReusableWorkflows,
+			err:      serrors.ErrorInvalidRef,
+		},
+		{
+			name: "untrusted job workflow ref",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: "/malicious/slsa-go/.github/workflows/builder.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
@@ -61,11 +87,24 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			err:      serrors.ErrorInvalidRef,
 		},
 		{
-			name: "valid main ref for trusted builder",
+			name: "untrusted cert issuer for general repos",
+			workflow: &WorkflowIdentity{
+				CallerRepository:  "asraa/slsa-on-github-test",
+				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
+				Trigger:           "workflow_dispatch",
+				Issuer:            "https://bad.issuer.com",
+			},
+			source:   "asraa/slsa-on-github-test",
+			defaults: defaultArtifactTrustedReusableWorkflows,
+			err:      serrors.ErrorInvalidOIDCIssuer,
+		},
+		{
+			name: "valid trusted builder witjout tag",
 			workflow: &WorkflowIdentity{
 				CallerRepository:  trustedBuilderRepository,
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            "https://token.actions.githubusercontent.com",
 			},
@@ -78,7 +117,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  e2eTestRepository,
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
@@ -91,7 +130,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  e2eTestRepository,
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
@@ -107,7 +146,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  e2eTestRepository,
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
@@ -123,7 +162,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			workflow: &WorkflowIdentity{
 				CallerRepository:  e2eTestRepository,
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
@@ -136,7 +175,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			name: "valid main ref for builder",
 			workflow: &WorkflowIdentity{
 				CallerRepository:  trustedBuilderRepository,
-				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
+				JobWobWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
 				Trigger:           "workflow_dispatch",
 				Issuer:            certOidcIssuer,
 			},
@@ -332,8 +371,9 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if id != tt.builderID {
-				t.Errorf(cmp.Diff(id, tt.builderID))
+
+			if err := id.Matches(tt.builderID, true); err != nil {
+				t.Errorf("matches failed:%v", err)
 			}
 		})
 	}
@@ -358,19 +398,13 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
 			tag:      "v1.2.3",
 			defaults: defaultArtifactTrustedReusableWorkflows,
+			expected: serrors.ErrorInvalidRef,
 		},
 		{
 			name:     "default trusted long tag",
 			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
 			tag:      "refs/tags/v1.2.3",
 			defaults: defaultArtifactTrustedReusableWorkflows,
-		},
-		{
-			name:     "default mismatch against container defaults short tag",
-			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
-			tag:      "v1.2.3",
-			defaults: defaultContainerTrustedReusableWorkflows,
-			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name:     "default mismatch against container defaults long tag",
@@ -380,75 +414,89 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name: "valid ID for GitHub builder short tag",
-			path: "some/repo/someBuilderID",
-			tag:  "v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
-		},
-		{
-			name: "valid ID for GitHub builder long tag",
-			path: "some/repo/someBuilderID",
-			tag:  "refs/tags/v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
-		},
-		{
-			name: "valid short ID for GitHub builder long tag",
-			path: "some/repo/someBuilderID",
-			tag:  "refs/tags/v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
-		},
-		{
-			name: "valid long ID for GitHub builder short tag",
-			path: "some/repo/someBuilderID",
-			tag:  "v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
-		},
-		{
-			name: "valid ID for GitHub builder long tag",
-			path: "some/repo/someBuilderID",
-			tag:  "refs/tags/v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
-		},
-		{
-			name: "valid ID for GitHub builder short tag",
-			path: "some/repo/someBuilderID",
-			tag:  "v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
-		},
-		{
-			name: "valid short ID for GitHub builder long tag",
-			path: "some/repo/someBuilderID",
-			tag:  "refs/tags/v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
-		},
-		{
-			name: "valid long ID for GitHub builder short tag",
-			path: "some/repo/someBuilderID",
-			tag:  "v1.2.3",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
-		},
-		// TODO: short, long, short-long and long-short
-		{
-			name:     "non GitHub builder ID",
+			name:     "valid ID for GitHub builder short tag",
 			path:     "some/repo/someBuilderID",
+			tag:      "v1.2.3",
+			id:       asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+			expected: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+		},
+		{
+			name: "valid short ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+		},
+		{
+			name:     "valid long ID for GitHub builder short tag",
+			path:     "some/repo/someBuilderID",
+			tag:      "v1.2.3",
+			id:       asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+			expected: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+		},
+		{
+			name:     "valid ID for GitHub builder short tag",
+			path:     "some/repo/someBuilderID",
+			tag:      "v1.2.3",
+			id:       asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+			expected: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid short ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+		},
+		{
+			name:     "valid long ID for GitHub builder short tag",
+			path:     "some/repo/someBuilderID",
+			tag:      "v1.2.3",
+			id:       asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+			expected: serrors.ErrorInvalidRef,
+		},
+		{
+			name:     "non GitHub builder ID long builder tag",
+			path:     "some/repo/someBuilderID",
+			tag:      "refs/tags/v1.2.3",
 			id:       asStringPointer("https://not-github.com/some/repo/someBuilderID"),
 			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch org GitHub",
+			name:     "mismatch org GitHub short builder tag",
 			path:     "some/repo/someBuilderID",
+			tag:      "v1.2.3",
+			id:       asStringPointer("https://github.com/other/repo/someBuilderID"),
+			expected: serrors.ErrorInvalidRef,
+		},
+		{
+			name:     "mismatch org GitHub long builder tag",
+			path:     "some/repo/someBuilderID",
+			tag:      "refs/tags/v1.2.3",
 			id:       asStringPointer("https://github.com/other/repo/someBuilderID"),
 			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch name GitHub",
+			name:     "mismatch name GitHub long builder tag",
 			path:     "some/repo/someBuilderID",
+			tag:      "refs/tags/v1.2.3",
 			id:       asStringPointer("https://github.com/some/other/someBuilderID"),
 			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch id GitHub",
+			name:     "mismatch id GitHub long builder tag",
 			path:     "some/repo/someBuilderID",
+			tag:      "refs/tags/v1.2.3",
 			id:       asStringPointer("https://github.com/some/repo/ID"),
 			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
@@ -466,26 +514,8 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 				return
 			}
 			expectedID := "https://github.com/" + tt.path + "@" + tt.tag
-			builderID, err := utils.BuilderIDNew(expectedID)
-			if err != nil {
-				panic(fmt.Errorf("BuilderIDNew: %w", err))
-			}
-
-			if err := builderId.Matches(id); err != nil {
-				cpy := err
-				tag, err := tagName(certTag)
-				if err != nil {
-					return nil, err
-				}
-				expectedID := "https://github.com/" + tt.path + "@" + tag
-				builderID, err := utils.BuilderIDNew(expectedID)
-				if err != nil {
-					return nil, err
-				}
-				if err := builderID.Matches(id); err != nil {
-					t.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, []error{cpy, err})
-				}
-
+			if err := id.Matches(expectedID, true); err != nil {
+				t.Errorf("matches failed:%v", err)
 			}
 		})
 	}

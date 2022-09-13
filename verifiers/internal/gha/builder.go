@@ -43,21 +43,21 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 
 	// Verify trusted workflow.
 	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
-	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath,
+	reusableWorkflowTag := strings.Trim(workflowPath[1], "/")
+	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath, reusableWorkflowTag,
 		builderOpts.ExpectedID, defaultBuilders)
 	if err != nil {
 		return nil, err
 	}
 
 	// Verify the ref is a tag.
-	builderTag := strings.Trim(workflowPath[1], "/")
-	if err := verifyTrustedBuilderRef(id, builderTag); err != nil {
+	if err := verifyTrustedBuilderRef(id, reusableWorkflowTag); err != nil {
 		return nil, err
 	}
 
 	// Issuer verification.
 	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
-		return nil, fmt.Errorf("untrusted token issuer: %s", id.Issuer)
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
 	}
 
 	// The caller repository in the x509 extension is not fully qualified. It only contains
@@ -79,55 +79,38 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultBuilders map[string]bool) (*utils.BuilderID, error) {
 	var builderID *utils.BuilderID
 	var err error
+	certBuilderName := "https://github.com/" + certPath
+	// Validate the tag name.
+	if err := utils.ValidateTagName(certTag); err != nil {
+		return nil, err
+	}
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
-		name, ok := defaultBuilders[certPath]
-		if !ok {
+		if _, ok := defaultBuilders[certPath]; !ok {
 			return nil, fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID == nil)
 		}
 		// Construct the builderID using the default builder's name and the certificate's tag.
-		builderID, err = utils.BuilderIDNew(name, certTag)
+		builderID, err = utils.BuilderIDNew(certBuilderName + "@" + certTag)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
-		url := "https://github.com/" + certPath
-		builderID, err := utils.BuilderIDNew(url + "@" + certTag)
+		builderID, err = utils.BuilderIDNew(certBuilderName + "@" + certTag)
 		if err != nil {
 			return nil, err
 		}
 
 		// BuilderID provided by user should match the certificate.
-		// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`.
-		if err := builderID.Matches(*expectedBuilderID); err != nil {
-			cpy := err
-			// Try the shortened version, using
-			// `name@v1.2.3`.
-			tag, err := tagName(certTag)
-			if err != nil {
-				return nil, err
-			}
-			builderID, err := utils.BuilderIDNew(url + "@" + tag)
-			if err != nil {
-				return nil, err
-			}
-			if err := builderID.Matches(*expectedBuilderID); err != nil {
-				return nil, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, []error{cpy, err})
-			}
+		// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
+		// so we pass `allowRef = true`.
+		if err := builderID.Matches(*expectedBuilderID, true); err != nil {
+			return nil, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
 		}
 	}
 
 	return builderID, nil
-}
-
-func tagName(ref string) (string, error) {
-	if !strings.HasPrefix(ref, "refs/tags/") {
-		return "", fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", serrors.ErrorInvalidRef, ref)
-	}
-
-	return strings.TrimPrefix(ref, "refs/tags/"), nil
 }
 
 // Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.
@@ -141,7 +124,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	}
 
 	// Extract the pin.
-	pin, err := tagName(ref)
+	pin, err := utils.TagName(ref)
 	if err != nil {
 		return err
 	}

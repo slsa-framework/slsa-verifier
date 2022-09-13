@@ -513,7 +513,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 
 				// Validate against test's expected builderID, if provided.
 				if tt.outBuilderID != "" {
-					if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+					if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
@@ -681,7 +681,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 
 				// Validate against test's expected builderID, if provided.
 				if tt.outBuilderID != "" {
-					if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+					if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
@@ -950,13 +950,13 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 					// Validate against test's expected builderID, if provided.
 					if tt.outBuilderID != "" {
-						if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed: %v", err))
 						}
 					}
 
 					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(bid); err != nil {
+					if err := outBuilderID.Matches(bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
