@@ -349,25 +349,85 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		name     string
 		id       *string
 		path     string
+		tag      string
 		defaults map[string]bool
 		expected error
 	}{
 		{
-			name:     "default trusted",
+			name:     "default trusted short tag",
 			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
+			tag:      "v1.2.3",
 			defaults: defaultArtifactTrustedReusableWorkflows,
 		},
 		{
-			name:     "default mismatch against container defaults",
+			name:     "default trusted long tag",
 			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
+			tag:      "refs/tags/v1.2.3",
+			defaults: defaultArtifactTrustedReusableWorkflows,
+		},
+		{
+			name:     "default mismatch against container defaults short tag",
+			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
+			tag:      "v1.2.3",
 			defaults: defaultContainerTrustedReusableWorkflows,
 			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name: "valid ID for GitHub builder",
-			path: "some/repo/someBuilderID",
-			id:   asStringPointer("https://github.com/some/repo/someBuilderID"),
+			name:     "default mismatch against container defaults long tag",
+			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
+			tag:      "refs/tags/v1.2.3",
+			defaults: defaultContainerTrustedReusableWorkflows,
+			expected: serrors.ErrorUntrustedReusableWorkflow,
 		},
+		{
+			name: "valid ID for GitHub builder short tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+		},
+		{
+			name: "valid ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+		},
+		{
+			name: "valid short ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+		},
+		{
+			name: "valid long ID for GitHub builder short tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+		},
+		{
+			name: "valid ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+		},
+		{
+			name: "valid ID for GitHub builder short tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+		},
+		{
+			name: "valid short ID for GitHub builder long tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
+		},
+		{
+			name: "valid long ID for GitHub builder short tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+		},
+		// TODO: short, long, short-long and long-short
 		{
 			name:     "non GitHub builder ID",
 			path:     "some/repo/someBuilderID",
@@ -398,16 +458,34 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			id, err := verifyTrustedBuilderID(tt.path, tt.id, tt.defaults)
+			id, err := verifyTrustedBuilderID(tt.path, tt.tag, tt.id, tt.defaults)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 			if err != nil {
 				return
 			}
-			expectedID := "https://github.com/" + tt.path
-			if id != expectedID {
-				t.Errorf(cmp.Diff(id, expectedID))
+			expectedID := "https://github.com/" + tt.path + "@" + tt.tag
+			builderID, err := utils.BuilderIDNew(expectedID)
+			if err != nil {
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
+			}
+
+			if err := builderId.Matches(id); err != nil {
+				cpy := err
+				tag, err := tagName(certTag)
+				if err != nil {
+					return nil, err
+				}
+				expectedID := "https://github.com/" + tt.path + "@" + tag
+				builderID, err := utils.BuilderIDNew(expectedID)
+				if err != nil {
+					return nil, err
+				}
+				if err := builderID.Matches(id); err != nil {
+					t.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, []error{cpy, err})
+				}
+
 			}
 		})
 	}

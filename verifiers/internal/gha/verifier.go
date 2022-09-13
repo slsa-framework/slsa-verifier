@@ -57,11 +57,11 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		provenanceOpts.ExpectedSourceURI, defaultBuilders)
 	if err != nil {
 		return nil, nil, err
-	}
+	
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	provenanceOpts.ExpectedBuilderID = builderID
+	provenanceOpts.ExpectedBuilderID = builderID.String()
 	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, nil, err
 	}
@@ -75,13 +75,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	// Temporary code.
-	// TODO: remove `SetName` and `SetVersion` function once GHA is supported,
-	// and use: bid, err := utils.BuilderIDNew(builderID)
-	bid := &utils.BuilderID{}
-	bid.SetName(builderID)
-	bid.SetVersion(strings.Split(workflowInfo.JobWobWorkflowRef, "@")[1])
-	return r, bid, nil
+	return r, builderID, nil
 }
 
 // VerifyArtifact verifies provenance for an artifact.

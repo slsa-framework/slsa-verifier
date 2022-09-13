@@ -27,7 +27,7 @@ func BuilderIDNew(builderID string) (*BuilderID, error) {
 // Matches matches the builderID string against the reference builderID.
 // If the builderID contains a semver, the full builderID must match.
 // Otherwise, only the name needs to match.
-func (b *BuilderID) Matches(builderID string) error {
+func (b *BuilderID) Matches(builderID string, longRef bool) error {
 	name, version, err := ParseBuilderID(builderID, false)
 	if err != nil {
 		return err
@@ -56,15 +56,6 @@ func (b *BuilderID) Version() string {
 
 func (b *BuilderID) String() string {
 	return fmt.Sprintf("%s@%s", b.name, b.version)
-}
-
-// TODO: remove this function once GHA is supported.
-func (b *BuilderID) SetName(name string) {
-	b.name = name
-}
-
-func (b *BuilderID) SetVersion(version string) {
-	b.version = version
 }
 
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
