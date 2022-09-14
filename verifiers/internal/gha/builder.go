@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -115,8 +116,11 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	if (id.CallerRepository == trustedBuilderRepository ||
-		id.CallerRepository == e2eTestRepository) &&
+	isTrustedRepo := (os.Getenv("GITHUB_REPOSITORY") == trustedBuilderRepository &&
+		id.CallerRepository == trustedBuilderRepository)
+	isE2eRepo := (os.Getenv("GITHUB_REPOSITORY") == e2eTestRepository &&
+		id.CallerRepository == e2eTestRepository)
+	if (isTrustedRepo || isE2eRepo) &&
 		strings.EqualFold("refs/heads/main", ref) {
 		return nil
 	}
