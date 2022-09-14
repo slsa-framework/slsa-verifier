@@ -382,7 +382,7 @@ func Test_verifyBuilderID(t *testing.T) {
 					},
 				},
 			},
-			id: "some/builderID",
+			id: "some/builderID@v1.2.3",
 		},
 		{
 			name: "same builderID mismatch version",
