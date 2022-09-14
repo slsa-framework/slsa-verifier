@@ -68,8 +68,9 @@ func getBuildersAndVersions(t *testing.T,
 	return res
 }
 
-func Test_runVerifyArtifactPath(t *testing.T) {
+func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	t.Parallel()
+	builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
 	tests := []struct {
 		name         string
 		artifact     string
@@ -77,7 +78,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 		pbranch      *string
 		ptag         *string
 		pversiontag  *string
-		pbuilderID   *string
+		pBuilderID   *string
 		outBuilderID string
 		inputs       map[string]string
 		err          error
@@ -100,7 +101,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			name:       "valid main branch default - invalid builderID",
 			artifact:   "binary-linux-amd64-workflow_dispatch",
 			source:     "github.com/slsa-framework/example-package",
-			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
 			err:        serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
@@ -380,7 +381,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			source:       "github.com/slsa-framework/example-package",
 			minversion:   "v1.2.0",
 			builders:     []string{"gha_generic"},
-			pbuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
+			pBuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
 			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
 		},
 		// Special case of the e2e test repository building builder from head.
@@ -491,34 +492,60 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				cmd := verify.VerifyArtifactCommand{
-					ProvenancePath:      provenancePath,
-					SourceURI:           tt.source,
-					SourceBranch:        tt.pbranch,
-					BuilderID:           tt.pbuilderID,
-					SourceTag:           tt.ptag,
-					SourceVersionTag:    tt.pversiontag,
-					BuildWorkflowInputs: tt.inputs,
+				// TODO(#258): test for tagged builder.
+				// semver := path.Base(v)
+				// For each test, we run 4 sub-tests:
+				// 	1. With the the full builderID including the semver in short form.
+				//  2. With the the full builderID including the semver in long form.
+				//	3. With only the name of the builder.
+				//  4. With no builder ID.
+				builderIDs := []*string{
+					// pString(builder + "@" + semver),
+					// pString(builder + "@refs/tags/" + semver),
+					pString(builder),
+					nil,
 				}
 
-				outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
-
-				if !errCmp(err, tt.err) {
-					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				// If builder ID is set, use it.
+				if tt.pBuilderID != nil {
+					builderIDs = []*string{tt.pBuilderID}
 				}
 
-				if err != nil {
-					return
-				}
+				for _, bid := range builderIDs {
+					cmd := verify.VerifyArtifactCommand{
+						ProvenancePath:      provenancePath,
+						SourceURI:           tt.source,
+						SourceBranch:        tt.pbranch,
+						BuilderID:           bid,
+						SourceTag:           tt.ptag,
+						SourceVersionTag:    tt.pversiontag,
+						BuildWorkflowInputs: tt.inputs,
+					}
 
-				// Validate against test's expected builderID, if provided.
-				if tt.outBuilderID != "" {
-					if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
+					if !errCmp(err, tt.err) {
+						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+					}
+
+					if err != nil {
+						return
+					}
+
+					// Validate against test's expected builderID, if provided.
+					if tt.outBuilderID != "" {
+						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+							t.Errorf(fmt.Sprintf("matches failed: %v", err))
+						}
+					}
+
+					if bid == nil {
+						return
+					}
+					// Validate against builderID we generated automatically.
+					if err := outBuilderID.Matches(*bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
-
-				// TODO: verify using Matches().
 			}
 		})
 	}
@@ -588,6 +615,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		// When true, this does not iterate over all builder versions.
 		noversion bool
 	}{
+		// TODO(#258): test for tagged builder.
 		// {
 		// 	name:     "valid main branch default",
 		// 	artifact: "container_workflow_dispatch",
@@ -665,22 +693,24 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 				// 	1. With the the full builderID including the semver in short form.
 				//  2. With the the full builderID including the semver in long form.
 				//	3. With only the name of the builder.
-				builderIDs := []string{
-					builder + "@" + semver,
-					builder + "@refs/tags/" + semver,
-					builder,
+				//	4. With no builder ID.
+				builderIDs := []*string{
+					pString(builder + "@" + semver),
+					pString(builder + "@refs/tags/" + semver),
+					pString(builder),
+					nil,
 				}
 
 				// If builder ID is set, use it.
 				if tt.pBuilderID != nil {
-					builderIDs = []string{*tt.pBuilderID}
+					builderIDs = []*string{tt.pBuilderID}
 				}
 
 				for _, bid := range builderIDs {
 					cmd := verify.VerifyImageCommand{
 						SourceURI:        tt.source,
 						SourceBranch:     tt.pbranch,
-						BuilderID:        &bid,
+						BuilderID:        bid,
 						SourceTag:        tt.ptag,
 						SourceVersionTag: tt.pversiontag,
 						DigestFn:         localDigestComputeFn,
@@ -702,8 +732,11 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 						}
 					}
 
+					if bid == nil {
+						return
+					}
 					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(bid, false); err != nil {
+					if err := outBuilderID.Matches(*bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}

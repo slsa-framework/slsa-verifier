@@ -153,7 +153,11 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 
 	// Return the first error.
 	if len(errs) > 0 {
-		return nil, nil, fmt.Errorf("%w: %v", errs[0], errs[1:])
+		var s string
+		if len(errs) > 1 {
+			s = fmt.Sprintf(": %v", errs[1:])
+		}
+		return nil, nil, fmt.Errorf("%w%s", errs[0], s)
 	}
-	return nil, nil, fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
+	return nil, nil, fmt.Errorf("%w", serrors.ErrorNoValidSignature)
 }
