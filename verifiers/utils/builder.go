@@ -43,7 +43,7 @@ func (b *BuilderID) Matches(builderID string, allowRef bool) error {
 	}
 
 	if version != "" && version != b.version {
-		// If were allowed to use long ref, try it.
+		// If allowRef is true, try the long version `refs/tags/<name>` match.
 		if allowRef &&
 			"refs/tags/"+version == b.version {
 			return nil
