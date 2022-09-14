@@ -507,6 +507,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				case strings.HasSuffix(n, "_go"):
 					builder = goBuilder
 				case strings.HasSuffix(n, "_generic"):
+					builder = genericBuilder
 				default:
 					builder = genericBuilder
 				}
@@ -545,8 +546,6 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
 					if !errCmp(err, tt.err) {
-						fmt.Println(err)
-						fmt.Println(v)
 						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
 
@@ -557,16 +556,17 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					// Validate against test's expected builderID, if provided.
 					if tt.outBuilderID != "" {
 						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
-							t.Errorf(fmt.Sprintf("matches failed: %v", err))
+							t.Errorf(fmt.Sprintf("matches failed (1): %v", err))
 						}
 					}
 
 					if bid == nil {
 						return
 					}
+
 					// Validate against builderID we generated automatically.
 					if err := outBuilderID.Matches(*bid, false); err != nil {
-						t.Errorf(fmt.Sprintf("matches failed: %v", err))
+						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 				}
 			}

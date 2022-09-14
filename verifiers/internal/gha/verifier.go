@@ -60,6 +60,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
+	fmt.Println("builderID:", builderID.String())
+
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
 	provenanceOpts.ExpectedBuilderID = builderID.String()
