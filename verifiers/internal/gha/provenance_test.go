@@ -363,7 +363,7 @@ func Test_verifyBuilderID(t *testing.T) {
 		expected error
 	}{
 		{
-			name: "id has no @",
+			name: "match no version",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{
 					Builder: slsa.ProvenanceBuilder{
@@ -371,11 +371,10 @@ func Test_verifyBuilderID(t *testing.T) {
 					},
 				},
 			},
-			id:       "some/builderID",
-			expected: serrors.ErrorMalformedURI,
+			id: "some/builderID",
 		},
 		{
-			name: "same builderID",
+			name: "match with tag",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{
 					Builder: slsa.ProvenanceBuilder{
@@ -386,17 +385,6 @@ func Test_verifyBuilderID(t *testing.T) {
 			id: "some/builderID",
 		},
 		{
-			name: "same builderID full match",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Builder: slsa.ProvenanceBuilder{
-						ID: "some/builderID@v1.2.3",
-					},
-				},
-			},
-			id: "some/builderID@v1.2.3",
-		},
-		{
 			name: "same builderID mismatch version",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{
@@ -405,11 +393,12 @@ func Test_verifyBuilderID(t *testing.T) {
 					},
 				},
 			},
-			id: "some/builderID@v1.2.4",
+			id:       "some/builderID@v1.2.4",
+			expected: serrors.ErrorMismatchBuilderID,
 			// TODO(#189): this should fail.
 		},
 		{
-			name: "mismatch builderID",
+			name: "mismatch builderID same version",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa.ProvenancePredicate{
 					Builder: slsa.ProvenanceBuilder{
@@ -417,14 +406,26 @@ func Test_verifyBuilderID(t *testing.T) {
 					},
 				},
 			},
+			id:       "some/builderID@v1.2.3",
+			expected: serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:     "empty prov builderID",
+			prov:     &intoto.ProvenanceStatement{},
 			id:       "some/builderID",
 			expected: serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:     "empty builderID",
-			prov:     &intoto.ProvenanceStatement{},
-			id:       "some/builderID",
-			expected: serrors.ErrorMalformedURI,
+			name: "empty expected builderID",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa.ProvenancePredicate{
+					Builder: slsa.ProvenanceBuilder{
+						ID: "tome/builderID@v1.2.3",
+					},
+				},
+			},
+			id:       "",
+			expected: serrors.ErrorMismatchBuilderID,
 		},
 	}
 	for _, tt := range tests {
