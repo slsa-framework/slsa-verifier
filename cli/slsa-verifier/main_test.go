@@ -70,7 +70,8 @@ func getBuildersAndVersions(t *testing.T,
 
 func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	t.Parallel()
-	builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
+	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
+	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
 	tests := []struct {
 		name         string
 		artifact     string
@@ -432,7 +433,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			err:         serrors.ErrorMismatchBranch,
 			noversion:   true,
 		},
-		// Workflow inputs.
+		Workflow inputs.
 		{
 			name:     "workflow inputs match",
 			artifact: "workflow-inputs",
@@ -493,17 +494,37 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
 				// TODO(#258): test for tagged builder.
-				// semver := path.Base(v)
+				semver := path.Base(v)
 				// For each test, we run 4 sub-tests:
 				// 	1. With the the full builderID including the semver in short form.
 				//	2. With the the full builderID including the semver in long form.
 				//	3. With only the name of the builder.
 				//	4. With no builder ID.
+				var builder string
+				// Select the right builder based on directory structure.
+				n := strings.Split(v, "/")[0]
+				switch {
+				case strings.HasSuffix(n, "_go"):
+					builder = goBuilder
+				case strings.HasSuffix(n, "_generic"):
+				default:
+					builder = genericBuilder
+				}
+
+				// Default builders to test.
 				builderIDs := []*string{
-					// pString(builder + "@" + semver),
-					// pString(builder + "@refs/tags/" + semver),
 					pString(builder),
 					nil,
+				}
+
+				// We only add the tags to tests for versions >= 1,
+				// because we generated them with a builder at `@main`
+				// before GA. Add the tests for tag verification.
+				if !strings.HasPrefix(n, "v0.0.") {
+					builderIDs = append(builderIDs, []*string{
+						pString(builder + "@" + semver),
+						pString(builder + "@refs/tags/" + semver),
+					}...)
 				}
 
 				// If builder ID is set, use it.
@@ -524,6 +545,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
 					if !errCmp(err, tt.err) {
+						fmt.Println(err)
+						fmt.Println(v)
 						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
 
