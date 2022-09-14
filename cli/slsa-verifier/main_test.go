@@ -433,7 +433,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			err:         serrors.ErrorMismatchBranch,
 			noversion:   true,
 		},
-		Workflow inputs.
+		// Workflow inputs.
 		{
 			name:     "workflow inputs match",
 			artifact: "workflow-inputs",
