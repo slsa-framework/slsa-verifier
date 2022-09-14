@@ -493,7 +493,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				// TODO(#258): test for tagged builder.
+				// TODO(#258): invalid builder ref.
 				semver := path.Base(v)
 				// For each test, we run 4 sub-tests:
 				// 	1. With the the full builderID including the semver in short form.
