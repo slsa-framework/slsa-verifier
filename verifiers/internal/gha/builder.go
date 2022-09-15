@@ -116,11 +116,13 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	isTrustedRepo := (os.Getenv("GITHUB_REPOSITORY") == trustedBuilderRepository &&
-		id.CallerRepository == trustedBuilderRepository)
-	isE2eRepo := (os.Getenv("GITHUB_REPOSITORY") == e2eTestRepository &&
+	// The trusted builder needs to built itself at `@main`.
+	isBuilderRepoBinary := id.CallerRepository == trustedBuilderRepository
+	// End-to-end tests always build at head. We only allow `@main` if the
+	// verification occurs in the end-to-end repository.
+	isE2eTest := (os.Getenv("GITHUB_REPOSITORY") == e2eTestRepository &&
 		id.CallerRepository == e2eTestRepository)
-	if (isTrustedRepo || isE2eRepo) &&
+	if (isBuilderRepoBinary || isE2eTest) &&
 		strings.EqualFold("refs/heads/main", ref) {
 		return nil
 	}
