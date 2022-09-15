@@ -7,18 +7,18 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
-type BuilderID struct {
+type TrustedBuilderID struct {
 	name, version string
 }
 
-// BuilderIDNew creates a new BuilderID structure.
-func BuilderIDNew(builderID string) (*BuilderID, error) {
+// TrustedBuilderIDNew creates a new BuilderID structure.
+func TrustedBuilderIDNew(builderID string) (*TrustedBuilderID, error) {
 	name, version, err := ParseBuilderID(builderID, true)
 	if err != nil {
 		return nil, err
 	}
 
-	return &BuilderID{
+	return &TrustedBuilderID{
 		name:    name,
 		version: version,
 	}, nil
@@ -27,7 +27,11 @@ func BuilderIDNew(builderID string) (*BuilderID, error) {
 // Matches matches the builderID string against the reference builderID.
 // If the builderID contains a semver, the full builderID must match.
 // Otherwise, only the name needs to match.
-func (b *BuilderID) Matches(builderID string) error {
+// `allowRef: true` indicates that the matching need not be an eaxct
+// match. In this case, if the BuilderID version is a GitHub ref
+// `refs/tags/name`, we will consider it equal to user-provided
+// builderID `name`.
+func (b *TrustedBuilderID) Matches(builderID string, allowRef bool) error {
 	name, version, err := ParseBuilderID(builderID, false)
 	if err != nil {
 		return err
@@ -39,6 +43,11 @@ func (b *BuilderID) Matches(builderID string) error {
 	}
 
 	if version != "" && version != b.version {
+		// If allowRef is true, try the long version `refs/tags/<name>` match.
+		if allowRef &&
+			"refs/tags/"+version == b.version {
+			return nil
+		}
 		return fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			version, b.version)
 	}
@@ -46,25 +55,16 @@ func (b *BuilderID) Matches(builderID string) error {
 	return nil
 }
 
-func (b *BuilderID) Name() string {
+func (b *TrustedBuilderID) Name() string {
 	return b.name
 }
 
-func (b *BuilderID) Version() string {
+func (b *TrustedBuilderID) Version() string {
 	return b.version
 }
 
-func (b *BuilderID) String() string {
+func (b *TrustedBuilderID) String() string {
 	return fmt.Sprintf("%s@%s", b.name, b.version)
-}
-
-// TODO: remove this function once GHA is supported.
-func (b *BuilderID) SetName(name string) {
-	b.name = name
-}
-
-func (b *BuilderID) SetVersion(version string) {
-	b.version = version
 }
 
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
@@ -83,4 +83,18 @@ func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 
 	return "", "", fmt.Errorf("%w: builderID: '%s'",
 		serrors.ErrorInvalidFormat, id)
+}
+
+func ValidateGitHubTagRef(tag string) error {
+	if !strings.HasPrefix(tag, "refs/tags/") {
+		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", serrors.ErrorInvalidRef, tag)
+	}
+	return nil
+}
+
+func TagFromGitHubRef(ref string) (string, error) {
+	if err := ValidateGitHubTagRef(ref); err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(ref, "refs/tags/"), nil
 }
