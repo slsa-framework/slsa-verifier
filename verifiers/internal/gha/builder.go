@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -116,13 +115,19 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	// The trusted builder needs to built itself at `@main`.
-	isBuilderRepoBinary := id.CallerRepository == trustedBuilderRepository
-	// End-to-end tests always build at head. We only allow `@main` if the
-	// verification occurs in the end-to-end repository.
-	isE2eTest := (os.Getenv("GITHUB_REPOSITORY") == e2eTestRepository &&
-		id.CallerRepository == e2eTestRepository)
-	if (isBuilderRepoBinary || isE2eTest) &&
+	// // The trusted builders needs to build themselves at `@main`.
+	// isBuilderRepoBinary := id.CallerRepository == trustedBuilderRepository
+	// // End-to-end tests always build at `@main`. We only allow `@main` if the
+	// // verification occurs in the end-to-end repository.
+	// isE2eTest := (os.Getenv("GITHUB_REPOSITORY") == e2eTestRepository &&
+	// 	id.CallerRepository == e2eTestRepository)
+	// if (isBuilderRepoBinary || isE2eTest) &&
+	// 	strings.EqualFold("refs/heads/main", ref) {
+	// 	return nil
+	// }
+
+	if (id.CallerRepository == trustedBuilderRepository ||
+		id.CallerRepository == e2eTestRepository) &&
 		strings.EqualFold("refs/heads/main", ref) {
 		return nil
 	}
