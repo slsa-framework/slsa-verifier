@@ -34,7 +34,7 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	builderOpts *options.BuilderOpts, source string,
 	defaultBuilders map[string]bool,
-) (*utils.BuilderID, error) {
+) (*utils.TrustedBuilderID, error) {
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
@@ -76,8 +76,8 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 
 // Verifies the builder ID at path against an expected builderID.
 // If an expected builderID is not provided, uses the defaultBuilders.
-func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultBuilders map[string]bool) (*utils.BuilderID, error) {
-	var builderID *utils.BuilderID
+func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultBuilders map[string]bool) (*utils.TrustedBuilderID, error) {
+	var trustedBuilderID *utils.TrustedBuilderID
 	var err error
 	certBuilderName := "https://github.com/" + certPath
 	// WARNING: we don't validate the tag here, because we need to allow
@@ -87,15 +87,15 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 		if _, ok := defaultBuilders[certPath]; !ok {
 			return nil, fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID == nil)
 		}
-		// Construct the builderID using the default builder's name and the certificate's tag.
-		builderID, err = utils.BuilderIDNew(certBuilderName + "@" + certTag)
+		// Construct the builderID using the certificate's builder's name and tag.
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName + "@" + certTag)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
-		builderID, err = utils.BuilderIDNew(certBuilderName + "@" + certTag)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName + "@" + certTag)
 		if err != nil {
 			return nil, err
 		}
@@ -103,12 +103,12 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 		// BuilderID provided by user should match the certificate.
 		// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
 		// so we pass `allowRef = true`.
-		if err := builderID.Matches(*expectedBuilderID, true); err != nil {
+		if err := trustedBuilderID.Matches(*expectedBuilderID, true); err != nil {
 			return nil, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
 		}
 	}
 
-	return builderID, nil
+	return trustedBuilderID, nil
 }
 
 // Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.

@@ -74,7 +74,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			err:      serrors.ErrorInvalidOIDCIssuer,
 		},
 		{
-			name: "valid trusted builder witjout tag",
+			name: "valid trusted builder without tag",
 			workflow: &WorkflowIdentity{
 				CallerRepository:  trustedBuilderRepository,
 				CallerHash:        "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",

@@ -35,7 +35,7 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	return nil, nil, serrors.ErrorNotSupported
 }
 
@@ -44,7 +44,7 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	prov, err := ProvenanceFromBytes(provenance)
 	if err != nil {
 		return nil, nil, err

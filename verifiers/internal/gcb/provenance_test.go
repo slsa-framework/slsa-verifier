@@ -290,7 +290,7 @@ func Test_validateRecipeType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			builderID, err := utils.BuilderIDNew(tt.builderID)
+			builderID, err := utils.TrustedBuilderIDNew(tt.builderID)
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
@@ -416,7 +416,7 @@ func Test_VerifySourceURI(t *testing.T) {
 				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
 			}
 
-			builderID, err := utils.BuilderIDNew(tt.builderID)
+			builderID, err := utils.TrustedBuilderIDNew(tt.builderID)
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}

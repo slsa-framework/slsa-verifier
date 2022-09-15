@@ -7,18 +7,18 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 )
 
-type BuilderID struct {
+type TrustedBuilderID struct {
 	name, version string
 }
 
-// BuilderIDNew creates a new BuilderID structure.
-func BuilderIDNew(builderID string) (*BuilderID, error) {
+// TrustedBuilderIDNew creates a new BuilderID structure.
+func TrustedBuilderIDNew(builderID string) (*TrustedBuilderID, error) {
 	name, version, err := ParseBuilderID(builderID, true)
 	if err != nil {
 		return nil, err
 	}
 
-	return &BuilderID{
+	return &TrustedBuilderID{
 		name:    name,
 		version: version,
 	}, nil
@@ -31,7 +31,7 @@ func BuilderIDNew(builderID string) (*BuilderID, error) {
 // match. In this case, if the BuilderID version is a GitHub ref
 // `refs/tags/name`, we will consider it equal to user-provided
 // builderID `name`.
-func (b *BuilderID) Matches(builderID string, allowRef bool) error {
+func (b *TrustedBuilderID) Matches(builderID string, allowRef bool) error {
 	name, version, err := ParseBuilderID(builderID, false)
 	if err != nil {
 		return err
@@ -55,15 +55,15 @@ func (b *BuilderID) Matches(builderID string, allowRef bool) error {
 	return nil
 }
 
-func (b *BuilderID) Name() string {
+func (b *TrustedBuilderID) Name() string {
 	return b.name
 }
 
-func (b *BuilderID) Version() string {
+func (b *TrustedBuilderID) Version() string {
 	return b.version
 }
 
-func (b *BuilderID) String() string {
+func (b *TrustedBuilderID) String() string {
 	return fmt.Sprintf("%s@%s", b.name, b.version)
 }
 

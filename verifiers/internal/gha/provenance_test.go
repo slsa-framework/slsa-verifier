@@ -354,7 +354,7 @@ func Test_verifySourceURI(t *testing.T) {
 	}
 }
 
-func Test_verifyBuilderID(t *testing.T) {
+func Test_verifyBuilderIDExactMatch(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
@@ -433,7 +433,7 @@ func Test_verifyBuilderID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := verifyBuilderID(tt.prov, tt.id)
+			err := verifyBuilderIDExactMatch(tt.prov, tt.id)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}

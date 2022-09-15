@@ -39,7 +39,7 @@ func VerifyImage(ctx context.Context, artifactImage string,
 	provenance []byte,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
 		return nil, nil, err
@@ -52,7 +52,7 @@ func VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
 		return nil, nil, err

@@ -45,7 +45,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
@@ -59,8 +59,6 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	if err != nil {
 		return nil, nil, err
 	}
-
-	fmt.Println("builderID:", builderID.String())
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
@@ -86,7 +84,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
 		return nil, nil, err
@@ -108,7 +106,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
 	roots, err := fulcio.GetRoots()
 	if err != nil {
@@ -126,7 +124,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 
 	/* Now verify properties of the attestations */
 	var errs []error
-	var builderID *utils.BuilderID
+	var builderID *utils.TrustedBuilderID
 	var verifiedProvenance []byte
 	for _, att := range atts {
 		pyld, err := att.Payload()

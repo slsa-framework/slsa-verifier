@@ -44,7 +44,7 @@ func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement,
 // Verify Builder ID in provenance statement.
 // This function does an exact comparison, and expects certBuilderID to be the full
 // `name@refs/tags/<name>`.
-func verifyBuilderID(prov *intoto.ProvenanceStatement, certBuilderID string) error {
+func verifyBuilderIDExactMatch(prov *intoto.ProvenanceStatement, certBuilderID string) error {
 	if certBuilderID != prov.Predicate.Builder.ID {
 		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
 			certBuilderID, prov.Predicate.Builder.ID)
@@ -187,7 +187,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	// Verify Builder ID.
 	// Note: `provenanceOpts.ExpectedBuilderID` is not provided by the user,
 	// but taken from the certificate. It always is of the form `name@refs/tags/<name>`.
-	if err := verifyBuilderID(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+	if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 		return err
 	}
 

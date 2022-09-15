@@ -222,7 +222,7 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func validateRecipeType(builderID utils.BuilderID, recipeType string) error {
+func validateRecipeType(builderID utils.TrustedBuilderID, recipeType string) error {
 	var err error
 	v := builderID.Version()
 	switch v {
@@ -262,7 +262,7 @@ func validateRecipeType(builderID utils.BuilderID, recipeType string) error {
 // - in the recipe type
 // - the recipe argument type
 // - the predicate builder ID.
-func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.BuilderID, error) {
+func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.TrustedBuilderID, error) {
 	if err := self.isVerified(); err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func (self *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.
 		return nil, err
 	}
 
-	provBuilderID, err := utils.BuilderIDNew(predicateBuilderID)
+	provBuilderID, err := utils.TrustedBuilderIDNew(predicateBuilderID)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func (self *Provenance) VerifySubjectDigest(expectedHash string) error {
 }
 
 // Verify source URI in provenance statement.
-func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.BuilderID) error {
+func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.TrustedBuilderID) error {
 	if err := self.isVerified(); err != nil {
 		return err
 	}

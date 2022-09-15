@@ -94,32 +94,32 @@ func Test_ParseBuilderID(t *testing.T) {
 func Test_BuilderIDNew(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name           string
-		builderID      string
-		builderName    string
-		builderVersion string
-		err            error
+		name             string
+		trustedBuilderID string
+		builderName      string
+		builderVersion   string
+		err              error
 	}{
 		{
-			name:           "valid",
-			builderID:      "some/name@v1.2.3",
-			builderName:    "some/name",
-			builderVersion: "v1.2.3",
+			name:             "valid",
+			trustedBuilderID: "some/name@v1.2.3",
+			builderName:      "some/name",
+			builderVersion:   "v1.2.3",
 		},
 		{
-			name:      "empty version",
-			builderID: "some/name@",
-			err:       serrors.ErrorInvalidFormat,
+			name:             "empty version",
+			trustedBuilderID: "some/name@",
+			err:              serrors.ErrorInvalidFormat,
 		},
 		{
-			name:      "too many '@' - need version",
-			builderID: "some/name@vla@blo",
-			err:       serrors.ErrorInvalidFormat,
+			name:             "too many '@' - need version",
+			trustedBuilderID: "some/name@vla@blo",
+			err:              serrors.ErrorInvalidFormat,
 		},
 		{
-			name:      "too many '@' - no need version",
-			builderID: "some/name@vla@blo",
-			err:       serrors.ErrorInvalidFormat,
+			name:             "too many '@' - no need version",
+			trustedBuilderID: "some/name@vla@blo",
+			err:              serrors.ErrorInvalidFormat,
 		},
 	}
 	for _, tt := range tests {
@@ -127,7 +127,7 @@ func Test_BuilderIDNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			builderID, err := BuilderIDNew(tt.builderID)
+			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -136,9 +136,9 @@ func Test_BuilderIDNew(t *testing.T) {
 				return
 			}
 
-			name := builderID.Name()
-			version := builderID.Version()
-			full := builderID.String()
+			name := trustedBuilderID.Name()
+			version := trustedBuilderID.Version()
+			full := trustedBuilderID.String()
 
 			if name != tt.builderName {
 				t.Errorf(cmp.Diff(tt.builderName, name))
@@ -146,8 +146,8 @@ func Test_BuilderIDNew(t *testing.T) {
 			if version != tt.builderVersion {
 				t.Errorf(cmp.Diff(tt.builderVersion, version))
 			}
-			if full != tt.builderID {
-				t.Errorf(cmp.Diff(tt.builderID, full))
+			if full != tt.trustedBuilderID {
+				t.Errorf(cmp.Diff(tt.trustedBuilderID, full))
 			}
 		})
 	}
@@ -156,130 +156,130 @@ func Test_BuilderIDNew(t *testing.T) {
 func Test_Matches(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name      string
-		builderID string
-		allowRef  bool
-		match     string
-		err       error
+		name             string
+		trustedBuilderID string
+		allowRef         bool
+		match            string
+		err              error
 	}{
 		{
-			name:      "match full",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@v1.2.3",
+			name:             "match full",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.3",
 		},
 		{
-			name:      "match name",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name",
+			name:             "match name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name",
 		},
 		{
-			name:      "mismatch name",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name2",
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "mismatch name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name2",
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:      "mismatch version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@v1.2.4",
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "mismatch version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.4",
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:      "invalid empty version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@",
-			err:       serrors.ErrorInvalidFormat,
+			name:             "invalid empty version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@",
+			err:              serrors.ErrorInvalidFormat,
 		},
 		{
-			name:      "too many '@' - need version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@vla@blo",
-			err:       serrors.ErrorInvalidFormat,
+			name:             "too many '@' - need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			err:              serrors.ErrorInvalidFormat,
 		},
 		{
-			name:      "too many '@' - no need version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@vla@blo",
-			err:       serrors.ErrorInvalidFormat,
+			name:             "too many '@' - no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			err:              serrors.ErrorInvalidFormat,
 		},
 		// Same as above with `allowRef: true`.
 		{
-			name:      "match full",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@v1.2.3",
-			allowRef:  true,
+			name:             "match full",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.3",
+			allowRef:         true,
 		},
 		{
-			name:      "match name",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name",
-			allowRef:  true,
+			name:             "match name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name",
+			allowRef:         true,
 		},
 		{
-			name:      "mismatch name",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name2",
-			allowRef:  true,
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "mismatch name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name2",
+			allowRef:         true,
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:      "mismatch version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@v1.2.4",
-			allowRef:  true,
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "mismatch version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.4",
+			allowRef:         true,
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:      "invalid empty version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@",
-			allowRef:  true,
-			err:       serrors.ErrorInvalidFormat,
+			name:             "invalid empty version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@",
+			allowRef:         true,
+			err:              serrors.ErrorInvalidFormat,
 		},
 		{
-			name:      "too many '@' - need version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@vla@blo",
-			allowRef:  true,
-			err:       serrors.ErrorInvalidFormat,
+			name:             "too many '@' - need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			allowRef:         true,
+			err:              serrors.ErrorInvalidFormat,
 		},
 		{
-			name:      "too many '@' - no need version",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@vla@blo",
-			allowRef:  true,
-			err:       serrors.ErrorInvalidFormat,
+			name:             "too many '@' - no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			allowRef:         true,
+			err:              serrors.ErrorInvalidFormat,
 		},
 		// Mismatch of tag length.
 		{
-			name:      "match long tag match short",
-			builderID: "some/name@refs/tags/v1.2.3",
-			match:     "some/name@v1.2.3",
-			allowRef:  true,
+			name:             "match long tag match short",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			allowRef:         true,
 		},
 		{
-			name:      "long tag match short no ref",
-			builderID: "some/name@refs/tags/v1.2.3",
-			match:     "some/name@v1.2.3",
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "long tag match short no ref",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:      "match long tags",
-			builderID: "some/name@refs/tags/v1.2.3",
-			match:     "some/name@refs/tags/v1.2.3",
-			allowRef:  true,
+			name:             "match long tags",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			allowRef:         true,
 		},
 		{
-			name:      "mismatch tag length",
-			builderID: "some/name@refs/tags/v1.2.3",
-			match:     "some/name@v1.2.3",
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "mismatch tag length",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:      "mismatch tag length inversed",
-			builderID: "some/name@v1.2.3",
-			match:     "some/name@refs/tags/v1.2.3",
-			err:       serrors.ErrorMismatchBuilderID,
+			name:             "mismatch tag length inversed",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 	}
 	for _, tt := range tests {
@@ -287,12 +287,12 @@ func Test_Matches(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			builderID, err := BuilderIDNew(tt.builderID)
+			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID)
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
 
-			err = builderID.Matches(tt.match, tt.allowRef)
+			err = trustedBuilderID.Matches(tt.match, tt.allowRef)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
