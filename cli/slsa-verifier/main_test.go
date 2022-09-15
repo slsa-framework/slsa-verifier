@@ -504,11 +504,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				//	4. With no builder ID.
 				var builder string
 				// Select the right builder based on directory structure.
-				n := strings.Split(v, "/")[0]
+				name := strings.Split(v, "/")[0]
+				version := strings.Split(v, "/")[1]
 				switch {
-				case strings.HasSuffix(n, "_go"):
+				case strings.HasSuffix(name, "_go"):
 					builder = goBuilder
-				case strings.HasSuffix(n, "_generic"):
+				case strings.HasSuffix(name, "_generic"):
 					builder = genericBuilder
 				default:
 					builder = genericBuilder
@@ -523,7 +524,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// We only add the tags to tests for versions >= 1,
 				// because we generated them with a builder at `@main`
 				// before GA. Add the tests for tag verification.
-				if !strings.HasPrefix(n, "v0.0.") {
+				if !strings.HasPrefix(version, "v0.0.") {
 					builderIDs = append(builderIDs, []*string{
 						pString(builder + "@" + semver),
 						pString(builder + "@refs/tags/" + semver),
@@ -548,7 +549,6 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
 					if !errCmp(err, tt.err) {
-						fmt.Println(err)
 						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
 
