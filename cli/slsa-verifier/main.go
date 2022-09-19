@@ -34,6 +34,7 @@ For more information on SLSA, visit https://slsa.dev`,
 	c.AddCommand(verifyImageCmd())
 	// We print our own errors and usage in the check function.
 	c.SilenceErrors = true
+	c.SilenceUsage = true
 	return c
 }
 
