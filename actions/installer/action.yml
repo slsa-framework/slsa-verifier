@@ -1,0 +1,48 @@
+# Copyright 2022 SLSA Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'Install slsa-verifier'
+description: 'Installs SLSA verifier and adds it to your PATH'
+branding:
+  icon: 'package'
+  color: 'blue'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+    - name: Setup Node.js 16
+      uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
+      with:
+        node-version: 16
+
+    - name: Install dependencies
+      working-directory: actions/installer
+      shell: bash
+      run: npm ci
+
+    - name: Run build
+      working-directory: actions/installer
+      shell: bash
+      run: npm run build
+
+    - name: Run installer
+      env:
+        ACTION_REF: "${{ github.action_ref }}"
+        TOKEN: "${{ github.token }}"
+        REPOSITORY: "${{ github.repository }}"
+      working-directory: actions/installer/dist
+      shell: bash
+      run: nodejs index.js 
