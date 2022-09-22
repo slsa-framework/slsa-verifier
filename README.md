@@ -13,12 +13,12 @@ ________
 - [Option details](#option-details)
 
 [Verification for GitHub generators](#verification-for-github-generators)
-- [Artifacts](#gha-artifacts)
-- [Containers](#gha-containers)
+- [Artifacts](#artifacts)
+- [Containers](#containers)
 
 [Verification for Google Cloud Build](#verification-for-google-cloud-build)
-- [Artifacts](#gcb-artifacts)
-- [Containers](#gcb-containers)
+- [Artifacts](#artifacts-1)
+- [Containers](#containers-2)
 
 [Technical design](#technial-design)
 - [Blog posts](#blog-posts)
@@ -99,7 +99,7 @@ The following options are supported for [SLSA GitHub builders and generators](ht
 
 ## Verification for GitHub generators
 
-### Artifacts<a id='gha-artifacts'></a>
+### Artifacts
 
 To verify an artifact, run the following command:
 
@@ -116,15 +116,15 @@ PASSED: Verified SLSA provenance
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
 
 
-### Containers<a id='gha-containers'></a>
+### Containers
 This is WIP and currently not supported.
 
 ## Verification for Google Cloud Build
 
-### Artifacts<a id='gcb-artifacts'></a>
+### Artifacts
 This is WIP and currently not supported.
 
-### Containers<a id='gcb-containers'></a>
+### Containers
 To verify a contaimer image, run the following command:
 
 ```bash
