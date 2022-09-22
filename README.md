@@ -13,8 +13,8 @@ ________
 - [Option details](#option-details)
 
 [Verification for GitHub generators](#verification-for-github-generators)
-- [Artifacts](#artifacts)
-- [Containers](#containers)
+- [Artifacts](#gha-artifacts)
+- [Containers](#gha-containers)
 
 [Verification for Google Cloud Build](#verification-for-google-cloud-build)
 - [Artifacts](#artifacts)
@@ -99,7 +99,7 @@ The following options are supported for [SLSA GitHub builders and generators](ht
 
 ## Verification for GitHub generators
 
-### Artifacts
+### Artifacts<a id='gha-artifacts'></a>
 
 To verify an artifact, run the following command:
 
@@ -116,7 +116,7 @@ PASSED: Verified SLSA provenance
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
 
 
-### Containers
+### Containers<a id='gha-containers'></a>
 This is WIP and currently not supported.
 
 ## Verification for Google Cloud Build
