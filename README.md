@@ -18,7 +18,7 @@ ________
 
 [Verification for Google Cloud Build](#verification-for-google-cloud-build)
 - [Artifacts](#artifacts-1)
-- [Containers](#containers-2)
+- [Containers](#containers-1)
 
 [Technical design](#technial-design)
 - [Blog posts](#blog-posts)
