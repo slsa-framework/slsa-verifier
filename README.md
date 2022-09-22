@@ -86,6 +86,8 @@ Flags:
 
 #### Artifacts
 
+To verify an artifact, run the following command:
+
 ```bash
 $ slsa-verifier verify-artifact slsa-test-linux-amd64 \
   --provenance-path slsa-test-linux-amd64.intoto.jsonl \
@@ -100,14 +102,16 @@ The verified in-toto statement may be written to stdout with the `--print-proven
 
 
 #### Containers
-This is WIP.
+This is WIP and currently not supported.
 
 ### Google Cloud Build
 
 #### Artifacts
-This is WIP
+This is WIP and currently not supported.
 
 #### Containers
+To verify a contaimer image, run the following command:
+
 ```bash
 $ IMAGE=us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v39
 $ IMAGE=$(docker inspect --format='{{.RepoDigests}}' ${IMAGE} | cut -f1 -d ' ' | cut -d "[" -f2 | cut -d "]" -f1)
