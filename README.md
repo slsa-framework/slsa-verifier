@@ -82,7 +82,7 @@ Flags:
       --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
-### Example for GitHub generators
+### GitHub generators
 
 #### Artifacts
 
@@ -102,7 +102,7 @@ The verified in-toto statement may be written to stdout with the `--print-proven
 #### Containers
 This is WIP.
 
-### Example for Google Cloud Build
+### Google Cloud Build
 
 #### Artifacts
 This is WIP
