@@ -17,8 +17,8 @@ ________
 - [Containers](#gha-containers)
 
 [Verification for Google Cloud Build](#verification-for-google-cloud-build)
-- [Artifacts](#artifacts)
-- [Containers](#containers)
+- [Artifacts](#gcb-artifacts)
+- [Containers](#gcb-containers)
 
 [Technical design](#technial-design)
 - [Blog posts](#blog-posts)
@@ -121,10 +121,10 @@ This is WIP and currently not supported.
 
 ## Verification for Google Cloud Build
 
-### Artifacts
+### Artifacts<a id='gcb-artifacts'></a>
 This is WIP and currently not supported.
 
-### Containers
+### Containers<a id='gcb-containers'></a>
 To verify a contaimer image, run the following command:
 
 ```bash
