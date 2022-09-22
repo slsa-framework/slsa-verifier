@@ -85,7 +85,7 @@ Flags:
       --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
-### Options details
+### Option details
 
 The following options are supported for [SLSA GitHub builders and generators](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance):
 
