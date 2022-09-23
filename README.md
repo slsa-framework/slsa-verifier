@@ -90,7 +90,7 @@ Flags:
 
 The following options are supported for [SLSA GitHub builders and generators](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance):
 
-| Option | Description | GitHub
+| Option | Description | Support
 | --- | ----------- | --------
 | `source-uri` | Expects a source, for e.g. `github.com/org/repo`. | All builders
 | `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. | GitHub builders only
