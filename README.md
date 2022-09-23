@@ -12,7 +12,7 @@ ________
 - [Option list](#option-list)
 - [Option details](#option-details)
 
-[Verification for GitHub generators](#verification-for-github-generators)
+[Verification for GitHub builders](#verification-for-github-builders)
 - [Artifacts](#artifacts)
 - [Containers](#containers)
 
@@ -23,6 +23,7 @@ ________
 [Technical design](#technial-design)
 - [Blog posts](#blog-posts)
 - [Specifications](#specifications)
+- [TOCTOU attacks](#toctou-attacks)
 ________
 
 ## Installation
@@ -89,15 +90,15 @@ Flags:
 
 The following options are supported for [SLSA GitHub builders and generators](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance):
 
-| Option | Description |
-| --- | ----------- |
-| `source-uri` | Expects a source, for e.g. `github.com/org/repo`. |
-| `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. |
-| `source-tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. NSupported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. |
-| `source-versioned-tag` | Like `tag`, but verifies using semantic versioning. |
-| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for GitHub Actions `workflow_dispatch` triggers. |
+| Option | Description | GitHub
+| --- | ----------- | --------
+| `source-uri` | Expects a source, for e.g. `github.com/org/repo`. | All builders
+| `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. | GitHub builders only
+| `source-tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. Supported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. | GitHub builders only
+| `source-versioned-tag` | Like `tag`, but verifies using semantic versioning. | GitHub builders only
+| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for GitHub Actions `workflow_dispatch` triggers. | GitHub builders only
 
-## Verification for GitHub generators
+## Verification for GitHub builders
 
 ### Artifacts
 
@@ -125,12 +126,26 @@ This is WIP and currently not supported.
 This is WIP and currently not supported.
 
 ### Containers
-To verify a contaimer image, run the following command:
+To verify a contaimer image, you need to pass a container image name that is _immutable_ by providing its digest, in order to avoid [TOCTOU attacks](#toctou-attacks).
+
+Run the commands below:
 
 ```bash
-$ IMAGE=us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v39
-$ IMAGE=$(docker inspect --format='{{.RepoDigests}}' ${IMAGE} | cut -f1 -d ' ' | cut -d "[" -f2 | cut -d "]" -f1)
+$ IMAGE=laurentsimon/slsa-gcb-v0.3:test
+```
+
+Get the digest for your container _without_ pulling it using the [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md) command:
+```shell
+$ IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
+```
+
+Download the provenance:
+```shell
 $ gcloud artifacts docker images describe $IMAGE --format json --show-provenance > provenance.json
+```
+
+Verify the image:
+```bash
 $ slsa-verifier verify-image "$IMAGE" \
   --provenance-path provenance.json \
   --source-uri github.com/laurentsimon/gcb-tests \
@@ -148,3 +163,8 @@ Find our blog post series [here](https://security.googleblog.com/2022/04/improvi
 
 ### Specifications
 For a more in-depth technical dive, read the [SPECIFICATIONS.md](https://github.com/slsa-framework/slsa-github-generator/blob/main/SPECIFICATIONS.md).
+
+### TOCTOU attacks
+As explained on [Wikipedia](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use), a "time-of-check to time-of-use (TOCTOU) is a class of software bugs caused by a race condition involving the checking of the state of a part of a system and the use of the results of that check".
+
+In the context of provenance verification, imagine you verify a container refered to via a _mutable_ image `image:tag`. The verification succeeds and verifies the corresponding hash is `sha256:abcdef...`. After verification, you pull and run the image using `docker run image:tag`. An attacker could have altered the image between the verification step and the run step. To mitigate this attack, we ask users to always pass an _immutable_ reference to the artifact they verify.
