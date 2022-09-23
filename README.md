@@ -76,7 +76,7 @@ Usage:
 
 Flags:
       --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events). (default map[])
-      --builder-id string             EXPERIMENTAL: the unique builder ID who created the provenance
+      --builder-id string             the unique builder ID who created the provenance
   -h, --help                          help for verify-artifact
       --print-provenance              print the verified provenance to stdout
       --provenance-path string        path to a provenance file
