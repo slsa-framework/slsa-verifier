@@ -42,22 +42,14 @@ func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement,
 }
 
 // Verify Builder ID in provenance statement.
-func verifyBuilderID(prov *intoto.ProvenanceStatement, builderID string) error {
-	// Check that the BuilderID is well-formed.
-	provid, err := sourceFromURI(prov.Predicate.Builder.ID, false)
-	if err != nil {
-		return err
-	}
-	// Note: builderID does not contain the tag.
-	// TODO(#189): support cases where user wants to match on the full builderID, including the tag.
-	bid, err := sourceFromURI(builderID, true)
-	if err != nil {
-		return err
-	}
-	if provid != bid {
+// This function does an exact comparison, and expects certBuilderID to be the full
+// `name@refs/tags/<name>`.
+func verifyBuilderIDExactMatch(prov *intoto.ProvenanceStatement, certBuilderID string) error {
+	if certBuilderID != prov.Predicate.Builder.ID {
 		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
-			bid, provid)
+			certBuilderID, prov.Predicate.Builder.ID)
 	}
+
 	return nil
 }
 
@@ -193,7 +185,9 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	}
 
 	// Verify Builder ID.
-	if err := verifyBuilderID(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+	// Note: `provenanceOpts.ExpectedBuilderID` is not provided by the user,
+	// but taken from the certificate. It always is of the form `name@refs/tags/<name>`.
+	if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 		return err
 	}
 

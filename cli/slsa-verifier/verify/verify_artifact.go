@@ -39,7 +39,7 @@ type VerifyArtifactCommand struct {
 	PrintProvenance     bool
 }
 
-func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.BuilderID, error) {
+func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
 	artifactHash, err := getArtifactHash(artifacts[0])
 	if err != nil {
 		return nil, err

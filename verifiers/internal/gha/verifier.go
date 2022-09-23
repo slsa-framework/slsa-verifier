@@ -13,6 +13,7 @@ import (
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 
+	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
 	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
@@ -44,7 +45,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
@@ -61,7 +62,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	provenanceOpts.ExpectedBuilderID = builderID
+	provenanceOpts.ExpectedBuilderID = builderID.String()
 	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, nil, err
 	}
@@ -75,13 +76,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	// Temporary code.
-	// TODO: remove `SetName` and `SetVersion` function once GHA is supported,
-	// and use: bid, err := utils.BuilderIDNew(builderID)
-	bid := &utils.BuilderID{}
-	bid.SetName(builderID)
-	bid.SetVersion(strings.Split(workflowInfo.JobWobWorkflowRef, "@")[1])
-	return r, bid, nil
+	return r, builderID, nil
 }
 
 // VerifyArtifact verifies provenance for an artifact.
@@ -89,7 +84,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	rClient, err := rekor.NewClient(defaultRekorAddr)
 	if err != nil {
 		return nil, nil, err
@@ -111,7 +106,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.BuilderID, error) {
+) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
 	roots, err := fulcio.GetRoots()
 	if err != nil {
@@ -128,8 +123,8 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	}
 
 	/* Now verify properties of the attestations */
-	var verifyErr error
-	var builderID *utils.BuilderID
+	var errs []error
+	var builderID *utils.TrustedBuilderID
 	var verifiedProvenance []byte
 	for _, att := range atts {
 		pyld, err := att.Payload()
@@ -147,13 +142,22 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
 			continue
 		}
-		verifiedProvenance, builderID, verifyErr = verifyEnvAndCert(env,
+		verifiedProvenance, builderID, err = verifyEnvAndCert(env,
 			cert, provenanceOpts, builderOpts,
 			defaultContainerTrustedReusableWorkflows)
-		if verifyErr == nil {
+		if err == nil {
 			return verifiedProvenance, builderID, nil
 		}
+		errs = append(errs, err)
 	}
 
-	return nil, nil, fmt.Errorf("no valid attestations found on OCI registry: %w", verifyErr)
+	// Return the first error.
+	if len(errs) > 0 {
+		var s string
+		if len(errs) > 1 {
+			s = fmt.Sprintf(": %v", errs[1:])
+		}
+		return nil, nil, fmt.Errorf("%w%s", errs[0], s)
+	}
+	return nil, nil, fmt.Errorf("%w", serrors.ErrorNoValidSignature)
 }

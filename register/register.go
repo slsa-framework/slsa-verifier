@@ -20,14 +20,14 @@ type SLSAVerifier interface {
 		provenance []byte, artifactHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
-	) ([]byte, *utils.BuilderID, error)
+	) ([]byte, *utils.TrustedBuilderID, error)
 
 	// VerifyImage verifies a provenance for a supplied OCI image.
 	VerifyImage(ctx context.Context,
 		provenance []byte, artifactImage string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
-	) ([]byte, *utils.BuilderID, error)
+	) ([]byte, *utils.TrustedBuilderID, error)
 }
 
 func RegisterVerifier(name string, verifier SLSAVerifier) {

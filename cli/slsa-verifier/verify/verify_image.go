@@ -41,7 +41,7 @@ type VerifyImageCommand struct {
 	DigestFn            ComputeDigestFn
 }
 
-func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*utils.BuilderID, error) {
+func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
 	artifactImage := artifacts[0]
 	// Retrieve the image digest.
 	if c.DigestFn == nil {

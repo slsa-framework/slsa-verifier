@@ -68,8 +68,10 @@ func getBuildersAndVersions(t *testing.T,
 	return res
 }
 
-func Test_runVerifyArtifactPath(t *testing.T) {
+func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	t.Parallel()
+	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
+	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
 	tests := []struct {
 		name         string
 		artifact     string
@@ -77,7 +79,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 		pbranch      *string
 		ptag         *string
 		pversiontag  *string
-		pbuilderID   *string
+		pBuilderID   *string
 		outBuilderID string
 		inputs       map[string]string
 		err          error
@@ -100,7 +102,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			name:       "valid main branch default - invalid builderID",
 			artifact:   "binary-linux-amd64-workflow_dispatch",
 			source:     "github.com/slsa-framework/example-package",
-			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
 			err:        serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
@@ -380,7 +382,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			source:       "github.com/slsa-framework/example-package",
 			minversion:   "v1.2.0",
 			builders:     []string{"gha_generic"},
-			pbuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
+			pBuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
 			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
 		},
 		// Special case of the e2e test repository building builder from head.
@@ -390,6 +392,7 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 			source:       "github.com/slsa-framework/example-package",
 			pbranch:      pString("main"),
 			noversion:    true,
+			pBuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"),
 			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml",
 		},
 		// Malicious builders and workflows.
@@ -469,11 +472,12 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 		},
 		// Regression test of sharded UUID.
 		{
-			name:      "regression: sharded uuids",
-			artifact:  "binary-linux-amd64-sharded",
-			source:    "github.com/slsa-framework/slsa-verifier",
-			pbranch:   pString("release/v1.0"),
-			noversion: true,
+			name:       "regression: sharded uuids",
+			artifact:   "binary-linux-amd64-sharded",
+			source:     "github.com/slsa-framework/slsa-verifier",
+			pbranch:    pString("release/v1.0"),
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"),
+			noversion:  true,
 		},
 	}
 	for _, tt := range tests {
@@ -491,34 +495,87 @@ func Test_runVerifyArtifactPath(t *testing.T) {
 				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 
-				cmd := verify.VerifyArtifactCommand{
-					ProvenancePath:      provenancePath,
-					SourceURI:           tt.source,
-					SourceBranch:        tt.pbranch,
-					BuilderID:           tt.pbuilderID,
-					SourceTag:           tt.ptag,
-					SourceVersionTag:    tt.pversiontag,
-					BuildWorkflowInputs: tt.inputs,
+				// TODO(#258): invalid builder ref.
+				sv := path.Base(v)
+				// For each test, we run 4 sub-tests:
+				// 	1. With the the full builderID including the semver in short form.
+				//	2. With the the full builderID including the semver in long form.
+				//	3. With only the name of the builder.
+				//	4. With no builder ID.
+				var builder string
+				// Select the right builder based on directory structure.
+				parts := strings.Split(v, "/")
+				name := parts[0]
+				version := ""
+				if len(parts) > 1 {
+					version = parts[1]
+				}
+				switch {
+				case strings.HasSuffix(name, "_go"):
+					builder = goBuilder
+				case strings.HasSuffix(name, "_generic"):
+					builder = genericBuilder
+				default:
+					builder = genericBuilder
 				}
 
-				outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
-
-				if !errCmp(err, tt.err) {
-					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				// Default builders to test.
+				builderIDs := []*string{
+					pString(builder),
+					nil,
 				}
 
-				if err != nil {
-					return
+				// We only add the tags to tests for versions >= 1,
+				// because we generated them with a builder at `@main`
+				// before GA. Add the tests for tag verification.
+				if version != "" && semver.Compare(version, "v1.0.0") > 0 {
+					builderIDs = append(builderIDs, []*string{
+						pString(builder + "@" + sv),
+						pString(builder + "@refs/tags/" + sv),
+					}...)
 				}
 
-				// Validate against test's expected builderID, if provided.
-				if tt.outBuilderID != "" {
-					if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
-						t.Errorf(fmt.Sprintf("matches failed: %v", err))
+				// If builder ID is set, use it.
+				if tt.pBuilderID != nil {
+					builderIDs = []*string{tt.pBuilderID}
+				}
+
+				for _, bid := range builderIDs {
+					cmd := verify.VerifyArtifactCommand{
+						ProvenancePath:      provenancePath,
+						SourceURI:           tt.source,
+						SourceBranch:        tt.pbranch,
+						BuilderID:           bid,
+						SourceTag:           tt.ptag,
+						SourceVersionTag:    tt.pversiontag,
+						BuildWorkflowInputs: tt.inputs,
+					}
+
+					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
+					if !errCmp(err, tt.err) {
+						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+					}
+
+					if err != nil {
+						return
+					}
+
+					// Validate against test's expected builderID, if provided.
+					if tt.outBuilderID != "" {
+						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+							t.Errorf(fmt.Sprintf("matches failed (1): %v", err))
+						}
+					}
+
+					if bid == nil {
+						return
+					}
+
+					// Validate against builderID we generated automatically.
+					if err := outBuilderID.Matches(*bid, false); err != nil {
+						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 				}
-
-				// TODO: verify using Matches().
 			}
 		})
 	}
@@ -571,6 +628,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		return strings.TrimPrefix(h.String(), "sha256:"), nil
 	}
 
+	builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml"
 	tests := []struct {
 		name         string
 		artifact     string
@@ -578,7 +636,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		pbranch      *string
 		ptag         *string
 		pversiontag  *string
-		pbuilderID   *string
+		pBuilderID   *string
 		outBuilderID string
 		err          error
 		// noversion is a special case where we are not testing all builder versions
@@ -587,65 +645,64 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		// When true, this does not iterate over all builder versions.
 		noversion bool
 	}{
-		{
-			name:     "valid main branch default",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-		},
-		{
-			name:       "valid main branch default - invalid builderID",
-			artifact:   "container_workflow_dispatch",
-			source:     "github.com/slsa-framework/example-package",
-			pbuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
-			err:        serrors.ErrorUntrustedReusableWorkflow,
-		},
+		// {
+		// 	name:     "valid main branch default",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "github.com/slsa-framework/example-package",
+		// },
+		// {
+		// 	name:       "valid main branch default - invalid builderID",
+		// 	artifact:   "container_workflow_dispatch",
+		// 	source:     "github.com/slsa-framework/example-package",
+		// 	pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
+		// 	err:        serrors.ErrorUntrustedReusableWorkflow,
+		// },
+		// {
+		// 	name:     "valid main branch set",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "github.com/slsa-framework/example-package",
+		// 	pbranch:  pString("main"),
+		// },
 
-		{
-			name:     "valid main branch set",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-			pbranch:  pString("main"),
-		},
-
-		{
-			name:     "wrong branch master",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-			pbranch:  pString("master"),
-			err:      serrors.ErrorMismatchBranch,
-		},
-		{
-			name:     "wrong source append A",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-packageA",
-			err:      serrors.ErrorMismatchSource,
-		},
-		{
-			name:     "wrong source prepend A",
-			artifact: "container_workflow_dispatch",
-			source:   "Agithub.com/slsa-framework/example-package",
-			err:      serrors.ErrorMismatchSource,
-		},
-		{
-			name:     "wrong source middle A",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/Aslsa-framework/example-package",
-			err:      serrors.ErrorMismatchSource,
-		},
-		{
-			name:     "tag no match empty tag workflow_dispatch",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-			ptag:     pString("v1.2.3"),
-			err:      serrors.ErrorMismatchTag,
-		},
-		{
-			name:        "versioned tag no match empty tag workflow_dispatch",
-			artifact:    "container_workflow_dispatch",
-			source:      "github.com/slsa-framework/example-package",
-			pversiontag: pString("v1"),
-			err:         serrors.ErrorInvalidSemver,
-		},
+		// {
+		// 	name:     "wrong branch master",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "github.com/slsa-framework/example-package",
+		// 	pbranch:  pString("master"),
+		// 	err:      serrors.ErrorMismatchBranch,
+		// },
+		// {
+		// 	name:     "wrong source append A",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "github.com/slsa-framework/example-packageA",
+		// 	err:      serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:     "wrong source prepend A",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "Agithub.com/slsa-framework/example-package",
+		// 	err:      serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:     "wrong source middle A",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "github.com/Aslsa-framework/example-package",
+		// 	err:      serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:     "tag no match empty tag workflow_dispatch",
+		// 	artifact: "container_workflow_dispatch",
+		// 	source:   "github.com/slsa-framework/example-package",
+		// 	ptag:     pString("v1.2.3"),
+		// 	err:      serrors.ErrorMismatchTag,
+		// },
+		// {
+		// 	name:        "versioned tag no match empty tag workflow_dispatch",
+		// 	artifact:    "container_workflow_dispatch",
+		// 	source:      "github.com/slsa-framework/example-package",
+		// 	pversiontag: pString("v1"),
+		// 	err:         serrors.ErrorInvalidSemver,
+		// },
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -659,34 +716,60 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 
 			for _, v := range checkVersions {
 				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
-
-				cmd := verify.VerifyImageCommand{
-					SourceURI:        tt.source,
-					SourceBranch:     tt.pbranch,
-					BuilderID:        tt.pbuilderID,
-					SourceTag:        tt.ptag,
-					SourceVersionTag: tt.pversiontag,
-					DigestFn:         localDigestComputeFn,
+				// TODO(#258): test for tagged builder.
+				sv := path.Base(v)
+				// For each test, we run 2 sub-tests:
+				//	1. With the the full builderID including the semver in short form.
+				//	2. With the the full builderID including the semver in long form.
+				//	3. With only the name of the builder.
+				//	4. With no builder ID.
+				builderIDs := []*string{
+					pString(builder + "@" + sv),
+					pString(builder + "@refs/tags/" + sv),
+					pString(builder),
+					nil,
 				}
 
-				outBuilderID, err := cmd.Exec(context.Background(), []string{image})
-
-				if !errCmp(err, tt.err) {
-					t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				// If builder ID is set, use it.
+				if tt.pBuilderID != nil {
+					builderIDs = []*string{tt.pBuilderID}
 				}
 
-				if err != nil {
-					return
-				}
+				for _, bid := range builderIDs {
+					cmd := verify.VerifyImageCommand{
+						SourceURI:        tt.source,
+						SourceBranch:     tt.pbranch,
+						BuilderID:        bid,
+						SourceTag:        tt.ptag,
+						SourceVersionTag: tt.pversiontag,
+						DigestFn:         localDigestComputeFn,
+					}
 
-				// Validate against test's expected builderID, if provided.
-				if tt.outBuilderID != "" {
-					if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+					outBuilderID, err := cmd.Exec(context.Background(), []string{image})
+					if !errCmp(err, tt.err) {
+						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+					}
+
+					if err != nil {
+						return
+					}
+
+					// Validate against test's expected builderID, if provided.
+					if tt.outBuilderID != "" {
+						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+							t.Errorf(fmt.Sprintf("matches failed: %v", err))
+						}
+					}
+
+					if bid == nil {
+						return
+					}
+					// Validate against builderID we generated automatically.
+					if err := outBuilderID.Matches(*bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
 
-				// TODO: verify using Matches().
 			}
 		})
 	}
@@ -900,9 +983,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 				// If builder ID is set, use it.
 				if tt.pBuilderID != nil {
-					// if !tt.noversion {
-					// 	panic("builderID set but not noversion option")
-					// }
 					builderIDs = []string{*tt.pBuilderID}
 				}
 
@@ -950,13 +1030,13 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 					// Validate against test's expected builderID, if provided.
 					if tt.outBuilderID != "" {
-						if err := outBuilderID.Matches(tt.outBuilderID); err != nil {
+						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed: %v", err))
 						}
 					}
 
 					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(bid); err != nil {
+					if err := outBuilderID.Matches(bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}

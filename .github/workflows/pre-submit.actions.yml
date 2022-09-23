@@ -1,0 +1,43 @@
+name: Actions pre submits
+on: [pull_request, workflow_dispatch]
+
+permissions: read-all
+
+jobs:
+  action-presubmit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        working-directory: actions/installer
+        run: npm ci
+
+      - name: Run build and tests
+        working-directory: actions/installer
+        run: npm run all
+
+      - name: Compare the expected and actual dist/ directories
+        working-directory: actions/installer
+        id: diff
+        run: |
+          set -euo pipefail
+          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build.  See status below:"
+            git diff
+            exit 1
+          fi
+
+      # If there are uncommited changes in dist/, upload the directory
+      - name: Upload dist/
+        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        with:
+          name: dist
+          path: dist/
