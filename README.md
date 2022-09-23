@@ -88,15 +88,15 @@ Flags:
 
 ### Option details
 
-The following options are supported for [SLSA GitHub builders and generators](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance):
+The following options are available:
 
 | Option | Description | Support
 | --- | ----------- | --------
 | `source-uri` | Expects a source, for e.g. `github.com/org/repo`. | All builders
-| `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. | GitHub builders only
-| `source-tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. Supported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. | GitHub builders only
-| `source-versioned-tag` | Like `tag`, but verifies using semantic versioning. | GitHub builders only
-| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for GitHub Actions `workflow_dispatch` triggers. | GitHub builders only
+| `source-branch` | Expects a `branch` like `main` or `dev`. Not supported for all GitHub Workflow triggers. | [GitHub builders](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance)
+| `source-tag` | Expects a  `tag` like `v0.0.1`. Verifies exact tag used to create the binary. Supported for new [tag](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.tag.main.config-ldflags-assets-tag.slsa3.yml#L5) and [release](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.go.release.main.config-ldflags-assets-tag.slsa3.yml) triggers. | [GitHub builders](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance)
+| `source-versioned-tag` | Like `tag`, but verifies using semantic versioning. | [GitHub builders](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance)
+| `build-workflow-input` | Expects key-value pairs like `key=value` to match against [inputs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs) for GitHub Actions `workflow_dispatch` triggers. | [GitHub builders](https://github.com/slsa-framework/slsa-github-generator#generation-of-provenance)
 
 ## Verification for GitHub builders
 
