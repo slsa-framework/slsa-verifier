@@ -57,9 +57,6 @@ func verifyArtifactCmd() *cobra.Command {
 				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
-				if !ExperimentalEnabled() {
-					return fmt.Errorf("builder-id only supported with experimental flag")
-				}
 				v.BuilderID = &o.BuilderID
 			}
 
@@ -109,9 +106,6 @@ func verifyImageCmd() *cobra.Command {
 				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
-				if !ExperimentalEnabled() {
-					return fmt.Errorf("builder-id only supported with experimental flag")
-				}
 				v.BuilderID = &o.BuilderID
 			}
 
