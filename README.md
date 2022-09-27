@@ -134,14 +134,14 @@ Run the commands below:
 $ IMAGE=laurentsimon/slsa-gcb-v0.3:test
 ```
 
-Get the digest for your container _without_ pulling it using the [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md) command:
-```shell
-$ IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
-```
-
 Download the provenance:
 ```shell
 $ gcloud artifacts docker images describe $IMAGE --format json --show-provenance > provenance.json
+```
+
+Get the digest for your container _without_ pulling it using the [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md) command:
+```shell
+$ IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
 ```
 
 Verify the image:
