@@ -470,15 +470,6 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			err:       serrors.ErrorMismatchWorkflowInputs,
 			noversion: true,
 		},
-		// Regression test of sharded UUID.
-		{
-			name:       "regression: sharded uuids",
-			artifact:   "binary-linux-amd64-sharded",
-			source:     "github.com/slsa-framework/slsa-verifier",
-			pbranch:    pString("release/v1.0"),
-			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"),
-			noversion:  true,
-		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below

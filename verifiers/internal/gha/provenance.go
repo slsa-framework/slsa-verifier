@@ -1,20 +1,26 @@
 package gha
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/mod/semver"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
+	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/generated/client"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/sigstore/sigstore/pkg/signature/dsse"
 
+	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 )
@@ -151,31 +157,50 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
 func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, provenance []byte, artifactHash string) (*dsselib.Envelope, *x509.Certificate, error) {
-	// Get Rekor entries corresponding to provenance
-	env, cert, err := GetRekorEntriesWithCert(rClient, provenance)
-	if err == nil {
-		return env, cert, nil
+	// 1. Get the certificate from the provenance
+	certPem, err := envelope.GetCertFromEnvelope(provenance)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error getting certificate from provenance: %w", err)
 	}
-
-	// Fallback on using the redis search index to get matching UUIDs.
-	fmt.Fprintf(os.Stderr, "Getting rekor entry error %s, trying Redis search index to find entries by subject digest\n", err)
-	uuids, err := GetRekorEntries(rClient, artifactHash)
+	certs, err := cryptoutils.UnmarshalCertificatesFromPEM(certPem)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	env, err = EnvelopeFromBytes(provenance)
+	if len(certs) != 1 {
+		return nil, nil, fmt.Errorf("error unmarshaling certificate from pem")
+	}
+	// 2. Validate the certificates chain and issuer.
+	roots, err := fulcio.GetRoots()
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: retrieving fulcio root", err)
+	}
+	co := &cosign.CheckOpts{
+		RootCerts:      roots,
+		CertOidcIssuer: certOidcIssuer,
+	}
+	verifier, err := cosign.ValidateAndUnpackCert(certs[0], co)
+	if err != nil {
+		return nil, nil, fmt.Errorf("validating cert: %s", err)
+	}
+	// 3. Validate the signature
+	verifier = dsse.WrapVerifier(verifier)
+	if err := verifier.VerifySignature(bytes.NewReader(provenance), bytes.NewReader(provenance)); err != nil {
+		return nil, nil, fmt.Errorf("validating signature: %s", err)
+	}
+	// 4. Get Rekor entry.
+	entry, err := GetRekorEntriesWithCert(rClient, provenance)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting rekor entries: %w", serrors.ErrorNoValidRekorEntries)
+	}
+	it := time.Unix(*entry.IntegratedTime, 0)
+	if err := cosign.CheckExpiry(certs[0], it); err != nil {
+		return nil, nil, fmt.Errorf("validating signature timestamp: %s", err)
+	}
+	env, err := EnvelopeFromBytes(provenance)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// Verify the provenance and return the signing certificate.
-	cert, err = FindSigningCertificate(ctx, uuids, *env, rClient)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return env, cert, nil
+	return env, certs[0], nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
