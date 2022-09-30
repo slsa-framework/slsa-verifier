@@ -36,6 +36,7 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/client/index"
 	"github.com/sigstore/rekor/pkg/generated/client/tlog"
 	"github.com/sigstore/rekor/pkg/generated/models"
+	"github.com/sigstore/rekor/pkg/sharding"
 	"github.com/sigstore/rekor/pkg/types"
 	intotod "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
 	"github.com/sigstore/rekor/pkg/util"
@@ -188,7 +189,10 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, artifactHash string, provena
 	return env, certs[0], nil
 }
 
-func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
+func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
+	treeID int64,
+	proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
+	treeIDString := fmt.Sprintf("%d", treeID)
 	infoParams := tlog.NewGetLogInfoParamsWithContext(ctx)
 	result, err := rekorClient.Tlog.GetLogInfo(infoParams)
 	if err != nil {
@@ -200,6 +204,13 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor, proof *model
 	sth := util.SignedCheckpoint{}
 	if err := sth.UnmarshalText([]byte(*logInfo.SignedTreeHead)); err != nil {
 		return err
+	}
+	for _, inactiveShard := range logInfo.InactiveShards {
+		if *inactiveShard.TreeID == treeIDString {
+			if err := sth.UnmarshalText([]byte(*inactiveShard.SignedTreeHead)); err != nil {
+				return err
+			}
+		}
 	}
 
 	verifier, err := signature.LoadVerifier(pub, crypto.SHA256)
@@ -263,9 +274,18 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, uuid 
 	return verifyTlogEntry(ctx, rekorClient, params.EntryUUID, e)
 }
 
-func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string, e models.LogEntryAnon) (*models.LogEntryAnon, error) {
+func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, entryUUID string, e models.LogEntryAnon) (*models.LogEntryAnon, error) {
 	if e.Verification == nil || e.Verification.InclusionProof == nil {
 		return nil, errors.New("inclusion proof not provided")
+	}
+
+	uuid, err := sharding.GetUUIDFromIDString(entryUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: retrieving uuid from entry uuid", err)
+	}
+	treeID, err := sharding.TreeID(entryUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: retrieving tree ID", err)
 	}
 
 	hashes := [][]byte{}
@@ -295,7 +315,8 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, uuid string
 	var entryVerError error
 	for _, pubKey := range pubs {
 		// Verify inclusion against the signed tree head
-		entryVerError = verifyRootHash(ctx, rekorClient, e.Verification.InclusionProof, pubKey.PubKey)
+		entryVerError = verifyRootHash(ctx, rekorClient, treeID,
+			e.Verification.InclusionProof, pubKey.PubKey)
 		if entryVerError == nil {
 			break
 		}
