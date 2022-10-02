@@ -308,7 +308,7 @@ func Test_runVerify(t *testing.T) {
 			name:      "rekor upload bypassed",
 			artifact:  "binary-linux-amd64-no-tlog-upload",
 			source:    "github.com/slsa-framework/example-package",
-			err:       pkg.ErrorRekorSearch,
+			err:       pkg.ErrorNoValidRekorEntries,
 			noversion: true,
 		},
 		{
