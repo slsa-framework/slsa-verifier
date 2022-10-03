@@ -19,12 +19,12 @@ import (
 
 	cjson "github.com/docker/go/canonical/json"
 	"github.com/go-openapi/runtime"
-	"github.com/google/trillian/merkle/logverifier"
-	"github.com/google/trillian/merkle/rfc6962"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/dsse"
+	merkleproof "github.com/transparency-dev/merkle/proof"
+	"github.com/transparency-dev/merkle/rfc6962"
 
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/pkg/cosign"
@@ -175,8 +175,10 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
 			}
 			hashes = append(hashes, b)
 		}
-		v := logverifier.New(rfc6962.DefaultHasher)
-		if err := v.VerifyConsistencyProof(*proof.TreeSize, int64(sth.Size), rootHash, sth.Hash, hashes); err != nil {
+		if err := merkleproof.VerifyConsistency(rfc6962.DefaultHasher,
+			uint64(*proof.TreeSize), sth.Size,
+			hashes,
+			rootHash, sth.Hash); err != nil {
 			return err
 		}
 	} else if *proof.TreeSize > int64(sth.Size) {
@@ -204,7 +206,9 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, entryUUID s
 	}
 
 	var e models.LogEntryAnon
+	var returnEntryUUID string
 	for k, entry := range lep.Payload {
+		returnEntryUUID = k
 		returnedUUID, err := sharding.GetUUIDFromIDString(k)
 		if err != nil {
 			return nil, fmt.Errorf("%w: retrieving uuid from entry uuid", err)
@@ -237,13 +241,13 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, entryUUID s
 	}
 
 	// Verify the root hash against the current Signed Entry Tree Head
-	pubs, err := cosign.GetRekorPubs(ctx)
+	pubs, err := cosign.GetRekorPubs(ctx, rekorClient)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", err, "unable to fetch Rekor public keys from TUF repository")
 	}
 
 	var entryVerError error
-	treeID, err := sharding.TreeID(entryUUID)
+	treeID, err := sharding.TreeID(returnEntryUUID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: retrieving tree ID", err)
 	}
@@ -260,8 +264,10 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, entryUUID s
 	}
 
 	// Verify the entry's inclusion
-	v := logverifier.New(rfc6962.DefaultHasher)
-	if err := v.VerifyInclusionProof(*e.Verification.InclusionProof.LogIndex, *e.Verification.InclusionProof.TreeSize, hashes, rootHash, leafHash); err != nil {
+	if err := merkleproof.VerifyInclusion(rfc6962.DefaultHasher,
+		uint64(*e.Verification.InclusionProof.LogIndex),
+		uint64(*e.Verification.InclusionProof.TreeSize),
+		leafHash, hashes, rootHash); err != nil {
 		return nil, fmt.Errorf("%w: %s", err, "verifying inclusion proof")
 	}
 
@@ -296,7 +302,7 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 		return nil, err
 	}
 
-	eimpl, err := types.NewEntry(pe)
+	eimpl, err := types.UnmarshalEntry(pe)
 	if err != nil {
 		return nil, err
 	}
@@ -365,6 +371,20 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 	//   * Verify dsse envelope signature against signing certificate.
 	//   * Check signature expiration against IntegratedTime in entry.
 	//   * If all succeed, return the signing certificate.
+	roots, err := fulcio.GetRoots()
+	if err != nil {
+		return nil, err
+	}
+	intermediates, err := fulcio.GetIntermediates()
+	if err != nil {
+		return nil, err
+	}
+
+	co := &cosign.CheckOpts{
+		RootCerts:         roots,
+		IntermediateCerts: intermediates,
+		CertOidcIssuer:    certOidcIssuer,
+	}
 	for _, uuid := range uuids {
 		entry, err := verifyTlogEntry(ctx, rClient, uuid)
 		if err != nil {
@@ -373,12 +393,6 @@ func FindSigningCertificate(ctx context.Context, uuids []string, dssePayload dss
 		cert, err := extractCert(entry)
 		if err != nil {
 			continue
-		}
-
-		co := &cosign.CheckOpts{
-			RootCerts:         fulcio.GetRoots(),
-			IntermediateCerts: fulcio.GetIntermediates(),
-			CertOidcIssuer:    certOidcIssuer,
 		}
 		verifier, err := cosign.ValidateAndUnpackCert(cert, co)
 		if err != nil {

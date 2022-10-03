@@ -24,7 +24,7 @@ func pString(s string) *string {
 var generatorVersions = []string{"v0.0.2", "v1.0.0"}
 
 func Test_runVerify(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	tests := []struct {
 		name        string
 		artifact    string
@@ -308,7 +308,7 @@ func Test_runVerify(t *testing.T) {
 			name:      "rekor upload bypassed",
 			artifact:  "binary-linux-amd64-no-tlog-upload",
 			source:    "github.com/slsa-framework/example-package",
-			err:       pkg.ErrorNoValidRekorEntries,
+			err:       pkg.ErrorRekorSearch,
 			noversion: true,
 		},
 		{
