@@ -1,27 +1,26 @@
 name: Actions pre submits
-on: [pull_request, workflow_dispatch]
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions: read-all
 
 jobs:
-  action-presubmit:
+  check-dist:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
-      - name: Setup Node.js 16
+      - name: Set Node.js 16
         uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version: 16
 
-      - name: Install dependencies
+      - name: Rebuild the dist/ directory
         working-directory: actions/installer
-        run: npm ci
-
-      - name: Run build and tests
-        working-directory: actions/installer
-        run: npm run all
+        run: make package
 
       - name: Compare the expected and actual dist/ directories
         working-directory: actions/installer
@@ -34,10 +33,9 @@ jobs:
             exit 1
           fi
 
-      # If there are uncommited changes in dist/, upload the directory
-      - name: Upload dist/
+      # If index.js was different from expected, upload the expected version as an artifact
+      - uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8
         if: ${{ failure() && steps.diff.conclusion == 'failure' }}
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
         with:
           name: dist
           path: dist/
