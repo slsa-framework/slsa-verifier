@@ -119,7 +119,6 @@ func GetRekorEntries(rClient *client.Rekor, artifactHash string) ([]string, erro
 func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
 	treeID int64,
 	proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
-	treeIDString := fmt.Sprintf("%d", treeID)
 	infoParams := tlog.NewGetLogInfoParamsWithContext(ctx)
 	result, err := rekorClient.Tlog.GetLogInfo(infoParams)
 	if err != nil {
@@ -132,6 +131,7 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
 	if err := sth.UnmarshalText([]byte(*logInfo.SignedTreeHead)); err != nil {
 		return err
 	}
+	treeIDString := fmt.Sprintf("%d", treeID)
 	for _, inactiveShard := range logInfo.InactiveShards {
 		if *inactiveShard.TreeID == treeIDString {
 			if err := sth.UnmarshalText([]byte(*inactiveShard.SignedTreeHead)); err != nil {
