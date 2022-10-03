@@ -10,6 +10,9 @@ edd1d430429fa3dfaf249d7ec805891a4b7332ea1d17d23f9d20bc6f4aeebe04 slsa-verifier-l
 ### [v1.2.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.2.0)
 37db23392c7918bb4e243cdb097ed5f9d14b9b965dc1905b25bc2d1c0c91bf3d slsa-verifier-linux-amd64
 
+### [v1.1.2](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.2)
+2c9225603186f227d01c12bf8b8815f42eb3d4e2a2de7945dd65e704de254d74 slsa-verifier-linux-amd64
+
 ### [v1.1.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.1.1)
 f92fc4e571949c796d7709bb3f0814a733124b0155e484fad095b5ca68b4cb21 slsa-verifier-linux-amd64
 
