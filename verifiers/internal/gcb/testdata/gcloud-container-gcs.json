@@ -1,0 +1,117 @@
+{
+  "image_summary": {
+    "digest": "sha256:9dcfacc497b61c4d2ff5708e644c060726781fae514dc8ba71c49dced675bcbe",
+    "fully_qualified_digest": "us-central1-docker.pkg.dev/damith-sds/containers/java-guestbook-backend@sha256:9dcfacc497b61c4d2ff5708e644c060726781fae514dc8ba71c49dced675bcbe",
+    "registry": "us-central1-docker.pkg.dev",
+    "repository": "containers"
+  },
+  "provenance_summary": {
+    "provenance": [
+      {
+        "build": {
+          "intotoStatement": {
+            "_type": "https://in-toto.io/Statement/v0.1",
+            "predicateType": "https://slsa.dev/provenance/v0.1",
+            "slsaProvenance": {
+              "builder": {
+                "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3"
+              },
+              "materials": [
+                {
+                  "digest": {
+                    "md5": "6e9c2c03099262d534519d106fe04b08"
+                  },
+                  "uri": "gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729"
+                }
+              ],
+              "metadata": {
+                "buildFinishedOn": "2022-10-07T17:57:16.595464Z",
+                "buildInvocationId": "565456b1-0394-4c71-8c18-79f9057483df",
+                "buildStartedOn": "2022-10-07T17:56:01.814040892Z"
+              },
+              "recipe": {
+                "arguments": {
+                  "@type": "type.googleapis.com/google.devtools.cloudbuild.v1.Build",
+                  "id": "565456b1-0394-4c71-8c18-79f9057483df",
+                  "name": "projects/171719165453/locations/us-central1/builds/565456b1-0394-4c71-8c18-79f9057483df",
+                  "options": {
+                    "dynamicSubstitutions": true,
+                    "logging": "LEGACY",
+                    "pool": {},
+                    "requestedVerifyOption": "VERIFIED"
+                  },
+                  "sourceProvenance": {
+                    "fileHashes": {
+                      "gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729": {
+                        "fileHash": [
+                          {
+                            "type": "MD5",
+                            "value": "bpwsAwmSYtU0UZ0Qb+BLCA=="
+                          }
+                        ]
+                      }
+                    },
+                    "resolvedStorageSource": {
+                      "bucket": "damith-sds_cloudbuild",
+                      "generation": "1665165361152729",
+                      "object": "source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz"
+                    }
+                  },
+                  "steps": [
+                    {
+                      "args": [
+                        "-c",
+                        "docker build -t us-central1-docker.pkg.dev/damith-sds/containers/java-guestbook-backend:quickstart .\ndocker push us-central1-docker.pkg.dev/damith-sds/containers/java-guestbook-backend:quickstart\n"
+                      ],
+                      "entrypoint": "/bin/bash",
+                      "id": "Build and Push Container Image: Backend",
+                      "name": "gcr.io/cloud-builders/docker",
+                      "pullTiming": {
+                        "endTime": "2022-10-07T17:56:08.614390837Z",
+                        "startTime": "2022-10-07T17:56:08.610302991Z"
+                      },
+                      "status": "SUCCESS",
+                      "timing": {
+                        "endTime": "2022-10-07T17:57:15.136042514Z",
+                        "startTime": "2022-10-07T17:56:08.610302991Z"
+                      }
+                    }
+                  ],
+                  "substitutions": {
+                    "_BACKEND_IMAGE": "us-central1-docker.pkg.dev/damith-sds/containers/java-guestbook-backend:quickstart"
+                  }
+                },
+                "definedInMaterial": "-1",
+                "type": "https://cloudbuild.googleapis.com/CloudBuildSteps@v0.1"
+              }
+            },
+            "subject": [
+              {
+                "digest": {
+                  "sha256": "9dcfacc497b61c4d2ff5708e644c060726781fae514dc8ba71c49dced675bcbe"
+                },
+                "name": "https://us-central1-docker.pkg.dev/damith-sds/containers/java-guestbook-backend:quickstart"
+              }
+            ]
+          }
+        },
+        "createTime": "2022-10-07T17:57:17.438466Z",
+        "envelope": {
+          "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZSI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0dvb2dsZUhvc3RlZFdvcmtlckB2MC4zIn0sIm1hdGVyaWFscyI6W3siZGlnZXN0Ijp7Im1kNSI6IjZlOWMyYzAzMDk5MjYyZDUzNDUxOWQxMDZmZTA0YjA4In0sInVyaSI6ImdzOi8vZGFtaXRoLXNkc19jbG91ZGJ1aWxkL3NvdXJjZS8xNjY1MTY1MzYwLjI3OTc3Ny05NTVkMTkwNDc0MWU0YmJlYjM0NjEwODAyOTllOTI5YS50Z3ojMTY2NTE2NTM2MTE1MjcyOSJ9XSwibWV0YWRhdGEiOnsiYnVpbGRGaW5pc2hlZE9uIjoiMjAyMi0xMC0wN1QxNzo1NzoxNi41OTU0NjRaIiwiYnVpbGRJbnZvY2F0aW9uSWQiOiI1NjU0NTZiMS0wMzk0LTRjNzEtOGMxOC03OWY5MDU3NDgzZGYiLCJidWlsZFN0YXJ0ZWRPbiI6IjIwMjItMTAtMDdUMTc6NTY6MDEuODE0MDQwODkyWiJ9LCJyZWNpcGUiOnsiYXJndW1lbnRzIjp7IkB0eXBlIjoidHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuZGV2dG9vbHMuY2xvdWRidWlsZC52MS5CdWlsZCIsImlkIjoiNTY1NDU2YjEtMDM5NC00YzcxLThjMTgtNzlmOTA1NzQ4M2RmIiwibmFtZSI6InByb2plY3RzLzE3MTcxOTE2NTQ1My9sb2NhdGlvbnMvdXMtY2VudHJhbDEvYnVpbGRzLzU2NTQ1NmIxLTAzOTQtNGM3MS04YzE4LTc5ZjkwNTc0ODNkZiIsIm9wdGlvbnMiOnsiZHluYW1pY1N1YnN0aXR1dGlvbnMiOnRydWUsImxvZ2dpbmciOiJMRUdBQ1kiLCJwb29sIjp7fSwicmVxdWVzdGVkVmVyaWZ5T3B0aW9uIjoiVkVSSUZJRUQifSwic291cmNlUHJvdmVuYW5jZSI6eyJmaWxlSGFzaGVzIjp7ImdzOi8vZGFtaXRoLXNkc19jbG91ZGJ1aWxkL3NvdXJjZS8xNjY1MTY1MzYwLjI3OTc3Ny05NTVkMTkwNDc0MWU0YmJlYjM0NjEwODAyOTllOTI5YS50Z3ojMTY2NTE2NTM2MTE1MjcyOSI6eyJmaWxlSGFzaCI6W3sidHlwZSI6Ik1ENSIsInZhbHVlIjoiYnB3c0F3bVNZdFUwVVowUWIrQkxDQT09In1dfX0sInJlc29sdmVkU3RvcmFnZVNvdXJjZSI6eyJidWNrZXQiOiJkYW1pdGgtc2RzX2Nsb3VkYnVpbGQiLCJnZW5lcmF0aW9uIjoiMTY2NTE2NTM2MTE1MjcyOSIsIm9iamVjdCI6InNvdXJjZS8xNjY1MTY1MzYwLjI3OTc3Ny05NTVkMTkwNDc0MWU0YmJlYjM0NjEwODAyOTllOTI5YS50Z3oifX0sInN0ZXBzIjpbeyJhcmdzIjpbIi1jIiwiZG9ja2VyIGJ1aWxkIC10IHVzLWNlbnRyYWwxLWRvY2tlci5wa2cuZGV2L2RhbWl0aC1zZHMvY29udGFpbmVycy9qYXZhLWd1ZXN0Ym9vay1iYWNrZW5kOnF1aWNrc3RhcnQgLlxuZG9ja2VyIHB1c2ggdXMtY2VudHJhbDEtZG9ja2VyLnBrZy5kZXYvZGFtaXRoLXNkcy9jb250YWluZXJzL2phdmEtZ3Vlc3Rib29rLWJhY2tlbmQ6cXVpY2tzdGFydFxuIl0sImVudHJ5cG9pbnQiOiIvYmluL2Jhc2giLCJpZCI6IkJ1aWxkIGFuZCBQdXNoIENvbnRhaW5lciBJbWFnZTogQmFja2VuZCIsIm5hbWUiOiJnY3IuaW8vY2xvdWQtYnVpbGRlcnMvZG9ja2VyIiwicHVsbFRpbWluZyI6eyJlbmRUaW1lIjoiMjAyMi0xMC0wN1QxNzo1NjowOC42MTQzOTA4MzdaIiwic3RhcnRUaW1lIjoiMjAyMi0xMC0wN1QxNzo1NjowOC42MTAzMDI5OTFaIn0sInN0YXR1cyI6IlNVQ0NFU1MiLCJ0aW1pbmciOnsiZW5kVGltZSI6IjIwMjItMTAtMDdUMTc6NTc6MTUuMTM2MDQyNTE0WiIsInN0YXJ0VGltZSI6IjIwMjItMTAtMDdUMTc6NTY6MDguNjEwMzAyOTkxWiJ9fV0sInN1YnN0aXR1dGlvbnMiOnsiX0JBQ0tFTkRfSU1BR0UiOiJ1cy1jZW50cmFsMS1kb2NrZXIucGtnLmRldi9kYW1pdGgtc2RzL2NvbnRhaW5lcnMvamF2YS1ndWVzdGJvb2stYmFja2VuZDpxdWlja3N0YXJ0In19LCJkZWZpbmVkSW5NYXRlcmlhbCI6Ii0xIiwidHlwZSI6Imh0dHBzOi8vY2xvdWRidWlsZC5nb29nbGVhcGlzLmNvbS9DbG91ZEJ1aWxkU3RlcHNAdjAuMSJ9fSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8vc2xzYS5kZXYvcHJvdmVuYW5jZS92MC4xIiwic2xzYVByb3ZlbmFuY2UiOnsiYnVpbGRlciI6eyJpZCI6Imh0dHBzOi8vY2xvdWRidWlsZC5nb29nbGVhcGlzLmNvbS9Hb29nbGVIb3N0ZWRXb3JrZXJAdjAuMyJ9LCJtYXRlcmlhbHMiOlt7ImRpZ2VzdCI6eyJtZDUiOiI2ZTljMmMwMzA5OTI2MmQ1MzQ1MTlkMTA2ZmUwNGIwOCJ9LCJ1cmkiOiJnczovL2RhbWl0aC1zZHNfY2xvdWRidWlsZC9zb3VyY2UvMTY2NTE2NTM2MC4yNzk3NzctOTU1ZDE5MDQ3NDFlNGJiZWIzNDYxMDgwMjk5ZTkyOWEudGd6IzE2NjUxNjUzNjExNTI3MjkifV0sIm1ldGFkYXRhIjp7ImJ1aWxkRmluaXNoZWRPbiI6IjIwMjItMTAtMDdUMTc6NTc6MTYuNTk1NDY0WiIsImJ1aWxkSW52b2NhdGlvbklkIjoiNTY1NDU2YjEtMDM5NC00YzcxLThjMTgtNzlmOTA1NzQ4M2RmIiwiYnVpbGRTdGFydGVkT24iOiIyMDIyLTEwLTA3VDE3OjU2OjAxLjgxNDA0MDg5MloifSwicmVjaXBlIjp7ImFyZ3VtZW50cyI6eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmRldnRvb2xzLmNsb3VkYnVpbGQudjEuQnVpbGQiLCJpZCI6IjU2NTQ1NmIxLTAzOTQtNGM3MS04YzE4LTc5ZjkwNTc0ODNkZiIsIm5hbWUiOiJwcm9qZWN0cy8xNzE3MTkxNjU0NTMvbG9jYXRpb25zL3VzLWNlbnRyYWwxL2J1aWxkcy81NjU0NTZiMS0wMzk0LTRjNzEtOGMxOC03OWY5MDU3NDgzZGYiLCJvcHRpb25zIjp7ImR5bmFtaWNTdWJzdGl0dXRpb25zIjp0cnVlLCJsb2dnaW5nIjoiTEVHQUNZIiwicG9vbCI6e30sInJlcXVlc3RlZFZlcmlmeU9wdGlvbiI6IlZFUklGSUVEIn0sInNvdXJjZVByb3ZlbmFuY2UiOnsiZmlsZUhhc2hlcyI6eyJnczovL2RhbWl0aC1zZHNfY2xvdWRidWlsZC9zb3VyY2UvMTY2NTE2NTM2MC4yNzk3NzctOTU1ZDE5MDQ3NDFlNGJiZWIzNDYxMDgwMjk5ZTkyOWEudGd6IzE2NjUxNjUzNjExNTI3MjkiOnsiZmlsZUhhc2giOlt7InR5cGUiOiJNRDUiLCJ2YWx1ZSI6ImJwd3NBd21TWXRVMFVaMFFiK0JMQ0E9PSJ9XX19LCJyZXNvbHZlZFN0b3JhZ2VTb3VyY2UiOnsiYnVja2V0IjoiZGFtaXRoLXNkc19jbG91ZGJ1aWxkIiwiZ2VuZXJhdGlvbiI6IjE2NjUxNjUzNjExNTI3MjkiLCJvYmplY3QiOiJzb3VyY2UvMTY2NTE2NTM2MC4yNzk3NzctOTU1ZDE5MDQ3NDFlNGJiZWIzNDYxMDgwMjk5ZTkyOWEudGd6In19LCJzdGVwcyI6W3siYXJncyI6WyItYyIsImRvY2tlciBidWlsZCAtdCB1cy1jZW50cmFsMS1kb2NrZXIucGtnLmRldi9kYW1pdGgtc2RzL2NvbnRhaW5lcnMvamF2YS1ndWVzdGJvb2stYmFja2VuZDpxdWlja3N0YXJ0IC5cbmRvY2tlciBwdXNoIHVzLWNlbnRyYWwxLWRvY2tlci5wa2cuZGV2L2RhbWl0aC1zZHMvY29udGFpbmVycy9qYXZhLWd1ZXN0Ym9vay1iYWNrZW5kOnF1aWNrc3RhcnRcbiJdLCJlbnRyeXBvaW50IjoiL2Jpbi9iYXNoIiwiaWQiOiJCdWlsZCBhbmQgUHVzaCBDb250YWluZXIgSW1hZ2U6IEJhY2tlbmQiLCJuYW1lIjoiZ2NyLmlvL2Nsb3VkLWJ1aWxkZXJzL2RvY2tlciIsInB1bGxUaW1pbmciOnsiZW5kVGltZSI6IjIwMjItMTAtMDdUMTc6NTY6MDguNjE0MzkwODM3WiIsInN0YXJ0VGltZSI6IjIwMjItMTAtMDdUMTc6NTY6MDguNjEwMzAyOTkxWiJ9LCJzdGF0dXMiOiJTVUNDRVNTIiwidGltaW5nIjp7ImVuZFRpbWUiOiIyMDIyLTEwLTA3VDE3OjU3OjE1LjEzNjA0MjUxNFoiLCJzdGFydFRpbWUiOiIyMDIyLTEwLTA3VDE3OjU2OjA4LjYxMDMwMjk5MVoifX1dLCJzdWJzdGl0dXRpb25zIjp7Il9CQUNLRU5EX0lNQUdFIjoidXMtY2VudHJhbDEtZG9ja2VyLnBrZy5kZXYvZGFtaXRoLXNkcy9jb250YWluZXJzL2phdmEtZ3Vlc3Rib29rLWJhY2tlbmQ6cXVpY2tzdGFydCJ9fSwiZGVmaW5lZEluTWF0ZXJpYWwiOiItMSIsInR5cGUiOiJodHRwczovL2Nsb3VkYnVpbGQuZ29vZ2xlYXBpcy5jb20vQ2xvdWRCdWlsZFN0ZXBzQHYwLjEifX0sInN1YmplY3QiOlt7ImRpZ2VzdCI6eyJzaGEyNTYiOiI5ZGNmYWNjNDk3YjYxYzRkMmZmNTcwOGU2NDRjMDYwNzI2NzgxZmFlNTE0ZGM4YmE3MWM0OWRjZWQ2NzViY2JlIn0sIm5hbWUiOiJodHRwczovL3VzLWNlbnRyYWwxLWRvY2tlci5wa2cuZGV2L2RhbWl0aC1zZHMvY29udGFpbmVycy9qYXZhLWd1ZXN0Ym9vay1iYWNrZW5kOnF1aWNrc3RhcnQifV19",
+          "payloadType": "application/vnd.in-toto+json",
+          "signatures": [
+            {
+              "keyid": "projects/verified-builder/locations/us-central1/keyRings/attestor/cryptoKeys/builtByGCB/cryptoKeyVersions/1",
+              "sig": "MEUCIDfWuzwDVjmMmKdI_GE8s2eVjpKD80Bb5I9NYMxPc0tVAiEAvKVLpYl-uekpYq8ittlLN_5yMo5dle1GXVPvS5InAVw="
+            }
+          ]
+        },
+        "kind": "BUILD",
+        "name": "projects/damith-sds/occurrences/26129661-b842-42ff-9b67-7198ac893395",
+        "noteName": "projects/verified-builder/notes/intoto_565456b1-0394-4c71-8c18-79f9057483df",
+        "resourceUri": "https://us-central1-docker.pkg.dev/damith-sds/containers/java-guestbook-backend@sha256:9dcfacc497b61c4d2ff5708e644c060726781fae514dc8ba71c49dced675bcbe",
+        "updateTime": "2022-10-07T17:57:17.438466Z"
+      }
+    ]
+  }
+}

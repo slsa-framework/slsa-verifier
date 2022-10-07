@@ -822,6 +822,13 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			source:     "github.com/laurentsimon/gcb-tests",
 		},
 		{
+			name:       "valid main branch gcs",
+			artifact:   "gcloud-container-gcs",
+			provenance: "gcloud-container-gcs.json",
+			minversion: "v0.3",
+			source:     "gs://slsa-tooling_cloudbuild/source/1663616632.078353-fc7db143dcc64b5f9fe71d0497125ca1.tgz",
+		},
+		{
 			name:       "mismatch input builder version",
 			artifact:   "gcloud-container-github",
 			provenance: "gcloud-container-github.json",
@@ -966,7 +973,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			checkVersions := getBuildersAndVersions(t, "", nil, GCB_ARTIFACT_IMAGE_BUILDERS)
+			checkVersions := getBuildersAndVersions(t, tt.minversion, nil, GCB_ARTIFACT_IMAGE_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
