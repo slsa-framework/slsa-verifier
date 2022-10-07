@@ -45,6 +45,10 @@ func Test_VerifyIntotoHeaders(t *testing.T) {
 			path: "./testdata/gcloud-container-github.json",
 		},
 		{
+			name: "valid gcb provenance gcs",
+			path: "./testdata/gcloud-container-gcs.json",
+		},
+		{
 			name:     "invalid intoto header",
 			path:     "./testdata/gcloud-container-invalid-intotoheader.json",
 			expected: serrors.ErrorInvalidDssePayload,
@@ -94,6 +98,11 @@ func Test_VerifyBuilder(t *testing.T) {
 			name:      "valid gcb provenance",
 			path:      "./testdata/gcloud-container-github.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+		},
+		{
+			name:      "valid gcb provenance gcs",
+			path:      "./testdata/gcloud-container-gcs.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 		},
 		{
 			name:      "mismatch builder.id version",
@@ -536,6 +545,11 @@ func Test_VerifySummary(t *testing.T) {
 			name: "valid gcb provenance",
 			path: "./testdata/gcloud-container-github.json",
 			hash: "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+		},
+		{
+			name: "valid gcb provenance gcs",
+			path: "./testdata/gcloud-container-gcs.json",
+			hash: "9dcfacc497b61c4d2ff5708e644c060726781fae514dc8ba71c49dced675bcbe",
 		},
 		{
 			name:     "mismatch digest",

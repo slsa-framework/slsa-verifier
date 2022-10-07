@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsa01 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
@@ -29,7 +28,7 @@ var GCBBuilderIDs = []string{
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
-	Predicate slsa01.ProvenancePredicate `json:"predicate"`
+	Predicate ProvenancePredicate `json:"predicate"`
 }
 
 // The GCB provenance contains a human-readable version of the intoto
@@ -38,7 +37,7 @@ type v01IntotoStatement struct {
 // by the GCB team.
 type v01GCBIntotoStatement struct {
 	intoto.StatementHeader
-	SlsaProvenance slsa01.ProvenancePredicate `json:"slsaProvenance"`
+	SlsaProvenance ProvenancePredicate `json:"slsaProvenance"`
 }
 
 type provenance struct {
@@ -72,7 +71,7 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 	var prov gloudProvenance
 	err := json.Unmarshal(payload, &prov)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal: %w", err)
+		return nil, fmt.Errorf("json.Unmarshal gcloud provenance: %w", err)
 	}
 
 	return &Provenance{
@@ -205,9 +204,9 @@ func (self *Provenance) VerifyIntotoHeaders() error {
 	}
 
 	// https://slsa.dev/provenance/v0.1
-	if statement.StatementHeader.PredicateType != slsa01.PredicateSLSAProvenance {
+	if statement.StatementHeader.PredicateType != PredicateSLSAProvenance {
 		return fmt.Errorf("%w: expected statement predicate type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, slsa01.PredicateSLSAProvenance, statement.StatementHeader.PredicateType)
+			serrors.ErrorInvalidDssePayload, PredicateSLSAProvenance, statement.StatementHeader.PredicateType)
 	}
 
 	return nil
@@ -357,7 +356,9 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID util
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
 	}
 	uri := materials[0].URI
-	if !strings.HasPrefix(expectedSourceURI, "https://") {
+
+	// It is possible that GCS builds at level 2 use GCS sources, prefixed by gs://.
+	if strings.HasPrefix(uri, "https://") && !strings.HasPrefix(expectedSourceURI, "https://") {
 		expectedSourceURI = "https://" + expectedSourceURI
 	}
 
@@ -367,14 +368,17 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID util
 	case "v0.2":
 		// In v0.2, it uses format
 		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`.
-		if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") {
+		if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") &&
+			!strings.HasPrefix(uri, expectedSourceURI+"#") {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
 				serrors.ErrorMismatchSource, expectedSourceURI, uri)
 		}
 		// In v0.3, it uses the standard intoto and has the commit sha in its own
 		// `digest.sha1` field.
 	case "v0.3":
-		if uri != expectedSourceURI {
+		// The latter case is a versioned GCS source.
+		if uri != expectedSourceURI &&
+			!strings.HasPrefix(uri, expectedSourceURI+"#") {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
 				serrors.ErrorMismatchSource, expectedSourceURI, uri)
 		}
@@ -418,7 +422,7 @@ func decodeSignature(s string) ([]byte, []error) {
 }
 
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
-// It succeeds if one of them can ne verified.
+// It succeeds if one of them can be verified.
 func (self *Provenance) verifySignatures(prov *provenance) error {
 	// Verify the envelope type. It should be an intoto type.
 	if prov.Envelope.PayloadType != intoto.PayloadType {
