@@ -14,4 +14,4 @@ binary: slsa-verifier-{{ .Os }}-{{ .Arch }}
 dir: ./cli/slsa-verifier
 
 ldflags:
-  - "-X version.Version={{ .Version }}"
+  - "-X version.Version={{ .Env.Version }}"
