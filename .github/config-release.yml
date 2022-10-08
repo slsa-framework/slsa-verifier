@@ -14,4 +14,4 @@ binary: slsa-verifier-{{ .Os }}-{{ .Arch }}
 dir: ./cli/slsa-verifier
 
 ldflags:
-  - "-X version.Version={{ .Env.Version }}"
+  - "-X sigs.k8s.io/release-utils/version.gitVersion={{ .Env.Version }}"
