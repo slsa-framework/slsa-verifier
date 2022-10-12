@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/release-utils/version"
 )
 
 func check(err error) {
@@ -29,7 +30,7 @@ For more information on SLSA, visit https://slsa.dev`,
 			return errors.New("expected command")
 		},
 	}
-	c.AddCommand(versionCmd())
+	c.AddCommand(version.Version())
 	c.AddCommand(verifyArtifactCmd())
 	c.AddCommand(verifyImageCmd())
 	// We print our own errors and usage in the check function.
