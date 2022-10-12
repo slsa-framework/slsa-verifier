@@ -356,11 +356,46 @@ func Test_VerifySourceURI(t *testing.T) {
 			source:    "http://github.com/laurentsimon/gcb-tests",
 			expected:  serrors.ErrorMismatchSource,
 		},
+		// TODO: Why do we disallow matches on full URI with commit?
 		{
 			name:      "v0.2 mismatch full uri",
 			path:      "./testdata/gcloud-container-github.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
 			source:    "https://github.com/laurentsimon/gcb-tests/commit/fbbb98765e85ad464302dc5977968104d36e455e",
+			expected:  serrors.ErrorMismatchSource,
+		},
+		// v0.2 GCS source
+		{
+			name:      "v0.2 valid gcb gcs provenance full URI",
+			path:      "./testdata/gcloud-container-gcs.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			source:    "gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz",
+		},
+		{
+			name:      "v0.2 valid gcb gcs provenance",
+			path:      "./testdata/gcloud-container-gcs.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			source:    "gs://damith-sds_cloudbuild/source",
+		},
+		// TODO: Should we disallow matches on full URI with fragment like full URI with commit is disallowed?
+		{
+			name:      "v0.2 mismatch full uri gcs",
+			path:      "./testdata/gcloud-container-gcs.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			source:    "gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729",
+		},
+		{
+			name:      "v0.2 mismatch gcb gcs provenance",
+			path:      "./testdata/gcloud-container-gcs.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			source:    "gs://damith-sds_cloudbuilds/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz",
+			expected:  serrors.ErrorMismatchSource,
+		},
+		{
+			name:      "v0.2 mismatch scheme gcb gcs provenance",
+			path:      "./testdata/gcloud-container-gcs.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+			source:    "https://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz",
 			expected:  serrors.ErrorMismatchSource,
 		},
 		// v0.3
