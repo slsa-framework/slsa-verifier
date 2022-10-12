@@ -18,7 +18,7 @@ require (
 	github.com/go-openapi/swag v0.22.3
 	github.com/google/go-containerregistry v0.11.0
 	github.com/gorilla/mux v1.8.0
-	github.com/sigstore/cosign v1.12.0
+	github.com/sigstore/cosign v1.13.0
 	github.com/slsa-framework/slsa-github-generator v1.2.0
 	github.com/spf13/cobra v1.5.0
 	github.com/transparency-dev/merkle v0.0.1
