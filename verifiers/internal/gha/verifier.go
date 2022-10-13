@@ -7,8 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
-
+	"github.com/sigstore/rekor/pkg/client"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 	"github.com/slsa-framework/slsa-verifier/register"
@@ -40,7 +39,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, string, error) {
-	rClient, err := rekor.NewClient(defaultRekorAddr)
+	rClient, err := client.GetRekorClient(defaultRekorAddr)
 	if err != nil {
 		return nil, "", err
 	}
