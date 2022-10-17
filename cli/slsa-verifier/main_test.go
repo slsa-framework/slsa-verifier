@@ -531,7 +531,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// before GA. Add the tests for tag verification.
 				if version != "" && semver.Compare(version, "v1.0.0") > 0 {
 					builderIDs = append(builderIDs, []*string{
-						pString(builder + "@" + sv),
+						// pString(builder + "@" + sv),
 						pString(builder + "@refs/tags/" + sv),
 					}...)
 				}
