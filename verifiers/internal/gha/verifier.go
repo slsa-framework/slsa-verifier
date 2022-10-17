@@ -10,8 +10,8 @@ import (
 
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
-	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/rekor/pkg/client"
 
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
@@ -85,7 +85,8 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	rClient, err := rekor.NewClient(defaultRekorAddr)
+	// This includes a default retry count of 3.
+	rClient, err := client.GetRekorClient(defaultRekorAddr)
 	if err != nil {
 		return nil, nil, err
 	}
