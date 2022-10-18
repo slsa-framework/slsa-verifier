@@ -72,6 +72,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	t.Parallel()
 	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
 	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
+
 	tests := []struct {
 		name         string
 		artifact     string
@@ -157,7 +158,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		},
 		// Provenance contains tag = v13.0.30.
 		{
-			name:     "tag v31.0.29 no match v13.0.30",
+			name:     "tag v13.0.29 no match v13.0.30",
 			artifact: "binary-linux-amd64-push-v13.0.30",
 			source:   "github.com/slsa-framework/example-package",
 			ptag:     pString("v13.0.29"),
@@ -363,24 +364,24 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		},
 		// Multiple subjects in version v1.2.0+
 		{
-			name:       "multiple subject first match",
-			artifact:   "binary-linux-amd64-multi-subject-first",
-			source:     "github.com/slsa-framework/example-package",
-			minversion: "v1.2.0",
-			builders:   []string{"gha_generic"},
+			name:      "multiple subject first match",
+			artifact:  "binary-linux-amd64-multi-subject-first",
+			source:    "github.com/slsa-framework/example-package",
+			noversion: true,
+			builders:  []string{"gha_generic"},
 		},
 		{
-			name:       "multiple subject second match",
-			artifact:   "binary-linux-amd64-multi-subject-second",
-			source:     "github.com/slsa-framework/example-package",
-			minversion: "v1.2.0",
-			builders:   []string{"gha_generic"},
+			name:      "multiple subject second match",
+			artifact:  "binary-linux-amd64-multi-subject-second",
+			source:    "github.com/slsa-framework/example-package",
+			noversion: true,
+			builders:  []string{"gha_generic"},
 		},
 		{
 			name:         "multiple subject second match - builderID",
 			artifact:     "binary-linux-amd64-multi-subject-second",
 			source:       "github.com/slsa-framework/example-package",
-			minversion:   "v1.2.0",
+			noversion:    true,
 			builders:     []string{"gha_generic"},
 			pBuilderID:   pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"),
 			outBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml",
@@ -530,7 +531,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// before GA. Add the tests for tag verification.
 				if version != "" && semver.Compare(version, "v1.0.0") > 0 {
 					builderIDs = append(builderIDs, []*string{
-						pString(builder + "@" + sv),
+						// pString(builder + "@" + sv),
 						pString(builder + "@refs/tags/" + sv),
 					}...)
 				}
@@ -557,7 +558,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					}
 
 					if err != nil {
-						return
+						continue
 					}
 
 					// Validate against test's expected builderID, if provided.
@@ -568,7 +569,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					}
 
 					if bid == nil {
-						return
+						continue
 					}
 
 					// Validate against builderID we generated automatically.
