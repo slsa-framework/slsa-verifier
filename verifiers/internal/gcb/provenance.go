@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"reflect"
 	"regexp"
@@ -356,56 +355,40 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID util
 	if len(materials) == 0 {
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
 	}
+	uri := materials[0].URI
 
-	uri, err := url.Parse(materials[0].URI)
-	if err != nil {
-		return fmt.Errorf("parsing materials URI: %w", err)
-	}
-
-	expectedURI, err := url.Parse(expectedSourceURI)
-	if err != nil {
-		return fmt.Errorf("parsing materials URI: %w", err)
-	}
-
-	// If users do not specify a scheme, use HTTPS by default.
-	if !expectedURI.IsAbs() {
+	// It is possible that GCS builds at level 2 use GCS sources, prefixed by gs://.
+	if strings.HasPrefix(uri, "https://") && !strings.HasPrefix(expectedSourceURI, "https://") {
 		expectedSourceURI = "https://" + expectedSourceURI
-		expectedURI, err = url.Parse(expectedSourceURI)
-		if err != nil {
-			return fmt.Errorf("parsing materials URI: %w", err)
-		}
 	}
 
-	// Expect a direct match on scheme and hostnames.
-	if expectedURI.Scheme != uri.Scheme {
-		return fmt.Errorf("%w: expected schemes to match '%s', got '%s'",
-			serrors.ErrorMismatchSource, expectedURI.Scheme, uri.Scheme)
-	}
-	if uri.Host != expectedURI.Host {
-		return fmt.Errorf("%w: expected host match '%s', got '%s'",
-			serrors.ErrorMismatchSource, uri.Host, expectedURI.Host)
+	// The build was not configured with a GitHub trigger. Warn.
+	if strings.HasPrefix(uri, "gs://") {
+		fmt.Fprintf(os.Stderr, `This build was not configured with a GitHub trigger `+
+			`and will not match on an expected, version controlled source URI. `+
+			`See Cloud Build's documentation on building repositories from GitHub: `+
+			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`)
 	}
 
+	var err error
 	v := builderID.Version()
 	switch v {
 	case "v0.2":
-		// In v0.2, it uses the formats
-		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`
-		// `gs://slsa-tooling_cloudbuild/source/1663616632.078353-fc7db143dcc64b5f9fe71d0497125ca1.tgz#1663616635134845`
-		if uri.Fragment == "" && !strings.HasPrefix(uri.Path, expectedURI.Path+"/commit/") {
-			return fmt.Errorf("%w: expected matching paths '%s', got '%s'",
-				serrors.ErrorMismatchSource, expectedSourceURI, uri.String())
-		}
-		if uri.Fragment != "" && !strings.HasPrefix(uri.Path, expectedURI.Path) {
-			return fmt.Errorf("%w: expected path with fragment '%s', got '%s'",
-				serrors.ErrorMismatchSource, expectedSourceURI, uri.String())
+		// In v0.2, it uses format
+		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`.
+		if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") &&
+			!strings.HasPrefix(uri, expectedSourceURI+"#") {
+			return fmt.Errorf("%w: expected '%s', got '%s'",
+				serrors.ErrorMismatchSource, expectedSourceURI, uri)
 		}
 		// In v0.3, it uses the standard intoto and has the commit sha in its own
 		// `digest.sha1` field.
 	case "v0.3":
-		if uri.Path != expectedURI.Path {
+		// The latter case is a versioned GCS source.
+		if uri != expectedSourceURI &&
+			!strings.HasPrefix(uri, expectedSourceURI+"#") {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
-				serrors.ErrorMismatchSource, expectedURI.Path, uri.Path)
+				serrors.ErrorMismatchSource, expectedSourceURI, uri)
 		}
 	default:
 		err = fmt.Errorf("%w: version '%s'",
