@@ -18,7 +18,23 @@ Major and minor releases are released directly from the `main` branch. Patch ver
 
 ### New major or minor release
 
-Create a new tag for the official generator via [slsa-framework/slsa-verifier/releases/new](https://github.com/slsa-framework/slsa-verifier/releases/new). 
+### Dry-Run
+
+Create a release candidate for the official slsa-verifier via [slsa-framework/slsa-verifier/releases/new](https://github.com/slsa-framework/slsa-verifier/releases/new).
+
+Use a pre-release name denoted with a hypen `vX.Y.Z-rc` (do not use a pre-release check, the e2e tests will ignore these).
+
+Set the title to `vX.Y.Z-rc`.
+
+Click `Publish release`.
+
+This will trigger a release workflow: wait until it completes and generates the binary and the provenance.
+
+Ensure that the release is successful and provenance can be verified properly. Then, either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
+
+If both of these steps succeed, then move on to the [Final Release](#final-release).
+
+### Final Release
 
 Use a "canonical" semantic version without metadata `vX.Y.Z`.
 
