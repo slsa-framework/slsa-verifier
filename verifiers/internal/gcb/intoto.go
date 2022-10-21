@@ -1,11 +1,17 @@
 package gcb
 
-// Copy of github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1
+// NOTE: Copy of github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1
 // This holds an internal copy of in-toto-golang's structs for
 // SLSA predicates to handle GCB's incompatibility with the
-// published specification. Specifically, GCB provenance currently
-// produces a string for ProvenancePredicate.Recipe.DefinedInMaterial
-// rather than the compliant signed integer.
+// published specification.
+// Specifically, GCB provenance currently produces a string for
+// ProvenancePredicate.Recipe.DefinedInMaterial rather than the SLSA compliant
+// signed integer. Because of this, we comment out the field and do not unmarshal
+// this in the Go struct. When comparing the envelope with the human-readable
+// content, this field is ignored!
+// GCB will later add compliant fields in the signed envelope, but NOT in the
+// human-readable component. Either disregard comparison between human-readable
+// summary and the signed envelope, or use this struct in comparison.
 
 import "time"
 

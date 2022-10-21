@@ -116,6 +116,8 @@ PASSED: Verified SLSA provenance
 
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
 
+Only GitHub URIs are supported with the `--source-uri` flag. A tag should not be specified, even if the provenance was built at some tag. If you intend to do source versioning validation, use `--print-provenance` and inspect the commit SHA of the config source or materials.
+
 
 ### Containers
 This is WIP and currently not supported.
@@ -155,6 +157,8 @@ PASSED: Verified SLSA provenance
 ```
 
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+
+Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You *may* match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
 
 ## Technical design
 
