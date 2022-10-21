@@ -22,13 +22,15 @@ Major and minor releases are released directly from the `main` branch. Patch ver
 
 Create a release candidate for the official slsa-verifier via [slsa-framework/slsa-verifier/releases/new](https://github.com/slsa-framework/slsa-verifier/releases/new).
 
-Use a pre-release name denoted with a hypen `vX.Y.Z-rc` (do not use a pre-release check, the e2e tests will ignore these).
+Use a pre-release name denoted with a hypen `vX.Y.Z-rc` (do not use a pre-release check, the e2e tests will ignore these). By creating a pre-release version, the release flow and e2e tests can be validated committing to the final version. Because Go module downloads are deterministic through the public GOPROXY, this helps ensure that the final released Go module is immutable: a final release version should not be deleted.
 
 Set the title to `vX.Y.Z-rc`.
 
 Click `Publish release`.
 
 This will trigger a release workflow: wait until it completes and generates the binary and the provenance.
+
+Do **NOT** submit any more code between now and the final release.
 
 Ensure that the release is successful and provenance can be verified properly. Then, either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
 
