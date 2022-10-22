@@ -9,7 +9,7 @@ require (
 	github.com/google/trillian v1.5.0 // indirect
 	github.com/in-toto/in-toto-golang v0.3.4-0.20220709202702-fa494aaa0add
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0
-	github.com/sigstore/rekor v1.0.0-rc.1
+	github.com/sigstore/rekor v1.0.0
 	github.com/sigstore/sigstore v1.4.4
 )
 

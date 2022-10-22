@@ -1341,6 +1341,8 @@ github.com/sigstore/fulcio v0.6.0 h1:YNfnGm9EjYPlzHiPDcIVhslYj846jkPtHQH+FTKNncw
 github.com/sigstore/fulcio v0.6.0/go.mod h1:lwxzHDYYQ0lVVWqaj68ZQNkcP847aoF7AIa7ra9rRqA=
 github.com/sigstore/rekor v1.0.0-rc.1 h1:Tp6Wik1V34aqMPgLR/trmO2GSQR0cY/mu8TPCPQ/EO0=
 github.com/sigstore/rekor v1.0.0-rc.1/go.mod h1:8FPG2wHngSA4Bo8tgOn0C/PIDDNi4iiNePhAiyJlv5Q=
+github.com/sigstore/rekor v1.0.0 h1:64IeShnl8n862APKu4MyDObAOjwNL//je6okig4uQw8=
+github.com/sigstore/rekor v1.0.0/go.mod h1:8FPG2wHngSA4Bo8tgOn0C/PIDDNi4iiNePhAiyJlv5Q=
 github.com/sigstore/sigstore v1.4.4 h1:lVsnNTY8DUmy2hnwCPtimWfEqv+DIwleORkF8KyFsMs=
 github.com/sigstore/sigstore v1.4.4/go.mod h1:wIqu9sN72+pds31MMu89GchxXHy17k+VZWc+HY1ZXMA=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
