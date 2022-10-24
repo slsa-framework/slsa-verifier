@@ -81,7 +81,7 @@ function getVerifierVersion(actionRef) {
         // If actionRef is a commit SHA, then find the associated version number.
         const shaRe = /^[a-f\d]{40}$/;
         if (shaRe.test(actionRef)) {
-            const octokit = github.getOctokit(core.getInput('github-token'));
+            const octokit = github.getOctokit(core.getInput("github-token"));
             const { data: tags } = yield octokit.request("GET /repos/{owner}/{repository}/tags", {
                 owner: "slsa-framework",
                 repository: "slsa-verifier",
