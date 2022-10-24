@@ -43,7 +43,7 @@ export async function getVerifierVersion(actionRef: string): Promise<string> {
   // If actionRef is a commit SHA, then find the associated version number.
   const shaRe = /^[a-f\d]{40}$/;
   if (shaRe.test(actionRef)) {
-    const octokit = github.getOctokit(process.env.TOKEN || "");
+    const octokit = github.getOctokit(core.getInput("github-token"));
     const { data: tags } = await octokit.request(
       "GET /repos/{owner}/{repository}/tags",
       {
@@ -88,7 +88,7 @@ async function cleanup(): Promise<void> {
 
 async function run(): Promise<void> {
   // Get requested verifier version and validate
-  const actionRef = process.env.ACTION_REF || "";
+  const actionRef = process.env.GITHUB_ACTION_REF || "";
   let version: string;
   try {
     version = await getVerifierVersion(actionRef);
