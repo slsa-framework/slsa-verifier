@@ -17,32 +17,10 @@ description: 'Installs SLSA verifier and adds it to your PATH'
 branding:
   icon: 'package'
   color: 'blue'
+inputs:
+  github-token:
+    description: 'GitHub token'
+    required: true
 runs:
-  using: 'composite'
-  steps:
-    - name: Checkout
-      uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
-
-    - name: Setup Node.js 16
-      uses: actions/setup-node@969bd2663942d722d85b6a8626225850c2f7be4b # tag=v3.5.0
-      with:
-        node-version: 16
-
-    - name: Install dependencies
-      working-directory: actions/installer
-      shell: bash
-      run: npm ci
-
-    - name: Run build
-      working-directory: actions/installer
-      shell: bash
-      run: npm run build
-
-    - name: Run installer
-      env:
-        ACTION_REF: "${{ github.action_ref }}"
-        TOKEN: "${{ github.token }}"
-        REPOSITORY: "${{ github.repository }}"
-      working-directory: actions/installer/dist
-      shell: bash
-      run: nodejs index.js 
+  using: 'node16'
+  main: 'dist/index.js'
