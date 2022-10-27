@@ -21,7 +21,7 @@ jobs:
         with:
           name: event_name
       - name: Check event name
-        id: event
+        id: name
         run: |
           name=$(cat ./event_name.txt)
           ctned="false"
@@ -30,9 +30,9 @@ jobs:
           fi
           echo "continue=$ctned" >> $GITHUB_OUTPUT
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
-        if: steps.event.outputs.continue == 'true'
+        if: steps.name.outputs.continue == 'true'
         with:
           ref: main
           repository: slsa-framework/example-package
       - run: ./.github/workflows/scripts/e2e-report-failure.sh
-        if: steps.event.outputs.continue == 'true'
+        if: steps.name.outputs.continue == 'true'
