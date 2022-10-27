@@ -1,5 +1,12 @@
-name: Pre submits
-on: [pull_request, workflow_dispatch]
+name: Pre submits cli
+on: 
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+  # Used in combination with schedule.cli.yml
+  # to avoid duplicating the test code.
+  schedule:
+    - cron: '25 6 * * 5'
 
 permissions: read-all
 
@@ -14,6 +21,17 @@ jobs:
         uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
         with:
           go-version: '1.18'
+
+      - name: Save event name
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          echo $EVENT_NAME > ./event_name.txt
+
+      - uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # tag=v3.1.1
+        with:
+          name: event_name
+          path: ./event_name.txt
 
       - name: Run tests for verifier
         run: |
