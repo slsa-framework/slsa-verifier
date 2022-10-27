@@ -23,11 +23,11 @@ jobs:
       - name: Check event name
         id: event
         run: |
-          name=$(cat event_name.txt)
+          name=$(cat ./event_name.txt)
           ctned="false"
           if [[ "$name" == "schedule" ]] || [[ "$name" == "workflow_dispatch" ]]; then
             ctned="true"
-          fi'
+          fi
           echo "continue=$ctned" >> $GITHUB_OUTPUT
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
         if: steps.event.outputs.continue == 'true'
