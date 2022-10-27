@@ -15,7 +15,6 @@ jobs:
   if-failed:
     runs-on: ubuntu-latest
     # See https://github.com/orgs/community/discussions/26238.
-    if: github.event.workflow_run.conclusion != 'success'
     steps:
       - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # tag=v1.10.0
         with:
@@ -35,4 +34,6 @@ jobs:
           ref: main
           repository: slsa-framework/example-package
       - run: ./.github/workflows/scripts/e2e-report-failure.sh
-        if: steps.name.outputs.continue == 'true'
+        if: steps.name.outputs.continue == 'true' && github.event.workflow_run.conclusion != 'success'
+      - run: ./.github/workflows/scripts/e2e-report-success.sh
+        if: steps.name.outputs.continue == 'true' && github.event.workflow_run.conclusion == 'success'
