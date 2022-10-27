@@ -19,7 +19,7 @@ require (
 	github.com/google/go-containerregistry v0.12.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sigstore/cosign v1.13.1
-	github.com/slsa-framework/slsa-github-generator v1.2.0
+	github.com/slsa-framework/slsa-github-generator v1.2.1
 	github.com/spf13/cobra v1.6.0
 	github.com/transparency-dev/merkle v0.0.1
 	golang.org/x/mod v0.6.0
@@ -205,7 +205,7 @@ require (
 	go.etcd.io/etcd/server/v3 v3.6.0-alpha.0 // indirect
 	go.etcd.io/etcd/tests/v3 v3.6.0-alpha.0 // indirect
 	go.etcd.io/etcd/v3 v3.6.0-alpha.0 // indirect
-	go.mongodb.org/mongo-driver v1.10.0 // indirect
+	go.mongodb.org/mongo-driver v1.10.3 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.28.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.7.0 // indirect
