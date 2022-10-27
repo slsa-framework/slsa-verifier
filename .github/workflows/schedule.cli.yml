@@ -12,6 +12,7 @@ env:
   ISSUE_REPOSITORY: ${{ github.repository }}
   TITLE: 'schedule cli'
   WORKFLOW: 'cli'
+  HEADER: 'cli'
 
 jobs:
   if-failed:
