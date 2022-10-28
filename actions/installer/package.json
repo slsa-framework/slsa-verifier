@@ -30,6 +30,6 @@
     "eslint-plugin-github": "4.4.0",
     "jasmine": "4.4.0",
     "prettier": "2.7.1",
-    "typescript": "4.8.2"
+    "typescript": "4.8.4"
   }
 }
