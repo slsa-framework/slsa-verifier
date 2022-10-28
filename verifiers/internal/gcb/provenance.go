@@ -362,6 +362,14 @@ func (self *Provenance) VerifySourceURI(expectedSourceURI string, builderID util
 		expectedSourceURI = "https://" + expectedSourceURI
 	}
 
+	// The build was not configured with a GitHub trigger. Warn.
+	if strings.HasPrefix(uri, "gs://") {
+		fmt.Fprintf(os.Stderr, `This build was not configured with a GitHub trigger `+
+			`and will not match on an expected, version controlled source URI. `+
+			`See Cloud Build's documentation on building repositories from GitHub: `+
+			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`)
+	}
+
 	var err error
 	v := builderID.Version()
 	switch v {

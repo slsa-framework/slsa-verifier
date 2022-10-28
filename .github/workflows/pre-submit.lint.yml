@@ -1,4 +1,4 @@
-name: Lint
+name: Pre submits Lint
 
 on: [pull_request]
 

@@ -76,9 +76,9 @@ Usage:
 
 Flags:
       --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events). (default map[])
-      --builder-id string             the unique builder ID who created the provenance
+      --builder-id string             [optional] the unique builder ID who created the provenance
   -h, --help                          help for verify-artifact
-      --print-provenance              print the verified provenance to stdout
+      --print-provenance              [optional] print the verified provenance to stdout
       --provenance-path string        path to a provenance file
       --source-branch string          [optional] expected branch the binary was compiled from
       --source-tag string             [optional] expected tag the binary was compiled from
@@ -115,6 +115,8 @@ PASSED: Verified SLSA provenance
 ```
 
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+
+Only GitHub URIs are supported with the `--source-uri` flag. A tag should not be specified, even if the provenance was built at some tag. If you intend to do source versioning validation, use `--print-provenance` and inspect the commit SHA of the config source or materials.
 
 
 ### Containers
@@ -155,6 +157,8 @@ PASSED: Verified SLSA provenance
 ```
 
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+
+Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You *may* match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
 
 ## Technical design
 

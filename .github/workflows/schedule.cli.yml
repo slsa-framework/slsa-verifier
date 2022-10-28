@@ -1,0 +1,39 @@
+name: Schedule cli
+on:
+  workflow_run:
+    workflows: ["Pre submits cli"]
+    types: [completed]
+    branches: [main]
+
+permissions: read-all
+
+env:
+  GH_TOKEN: ${{ secrets.CREATE_ISSUES }}
+  ISSUE_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  if-failed:
+    runs-on: ubuntu-latest
+    # See https://github.com/orgs/community/discussions/26238.
+    steps:
+      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # tag=v1.10.0
+        with:
+          name: event_name
+      - name: Check event name
+        id: name
+        run: |
+          name=$(cat ./event_name.txt)
+          ctned="false"
+          if [[ "$name" == "schedule" ]] || [[ "$name" == "workflow_dispatch" ]]; then
+            ctned="true"
+          fi
+          echo "continue=$ctned" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        if: steps.name.outputs.continue == 'true'
+        with:
+          ref: main
+          repository: slsa-framework/example-package
+      - run: ./.github/workflows/scripts/e2e-report-failure.sh
+        if: steps.name.outputs.continue == 'true' && github.event.workflow_run.conclusion != 'success'
+      - run: ./.github/workflows/scripts/e2e-report-success.sh
+        if: steps.name.outputs.continue == 'true' && github.event.workflow_run.conclusion == 'success'

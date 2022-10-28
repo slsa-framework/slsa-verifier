@@ -81,18 +81,15 @@ function getVerifierVersion(actionRef) {
         // If actionRef is a commit SHA, then find the associated version number.
         const shaRe = /^[a-f\d]{40}$/;
         if (shaRe.test(actionRef)) {
-            const octokit = github.getOctokit(process.env.TOKEN || "");
-            const { data: releases } = yield octokit.request("GET /repos/{repository}/releases", {
-                repository: process.env.REPOSITORY,
+            const octokit = github.getOctokit(core.getInput("github-token"));
+            const { data: tags } = yield octokit.request("GET /repos/{owner}/{repository}/tags", {
+                owner: "slsa-framework",
+                repository: "slsa-verifier",
             });
-            for (const release of releases) {
-                const { data: commit } = yield octokit.request("GET /reps/{repository}/git/ref/tags/{tagName}", {
-                    repository: process.env.REPOSITORY,
-                    tagName: release.tag_name,
-                });
-                const commitSha = commit.object.sha;
+            for (const tag of tags) {
+                const commitSha = tag.commit.sha;
                 if (commitSha === actionRef) {
-                    return release.tag_name;
+                    return tag.name;
                 }
             }
         }
@@ -123,7 +120,7 @@ function cleanup() {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         // Get requested verifier version and validate
-        const actionRef = process.env.ACTION_REF || "";
+        const actionRef = process.env.GITHUB_ACTION_REF || "";
         let version;
         try {
             version = yield getVerifierVersion(actionRef);
