@@ -191,7 +191,7 @@ func GetRekorEntriesWithCert(rClient *client.Rekor, artifactHash string, provena
 
 func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
 	treeID int64,
-	proof *models.InclusionProof, pub *ecdsa.PublicKey) error {
+	eproof *models.InclusionProof, pub *ecdsa.PublicKey) error {
 	treeIDString := fmt.Sprintf("%d", treeID)
 	infoParams := tlog.NewGetLogInfoParamsWithContext(ctx)
 	result, err := rekorClient.Tlog.GetLogInfo(infoParams)
@@ -222,19 +222,19 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
 		return errors.New("signature on tree head did not verify")
 	}
 
-	rootHash, err := hex.DecodeString(*proof.RootHash)
+	rootHash, err := hex.DecodeString(*eproof.RootHash)
 	if err != nil {
 		return errors.New("error decoding root hash in inclusion proof")
 	}
 
-	if *proof.TreeSize == int64(sth.Size) {
+	if *eproof.TreeSize == int64(sth.Size) {
 		if !bytes.Equal(rootHash, sth.Hash) {
 			return errors.New("root hash returned from server does not match inclusion proof hash")
 		}
-	} else if *proof.TreeSize < int64(sth.Size) {
+	} else if *eproof.TreeSize < int64(sth.Size) {
 		consistencyParams := tlog.NewGetLogProofParamsWithContext(ctx)
-		consistencyParams.FirstSize = proof.TreeSize // Root hash at the time the proof was returned
-		consistencyParams.LastSize = int64(sth.Size) // Root hash verified with rekor pubkey
+		consistencyParams.FirstSize = eproof.TreeSize // Root hash at the time the proof was returned
+		consistencyParams.LastSize = int64(sth.Size)  // Root hash verified with rekor pubkey
 
 		consistencyProof, err := rekorClient.Tlog.GetLogProof(consistencyParams)
 		if err != nil {
@@ -249,10 +249,10 @@ func verifyRootHash(ctx context.Context, rekorClient *client.Rekor,
 			hashes = append(hashes, b)
 		}
 		if err := proof.VerifyConsistency(rfc6962.DefaultHasher,
-			uint64(*proof.TreeSize), sth.Size, hashes, rootHash, sth.Hash); err != nil {
+			uint64(*eproof.TreeSize), sth.Size, hashes, rootHash, sth.Hash); err != nil {
 			return err
 		}
-	} else if *proof.TreeSize > int64(sth.Size) {
+	} else if *eproof.TreeSize > int64(sth.Size) {
 		return errors.New("inclusion proof returned a tree size larger than the verified tree size")
 	}
 	return nil
@@ -363,7 +363,7 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 		return nil, err
 	}
 
-	eimpl, err := types.NewEntry(pe)
+	eimpl, err := types.UnmarshalEntry(pe)
 	if err != nil {
 		return nil, err
 	}
