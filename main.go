@@ -12,7 +12,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
+	"github.com/sigstore/rekor/pkg/client"
+
 	"github.com/slsa-framework/slsa-verifier/pkg"
 )
 
@@ -31,7 +32,7 @@ func verify(ctx context.Context,
 	provenance []byte, artifactHash, source, branch string,
 	tag, versiontag *string,
 ) error {
-	rClient, err := rekor.NewClient(defaultRekorAddr)
+	rClient, err := client.GetRekorClient(defaultRekorAddr)
 	if err != nil {
 		return err
 	}
