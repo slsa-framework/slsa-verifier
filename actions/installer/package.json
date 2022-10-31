@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@types/jasmine": "4.3.0",
-    "@types/node": "18.7.13",
+    "@types/node": "18.11.8",
     "@vercel/ncc": "0.34.0",
     "eslint": "8.26.0",
     "eslint-plugin-github": "4.4.0",
