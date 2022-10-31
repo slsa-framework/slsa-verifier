@@ -20,7 +20,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/sigstore/cosign v1.13.1
 	github.com/slsa-framework/slsa-github-generator v1.2.1
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	github.com/transparency-dev/merkle v0.0.1
 	golang.org/x/mod v0.6.0
 	sigs.k8s.io/release-utils v0.7.3
