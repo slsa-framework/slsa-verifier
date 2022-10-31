@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     # See https://github.com/orgs/community/discussions/26238.
     steps:
-      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # tag=v1.10.0
+      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # tag=v3.0.1
         with:
           name: event_name
       - name: Check event name
@@ -28,7 +28,7 @@ jobs:
             ctned="true"
           fi
           echo "continue=$ctned" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
         if: steps.name.outputs.continue == 'true'
         with:
           ref: main
