@@ -20,6 +20,8 @@ ________
 - [Artifacts](#artifacts-1)
 - [Containers](#containers-1)
 
+[Known Issues](#known-issues)
+
 [Technical design](#technial-design)
 - [Blog posts](#blog-posts)
 - [Specifications](#specifications)
@@ -159,6 +161,22 @@ PASSED: Verified SLSA provenance
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
 
 Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You *may* match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
+
+## Known Issues
+
+### tuf: invalid key
+
+This will occur only when verifying provenance generated with GitHub Actions.
+
+**Affected versions:** v1.3.0-v1.3.1, v1.2.0-v1.2.1, v1.1.0-v1.1.2, v1.0.0-v1.0.4 
+
+`slsa-verifier` will fail with the following error:
+
+```
+FAILED: SLSA verification failed: could not find a matching valid signature entry: got unexpected errors unable to initialize client, local cache may be corrupt: tuf: invalid key: unable to fetch Rekor public keys from TUF repository
+```
+
+This issue is tracked by [issue #325](https://github.com/slsa-framework/slsa-verifier/issues/325). You *must* update to the newest patch versions of each minor release to fix this issue.
 
 ## Technical design
 
