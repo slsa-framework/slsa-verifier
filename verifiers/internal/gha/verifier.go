@@ -92,6 +92,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	}
 
 	/* Verify signature on the intoto attestation. */
+	// TODO: We will also need to support bundles when those are complete.
 	env, cert, err := VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
 	if err != nil {
 		return nil, nil, err

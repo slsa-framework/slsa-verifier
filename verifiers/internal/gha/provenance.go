@@ -15,6 +15,7 @@ import (
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
 
+	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 )
@@ -150,27 +151,32 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
-func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor, provenance []byte, artifactHash string) (*dsselib.Envelope, *x509.Certificate, error) {
-	// Get Rekor entries corresponding to provenance
-	env, cert, err := GetRekorEntriesWithCert(rClient, provenance)
-	if err == nil {
-		return env, cert, nil
+func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor,
+	provenance []byte, artifactHash string) (
+	*dsselib.Envelope, *x509.Certificate, error) {
+	// There are two cases, either we have an embedded certificate, or we need
+	// to use the Redis index for searching by artifact SHA.
+	if hasCertInEnvelope(provenance) {
+		// Get Rekor entries corresponding to provenance
+		return GetRekorEntriesWithCert(rClient, provenance)
 	}
 
 	// Fallback on using the redis search index to get matching UUIDs.
-	fmt.Fprintf(os.Stderr, "Getting rekor entry error %s, trying Redis search index to find entries by subject digest\n", err)
+	fmt.Fprintf(os.Stderr, "No certificate provided, trying Redis search index to find entries by subject digest\n")
+
+	// Search redis index for matching UUIDs.
 	uuids, err := GetRekorEntries(rClient, artifactHash)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	env, err = EnvelopeFromBytes(provenance)
+	env, err := EnvelopeFromBytes(provenance)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Verify the provenance and return the signing certificate.
-	cert, err = FindSigningCertificate(ctx, uuids, *env, rClient)
+	cert, err := FindSigningCertificate(ctx, uuids, *env, rClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -555,4 +561,11 @@ func getBranch(prov *intoto.ProvenanceStatement) (string, error) {
 		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
+}
+
+// hasCertInEnvelope checks if a valid x509 certificate is present in the
+// envelope.
+func hasCertInEnvelope(provenance []byte) bool {
+	_, err := envelope.GetCertFromEnvelope(provenance)
+	return err == nil
 }
