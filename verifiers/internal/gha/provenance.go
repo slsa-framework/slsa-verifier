@@ -566,6 +566,6 @@ func getBranch(prov *intoto.ProvenanceStatement) (string, error) {
 // hasCertInEnvelope checks if a valid x509 certificate is present in the
 // envelope.
 func hasCertInEnvelope(provenance []byte) bool {
-	_, err := envelope.GetCertFromEnvelope(provenance)
-	return err == nil
+	certPem, err := envelope.GetCertFromEnvelope(provenance)
+	return err == nil && len(certPem) > 0
 }
