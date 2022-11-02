@@ -14,11 +14,23 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
+	"github.com/sigstore/rekor/pkg/generated/models"
 
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	serrors "github.com/slsa-framework/slsa-verifier/errors"
 	"github.com/slsa-framework/slsa-verifier/options"
 )
+
+// SignedAttestation contains a signed DSSE envelope
+// and its associated signing certificate.
+type SignedAttestation struct {
+	// The signed DSSE envelope
+	Envelope *dsselib.Envelope
+	// The signing certificate
+	SigningCert *x509.Certificate
+	// The associated verified Rekor entry
+	RekorEntry *models.LogEntryAnon
+}
 
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 	env = &dsselib.Envelope{}
@@ -153,35 +165,24 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 // and the signing certificate given the provenance and artifact hash.
 func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
-	*dsselib.Envelope, *x509.Certificate, error) {
+	*SignedAttestation, error) {
 	// There are two cases, either we have an embedded certificate, or we need
 	// to use the Redis index for searching by artifact SHA.
 	if hasCertInEnvelope(provenance) {
 		// Get Rekor entries corresponding to provenance
-		return GetRekorEntriesWithCert(rClient, provenance)
+		return GetValidSignedAttestationWithCert(rClient, provenance)
 	}
 
 	// Fallback on using the redis search index to get matching UUIDs.
 	fmt.Fprintf(os.Stderr, "No certificate provided, trying Redis search index to find entries by subject digest\n")
 
-	// Search redis index for matching UUIDs.
-	uuids, err := GetRekorEntries(rClient, artifactHash)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	env, err := EnvelopeFromBytes(provenance)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	// Verify the provenance and return the signing certificate.
-	cert, err := FindSigningCertificate(ctx, uuids, *env, rClient)
+	signedAttestation, err := SearchValidSignedAttestation(ctx, artifactHash, provenance, rClient)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return env, cert, nil
+	return signedAttestation, nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
