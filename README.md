@@ -130,7 +130,7 @@ This is WIP and currently not supported.
 This is WIP and currently not supported.
 
 ### Containers
-To verify a contaimer image, you need to pass a container image name that is _immutable_ by providing its digest, in order to avoid [TOCTOU attacks](#toctou-attacks).
+To verify a container image, you need to pass a container image name that is _immutable_ by providing its digest, in order to avoid [TOCTOU attacks](#toctou-attacks).
 
 Run the commands below:
 
