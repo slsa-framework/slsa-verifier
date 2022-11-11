@@ -554,7 +554,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
 					if !errCmp(err, tt.err) {
-						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
 
 					if err != nil {
