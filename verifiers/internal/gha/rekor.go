@@ -83,13 +83,13 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, e models.Lo
 
 	verifier, err := signature.LoadECDSAVerifier(pubs[*e.LogID].PubKey, crypto.SHA256)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", err, "unable to fetch Rekor public keys from TUF repository")
+		return nil, fmt.Errorf("%w: %s", err, "unable to load a ECDSA verifier")
 	}
 
 	// This function verifies the inclusion proof, the signature on the root hash of the
 	// inclusion proof, and the SignedEntryTimestamp.
 	if err := rverify.VerifyLogEntry(ctx, &e, verifier); err != nil {
-		return nil, fmt.Errorf("%w: %s", err, "unable to fetch Rekor public keys from TUF repository")
+		return nil, fmt.Errorf("%w: %s", err, "unable to verify a log entry")
 	}
 
 	return &e, nil
