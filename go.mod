@@ -16,7 +16,7 @@ require (
 require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/go-openapi/swag v0.22.3
-	github.com/google/go-containerregistry v0.12.0
+	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
 	github.com/sigstore/cosign v1.13.1
 	github.com/slsa-framework/slsa-github-generator v1.2.1
