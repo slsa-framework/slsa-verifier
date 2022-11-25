@@ -21,50 +21,70 @@ linters:
   disable-all: true
   enable:
     - asciicheck
-    - deadcode
+    # TODO(): Restore linter
+    # - deadcode
     - depguard
     - dogsled
-    - errcheck
+    # TODO(): Restore linter
+    # - errcheck
     - errorlint
     - exhaustive
     - exportloopref
-    - gci
+    # TODO(): Restore linter
+    # - gci
     - gochecknoinits
-    - gocognit
+    # TODO(): Restore linter
+    # - gocognit
     - goconst
-    - gocritic
+    # TODO(): Restore linter
+    # - gocritic
     - gocyclo
-    - godot
+    # TODO(): Restore linter
+    # - godot
     - godox
-    - goerr113
+    # TODO(): Restore linter
+    # - goerr113
     - gofmt
-    - gofumpt
+    # TODO(): Restore linter
+    # - gofumpt
     - goheader
     - goimports
     - gomodguard
     - goprintffuncname
-    - gosec
+    # TODO(): Restore linter
+    # - gosec
     - gosimple
-    - govet
+    # TODO(): Restore linter
+    # - govet
     - ineffassign
-    - lll
+    # TODO(): Restore linter
+    # - lll
     - makezero
-    - misspell
+    # TODO(): Restore linter
+    # - misspell
     - nakedret
-    - nestif
+    # TODO(): Restore linter
+    # - nestif
     - nolintlint
-    - paralleltest
+    # TODO(): Restore linter
+    # - paralleltest
     - predeclared
-    - revive
-    - staticcheck
-    - stylecheck
-    - thelper
+    # TODO(): Restore linter
+    # - revive
+    # TODO(): Restore linter
+    # - staticcheck
+    # TODO(): Restore linter
+    # - stylecheck
+    # TODO(): Restore linter
+    # - thelper
     - typecheck
-    - unconvert
+    # TODO(): Restore linter
+    # - unconvert
     - unused
     - varcheck
     - whitespace
-    - wrapcheck
+    # TODO(): Restore linter
+    # - wrapcheck
 linters-settings:
   errcheck:
     check-type-assertions: true
