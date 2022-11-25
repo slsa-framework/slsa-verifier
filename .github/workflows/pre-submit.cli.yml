@@ -1,12 +1,12 @@
 name: Pre submits cli
-on: 
+on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
   # Used in combination with schedule.cli.yml
   # to avoid duplicating the test code.
   schedule:
-    - cron: '25 6 * * 5'
+    - cron: "25 6 * * 5"
 
 permissions: read-all
 
@@ -20,7 +20,7 @@ jobs:
       - name: setup-go
         uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3.3.1
         with:
-          go-version: '1.18'
+          go-version: "1.18"
 
       - name: Save event name
         env:
