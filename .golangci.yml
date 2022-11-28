@@ -1,0 +1,173 @@
+---
+run:
+  concurrency: 2
+  deadline: 5m
+issues:
+  include:
+    - EXC0012
+    - EXC0013
+    - EXC0014
+    - EXC0015
+  # Maximum issues count per one linter.
+  # Set to 0 to disable.
+  # Default: 50
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text.
+  # Set to 0 to disable.
+  # Default: 3
+  max-same-issues: 0
+  new-from-rev: ""
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - deadcode
+    - depguard
+    - dogsled
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - errcheck
+    - errorlint
+    - exhaustive
+    - exportloopref
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - gci
+    - gochecknoinits
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - gocognit
+    - goconst
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - gocritic
+    - gocyclo
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - godot
+    - godox
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - goerr113
+    - gofmt
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - gofumpt
+    - goheader
+    - goimports
+    - gomodguard
+    - goprintffuncname
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - gosec
+    - gosimple
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - govet
+    - ineffassign
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - lll
+    - makezero
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - misspell
+    - nakedret
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - nestif
+    - nolintlint
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - paralleltest
+    - predeclared
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - revive
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - staticcheck
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - stylecheck
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - thelper
+    - typecheck
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - unconvert
+    - unused
+    - varcheck
+    - whitespace
+    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
+    # - wrapcheck
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  govet:
+    enable:
+      - fieldalignment
+  godox:
+    keywords:
+      - BUG
+      - FIXME
+      - HACK
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/slsa-framework/slsa-github-generator)
+  gocritic:
+    enabled-checks:
+      # Diagnostic
+      - appendAssign
+      - argOrder
+      - badCond
+      - caseOrder
+      - codegenComment
+      - commentedOutCode
+      - deprecatedComment
+      - dupArg
+      - dupBranchBody
+      - dupCase
+      - dupSubExpr
+      - exitAfterDefer
+      - flagDeref
+      - flagName
+      - nilValReturn
+      - offBy1
+      - sloppyReassign
+      - weakCond
+      - octalLiteral
+
+      # Performance
+      - appendCombine
+      - equalFold
+      - hugeParam
+      - indexAlloc
+      - rangeExprCopy
+      - rangeValCopy
+
+      # Style
+      - assignOp
+      - boolExprSimplify
+      - captLocal
+      - commentFormatting
+      - commentedOutImport
+      - defaultCaseOrder
+      - docStub
+      - elseif
+      - emptyFallthrough
+      - emptyStringTest
+      - hexLiteral
+      - ifElseChain
+      - methodExprCall
+      - regexpMust
+      - singleCaseSwitch
+      - sloppyLen
+      - stringXbytes
+      - switchTrue
+      - typeAssertChain
+      - typeSwitchVar
+      - underef
+      - unlabelStmt
+      - unlambda
+      - unslice
+      - valSwap
+      - wrapperFunc
+      - yodaStyleExpr
+
+      # Opinionated
+      - builtinShadow
+      - importShadow
+      - initClause
+      - nestingReduce
+      - paramTypeCombine
+      - ptrToRefParam
+      - typeUnparen
+      - unnecessaryBlock

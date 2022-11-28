@@ -770,7 +770,6 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
-
 			}
 		})
 	}
