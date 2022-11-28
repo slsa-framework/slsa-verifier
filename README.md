@@ -120,7 +120,7 @@ You have two options to install the verifier.
 #### Option 1: Install via go
 
 ```
-$ go install github.com/slsa-framework/slsa-verifier/cli/slsa-verifier@v1.3.1
+$ go install github.com/slsa-framework/slsa-verifier/cli/slsa-verifier@v1.3.2
 $ slsa-verifier <options>
 ```
 
@@ -128,13 +128,13 @@ $ slsa-verifier <options>
 
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v1.3.1
+$ cd slsa-verifier && git checkout v1.3.2
 $ go run ./cli/slsa-verifier <options>
 ```
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.3.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.3.1)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.3.2](https://github.com/slsa-framework/slsa-verifier/releases/tag/v1.3.2)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
