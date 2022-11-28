@@ -1,0 +1,17 @@
+---
+extends: default
+
+ignore: |
+  node_modules/
+  vendor/
+
+rules:
+  comments:
+    # prettier formats comments one space from content
+    min-spaces-from-content: 1
+  document-start: disable
+  line-length: disable
+  truthy:
+    allowed-values: ["true", "false"]
+    # Allow Github Actions keys like 'on'
+    check-keys: false
