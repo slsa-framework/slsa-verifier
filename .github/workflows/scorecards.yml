@@ -3,9 +3,9 @@ on:
   # Only the default branch is supported.
   branch_protection_rule:
   schedule:
-    - cron: '25 6 * * 5'
+    - cron: "25 6 * * 5"
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -22,7 +22,7 @@ jobs:
       # Needs for private repositories.
       contents: read
       actions: read
-    
+
     steps:
       - name: "Checkout code"
         uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # tag=v3.1.2
@@ -41,8 +41,8 @@ jobs:
           # repo_token: ${{ secrets.SCORECARD_READ_TOKEN }}
 
           # Publish the results for public repositories to enable scorecard badges. For more details, see
-          # https://github.com/ossf/scorecard-action#publishing-results. 
-          # For private repositories, `publish_results` will automatically be set to `false`, regardless 
+          # https://github.com/ossf/scorecard-action#publishing-results.
+          # For private repositories, `publish_results` will automatically be set to `false`, regardless
           # of the value entered here.
           publish_results: true
 
@@ -54,9 +54,9 @@ jobs:
           name: SARIF file
           path: results.sarif
           retention-days: 5
-      
+
       # Upload the results to GitHub's code scanning dashboard.
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@4238421316c33d73aeea2801274dd286f157c2bb # v2.1.32
+        uses: github/codeql-action/upload-sarif@312e093a1892bd801f026f1090904ee8e460b9b6 # v2.1.34
         with:
           sarif_file: results.sarif
