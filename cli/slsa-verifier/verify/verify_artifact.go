@@ -22,9 +22,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.

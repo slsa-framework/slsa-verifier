@@ -9,7 +9,7 @@ import (
 	"io/fs"
 	"path"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 //go:embed materials/*

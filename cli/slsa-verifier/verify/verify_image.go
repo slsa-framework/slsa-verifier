@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
 
 type ComputeDigestFn func(string) (string, error)

@@ -9,7 +9,7 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 type searchResult struct {

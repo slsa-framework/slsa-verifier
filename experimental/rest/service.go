@@ -9,8 +9,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
 )
 
 var errInvalid = errors.New("invalid")

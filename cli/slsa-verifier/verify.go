@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
+	"github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier/verify"
 	"github.com/spf13/cobra"
 )
 

@@ -13,11 +13,11 @@ import (
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/client"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/register"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/register"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
 
 const VerifierName = "GHA"

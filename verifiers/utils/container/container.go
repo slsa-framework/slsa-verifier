@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	crname "github.com/google/go-containerregistry/pkg/name"
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 func GetImageDigest(image string) (string, error) {

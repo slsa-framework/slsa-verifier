@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/slsa-framework/slsa-verifier/experimental/rest"
+	"github.com/slsa-framework/slsa-verifier/v2/experimental/rest"
 )
 
 func main() {
