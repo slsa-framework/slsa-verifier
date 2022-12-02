@@ -120,7 +120,7 @@ You have two options to install the verifier.
 #### Option 1: Install via go
 
 ```
-$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.0.0
+$ go install github.com/slsa-framework/slsa-verifier/cli/slsa-verifier@v1.3.2
 $ slsa-verifier <options>
 ```
 
