@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -487,7 +488,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			// Avoid rate limiting by not running the tests in parallel.
 			// t.Parallel()
 
-			checkVersions := getBuildersAndVersions(t, tt.minversion, tt.builders, GHA_ARTIFACT_PATH_BUILDERS)
+			checkVersions := getBuildersAndVersions(t, "v1.2.2", tt.builders, GHA_ARTIFACT_PATH_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}
 			}
@@ -575,6 +576,37 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					// Validate against builderID we generated automatically.
 					if err := outBuilderID.Matches(*bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
+					}
+
+					// Smoke test against the CLI command
+					cliCmd := verifyArtifactCmd()
+					args := []string{
+						artifactPath,
+						"--source-uri", tt.source,
+						"--provenance-path", provenancePath}
+					if bid != nil {
+						args = append(args, "--builder-id", *bid)
+					}
+					if tt.pbranch != nil {
+						args = append(args, "--source-branch", *tt.pbranch)
+					}
+					if tt.ptag != nil {
+						args = append(args, "--source-tag", *tt.ptag)
+					}
+					if tt.pversiontag != nil {
+						args = append(args, "--source-versioned-tag", *tt.pversiontag)
+					}
+					if tt.inputs != nil {
+						for k, v := range tt.inputs {
+							args = append(args, "--build-workflow-input", fmt.Sprintf("%s=%s", k, v))
+						}
+					}
+					b := bytes.NewBufferString("")
+					cliCmd.SetOut(b)
+					cliCmd.SetArgs(args)
+					cliErr := cliCmd.Execute()
+					if !errCmp(cliErr, tt.err) {
+						t.Errorf("%v: %v", v, cmp.Diff(cliErr, tt.err, cmpopts.EquateErrors()))
 					}
 				}
 			}
