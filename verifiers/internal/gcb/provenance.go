@@ -412,6 +412,7 @@ func (self *Provenance) VerifyVersionedTag(tag string) error {
 
 func decodeSignature(s string) ([]byte, []error) {
 	var errs []error
+	// First try the std decoding.
 	rsig, err := base64.StdEncoding.DecodeString(s)
 	if err == nil {
 		// No error, return the value.
@@ -419,6 +420,11 @@ func decodeSignature(s string) ([]byte, []error) {
 	}
 	errs = append(errs, err)
 
+	// If std decoding failed, try URL decoding.
+	// We try both because we encountered decoding failures
+	// during our tests. The DSSE documentation does not prescribes
+	// which encoding to use: `Either standard or URL-safe encoding is allowed`.
+	// https://github.com/secure-systems-lab/dsse/blob/27ce241dec575998dee8967c3c76d4edd5d6ee73/envelope.md#standard-json-envelope.
 	rsig, err = base64.URLEncoding.DecodeString(s)
 	if err == nil {
 		// No error, return the value.
