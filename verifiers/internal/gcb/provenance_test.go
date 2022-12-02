@@ -10,9 +10,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // This function sets the statement of the proveannce, as if

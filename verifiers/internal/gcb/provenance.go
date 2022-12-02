@@ -15,10 +15,10 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/keys"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 var GCBBuilderIDs = []string{

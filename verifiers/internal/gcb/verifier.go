@@ -3,11 +3,11 @@ package gcb
 import (
 	"context"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
-	register "github.com/slsa-framework/slsa-verifier/register"
-	_ "github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb/keys"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	register "github.com/slsa-framework/slsa-verifier/v2/register"
+	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/keys"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 const VerifierName = "GCB"

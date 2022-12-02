@@ -19,9 +19,9 @@ import (
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/layout"
 
-	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
+	"github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier/verify"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
 
 func errCmp(e1, e2 error) bool {
