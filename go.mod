@@ -1,4 +1,4 @@
-module github.com/slsa-framework/slsa-verifier
+module github.com/slsa-framework/slsa-verifier/v2
 
 go 1.18
 

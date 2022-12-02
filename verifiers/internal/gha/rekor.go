@@ -31,7 +31,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 const (

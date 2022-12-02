@@ -17,8 +17,8 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/models"
 
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
 )
 
 // SignedAttestation contains a signed DSSE envelope

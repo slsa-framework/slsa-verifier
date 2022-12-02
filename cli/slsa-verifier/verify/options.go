@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/spf13/cobra"
 )
 
