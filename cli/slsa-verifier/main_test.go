@@ -475,7 +475,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		{
 			name:       "regression: sharded uuids",
 			artifact:   "binary-linux-amd64-sharded",
-			source:     "github.com/slsa-framework/slsa-verifier/v2",
+			source:     "github.com/slsa-framework/slsa-verifier",
 			pbranch:    pString("release/v1.0"),
 			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"),
 			noversion:  true,
