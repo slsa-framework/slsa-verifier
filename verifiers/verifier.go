@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/register"
-	_ "github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb"
-	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gha"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/register"
+	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 func getVerifier(builderOpts *options.BuilderOpts) (register.SLSAVerifier, error) {

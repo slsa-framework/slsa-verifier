@@ -19,9 +19,9 @@ import (
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/layout"
 
-	"github.com/slsa-framework/slsa-verifier/cli/slsa-verifier/verify"
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
+	"github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier/verify"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
 
 func errCmp(e1, e2 error) bool {
@@ -475,7 +475,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		{
 			name:       "regression: sharded uuids",
 			artifact:   "binary-linux-amd64-sharded",
-			source:     "github.com/slsa-framework/slsa-verifier",
+			source:     "github.com/slsa-framework/slsa-verifier/v2",
 			pbranch:    pString("release/v1.0"),
 			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"),
 			noversion:  true,
