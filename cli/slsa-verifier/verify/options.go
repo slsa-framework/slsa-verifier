@@ -91,6 +91,9 @@ func (i *workflowInputs) Set(value string) error {
 	if len(l) != 2 {
 		return fmt.Errorf("%w: expected 'key=value' format, got '%s'", serrors.ErrorInvalidFormat, value)
 	}
+	if i.kv == nil {
+		i.kv = make(map[string]string)
+	}
 	i.kv[l[0]] = l[1]
 	return nil
 }
