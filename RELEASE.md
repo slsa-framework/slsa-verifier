@@ -18,6 +18,8 @@ Major and minor releases are released directly from the `main` branch. Patch ver
 
 ### New major or minor release
 
+For a new major version update, ensure that the new version's go.mod file appends the new major version number to the module path. Then, update every imported package from the module with the new major version. See [here](https://go.dev/doc/modules/major-version) for details.
+
 ### Dry-Run
 
 Create a release candidate for the official slsa-verifier via [slsa-framework/slsa-verifier/releases/new](https://github.com/slsa-framework/slsa-verifier/releases/new).
@@ -32,7 +34,11 @@ This will trigger a release workflow: wait until it completes and generates the 
 
 Do **NOT** submit any more code between now and the final release.
 
-Ensure that the release is successful and provenance can be verified properly. Then, either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
+Check the following:
+
+1. Ensure that the release is successful and provenance can be verified properly. 
+2. Either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
+3. Ensure that the latest release can be installed via a `go install`.
 
 If both of these steps succeed, then move on to the [Final Release](#final-release).
 
