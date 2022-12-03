@@ -467,7 +467,7 @@ func (self *Provenance) verifySignatures(prov *provenance) error {
 
 			// Decode the signature.
 			rsig, es := decodeSignature(sig.Sig)
-			if err != nil {
+			if len(es) != 0 {
 				errs = append(errs, es...)
 				continue
 			}
