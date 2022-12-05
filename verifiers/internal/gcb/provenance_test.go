@@ -75,7 +75,7 @@ func Test_VerifyIntotoHeaders(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			err = prov.VerifyIntotoHeaders()
@@ -216,7 +216,7 @@ func Test_VerifyBuilder(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			var builderOpts options.BuilderOpts
@@ -480,7 +480,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			builderID, err := utils.TrustedBuilderIDNew(tt.builderID)
@@ -516,6 +516,54 @@ func Test_VerifySignature(t *testing.T) {
 			path:     "./testdata/gcloud-container-invalid-signature-payloadtype.json",
 			expected: serrors.ErrorNoValidSignature,
 		},
+		{
+			name:     "invalid signature encoding",
+			path:     "./testdata/gcloud-container-invalid-signature-encoding.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid signature empty",
+			path:     "./testdata/gcloud-container-empty-signature.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid region",
+			path:     "./testdata/gcloud-container-invalid-signature-region.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid region empty",
+			path:     "./testdata/gcloud-container-empty-signature-region.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid keyid",
+			path:     "./testdata/gcloud-container-invalid-keyid.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid keyid empty",
+			path:     "./testdata/gcloud-container-empty-keyid.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid keyid none",
+			path:     "./testdata/gcloud-container-no-keyid.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name:     "invalid signature multiple",
+			path:     "./testdata/gcloud-container-multiple-invalid-signatures.json",
+			expected: serrors.ErrorNoValidSignature,
+		},
+		{
+			name: "signature multiple 2nd valid",
+			path: "./testdata/gcloud-container-multiple-signatures-2ndvalid.json",
+		},
+		{
+			name: "signature multiple 3rd valid",
+			path: "./testdata/gcloud-container-multiple-signatures-3rdvalid.json",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -533,10 +581,46 @@ func Test_VerifySignature(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			err = prov.VerifySignature()
+			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+			}
+		})
+	}
+}
+
+func Test_ProvenanceFromBytes(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		path     string
+		expected error
+	}{
+		{
+			name:     "invalid signature none",
+			path:     "./testdata/gcloud-container-no-signature.json",
+			expected: serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:     "invalid provenance empty",
+			path:     "./testdata/gcloud-container-empty-provenance.json",
+			expected: serrors.ErrorInvalidDssePayload,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(tt.path)
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			_, err = ProvenanceFromBytes(content)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
@@ -580,7 +664,7 @@ func Test_VerifySubjectDigest(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			err = prov.VerifySubjectDigest(tt.hash)
@@ -638,7 +722,7 @@ func Test_VerifySummary(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			provenanceOpts := options.ProvenanceOpts{
@@ -694,7 +778,7 @@ func Test_VerifyMetadata(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			provenanceOpts := options.ProvenanceOpts{
@@ -743,7 +827,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			if !tt.alter {
@@ -857,7 +941,7 @@ func Test_VerifyBranch(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			err = prov.VerifyBranch(tt.branch)
@@ -899,7 +983,7 @@ func Test_VerifyTag(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			err = prov.VerifyTag(tt.tag)
@@ -941,7 +1025,7 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			}
 
 			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
 			err = prov.VerifyVersionedTag(tt.tag)

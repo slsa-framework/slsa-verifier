@@ -583,7 +583,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					args := []string{
 						artifactPath,
 						"--source-uri", tt.source,
-						"--provenance-path", provenancePath}
+						"--provenance-path", provenancePath,
+					}
 					if bid != nil {
 						args = append(args, "--builder-id", *bid)
 					}
@@ -838,6 +839,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		source         string
 		pBuilderID     *string
 		outBuilderID   string
+		outProvenance  string
 		err            error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
@@ -847,158 +849,255 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		// minversion is a special case to test a newly added feature into a builder
 		minversion string
 	}{
+		// {
+		// 	name:       "valid main branch default",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// },
+		// {
+		// 	name:       "valid main branch gcs",
+		// 	artifact:   "gcloud-container-gcs",
+		// 	provenance: "gcloud-container-gcs.json",
+		// 	minversion: "v0.3",
+		// 	source:     "gs://slsa-tooling_cloudbuild/source/1663616632.078353-fc7db143dcc64b5f9fe71d0497125ca1.tgz",
+		// },
+		// {
+		// 	name:       "mismatch input builder version",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	pBuilderID: pString(builder + "@v0.4"),
+		// 	err:        serrors.ErrorMismatchBuilderID,
+		// },
+		// {
+		// 	name:       "unsupported builder",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	pBuilderID: pString(builder + "a"),
+		// 	err:        serrors.ErrorVerifierNotSupported,
+		// },
+		// {
+		// 	name:         "match output builder name",
+		// 	artifact:     "gcloud-container-github",
+		// 	provenance:   "gcloud-container-github.json",
+		// 	source:       "github.com/laurentsimon/gcb-tests",
+		// 	outBuilderID: builder,
+		// },
+		// {
+		// 	name:       "invalid repo name",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "github.com/laurentsimon/name",
+		// 	err:        serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:       "invalie org name",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "github.com/org/gcb-tests",
+		// 	err:        serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:       "invalid cloud git",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "gitlab.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorMismatchSource,
+		// },
+		// {
+		// 	name:       "invalid payload digest",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-payload-digest.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorNoValidSignature,
+		// },
+		// {
+		// 	name:       "invalid payload builderid",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-payload-builderid.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorNoValidSignature,
+		// },
+		// {
+		// 	name:       "invalid summary digest",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-summary-digest.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorMismatchHash,
+		// },
+		// {
+		// 	name:       "invalid text digest",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-text-digest.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorMismatchIntoto,
+		// },
+		// {
+		// 	name:       "invalid text build steps",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-text-steps.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorMismatchIntoto,
+		// },
+		// {
+		// 	name:       "invalid metadata kind",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-metadata-kind.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorInvalidFormat,
+		// },
+		// {
+		// 	name:       "invalid metadata resourceUri sha256",
+		// 	artifact:   "gcloud-container-github",
+		// 	provenance: "gcloud-container-mismatch-metadata-urisha256.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorMismatchHash,
+		// },
+		// START
 		{
-			name:       "valid main branch default",
+			name:       "invalid signature encoding",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/laurentsimon/gcb-tests",
-		},
-		{
-			name:       "valid main branch gcs",
-			artifact:   "gcloud-container-gcs",
-			provenance: "gcloud-container-gcs.json",
-			minversion: "v0.3",
-			source:     "gs://slsa-tooling_cloudbuild/source/1663616632.078353-fc7db143dcc64b5f9fe71d0497125ca1.tgz",
-		},
-		{
-			name:       "mismatch input builder version",
-			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/laurentsimon/gcb-tests",
-			pBuilderID: pString(builder + "@v0.4"),
-			err:        serrors.ErrorMismatchBuilderID,
-		},
-		{
-			name:       "unsupported builder",
-			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/laurentsimon/gcb-tests",
-			pBuilderID: pString(builder + "a"),
-			err:        serrors.ErrorVerifierNotSupported,
-		},
-		{
-			name:         "match output builder name",
-			artifact:     "gcloud-container-github",
-			provenance:   "gcloud-container-github.json",
-			source:       "github.com/laurentsimon/gcb-tests",
-			outBuilderID: builder,
-		},
-		{
-			name:       "invalid repo name",
-			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/laurentsimon/name",
-			err:        serrors.ErrorMismatchSource,
-		},
-		{
-			name:       "invalie org name",
-			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-github.json",
-			source:     "github.com/org/gcb-tests",
-			err:        serrors.ErrorMismatchSource,
-		},
-		{
-			name:       "invalid cloud git",
-			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-github.json",
-			source:     "gitlab.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorMismatchSource,
-		},
-		{
-			name:       "invalid payload digest",
-			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-payload-digest.json",
+			provenance: "gcloud-container-invalid-signature-encoding.json",
 			source:     "github.com/laurentsimon/gcb-tests",
 			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:       "invalid payload builderid",
+			name:       "invalid signature empty",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-payload-builderid.json",
+			provenance: "gcloud-container-empty-signature.json",
 			source:     "github.com/laurentsimon/gcb-tests",
 			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:       "invalid summary digest",
+			name:       "invalid signature none",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-summary-digest.json",
+			provenance: "gcloud-container-no-signature.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorMismatchHash,
+			err:        serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name:       "invalid text digest",
+			name:       "invalid region",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-text-digest.json",
+			provenance: "gcloud-container-invalid-signature-region.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorMismatchIntoto,
+			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:       "invalid text build steps",
+			name:       "invalid empty region",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-text-steps.json",
+			provenance: "gcloud-container-empty-signature-region.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorMismatchIntoto,
+			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:       "invalid metadata kind",
+			name:       "invalid keyid",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-metadata-kind.json",
+			provenance: "gcloud-container-invalid-keyid.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorInvalidFormat,
+			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:       "invalid metadata resourceUri sha256",
+			name:       "invalid keyid empty",
 			artifact:   "gcloud-container-github",
-			provenance: "gcloud-container-mismatch-metadata-urisha256.json",
+			provenance: "gcloud-container-empty-keyid.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorMismatchHash,
+			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name: "oci valid with tag",
-			// Image re-tagged and pushed to docker hub. This image is public.
-			artifact: "laurentsimon/slsa-gcb-%s:test",
-			artifactDigest: map[string]string{
-				"v0.2": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
-				"v0.3": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
-			},
-			remote:     true,
+			name:       "invalid keyid none",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-no-keyid.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			provenance: "gcloud-container-github.json",
+			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:     "oci mismatch digest",
-			artifact: "index.docker.io/laurentsimon/scorecard",
-			artifactDigest: map[string]string{
-				"v0.2": "d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
-				"v0.3": "d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
-			},
-			remote:     true,
-			provenance: "gcloud-container-github.json",
+			name:       "invalid signature multiple",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-invalid-signatures.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			err:        serrors.ErrorMismatchHash,
+			err:        serrors.ErrorNoValidSignature,
 		},
 		{
-			name:     "oci valid no tag",
-			artifact: "laurentsimon/slsa-gcb-%s",
-			artifactDigest: map[string]string{
-				"v0.2": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
-				"v0.3": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
-			},
-			remote:     true,
+			name:       "signature multiple 2nd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-signatures-2ndvalid.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			provenance: "gcloud-container-github.json",
 		},
-		// No version.
 		{
-			name:       "oci is mutable",
-			artifact:   "index.docker.io/laurentsimon/scorecard",
-			noversion:  true,
-			remote:     true,
+			name:       "signature multiple 3rd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-signatures-3rdvalid.json",
 			source:     "github.com/laurentsimon/gcb-tests",
-			provenance: "gcloud-container-github.json",
-			pBuilderID: pString(builder + "@v0.2"),
-			err:        serrors.ErrorMutableImage,
 		},
+		{
+			name:       "invalid multiple provenance",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-invalid-provenance.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "multiple provenance 2nd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-provenance-2ndvalid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+		},
+		{
+			name:       "multiple provenance 3rd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-provenance-3rdvalid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+		},
+		// END
+
+		// {
+		// 	name: "oci valid with tag",
+		// 	// Image re-tagged and pushed to docker hub. This image is public.
+		// 	artifact: "laurentsimon/slsa-gcb-%s:test",
+		// 	artifactDigest: map[string]string{
+		// 		"v0.2": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+		// 		"v0.3": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+		// 	},
+		// 	remote:     true,
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	provenance: "gcloud-container-github.json",
+		// },
+		// {
+		// 	name:     "oci mismatch digest",
+		// 	artifact: "index.docker.io/laurentsimon/scorecard",
+		// 	artifactDigest: map[string]string{
+		// 		"v0.2": "d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
+		// 		"v0.3": "d794817bdf9c7e5ec34758beb90a18113c7dfbd737e760cabf8dd923d49e96f4",
+		// 	},
+		// 	remote:     true,
+		// 	provenance: "gcloud-container-github.json",
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	err:        serrors.ErrorMismatchHash,
+		// },
+		// {
+		// 	name:     "oci valid no tag",
+		// 	artifact: "laurentsimon/slsa-gcb-%s",
+		// 	artifactDigest: map[string]string{
+		// 		"v0.2": "1a033b002f89ed2b8ea733162497fb70f1a4049a7f8602d6a33682b4ad9921fd",
+		// 		"v0.3": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+		// 	},
+		// 	remote:     true,
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	provenance: "gcloud-container-github.json",
+		// },
+		// // No version.
+		// {
+		// 	name:       "oci is mutable",
+		// 	artifact:   "index.docker.io/laurentsimon/scorecard",
+		// 	noversion:  true,
+		// 	remote:     true,
+		// 	source:     "github.com/laurentsimon/gcb-tests",
+		// 	provenance: "gcloud-container-github.json",
+		// 	pBuilderID: pString(builder + "@v0.2"),
+		// 	err:        serrors.ErrorMutableImage,
+		// },
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below

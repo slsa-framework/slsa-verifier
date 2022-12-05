@@ -1,0 +1,109 @@
+{
+    "image_summary": {
+      "digest": "sha256:f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+      "fully_qualified_digest": "us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image@sha256:f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+      "registry": "us-west2-docker.pkg.dev",
+      "repository": "quickstart-docker-repo"
+    },
+    "provenance_summary": {
+      "provenance": [
+        {
+          "build": {
+            "intotoStatement": {
+              "_type": "https://in-toto.io/Statement/v0.1",
+              "predicateType": "https://slsa.dev/provenance/v0.1",
+              "slsaProvenance": {
+                "builder": {
+                  "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3"
+                },
+                "materials": [
+                  {
+                    "digest": {
+                      "sha1": "01ce393d04eb6df2a7b2b3e95d4126e687afb7ae"
+                    },
+                    "uri": "https://github.com/laurentsimon/gcb-tests"
+                  }
+                ],
+                "metadata": {
+                  "buildFinishedOn": "2022-09-06T17:54:22.169342Z",
+                  "buildInvocationId": "11f6c682-3451-4f72-ac2a-8e386eab66af",
+                  "buildStartedOn": "2022-09-06T17:54:10.226833361Z"
+                },
+                "recipe": {
+                  "arguments": {
+                    "@type": "type.googleapis.com/google.devtools.cloudbuild.v1.Build",
+                    "id": "11f6c682-3451-4f72-ac2a-8e386eab66af",
+                    "options": {
+                      "dynamicSubstitutions": true,
+                      "logging": "LEGACY",
+                      "pool": {},
+                      "requestedVerifyOption": "VERIFIED",
+                      "substitutionOption": "ALLOW_LOOSE"
+                    },
+                    "sourceProvenance": {},
+                    "steps": [
+                      {
+                        "args": [
+                          "build",
+                          "-t",
+                          "us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v39",
+                          "."
+                        ],
+                        "name": "gcr.io/cloud-builders/docker",
+                        "pullTiming": {
+                          "endTime": "2022-09-06T17:54:13.240503649Z",
+                          "startTime": "2022-09-06T17:54:13.237138056Z"
+                        },
+                        "status": "SUCCESS",
+                        "timing": {
+                          "endTime": "2022-09-06T17:54:20.155242044Z",
+                          "startTime": "2022-09-06T17:54:13.237138056Z"
+                        }
+                      }
+                    ],
+                    "substitutions": {
+                      "COMMIT_SHA": "01ce393d04eb6df2a7b2b3e95d4126e687afb7ae",
+                      "REF_NAME": "v39",
+                      "REPO_NAME": "gcb-tests",
+                      "REVISION_ID": "01ce393d04eb6df2a7b2b3e95d4126e687afb7ae",
+                      "SHORT_SHA": "01ce393",
+                      "TAG_NAME": "v39",
+                      "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+                      "TRIGGER_NAME": "Tag"
+                    }
+                  },
+                  "entryPoint": "cloudbuild.yaml",
+                  "type": "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1"
+                }
+              },
+              "subject": [
+                {
+                  "digest": {
+                    "sha256": "f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7"
+                  },
+                  "name": "https://us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image:v39"
+                }
+              ]
+            }
+          },
+          "createTime": "2022-09-06T17:54:23.761540Z",
+          "envelope": {
+            "payload": "",
+            "payloadType": "application/vnd.in-toto+json",
+            "signatures": [
+              {
+                "keyid": "projects/verified-builder/locations/us-west2/keyRings/attestor/cryptoKeys/builtByGCB/cryptoKeyVersions/1",
+                "sig": "MEQCID2DrzUtVIv55nSl0FdoYdaaayxrjOOF2i35yadBIvFdAiAZhG4k1dC2RmSbIBVctPQ10bTzeN4XKU7Vm9E5oMJAJQ=="
+              }
+            ]
+          },
+          "kind": "BUILD",
+          "name": "projects/gosst-scare-sandbox/occurrences/768ee56d-2064-4ed9-9cd4-8232df1a1792",
+          "noteName": "projects/verified-builder/notes/intoto_11f6c682-3451-4f72-ac2a-8e386eab66af",
+          "resourceUri": "https://us-west2-docker.pkg.dev/gosst-scare-sandbox/quickstart-docker-repo/quickstart-image@sha256:f472ca4b68898c951ac3b476cba919d0d56fca4ced631fabcead51e4b2b690e7",
+          "updateTime": "2022-09-06T17:54:23.761540Z"
+        }
+      ]
+    }
+  }
+  
