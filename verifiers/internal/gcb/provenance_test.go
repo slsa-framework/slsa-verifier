@@ -562,11 +562,6 @@ func Test_VerifySignature(t *testing.T) {
 			expected: serrors.ErrorNoValidSignature,
 		},
 		{
-			name:     "invalid signature encoding",
-			path:     "./testdata/gcloud-container-invalid-signature-encoding.json",
-			expected: serrors.ErrorNoValidSignature,
-		},
-		{
 			name:     "invalid signature empty",
 			path:     "./testdata/gcloud-container-empty-signature.json",
 			expected: serrors.ErrorNoValidSignature,
