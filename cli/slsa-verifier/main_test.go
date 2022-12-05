@@ -1037,6 +1037,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			source:     "github.com/laurentsimon/gcb-tests",
 			err:        serrors.ErrorNoValidSignature,
 		},
+		// TODO(221): verify the correct provenance is returned.
+		// This should also be done for all other entries in this test.
 		{
 			name:       "multiple provenance 2nd valid",
 			artifact:   "gcloud-container-github",
