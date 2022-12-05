@@ -29,5 +29,6 @@ var (
 	ErrorNoValidSignature          = errors.New("no valid signature")
 	ErrorMutableImage              = errors.New("the image is mutable")
 	ErrorImageHash                 = errors.New("cannot retrieve sha256 of image")
+	ErrorInvalidEncoding           = errors.New("invalid encoding")
 	ErrorInternal                  = errors.New("internal error")
 )

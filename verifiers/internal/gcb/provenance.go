@@ -71,7 +71,7 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 	var prov gloudProvenance
 	err := json.Unmarshal(payload, &prov)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal gcloud provenance: %w", err)
+		return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	return &Provenance{
@@ -83,6 +83,9 @@ func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	payload, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+	if payload == nil {
+		return nil, fmt.Errorf("%w: empty payload", serrors.ErrorInvalidFormat)
 	}
 	return payload, nil
 }
@@ -410,7 +413,7 @@ func (self *Provenance) VerifyVersionedTag(tag string) error {
 	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
 }
 
-func decodeSignature(s string) ([]byte, []error) {
+func decodeSignature(s string) ([]byte, error) {
 	var errs []error
 	// First try the std decoding.
 	rsig, err := base64.StdEncoding.DecodeString(s)
@@ -432,7 +435,7 @@ func decodeSignature(s string) ([]byte, []error) {
 	}
 	errs = append(errs, err)
 
-	return nil, errs
+	return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidEncoding, errs)
 }
 
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
@@ -451,9 +454,13 @@ func (self *Provenance) verifySignatures(prov *provenance) error {
 
 	payloadHash := sha256.Sum256(payload)
 
+	// Verify the signatures.
+	if len(prov.Envelope.Signatures) == 0 {
+		return fmt.Errorf("%w: no signatures found in envelope", serrors.ErrorNoValidSignature)
+	}
+
 	var errs []error
 	regex := regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
-
 	for _, sig := range prov.Envelope.Signatures {
 		match := regex.FindStringSubmatch(sig.KeyID)
 		if len(match) == 2 {
@@ -466,9 +473,9 @@ func (self *Provenance) verifySignatures(prov *provenance) error {
 			}
 
 			// Decode the signature.
-			rsig, es := decodeSignature(sig.Sig)
-			if len(es) != 0 {
-				errs = append(errs, es...)
+			rsig, err := decodeSignature(sig.Sig)
+			if err != nil {
+				errs = append(errs, err)
 				continue
 			}
 
@@ -498,6 +505,7 @@ func (self *Provenance) VerifySignature() error {
 	if len(self.gcloudProv.ProvenanceSummary.Provenance) == 0 {
 		return fmt.Errorf("%w: no provenance found", serrors.ErrorInvalidDssePayload)
 	}
+
 	// Iterate over all provenances available.
 	var errs []error
 	for i := range self.gcloudProv.ProvenanceSummary.Provenance {

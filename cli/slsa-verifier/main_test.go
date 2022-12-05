@@ -583,7 +583,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					args := []string{
 						artifactPath,
 						"--source-uri", tt.source,
-						"--provenance-path", provenancePath}
+						"--provenance-path", provenancePath,
+					}
 					if bid != nil {
 						args = append(args, "--builder-id", *bid)
 					}
@@ -952,6 +953,102 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			provenance: "gcloud-container-mismatch-metadata-urisha256.json",
 			source:     "github.com/laurentsimon/gcb-tests",
 			err:        serrors.ErrorMismatchHash,
+		},
+		{
+			name:       "invalid signature encoding",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-invalid-signature-encoding.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid signature empty",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-empty-signature.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid signature none",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-no-signature.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:       "invalid region",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-invalid-signature-region.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid empty region",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-empty-signature-region.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid keyid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-invalid-keyid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid keyid empty",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-empty-keyid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid keyid none",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-no-keyid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "invalid signature multiple",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-invalid-signatures.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		{
+			name:       "signature multiple 2nd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-signatures-2ndvalid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+		},
+		{
+			name:       "signature multiple 3rd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-signatures-3rdvalid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+		},
+		{
+			name:       "invalid multiple provenance",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-invalid-provenance.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			err:        serrors.ErrorNoValidSignature,
+		},
+		// TODO(388): verify the correct provenance is returned.
+		// This should also be done for all other entries in this test.
+		{
+			name:       "multiple provenance 2nd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-provenance-2ndvalid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+		},
+		{
+			name:       "multiple provenance 3rd valid",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-multiple-provenance-3rdvalid.json",
+			source:     "github.com/laurentsimon/gcb-tests",
 		},
 		{
 			name: "oci valid with tag",
