@@ -839,7 +839,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		source         string
 		pBuilderID     *string
 		outBuilderID   string
-		outProvenance  string
 		err            error
 		// noversion is a special case where we are not testing all builder versions
 		// for example, testdata for the builder at head in trusted repo workflows
