@@ -119,9 +119,12 @@ function cleanup() {
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        // Get requested verifier version and validate.
-        // See https://docs.github.com/en/actions/learn-github-actions/contexts#github-context.
-        const actionRef = process.env.GITHUB_ACTION_REF || "";
+        // Get requested verifier version and validate
+        // SLSA_VERIFIER_CI_ACTION_REF is a utility env variable to help us test
+        // the Action in CI.
+        const actionRef = process.env.GITHUB_ACTION_REF ||
+            process.env.SLSA_VERIFIER_CI_ACTION_REF ||
+            "";
         let version;
         try {
             version = yield getVerifierVersion(actionRef);
