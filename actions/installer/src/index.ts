@@ -87,7 +87,8 @@ async function cleanup(): Promise<void> {
 }
 
 async function run(): Promise<void> {
-  // Get requested verifier version and validate
+  // Get requested verifier version and validate.
+  // See https://docs.github.com/en/actions/learn-github-actions/contexts#github-context.
   const actionRef = process.env.GITHUB_ACTION_REF || "";
   let version: string;
   try {

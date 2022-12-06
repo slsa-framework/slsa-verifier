@@ -119,7 +119,8 @@ function cleanup() {
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        // Get requested verifier version and validate
+        // Get requested verifier version and validate.
+        // See https://docs.github.com/en/actions/learn-github-actions/contexts#github-context.
         const actionRef = process.env.GITHUB_ACTION_REF || "";
         let version;
         try {
