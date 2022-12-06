@@ -62,8 +62,8 @@ const crypto = __importStar(__nccwpck_require__(6113));
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
-const BOOTSTRAP_VERSION = "v1.3.0";
-const BOOTSTRAP_VERIFIER_SHA256 = "1326430d044e8a9522c51e5f721e237b5f75acb6b4e518d129f669403cf7a79a";
+const BOOTSTRAP_VERSION = "v2.0.0";
+const BOOTSTRAP_VERIFIER_SHA256 = "8d2e93a9ea0126d5daec22f2778b42fea79192605d16955f0c91847c3a6a8921";
 const BINARY_NAME = "slsa-verifier";
 const PROVENANCE_NAME = "slsa-verifier-linux-amd64.intoto.jsonl";
 // If true, the input string conforms to slsa-verifier's versioning system.
