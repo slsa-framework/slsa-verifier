@@ -87,9 +87,10 @@ async function cleanup(): Promise<void> {
 }
 
 async function run(): Promise<void> {
-  // Get requested verifier version and validate.
-  // See https://docs.github.com/en/actions/learn-github-actions/contexts#github-context.
-  const actionRef = process.env.GITHUB_ACTION_REF || "";
+  // Get requested verifier version and validate
+  // SLSA_VERIFIER_CI_ACTION_REF is a utility env variable to help us test
+  // the Action in CI.
+  const actionRef = process.env.GITHUB_ACTION_REF || process.env.SLSA_VERIFIER_CI_ACTION_REF || "";
   let version: string;
   try {
     version = await getVerifierVersion(actionRef);
