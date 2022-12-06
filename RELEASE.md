@@ -39,6 +39,10 @@ Check the following:
 1. Ensure that the release is successful and provenance can be verified properly. 
 2. Either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
 3. Ensure that the latest release can be installed via a `go install`.
+4. Verify that the version reported by the `version` command is correct:
+```shell
+$ ./slsa-verifier version 2>&1 | grep GitVersion 
+```
 
 If both of these steps succeed, then move on to the [Final Release](#final-release).
 

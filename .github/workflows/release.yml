@@ -32,6 +32,7 @@ jobs:
           echo "::set-output name=version::$(git describe --tags --always --dirty | cut -c2-)"
 
   builder:
+    needs: [args]
     permissions:
       actions: read # For the detection of GitHub Actions environment.
       id-token: write # For signing.
