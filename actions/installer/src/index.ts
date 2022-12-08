@@ -167,10 +167,14 @@ async function run(): Promise<void> {
     const { exitCode, stdout, stderr } = await exec.getExecOutput(
       `${bootstrapVerifierPath}`,
       [
-        "verify-artifact", downloadedBinaryPath,
-        "--provenance-path", downloadedProvenancePath,
-        "--source-uri", "github.com/slsa-framework/slsa-verifier",
-        "--source-tag", version,
+        "verify-artifact",
+        downloadedBinaryPath,
+        "--provenance-path",
+        downloadedProvenancePath,
+        "--source-uri",
+        "github.com/slsa-framework/slsa-verifier",
+        "--source-tag",
+        version,
       ]
     );
     if (exitCode !== 0) {
