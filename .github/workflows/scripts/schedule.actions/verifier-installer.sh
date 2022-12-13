@@ -12,7 +12,7 @@ echo "Listing releases"
 release_list=$(gh -R slsa-framework/slsa-verifier release list)
 while read -r line; do
     tag=$(echo "$line" | cut -f1)
-    if version_ge "$tag" "$minimum_version"; then
+    if version_gt "$tag" "$minimum_version"; then
         echo " INFO: found version to test: $tag"
         list="$list, \"$tag\""
     fi
