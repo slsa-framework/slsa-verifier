@@ -158,7 +158,7 @@ jobs:
         run: |
           [ "$SUCCESS" == "true" ]
 
-      # Install at inexistent tag.
+      # Install at non-existent tag.
       # =========================
       - name: Install non-existent tag
         id: inexistent-tag
