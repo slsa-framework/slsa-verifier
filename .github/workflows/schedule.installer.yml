@@ -21,6 +21,7 @@ jobs:
   list-verifiers:
     runs-on: ubuntu-latest
     outputs:
+      # NOTE: version output is a JSON list of version numbers.
       # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/#new-fromjson-method-in-expressions
       # https://docs.github.com/en/actions/learn-github-actions/expressions#fromjson
       version: ${{ steps.generate-versions.outputs.version }}
