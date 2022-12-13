@@ -41,8 +41,10 @@ Check the following:
 3. Ensure that the latest release can be installed via a `go install`.
 4. Verify that the version reported by the `version` command is correct:
 ```shell
-$ ./slsa-verifier version 2>&1 | grep GitVersion 
+$ ./slsa-verifier version 2>&1 | grep GitVersion
 ```
+5. Ensure the installer Action works by manually running the [schedule.installer.yml](https://github.com/slsa-framework/slsa-verifier/actions/workflows/pre-submit.actions.yml). 
+
 
 If both of these steps succeed, then move on to the [Final Release](#final-release).
 
