@@ -116,7 +116,7 @@ jobs:
         env:
           VERSION: ${{ matrix.version }}
         run: |
-          commit_sha=$(gh api -H "Accept: application/vnd.github+json" /repos/${GITHUB_REPOSITORY}/git/ref/tags/"$VERSION" | jq -r '.object.sha')
+          commit_sha=$(gh api -H "Accept: application/vnd.github+json" "/repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" | jq -r '.object.sha')
           echo "commit_sha=$commit_sha" >> "$GITHUB_OUTPUT"
 
       - name: Run the Action at commit
@@ -134,7 +134,7 @@ jobs:
           slsa-verifier version
           echo "version: $version"
           echo "VERSION: $VERSION"
-          # Note: the version reported by the slsa-verifier does not contain the leading `v`.
+          # NOTE: the version reported by the slsa-verifier does not contain the leading `v`.
           [ "$version" == "${VERSION:1}" ]
 
       - name: Delete the binary
@@ -161,14 +161,14 @@ jobs:
       # Install at non-existent tag.
       # =========================
       - name: Install non-existent tag
-        id: inexistent-tag
+        id: nonexistent-tag
         if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
         continue-on-error: true
         env:
           SLSA_VERIFIER_CI_ACTION_REF: v100.3.5
         uses: ./actions/installer
       - env:
-          SUCCESS: ${{ steps.inexistent-tag.outcome == 'failure' }}
+          SUCCESS: ${{ steps.nonexistent-tag.outcome == 'failure' }}
         run: |
           [ "$SUCCESS" == "true" ]
 
@@ -182,7 +182,7 @@ jobs:
           SLSA_VERIFIER_CI_ACTION_REF:
         uses: ./actions/installer
       - env:
-          SUCCESS: ${{ steps.inexistent-tag.outcome == 'failure' }}
+          SUCCESS: ${{ steps.empty-tag.outcome == 'failure' }}
         run: |
           [ "$SUCCESS" == "true" ]
 
