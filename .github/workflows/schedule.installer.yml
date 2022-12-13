@@ -165,6 +165,7 @@ jobs:
         if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
         continue-on-error: true
         env:
+          # NOTE: actions/installer checks for valid semantic version numbers.
           SLSA_VERIFIER_CI_ACTION_REF: v100.3.5
         uses: ./actions/installer
       - env:
