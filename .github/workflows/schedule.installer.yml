@@ -99,7 +99,7 @@ jobs:
           slsa-verifier version
           echo "version: $version"
           echo "VERSION: $VERSION"
-          # Note: the version reported by the slsa-verifier does not contain the leading `v`.
+          # NOTE: the version reported by the slsa-verifier does not contain the leading `v`.
           [ "$version" == "${VERSION:1}" ]
 
       - name: Delete the binary
