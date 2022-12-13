@@ -116,8 +116,7 @@ jobs:
         env:
           VERSION: ${{ matrix.version }}
         run: |
-          # TODO: use $GITHUB_REPOSITORY
-          commit_sha=$(gh api -H "Accept: application/vnd.github+json" /repos/slsa-framework/slsa-verifier/git/ref/tags/"$VERSION" | jq -r '.object.sha')
+          commit_sha=$(gh api -H "Accept: application/vnd.github+json" /repos/${GITHUB_REPOSITORY}/git/ref/tags/"$VERSION" | jq -r '.object.sha')
           echo "commit_sha=$commit_sha" >> "$GITHUB_OUTPUT"
 
       - name: Run the Action at commit
