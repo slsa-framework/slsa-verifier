@@ -38,12 +38,12 @@ jobs:
           path: __THIS_REPO__
 
       - name: Generate verifier list
-        if: github.event_name != 'workflow_dispatch'
+        if: inputs.version == ''
         id: generate-list
         run: ./__THIS_REPO__/.github/workflows/scripts/schedule.actions/verifier-installer.sh
 
       - name: Generate pre-release list
-        if: github.event_name == 'workflow_dispatch'
+        if: inputs.version != ''
         id: generate-prerelease
         env:
           PRE_RELEASE_VERSION: ${{ inputs.version }}
@@ -55,7 +55,7 @@ jobs:
           PRE_RELEASE_VERSION: ${{ steps.generate-prerelease.outputs.version }}
           LIST_VERSION: ${{ steps.generate-list.outputs.version }}
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ -n $PRE_RELEASE_VERSION ]]; then
             echo "version=$PRE_RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           else
             echo "version=$LIST_VERSION" >> "$GITHUB_OUTPUT"
@@ -190,7 +190,7 @@ jobs:
     needs: [verifier-run]
     runs-on: ubuntu-latest
     # We use `== 'failure'` instead of ` != 'success'` because we want to ignore skipped jobs, if there are any.
-    if: always() && github.event_name != 'workflow_dispatch' && needs.verifier-run.result != 'failure'
+    if: always() && inputs.version == '' && needs.verifier-run.result != 'failure'
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
         with:
@@ -202,7 +202,7 @@ jobs:
 
     needs: [verifier-run]
     runs-on: ubuntu-latest
-    if: always() && github.event_name != 'workflow_dispatch' && needs.verifier-run.result == 'failure'
+    if: always() && inputs.version == '' && needs.verifier-run.result == 'failure'
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
         with:
