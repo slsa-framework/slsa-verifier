@@ -119,7 +119,7 @@ $ sed -i "s/v1.0.0/v1.1.1/g" ./README.md
 4. Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verification succeeds
 and the hash in the pull request matches the one computed on the binary. You can use [#slsa-framework/slsa-github-generator#113](https://github.com/slsa-framework/slsa-github-generator/pull/113) as example.
 
-5. Update the e2e.installer-action.yml [here](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.installer-action.yml#L9) and [here](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.installer-action.yml#L17) with the latest version to test.
+5. Update the e2e.installer-action.yml [here](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.installer-action.yml#L9) and [here](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.installer-action.yml#L17) with the newly released version.
 
 ## Update builders
 
