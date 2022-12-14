@@ -8,7 +8,7 @@ on:
       version:
         type: string
         description: The version to to test for pre-release.
-        required: true
+        required: false
 
 permissions: read-all
 
