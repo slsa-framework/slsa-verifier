@@ -203,7 +203,7 @@ jobs:
       - run: ./.github/workflows/scripts/e2e-report-success.sh
 
   if-failed:
-    needs: [verifier-run]
+    needs: [verifier-run, list-verifiers]
     runs-on: ubuntu-latest
     if: always() && inputs.version == '' && (needs.verifier-run.result == 'failure' || needs.list-verifiers.result == 'failure')
     permissions:
