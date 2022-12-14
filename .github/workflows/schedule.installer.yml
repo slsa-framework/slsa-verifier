@@ -41,8 +41,6 @@ jobs:
       - name: Generate verifier list
         if: inputs.version == ''
         id: generate-list
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./__THIS_REPO__/.github/workflows/scripts/schedule.actions/verifier-installer.sh
 
       - name: Generate pre-release list
