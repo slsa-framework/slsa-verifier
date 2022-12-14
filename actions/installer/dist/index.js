@@ -179,10 +179,14 @@ function run() {
         // Validate binary provenance
         try {
             const { exitCode, stdout, stderr } = yield exec.getExecOutput(`${bootstrapVerifierPath}`, [
-                "verify-artifact", downloadedBinaryPath,
-                "--provenance-path", downloadedProvenancePath,
-                "--source-uri", "github.com/slsa-framework/slsa-verifier",
-                "--source-tag", version,
+                "verify-artifact",
+                downloadedBinaryPath,
+                "--provenance-path",
+                downloadedProvenancePath,
+                "--source-uri",
+                "github.com/slsa-framework/slsa-verifier",
+                "--source-tag",
+                version,
             ]);
             if (exitCode !== 0) {
                 throw new Error(`Unable to verify binary provenance. Aborting installation. stdout: ${stdout}; stderr: ${stderr}`);
