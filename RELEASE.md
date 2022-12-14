@@ -41,8 +41,10 @@ Check the following:
 3. Ensure that the latest release can be installed via a `go install`.
 4. Verify that the version reported by the `version` command is correct:
 ```shell
-$ ./slsa-verifier version 2>&1 | grep GitVersion 
+$ ./slsa-verifier version 2>&1 | grep GitVersion
 ```
+5. Ensure the installer Action works by manually running the [schedule.installer.yml](https://github.com/slsa-framework/slsa-verifier/actions/workflows/pre-submit.actions.yml). 
+
 
 If both of these steps succeed, then move on to the [Final Release](#final-release).
 
@@ -116,6 +118,8 @@ $ sed -i "s/v1.0.0/v1.1.1/g" ./README.md
 
 4. Send a pull request with the changes. In the description, explain the steps to verify the hash update, i.e., reviewers shoud LGTM only if the provenance verification succeeds
 and the hash in the pull request matches the one computed on the binary. You can use [#slsa-framework/slsa-github-generator#113](https://github.com/slsa-framework/slsa-github-generator/pull/113) as example.
+
+5. Replace all version / commit references to the slsa-verifier repo with references to the newly released version [e2e.installer-action.yml](https://github.com/slsa-framework/example-package/blob/main/.github/workflows/e2e.installer-action.yml). Each reference has the comment `# UPDATE ON RELEASE`.
 
 ## Update builders
 
