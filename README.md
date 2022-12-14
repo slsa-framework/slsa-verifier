@@ -120,7 +120,7 @@ You have two options to install the verifier.
 #### Option 1: Install via go
 
 ```
-$ go install github.com/slsa-framework/slsa-verifier/cli/slsa-verifier@v1.3.2
+$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.0.1
 $ slsa-verifier <options>
 ```
 
@@ -128,13 +128,13 @@ $ slsa-verifier <options>
 
 ```
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v2.0.0
+$ cd slsa-verifier && git checkout v2.0.1
 $ go run ./cli/slsa-verifier <options>
 ```
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.0.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.0.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.0.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.0.1)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
@@ -267,6 +267,20 @@ FAILED: SLSA verification failed: could not find a matching valid signature entr
 ```
 
 This issue is tracked by [issue #325](https://github.com/slsa-framework/slsa-verifier/issues/325). You _must_ update to the newest patch versions of each minor release to fix this issue.
+
+### panic: assignment to entry in nil map 
+
+This will occur only when verifying provenance against workflow inputs.
+
+**Affected versions:** v2.0.0
+
+`slsa-verifier` will fail with the following error:
+
+```
+panic: assignment to entry in nil map
+```
+
+This is fixed by [PR #379](https://github.com/slsa-framework/slsa-verifier/pull/379). You _must_ update to the newest patch versions of each minor release to fix this issue.
 
 ## Technical design
 
