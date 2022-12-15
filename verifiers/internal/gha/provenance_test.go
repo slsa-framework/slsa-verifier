@@ -331,6 +331,11 @@ func Test_verifySourceURI(t *testing.T) {
 							URI: "git+https://not-github.com/some/repo@v1.2.3",
 						},
 					},
+					Materials: []slsacommon.ProvenanceMaterial{
+						{
+							URI: "git+https://not-github.com/some/repo@v1.2.3",
+						},
+					},
 				},
 			},
 			sourceURI: "git+https://not-github.com/some/repo",
