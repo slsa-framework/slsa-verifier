@@ -7,7 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
+	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
@@ -110,9 +111,9 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "source has no @",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo",
 						},
 					},
@@ -124,9 +125,9 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "empty materials",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
 					},
@@ -138,8 +139,8 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "empty configSource",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Materials: []slsa.ProvenanceMaterial{
+				Predicate: slsa02.ProvenancePredicate{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -152,8 +153,8 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "empty uri materials",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Materials: []slsa.ProvenanceMaterial{
+				Predicate: slsa02.ProvenancePredicate{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "",
 						},
@@ -166,8 +167,8 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "no tag uri materials",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Materials: []slsa.ProvenanceMaterial{
+				Predicate: slsa02.ProvenancePredicate{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo",
 						},
@@ -180,8 +181,8 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "no tag uri configSource",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Materials: []slsa.ProvenanceMaterial{
+				Predicate: slsa02.ProvenancePredicate{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo",
 						},
@@ -194,13 +195,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "match source",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -212,13 +213,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "match source no git",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -230,13 +231,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "match source no git+https",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -248,13 +249,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "match source no repo",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -267,13 +268,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "mismatch materials configSource tag",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/repo@v1.2.4",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -286,13 +287,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "mismatch materials configSource org",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/other/repo@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -305,13 +306,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "mismatch materials configSource name",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://github.com/some/other@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://github.com/some/repo@v1.2.3",
 						},
@@ -324,13 +325,13 @@ func Test_verifySourceURI(t *testing.T) {
 		{
 			name: "not github.com repo",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Invocation: slsa.ProvenanceInvocation{
-						ConfigSource: slsa.ConfigSource{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
 							URI: "git+https://not-github.com/some/repo@v1.2.3",
 						},
 					},
-					Materials: []slsa.ProvenanceMaterial{
+					Materials: []slsacommon.ProvenanceMaterial{
 						{
 							URI: "git+https://not-github.com/some/repo@v1.2.3",
 						},
@@ -365,8 +366,8 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		{
 			name: "match no version",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Builder: slsa.ProvenanceBuilder{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
 						ID: "some/builderID",
 					},
 				},
@@ -376,8 +377,8 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		{
 			name: "match with tag",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Builder: slsa.ProvenanceBuilder{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
 						ID: "some/builderID@v1.2.3",
 					},
 				},
@@ -387,8 +388,8 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		{
 			name: "same builderID mismatch version",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Builder: slsa.ProvenanceBuilder{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
 						ID: "some/builderID@v1.2.3",
 					},
 				},
@@ -400,8 +401,8 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		{
 			name: "mismatch builderID same version",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Builder: slsa.ProvenanceBuilder{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
 						ID: "tome/builderID@v1.2.3",
 					},
 				},
@@ -418,8 +419,8 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		{
 			name: "empty expected builderID",
 			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa.ProvenancePredicate{
-					Builder: slsa.ProvenanceBuilder{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
 						ID: "tome/builderID@v1.2.3",
 					},
 				},
