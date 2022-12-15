@@ -36,14 +36,4 @@ jobs:
       - name: Run tests for verifier
         run: |
           set -euo pipefail
-
-          go mod vendor
-
-          # Build cli
-          go build -mod=vendor -o slsa-verifier ./cli/slsa-verifier/
-
-          # Builder service
-          go build -mod=vendor -o service ./cli/experimental/service/
-
-          # Tests
-          go test -mod=vendor -v -timeout=20m  ./...
+          make regression-test
