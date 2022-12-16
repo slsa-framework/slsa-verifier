@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # tag=v3.1.2
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
 
       - name: setup-go
-        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3.3.1
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
           go-version: "1.18"
 
@@ -36,14 +36,4 @@ jobs:
       - name: Run tests for verifier
         run: |
           set -euo pipefail
-
-          go mod vendor
-
-          # Build cli
-          go build -mod=vendor -o slsa-verifier ./cli/slsa-verifier/
-
-          # Builder service
-          go build -mod=vendor -o service ./cli/experimental/service/
-
-          # Tests
-          go test -mod=vendor -v -timeout=20m  ./...
+          make regression-test
