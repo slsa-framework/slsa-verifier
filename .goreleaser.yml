@@ -16,7 +16,7 @@ builds:
     goarch:
       - amd64
       - arm64
-    main: ./cli/slsa-verifier/main.go
+    main: ./cli/slsa-verifier
     binary: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
 archives:
   - format: binary
