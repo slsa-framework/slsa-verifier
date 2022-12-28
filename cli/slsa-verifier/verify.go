@@ -32,7 +32,7 @@ func verifyArtifactCmd() *cobra.Command {
 	o := &verify.VerifyOptions{}
 
 	cmd := &cobra.Command{
-		Use: "verify-artifact",
+		Use: "verify-artifact [flags] artifact",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("expects a single path to an artifact")
@@ -79,7 +79,7 @@ func verifyImageCmd() *cobra.Command {
 	o := &verify.VerifyOptions{}
 
 	cmd := &cobra.Command{
-		Use: "verify-image",
+		Use: "verify-image [flags] image",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("expects a single path to an image")
