@@ -96,6 +96,10 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		minversion string
 		// specifying builders will restrict builders to only the specified ones.
 		builders []string
+		// specify provenance path if not the same as artifacts[0]
+		// useful for testing provenance with multiple artifacts,
+		// without needing to duplicate provenance
+		provenancePath string
 	}{
 		{
 			name:      "valid main branch default",
@@ -496,8 +500,13 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
-				testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-				provenancePath := fmt.Sprintf("%s.intoto.jsonl", testPath)
+				var provenancePath string
+				if tt.provenancePath == "" {
+					testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
+					provenancePath = fmt.Sprintf("%s.intoto.jsonl", testPath)
+				} else {
+					provenancePath = filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenancePath))
+				}
 
 				artifacts := make([]string, len(tt.artifacts))
 				for i, artifact := range tt.artifacts {
