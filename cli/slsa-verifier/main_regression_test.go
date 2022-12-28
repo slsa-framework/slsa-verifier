@@ -555,7 +555,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						BuildWorkflowInputs: tt.inputs,
 					}
 
-					outBuilderID, err := cmd.Exec(context.Background(), artifacts)
+					outBuilderID, err := cmd.Exec(context.Background(), tt.artifacts)
 					if !errCmp(err, tt.err) {
 						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
@@ -586,7 +586,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						"--source-uri", tt.source,
 						"--provenance-path", provenancePath,
 					}
-					args = append(args, artifacts)
+					args = append(args, tt.artifacts...)
 					if bid != nil {
 						args = append(args, "--builder-id", *bid)
 					}
