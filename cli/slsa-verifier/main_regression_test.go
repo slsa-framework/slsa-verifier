@@ -496,8 +496,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
-				artifactPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-				provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
+				testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
+				provenancePath := fmt.Sprintf("%s.intoto.jsonl", testPath)
 
 				// TODO(#258): invalid builder ref.
 				sv := path.Base(v)
@@ -555,7 +555,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						BuildWorkflowInputs: tt.inputs,
 					}
 
-					outBuilderID, err := cmd.Exec(context.Background(), []string{artifactPath})
+					outBuilderID, err := cmd.Exec(context.Background(), artifacts)
 					if !errCmp(err, tt.err) {
 						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
@@ -583,10 +583,10 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					// Smoke test against the CLI command
 					cliCmd := verifyArtifactCmd()
 					args := []string{
-						artifactPath,
 						"--source-uri", tt.source,
 						"--provenance-path", provenancePath,
 					}
+					args = append(args, artifacts)
 					if bid != nil {
 						args = append(args, "--builder-id", *bid)
 					}
