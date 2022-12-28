@@ -43,8 +43,6 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) ([
 	var builderIds []*utils.TrustedBuilderID
 
 	for _, artifact := range artifacts {
-		fmt.Fprintf(os.Stderr, "Verifying artifact %s\n", artifact)
-
 		artifactHash, err := getArtifactHash(artifact)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
