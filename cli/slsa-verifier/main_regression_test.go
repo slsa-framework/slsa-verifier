@@ -406,6 +406,13 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			builders:  []string{"gha_generic"},
 		},
 		{
+			name:      "multiple subject one mismatch",
+			artifacts: []string{"binary-linux-amd64-multi-subject-first", "binary-linux-amd64-push-v14.2"},
+			source:    "github.com/slsa-framework/example-package",
+			noversion: true,
+			err:       serrors.ErrorMismatchVersionedTag,
+		},
+		{
 			name:         "multiple subject second match - builderID",
 			artifacts:    []string{"binary-linux-amd64-multi-subject-second"},
 			source:       "github.com/slsa-framework/example-package",
