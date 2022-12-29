@@ -156,13 +156,13 @@ Below is a list of options currently supported for binary blobs and container im
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ go run ./cli/slsa-verifier/ verify-artifact --help
-Verifies SLSA provenance on an artifact blob
+Verifies SLSA provenance on artifact blobs given as arguments (assuming same provenance)
 
 Usage:
-  slsa-verifier verify-artifact [flags]
+  slsa-verifier verify-artifact [flags] artifact [artifact..]
 
 Flags:
-      --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events). (default map[])
+      --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions). (default map[])
       --builder-id string             [optional] the unique builder ID who created the provenance
   -h, --help                          help for verify-artifact
       --print-provenance              [optional] print the verified provenance to stdout
@@ -172,6 +172,8 @@ Flags:
       --source-uri string             expected source repository that should have produced the binary, e.g. github.com/some/repo
       --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
+
+Multiple artifacts can be passed to `verify-artifact`. As long as they are all covered by the same provenance file, the verification will succeed.
 
 ### Option details
 
@@ -204,6 +206,27 @@ PASSED: Verified SLSA provenance
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
 
 Only GitHub URIs are supported with the `--source-uri` flag. A tag should not be specified, even if the provenance was built at some tag. If you intend to do source versioning validation, use `--print-provenance` and inspect the commit SHA of the config source or materials.
+
+Multiple artifacts built from the same GitHub builder can be verified in the same command, by passing them in the same command line as arguments:
+
+```bash
+$ slsa-verifier verify-artifact \
+  --provenance-path /tmp/demo/multiple.intoto.jsonl \
+  --source-uri github.com/mihaimaruseac/example \
+  /tmp/demo/fib /tmp/demo/hello
+
+Verified signature against tlog entry index 9712459 at URL: https://rekor.sigstore.dev/api/v1/log/entries/24296fb24b8ad77a1544828b67bb5a2335f7e0d01c504a32ceb6f3a8814ed12c8f1b222d308bd9e8
+Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@refs/tags/v1.4.0 at commit 11fab87c5ee6f46c6f5e68f6c5378c62ce1ca77c
+Verifying artifact /tmp/demo/fib: PASSED
+
+Verified signature against tlog entry index 9712459 at URL: https://rekor.sigstore.dev/api/v1/log/entries/24296fb24b8ad77a1544828b67bb5a2335f7e0d01c504a32ceb6f3a8814ed12c8f1b222d308bd9e8
+Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@refs/tags/v1.4.0 at commit 11fab87c5ee6f46c6f5e68f6c5378c62ce1ca77c
+Verifying artifact /tmp/demo/hello: PASSED
+
+PASSED: Verified SLSA provenance
+```
+
+The only requirement is that the provenance file covers all artifacts passed as arguments in the command line (that is, they are a subset of `subject` field in the provenance file).
 
 ### Containers
 
