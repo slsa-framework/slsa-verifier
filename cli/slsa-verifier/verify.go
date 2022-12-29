@@ -79,7 +79,7 @@ func verifyImageCmd() *cobra.Command {
 			return nil
 		},
 		Short: "Verifies SLSA provenance on a container image",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyImageCommand{
 				SourceURI:           o.SourceURI,
 				PrintProvenance:     o.PrintProvenance,
@@ -103,11 +103,9 @@ func verifyImageCmd() *cobra.Command {
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
-				return err
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
 			}
-
-			fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
-			return nil
 		},
 	}
 
