@@ -34,7 +34,7 @@ func verifyArtifactCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "verify-artifact [flags] artifact [artifact..]",
 		Short: "Verifies SLSA provenance on artifact blobs given as arguments (assuming same provenance)",
-		Run:  func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyArtifactCommand{
 				ProvenancePath:      o.ProvenancePath,
 				SourceURI:           o.SourceURI,
