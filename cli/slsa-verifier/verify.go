@@ -32,14 +32,14 @@ func verifyArtifactCmd() *cobra.Command {
 	o := &verify.VerifyOptions{}
 
 	cmd := &cobra.Command{
-		Use: "verify-artifact [flags] artifact",
+		Use: "verify-artifact [flags] artifact [artifact..]",
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errors.New("expects a single path to an artifact")
+			if len(args) < 1 {
+				return errors.New("expects at least one artifact")
 			}
 			return nil
 		},
-		Short: "Verifies SLSA provenance on an artifact blob",
+		Short: "Verifies SLSA provenance on artifact blobs given as arguments (assuming same provenance)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := verify.VerifyArtifactCommand{
 				ProvenancePath:      o.ProvenancePath,

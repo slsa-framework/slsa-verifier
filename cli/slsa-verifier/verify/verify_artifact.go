@@ -40,39 +40,55 @@ type VerifyArtifactCommand struct {
 }
 
 func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
-	artifactHash, err := getArtifactHash(artifacts[0])
-	if err != nil {
-		return nil, err
+	var builderId *utils.TrustedBuilderID
+
+	for _, artifact := range artifacts {
+		artifactHash, err := getArtifactHash(artifact)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+
+		provenanceOpts := &options.ProvenanceOpts{
+			ExpectedSourceURI:      c.SourceURI,
+			ExpectedBranch:         c.SourceBranch,
+			ExpectedDigest:         artifactHash,
+			ExpectedVersionedTag:   c.SourceVersionTag,
+			ExpectedTag:            c.SourceTag,
+			ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+		}
+
+		builderOpts := &options.BuilderOpts{
+			ExpectedID: c.BuilderID,
+		}
+
+		provenance, err := os.ReadFile(c.ProvenancePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+
+		verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+
+		if c.PrintProvenance {
+			fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
+		}
+
+		if builderId == nil {
+			builderId = outBuilderID
+		} else if *builderId != *outBuilderID {
+			err := fmt.Errorf("Encountered different builderIDs %v %v\n", builderId, outBuilderID)
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+		fmt.Fprintf(os.Stderr, "Verifying artifact %s: PASSED\n\n", artifact)
 	}
 
-	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:      c.SourceURI,
-		ExpectedBranch:         c.SourceBranch,
-		ExpectedDigest:         artifactHash,
-		ExpectedVersionedTag:   c.SourceVersionTag,
-		ExpectedTag:            c.SourceTag,
-		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
-	}
-
-	builderOpts := &options.BuilderOpts{
-		ExpectedID: c.BuilderID,
-	}
-
-	provenance, err := os.ReadFile(c.ProvenancePath)
-	if err != nil {
-		return nil, err
-	}
-
-	verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	if c.PrintProvenance {
-		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
-	}
-
-	return outBuilderID, nil
+	return builderId, nil
 }
 
 func getArtifactHash(artifactPath string) (string, error) {
