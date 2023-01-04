@@ -62,6 +62,7 @@ func verifyArtifactCmd() *cobra.Command {
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				os.Exit(1)
 			} else {
 				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
 			}
@@ -109,6 +110,7 @@ func verifyImageCmd() *cobra.Command {
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				os.Exit(1)
 			} else {
 				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
 			}
