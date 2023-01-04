@@ -21,9 +21,10 @@ jobs:
           go-version: "1.18"
 
       - name: Build verifier at HEAD
+        working-directory: __THIS_REPO__
         run: |
           set -euo pipefail
-          go build -o slsa-verifier ./__THIS_REPO__/cli/slsa-verifier
+          go build -o slsa-verifier ./cli/slsa-verifier
 
       - name: Checkout e2e verification script
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
