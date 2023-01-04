@@ -2,9 +2,7 @@
 
 # Verify provenance authenticity with slsa-verifier at HEAD
 
-set -euo pipefail
-
-cd __EXAMPLE_PACKAGE__
+cd ../example-package
 # shellcheck source=/dev/null
 source "./.github/workflows/scripts/e2e-verify.common.sh"
 
@@ -15,4 +13,5 @@ export THIS_FILE=e2e.go.workflow_dispatch.main.config-noldflags.slsa3.yml
 cd -
 export BINARY=__THIS_REPO__/cli/slsa-verifier/testdata/gha_go/v1.2.2/binary-linux-amd64-workflow_dispatch
 export PROVENANCE=__THIS_REPO__/cli/slsa-verifier/testdata/gha_go/v1.2.2/binary-linux-amd64-workflow_dispatch.intoto.jsonl
-verify_provenance_authenticity "slsa-verifier" "HEAD"
+
+verify_provenance_authenticity "./slsa-verifier" "HEAD"
