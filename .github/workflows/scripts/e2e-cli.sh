@@ -2,7 +2,9 @@
 
 # Verify provenance authenticity with slsa-verifier at HEAD
 
-cd ../example-package
+set -euo pipefail
+
+cd __EXAMPLE_PACKAGE__
 # shellcheck source=/dev/null
 source "./.github/workflows/scripts/e2e-verify.common.sh"
 
