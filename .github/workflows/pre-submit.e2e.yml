@@ -33,4 +33,4 @@ jobs:
           repository: slsa-framework/example-package
 
       - name: Run verification script with testdata and slsa-verifier HEAD
-        run: ./.github/workflows/scripts/e2e-cli.sh
+        run: ./__THIS_REPO__/.github/workflows/scripts/e2e-cli.sh
