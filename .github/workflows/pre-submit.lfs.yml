@@ -3,6 +3,8 @@ name: LFS Warning
 on:
   pull_request:
 
+permissions: read-all
+
 jobs:
   large-file-check:
     runs-on: ubuntu-latest
