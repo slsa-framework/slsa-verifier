@@ -1,0 +1,36 @@
+name: Pre submits e2e
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  pre-submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
+        with:
+          path: __THIS_REPO__
+
+      - name: setup-go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+        with:
+          go-version: "1.18"
+
+      - name: Build verifier at HEAD
+        working-directory: __THIS_REPO__
+        run: |
+          set -euo pipefail
+          go build -o slsa-verifier ./cli/slsa-verifier
+
+      - name: Checkout e2e verification script
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
+        with:
+          path: __EXAMPLE_PACKAGE__
+          repository: slsa-framework/example-package
+
+      - name: Run verification script with testdata and slsa-verifier HEAD
+        run: ./__THIS_REPO__/.github/workflows/scripts/e2e-cli.sh
