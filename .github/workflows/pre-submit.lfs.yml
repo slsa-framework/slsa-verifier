@@ -1,0 +1,15 @@
+name: LFS Warning
+
+on:
+  pull_request:
+
+jobs:
+  large-file-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actionsdesk/lfs-warning@e5f9a4c21f4bee104db7c0f23954dde59e5df909 # v3.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filesizelimit: 10MB
+          exclusionPatterns: |
+            cli/slsa-verifier/testdata/**
