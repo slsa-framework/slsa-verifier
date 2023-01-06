@@ -32,7 +32,15 @@ jobs:
           echo "::set-output name=version::$(git describe --tags --always --dirty | cut -c2-)"
 
   builder:
+    name: builder-${{matrix.os}}-${{matrix.arch}}
     needs: [args]
+    strategy:
+      matrix:
+        os:
+          - linux
+        arch:
+          - amd64
+          - arm64
     permissions:
       actions: read # For the detection of GitHub Actions environment.
       id-token: write # For signing.
@@ -40,7 +48,7 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v1.4.0
     with:
       go-version: 1.18
-      config-file: .github/config-release.yml
+      config-file: .slsa-goreleaser-${{matrix.os}}-${{matrix.arch}}.yml
       compile-builder: true
       evaluated-envs: "VERSION:${{needs.args.outputs.version}}"
 
@@ -48,7 +56,7 @@ jobs:
   if-failed:
     runs-on: ubuntu-latest
     needs: [builder]
-    if: always() && needs.builder.result == 'failure'
+    if: failure()
     steps:
       - uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
         with:
