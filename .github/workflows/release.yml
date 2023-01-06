@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
       - id: ldflags
         run: |
-          echo "::set-output name=version::$(git describe --tags --always --dirty | cut -c2-)"
+          echo "version=$(git describe --tags --always --dirty | cut -c2-)" >> "$GITHUB_OUTPUT"
 
   builder:
     needs: [args]
