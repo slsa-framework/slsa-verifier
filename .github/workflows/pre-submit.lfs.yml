@@ -2,6 +2,7 @@ name: LFS Warning
 
 on:
   pull_request:
+    types: [assigned, opened, edited, reopened, synchronize, ready_for_review]
 
 permissions: read-all
 
@@ -13,5 +14,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           filesizelimit: 10MB
+          labelName: lfs-warning
           exclusionPatterns: |
             cli/slsa-verifier/testdata/**
