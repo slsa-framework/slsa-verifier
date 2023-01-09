@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           path: __THIS_REPO__
 
@@ -27,7 +27,7 @@ jobs:
           go build -o slsa-verifier ./cli/slsa-verifier
 
       - name: Checkout e2e verification script
-        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           path: __EXAMPLE_PACKAGE__
           repository: slsa-framework/example-package
