@@ -32,15 +32,15 @@ func verifyArtifactCmd() *cobra.Command {
 	o := &verify.VerifyOptions{}
 
 	cmd := &cobra.Command{
-		Use: "verify-artifact",
+		Use: "verify-artifact [flags] artifact [artifact..]",
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errors.New("expects a single path to an artifact")
+			if len(args) < 1 {
+				return errors.New("expects at least one artifact")
 			}
 			return nil
 		},
-		Short: "Verifies SLSA provenance on an artifact blob",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Short: "Verifies SLSA provenance on artifact blobs given as arguments (assuming same provenance)",
+		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyArtifactCommand{
 				ProvenancePath:      o.ProvenancePath,
 				SourceURI:           o.SourceURI,
@@ -62,11 +62,10 @@ func verifyArtifactCmd() *cobra.Command {
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
-				return err
+				os.Exit(1)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
 			}
-
-			fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
-			return nil
 		},
 	}
 
@@ -79,7 +78,7 @@ func verifyImageCmd() *cobra.Command {
 	o := &verify.VerifyOptions{}
 
 	cmd := &cobra.Command{
-		Use: "verify-image",
+		Use: "verify-image [flags] image",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("expects a single path to an image")
@@ -87,7 +86,7 @@ func verifyImageCmd() *cobra.Command {
 			return nil
 		},
 		Short: "Verifies SLSA provenance on a container image",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyImageCommand{
 				SourceURI:           o.SourceURI,
 				PrintProvenance:     o.PrintProvenance,
@@ -111,11 +110,10 @@ func verifyImageCmd() *cobra.Command {
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
-				return err
+				os.Exit(1)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
 			}
-
-			fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
-			return nil
 		},
 	}
 
