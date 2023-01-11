@@ -330,6 +330,7 @@ func verifySignedAttestation(signedAtt *SignedAttestation) error {
 		RootCerts:         roots,
 		IntermediateCerts: intermediates,
 		CertOidcIssuer:    certOidcIssuer,
+		EnforceSCT:        true,
 	}
 	verifier, err := cosign.ValidateAndUnpackCert(signedAtt.SigningCert, co)
 	if err != nil {
@@ -342,7 +343,7 @@ func verifySignedAttestation(signedAtt *SignedAttestation) error {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}
 
-	// 3. Verify signature was creating during certificate validity period.
+	// 4. Verify signature was creating during certificate validity period.
 	if err := cosign.CheckExpiry(cert, signatureTimestamp); err != nil {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}

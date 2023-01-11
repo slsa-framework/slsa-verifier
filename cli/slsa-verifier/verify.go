@@ -43,6 +43,7 @@ func verifyArtifactCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyArtifactCommand{
 				ProvenancePath:      o.ProvenancePath,
+				BundlePath:          o.BundlePath,
 				SourceURI:           o.SourceURI,
 				PrintProvenance:     o.PrintProvenance,
 				BuildWorkflowInputs: o.BuildWorkflowInputs.AsMap(),
@@ -70,7 +71,7 @@ func verifyArtifactCmd() *cobra.Command {
 	}
 
 	o.AddFlags(cmd)
-	cmd.MarkFlagRequired("provenance-path")
+	cmd.MarkFlagsMutuallyExclusive("provenance-path", "bundle-path")
 	return cmd
 }
 

@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -30,6 +31,7 @@ import (
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
 type VerifyArtifactCommand struct {
 	ProvenancePath      string
+	BundlePath          string
 	BuilderID           *string
 	SourceURI           string
 	SourceBranch        *string
@@ -40,6 +42,11 @@ type VerifyArtifactCommand struct {
 }
 
 func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
+	// One of BundlePath and ProvenancePath should be supplied.
+	if c.ProvenancePath == "" && c.BundlePath == "" {
+		return nil, errors.New("one of --provenance-path or --bundle-path must be supplied")
+	}
+
 	var builderId *utils.TrustedBuilderID
 
 	for _, artifact := range artifacts {
@@ -62,10 +69,20 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			ExpectedID: c.BuilderID,
 		}
 
-		provenance, err := os.ReadFile(c.ProvenancePath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
-			return nil, err
+		var provenance []byte
+		if c.ProvenancePath != "" {
+			provenance, err = os.ReadFile(c.ProvenancePath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+				return nil, err
+			}
+		} else {
+			bundle, err := os.ReadFile(c.BundlePath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+				return nil, err
+			}
+			provenanceOpts.Bundle = bundle
 		}
 
 		verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)

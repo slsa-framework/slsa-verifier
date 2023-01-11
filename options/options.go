@@ -23,6 +23,9 @@ type ProvenanceOpts struct {
 
 	// ExpectedWorkflowInputs is a map of key=value inputs.
 	ExpectedWorkflowInputs map[string]string
+
+	// Bundle is a Sigstore bundle containing the provenance and verification material.
+	Bundle []byte
 }
 
 // BuildOpts are the options for checking the builder.

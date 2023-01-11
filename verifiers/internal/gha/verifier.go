@@ -85,18 +85,26 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	// This includes a default retry count of 3.
-	rClient, err := client.GetRekorClient(defaultRekorAddr)
-	if err != nil {
-		return nil, nil, err
-	}
+	var signedAtt *SignedAttestation
+	if provenanceOpts.Bundle != nil {
+		// Perform offline verification.
+		var err error
+		signedAtt, err = VerifyProvenanceSignatureOffline(ctx, provenanceOpts.Bundle, artifactHash)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		// This includes a default retry count of 3.
+		rClient, err := client.GetRekorClient(defaultRekorAddr)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	/* Verify signature on the intoto attestation. */
-	// TODO(https://github.com/slsa-framework/slsa-github-generator/issues/716):
-	// We will also need to support bundles when those are complete.
-	signedAtt, err := VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
-	if err != nil {
-		return nil, nil, err
+		/* Verify signature on the intoto attestation. */
+		signedAtt, err = VerifyProvenanceSignature(ctx, rClient, provenance, artifactHash)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,

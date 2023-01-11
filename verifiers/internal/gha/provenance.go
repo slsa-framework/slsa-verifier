@@ -1,9 +1,12 @@
 package gha
 
 import (
+	"bytes"
 	"context"
+	"crypto"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,10 +14,15 @@ import (
 
 	"golang.org/x/mod/semver"
 
+	"github.com/golang/protobuf/jsonpb"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
+	"github.com/sigstore/cosign/pkg/cosign"
+	bundle_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
+	"github.com/sigstore/rekor/pkg/verify"
+	"github.com/sigstore/sigstore/pkg/signature"
 
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -183,6 +191,83 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor,
 	}
 
 	return signedAttestation, nil
+}
+
+// VerifyProvenanceSignatureOffline returns the verified DSSE envelope containing the provenance
+// and the signing certificate given the offline bundle and artifact hash.
+func VerifyProvenanceSignatureOffline(ctx context.Context,
+	bundleBytes []byte, artifactHash string) (
+	*SignedAttestation, error) {
+	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
+	var bundle bundle_v1.Bundle
+	if err := jsonpb.Unmarshal(bytes.NewReader(bundleBytes), &bundle); err != nil {
+		return nil, err
+	}
+
+	// We only expect one TLOG entry. If this changes in the future, we must iterate
+	// for a matching one.
+	if bundle.GetVerificationMaterial() == nil ||
+		len(bundle.GetVerificationMaterial().GetTlogEntries()) != 1 {
+		return nil, fmt.Errorf("bundle missing offline tlog verification material %d", len(bundle.GetVerificationMaterial().GetTlogEntries()))
+	}
+
+	// Get verified transparency log entry.
+	tlogEntry := bundle.GetVerificationMaterial().GetTlogEntries()[0]
+	logID := hex.EncodeToString(tlogEntry.GetLogId().GetKeyId())
+	rekorEntry := &models.LogEntryAnon{
+		Body:           tlogEntry.GetCanonicalizedBody(),
+		IntegratedTime: &tlogEntry.IntegratedTime,
+		LogIndex:       &tlogEntry.LogIndex,
+		LogID:          &logID,
+		Verification: &models.LogEntryAnonVerification{
+			SignedEntryTimestamp: tlogEntry.GetInclusionPromise().GetSignedEntryTimestamp(),
+		},
+	}
+
+	pubs, err := cosign.GetRekorPubs(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", err, "unable to fetch Rekor public keys from TUF repository")
+	}
+
+	verifier, err := signature.LoadECDSAVerifier(pubs[*rekorEntry.LogID].PubKey, crypto.SHA256)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", err, "unable to load a ECDSA verifier")
+	}
+	if err := verify.VerifySignedEntryTimestamp(ctx, rekorEntry, verifier); err != nil {
+		return nil, err
+	}
+
+	// Create DSSE envelope.
+	dsseEnvelope := bundle.GetDsseEnvelope()
+	env := &dsselib.Envelope{
+		PayloadType: dsseEnvelope.GetPayloadType(),
+		Payload:     base64.StdEncoding.EncodeToString(dsseEnvelope.GetPayload()),
+	}
+	for _, sig := range dsseEnvelope.GetSignatures() {
+		env.Signatures = append(env.Signatures, dsselib.Signature{
+			KeyID: sig.GetKeyid(),
+			Sig:   base64.StdEncoding.EncodeToString(sig.GetSig()),
+		})
+	}
+
+	// Get cert.
+	certBytes := bundle.GetVerificationMaterial().GetX509CertificateChain().GetCertificates()[0].GetRawBytes()
+	cert, err := x509.ParseCertificate(certBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	proposedSignedAtt := &SignedAttestation{
+		SigningCert: cert,
+		Envelope:    env,
+		RekorEntry:  rekorEntry,
+	}
+
+	if err := verifySignedAttestation(proposedSignedAtt); err != nil {
+		return nil, err
+	}
+
+	return proposedSignedAtt, nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
