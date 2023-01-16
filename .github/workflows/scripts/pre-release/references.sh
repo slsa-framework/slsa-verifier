@@ -32,6 +32,8 @@ if [[ "$version_txt" != "$version_lnk" ]]; then
     exit 1
 fi
 
+version="$version_txt"
+
 # Ensure major version matches go.mod
 major_version_sha="$(sed -E 's/(.+)\..+\..+/\1/' <<< "$version")"
 
@@ -42,8 +44,6 @@ if [[ "$major_version_go" != "$major_version_sha" ]]; then
     
     exit 1
 fi
-
-version="$version_txt"
 
 ###
 ### README.md
