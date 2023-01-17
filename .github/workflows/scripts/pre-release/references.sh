@@ -4,14 +4,18 @@
 
 set -euo pipefail
 
-# Get major version from go.mod
-major_version_go="$(head -n 1 go.mod | sed -E 's~.*/v(.*)~\1~')"
+function get_first_nonblank_line() {
+    while read line; do
+        [[ "$line" =~ [^[:blank:]] ]] && break
+    done < "$1"
+    echo "$line"
+}
 
 ###
 ### SHA256SUM.md
 ###
 
-read -r line < SHA256SUM.md
+line=$(get_first_nonblank_line SHA256SUM.md)
 
 # Ensure both visible text and link point to the same release
 version_txt="$(sed -E "s~.*\[v(.*)\].*~\1~" <<< "$line")"
@@ -24,7 +28,7 @@ if [[ "$version_txt" != "$version_lnk" ]]; then
     marks="${line/"$version_txt"/"$mark_txt"}"
     marks="${marks/"$version_lnk"/"$mark_lnk"}"
     marks="$(sed 's/[^^]/ /g' <<< "$marks")"
-    
+
     echo "SHA256SUM.md: Visible text and linked URL do not match:"
     echo "$line"
     echo "$marks"
@@ -34,14 +38,21 @@ fi
 
 version="$version_txt"
 
-# Ensure major version matches go.mod
-major_version_sha="$(sed -E 's/(.+)\..+\..+/\1/' <<< "$version")"
+major_version_sha256sum_md="$(sed -E 's/(.+)\..+\..+/\1/' <<< "$version")"
 
-if [[ "$major_version_go" != "$major_version_sha" ]]; then
+###
+### go.mod
+###
+
+# Get major version from go.mod
+major_version_go_mod="$(get_first_nonblank_line go.mod | sed -E 's~.*/v(.*)~\1~')"
+
+# Ensure major version from SHA256SUM.md matches go.mod's
+if [[ "$major_version_go_mod" != "$major_version_sha256sum_md" ]]; then
     echo "SHA256SUM.md and go.mod have different major versions:"
-    echo "go.mod:       v$major_version_go"
-    echo "SHA256SUM.md: v$major_version_sha (v$version)"
-    
+    echo "go.mod:       v$major_version_go_mod"
+    echo "SHA256SUM.md: v$major_version_sha256sum_md (v$version)"
+
     exit 1
 fi
 
@@ -49,6 +60,8 @@ fi
 ### README.md
 ###
 
+# Select all version numbers following a reference to slsa-verifier that are different
+# from the version defined in SHA256SUM.md
 results=$(
     grep -Pon ".*?slsa-verifier.*?\d+\.\d+\.\d+" README.md |
     grep -v "$version$" |
