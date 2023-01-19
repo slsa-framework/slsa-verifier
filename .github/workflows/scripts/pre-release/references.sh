@@ -36,9 +36,14 @@ if [[ "$version_txt" != "$version_lnk" ]]; then
     exit 1
 fi
 
-version="$version_txt"
+# Ensure version matches what's declared in the PR body
+if [[ "$version_txt" != "$RELEASE_TAG" ]]; then
+    echo "SHA256SUM.md version doesn't match version declared in PR body"
+    echo "PR body: #label:release v$RELEASE_TAG"
+    echo "SHA256SUM.md: v$version_txt"
 
-major_version_sha256sum_md="$(sed -E 's/(.+)\..+\..+/\1/' <<< "$version")"
+    exit 1
+fi
 
 ###
 ### go.mod
@@ -47,11 +52,14 @@ major_version_sha256sum_md="$(sed -E 's/(.+)\..+\..+/\1/' <<< "$version")"
 # Get major version from go.mod
 major_version_go_mod="$(get_first_nonblank_line go.mod | sed -E 's~.*/v(.*)~\1~')"
 
+# Get major version declared in PR body
+major_version="$(sed -E 's/(.+)\..+\..+/\1/' <<< "$RELEASE_TAG")"
+
 # Ensure major version from SHA256SUM.md matches go.mod's
-if [[ "$major_version_go_mod" != "$major_version_sha256sum_md" ]]; then
-    echo "SHA256SUM.md and go.mod have different major versions:"
-    echo "go.mod:       v$major_version_go_mod"
-    echo "SHA256SUM.md: v$major_version_sha256sum_md (v$version)"
+if [[ "$major_version_go_mod" != "$major_version" ]]; then
+    echo "go.mod version doesn't match version declared in PR body:"
+    echo "PR body: v$major_version (v$RELEASE_TAG)"
+    echo "go.mod:  v$major_version_go_mod"
 
     exit 1
 fi
@@ -64,13 +72,13 @@ fi
 # from the version defined in SHA256SUM.md
 results=$(
     grep -Pon ".*?slsa-verifier.*?\d+\.\d+\.\d+" README.md |
-    grep -v "$version$" |
+    grep -v "$RELEASE_TAG$" |
     sed -E 's/(.*)/  \1/' || true
 )
 
 if [[ "$results" != "" ]]; then
-    echo "README.md and SHA256SUM.md refer to different versions:"
-    echo "SHA256SUM.md: v$version"
+    echo "README.md version doesn't match version declared in PR body:"
+    echo "PR body: #label:release v$RELEASE_TAG"
     echo "README.md:"
     echo "$results"
     exit 1
