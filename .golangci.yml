@@ -66,8 +66,7 @@ linters:
     - predeclared
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - revive
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - staticcheck
+    - staticcheck
     - stylecheck
     - thelper
     - typecheck
