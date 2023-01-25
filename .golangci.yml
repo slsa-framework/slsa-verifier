@@ -34,8 +34,7 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - gocognit
     - goconst
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - gocritic
+    - gocritic
     - gocyclo
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - godot
