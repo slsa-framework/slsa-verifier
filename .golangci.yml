@@ -22,7 +22,7 @@ linters:
   enable:
     - asciicheck
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - deadcode
+    - deadcode
     - depguard
     - dogsled
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
