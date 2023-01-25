@@ -16,6 +16,11 @@ func check(err error) {
 	}
 }
 
+//nolint:deadcode
+func ExperimentalEnabled() bool {
+	return os.Getenv("SLSA_VERIFIER_EXPERIMENTAL") == "1"
+}
+
 func rootCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "slsa-verifier",
