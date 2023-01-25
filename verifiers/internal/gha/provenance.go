@@ -45,7 +45,7 @@ func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement,
 	}
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s:", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 	prov = &intoto.ProvenanceStatement{}
 	if err := json.Unmarshal(pyld, prov); err != nil {

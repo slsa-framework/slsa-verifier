@@ -21,8 +21,7 @@ linters:
   disable-all: true
   enable:
     - asciicheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - deadcode
+    - deadcode
     - depguard
     - dogsled
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
@@ -36,11 +35,9 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - gocognit
     - goconst
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - gocritic
+    - gocritic
     - gocyclo
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - godot
+    - godot
     - godox
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - goerr113
@@ -60,8 +57,7 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - lll
     - makezero
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - misspell
+    - misspell
     - nakedret
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - nestif
@@ -71,17 +67,12 @@ linters:
     - predeclared
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - revive
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - staticcheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - stylecheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - thelper
+    - staticcheck
+    - stylecheck
+    - thelper
     - typecheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - unconvert
+    - unconvert
     - unused
-    - varcheck
     - whitespace
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - wrapcheck
