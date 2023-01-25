@@ -56,7 +56,7 @@ func (self *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
 	}
 	if !ecdsa.VerifyASN1(self.pubKey, digest[:], sig) {
 		return fmt.Errorf("%w: cannot verify with public key '%v'",
-			serrors.ErrorInvalidSignature, string(self.region))
+			serrors.ErrorInvalidSignature, self.region)
 	}
 
 	return nil
