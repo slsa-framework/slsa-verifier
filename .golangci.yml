@@ -71,8 +71,7 @@ linters:
     # - revive
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - staticcheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - stylecheck
+    - stylecheck
     - thelper
     - typecheck
     - unconvert

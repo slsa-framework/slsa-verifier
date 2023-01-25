@@ -50,13 +50,13 @@ func PublicKeyNew(region string) (*PublicKey, error) {
 	}, nil
 }
 
-func (self *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
-	if self.pubKey == nil {
+func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
+	if p.pubKey == nil {
 		return fmt.Errorf("%w: key is empty", serrors.ErrorInternal)
 	}
-	if !ecdsa.VerifyASN1(self.pubKey, digest[:], sig) {
+	if !ecdsa.VerifyASN1(p.pubKey, digest[:], sig) {
 		return fmt.Errorf("%w: cannot verify with public key '%v'",
-			serrors.ErrorInvalidSignature, self.region)
+			serrors.ErrorInvalidSignature, p.region)
 	}
 
 	return nil
