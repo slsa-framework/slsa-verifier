@@ -21,7 +21,6 @@ linters:
   disable-all: true
   enable:
     - asciicheck
-    - deadcode
     - depguard
     - dogsled
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
@@ -74,8 +73,7 @@ linters:
     # - staticcheck
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - stylecheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - thelper
+    - thelper
     - typecheck
     - unconvert
     - unused
