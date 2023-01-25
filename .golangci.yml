@@ -58,8 +58,7 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - lll
     - makezero
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - misspell
+    - misspell
     - nakedret
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - nestif

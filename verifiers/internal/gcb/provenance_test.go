@@ -18,7 +18,7 @@ import (
 // This function sets the statement of the proveannce, as if
 // it had been verified. This is necessary because individual functions
 // expect this statement to be populated; and this is done only
-// after the signatue is verified.
+// after the signature is verified.
 func setStatement(gcb *Provenance) error {
 	var statement v01IntotoStatement
 	payload, err := payloadFromEnvelope(&gcb.gcloudProv.ProvenanceSummary.Provenance[0].Envelope)
