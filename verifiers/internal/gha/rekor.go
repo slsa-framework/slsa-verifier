@@ -139,7 +139,7 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 	return certs[0], err
 }
 
-func intotoEntry(certPem []byte, provenance []byte) (*intotod.V001Entry, error) {
+func intotoEntry(certPem, provenance []byte) (*intotod.V001Entry, error) {
 	if len(certPem) == 0 {
 		return nil, fmt.Errorf("no signing certificate found in intoto envelope")
 	}
@@ -191,8 +191,7 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte)
 		APIVersion: swag.String(e.APIVersion()),
 		Spec:       e.IntotoObj,
 	}
-	entries := []models.ProposedEntry{&entry}
-	searchLogQuery.SetEntries(entries)
+	searchLogQuery.SetEntries([]models.ProposedEntry{&entry})
 
 	params.SetEntry(&searchLogQuery)
 	resp, err := rClient.Entries.SearchLogQuery(params)
