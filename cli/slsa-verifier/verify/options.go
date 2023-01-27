@@ -44,7 +44,7 @@ type VerifyOptions struct {
 
 var _ Interface = (*VerifyOptions)(nil)
 
-// AddFlags implements Interface
+// AddFlags implements Interface.
 func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	/* Builder options */
 	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",

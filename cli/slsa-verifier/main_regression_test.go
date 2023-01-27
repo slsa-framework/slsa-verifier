@@ -584,7 +584,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// before GA. Add the tests for tag verification.
 				if version != "" && semver.Compare(version, "v1.0.0") > 0 {
 					builderIDs = append(builderIDs, []*string{
-						// pString(builder + "@" + sv),
+						pString(builder + "@" + sv),
 						pString(builder + "@refs/tags/" + sv),
 					}...)
 				}
@@ -605,6 +605,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						BuildWorkflowInputs: tt.inputs,
 					}
 
+					// The outBuilderID is the actual builder ID from the provenance.
+					// This is always long form for the GHA builders.
 					outBuilderID, err := cmd.Exec(context.Background(), artifacts)
 					if !errCmp(err, tt.err) {
 						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -619,15 +621,6 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed (1): %v", err))
 						}
-					}
-
-					if bid == nil {
-						continue
-					}
-
-					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(*bid, false); err != nil {
-						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 
 					// Smoke test against the CLI command
@@ -660,6 +653,18 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					cliErr := cliCmd.Execute()
 					if !errCmp(cliErr, tt.err) {
 						t.Errorf("%v: %v", v, cmp.Diff(cliErr, tt.err, cmpopts.EquateErrors()))
+					}
+
+					if bid == nil {
+						continue
+					}
+
+					// If we have a generated a user-provided bid, then validate it against the
+					// resulting builderID returned by the provenance check.
+					// Since this a GHA and the certificate ID is in long form,
+					// we pass `allowRef = true`.
+					if err := outBuilderID.Matches(*bid, true); err != nil {
+						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 				}
 			}
@@ -731,64 +736,64 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		// When true, this does not iterate over all builder versions.
 		noversion bool
 	}{
-		// {
-		// 	name:     "valid main branch default",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "github.com/slsa-framework/example-package",
-		// },
-		// {
-		// 	name:       "valid main branch default - invalid builderID",
-		// 	artifact:   "container_workflow_dispatch",
-		// 	source:     "github.com/slsa-framework/example-package",
-		// 	pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
-		// 	err:        serrors.ErrorUntrustedReusableWorkflow,
-		// },
-		// {
-		// 	name:     "valid main branch set",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "github.com/slsa-framework/example-package",
-		// 	pbranch:  pString("main"),
-		// },
+		{
+			name:     "valid main branch default",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+		},
+		{
+			name:       "valid main branch default - invalid builderID",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
+			err:        serrors.ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "valid main branch set",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+			pbranch:  pString("main"),
+		},
 
-		// {
-		// 	name:     "wrong branch master",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "github.com/slsa-framework/example-package",
-		// 	pbranch:  pString("master"),
-		// 	err:      serrors.ErrorMismatchBranch,
-		// },
-		// {
-		// 	name:     "wrong source append A",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "github.com/slsa-framework/example-packageA",
-		// 	err:      serrors.ErrorMismatchSource,
-		// },
-		// {
-		// 	name:     "wrong source prepend A",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "Agithub.com/slsa-framework/example-package",
-		// 	err:      serrors.ErrorMismatchSource,
-		// },
-		// {
-		// 	name:     "wrong source middle A",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "github.com/Aslsa-framework/example-package",
-		// 	err:      serrors.ErrorMismatchSource,
-		// },
-		// {
-		// 	name:     "tag no match empty tag workflow_dispatch",
-		// 	artifact: "container_workflow_dispatch",
-		// 	source:   "github.com/slsa-framework/example-package",
-		// 	ptag:     pString("v1.2.3"),
-		// 	err:      serrors.ErrorMismatchTag,
-		// },
-		// {
-		// 	name:        "versioned tag no match empty tag workflow_dispatch",
-		// 	artifact:    "container_workflow_dispatch",
-		// 	source:      "github.com/slsa-framework/example-package",
-		// 	pversiontag: pString("v1"),
-		// 	err:         serrors.ErrorInvalidSemver,
-		// },
+		{
+			name:     "wrong branch master",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+			pbranch:  pString("master"),
+			err:      serrors.ErrorMismatchBranch,
+		},
+		{
+			name:     "wrong source append A",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-packageA",
+			err:      serrors.ErrorMismatchSource,
+		},
+		{
+			name:     "wrong source prepend A",
+			artifact: "container_workflow_dispatch",
+			source:   "Agithub.com/slsa-framework/example-package",
+			err:      serrors.ErrorMismatchSource,
+		},
+		{
+			name:     "wrong source middle A",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/Aslsa-framework/example-package",
+			err:      serrors.ErrorMismatchSource,
+		},
+		{
+			name:     "tag no match empty tag workflow_dispatch",
+			artifact: "container_workflow_dispatch",
+			source:   "github.com/slsa-framework/example-package",
+			ptag:     pString("v1.2.3"),
+			err:      serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch",
+			artifact:    "container_workflow_dispatch",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v1"),
+			err:         serrors.ErrorInvalidSemver,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -850,8 +855,12 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					if bid == nil {
 						return
 					}
-					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(*bid, false); err != nil {
+
+					// If we have a generated a user-provided bid, then validate it against the
+					// resulting builderID returned by the provenance check.
+					// Since this a GHA and the certificate ID is in long form,
+					// we pass `allowRef = true`.
+					if err := outBuilderID.Matches(*bid, true); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}

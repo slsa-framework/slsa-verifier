@@ -40,7 +40,7 @@ type VerifyArtifactCommand struct {
 }
 
 func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
-	var builderId *utils.TrustedBuilderID
+	var builderID *utils.TrustedBuilderID
 
 	for _, artifact := range artifacts {
 		artifactHash, err := getArtifactHash(artifact)
@@ -78,17 +78,17 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 		}
 
-		if builderId == nil {
-			builderId = outBuilderID
-		} else if *builderId != *outBuilderID {
-			err := fmt.Errorf("Encountered different builderIDs %v %v\n", builderId, outBuilderID)
+		if builderID == nil {
+			builderID = outBuilderID
+		} else if *builderID != *outBuilderID {
+			err := fmt.Errorf("encountered different builderIDs %v %v", builderID, outBuilderID)
 			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
 			return nil, err
 		}
 		fmt.Fprintf(os.Stderr, "Verifying artifact %s: PASSED\n\n", artifact)
 	}
 
-	return builderId, nil
+	return builderID, nil
 }
 
 func getArtifactHash(artifactPath string) (string, error) {
