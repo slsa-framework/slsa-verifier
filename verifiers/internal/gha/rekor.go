@@ -67,13 +67,17 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, entry
 			return nil, errors.New("expected matching UUID")
 		}
 		// Validate the entry response.
-		return verifyTlogEntry(ctx, rekorClient, entry)
+		return verifyTlogEntry(ctx, entry, true)
 	}
 
 	return nil, serrors.ErrorRekorSearch
 }
 
-func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, e models.LogEntryAnon) (
+// verifyTlogEntry verifies a Rekor entry content against a trusted Rekor key.
+// Verification includes verifying the SignedEntryTimestamp and, if verifyInclusion
+// is true, the inclusion proof along with the signed tree head.
+func verifyTlogEntry(ctx context.Context, e models.LogEntryAnon,
+	verifyInclusion bool) (
 	*models.LogEntryAnon, error) {
 	// Verify the root hash against the current Signed Entry Tree Head
 	pubs, err := cosign.GetRekorPubs(ctx, nil)
@@ -86,9 +90,16 @@ func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, e models.Lo
 		return nil, fmt.Errorf("%w: %s", err, "unable to load a ECDSA verifier")
 	}
 
-	// This function verifies the inclusion proof, the signature on the root hash of the
-	// inclusion proof, and the SignedEntryTimestamp.
-	if err := rverify.VerifyLogEntry(ctx, &e, verifier); err != nil {
+	if verifyInclusion {
+		// This function verifies the inclusion proof, the signature on the root hash of the
+		// inclusion proof, and the SignedEntryTimestamp.
+		err = rverify.VerifyLogEntry(ctx, &e, verifier)
+	} else {
+		// This function verifies the SignedEntryTimestamp
+		err = rverify.VerifySignedEntryTimestamp(ctx, &e, verifier)
+	}
+
+	if err != nil {
 		return nil, fmt.Errorf("%w: %s", err, "unable to verify a log entry")
 	}
 
@@ -206,7 +217,7 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte)
 	logEntry := resp.Payload[0]
 	var rekorEntry models.LogEntryAnon
 	for uuid, e := range logEntry {
-		if _, err := verifyTlogEntry(context.Background(), rClient, e); err != nil {
+		if _, err := verifyTlogEntry(context.Background(), e, true); err != nil {
 			return nil, fmt.Errorf("error verifying tlog entry: %w", err)
 		}
 		rekorEntry = e
@@ -302,7 +313,8 @@ func SearchValidSignedAttestation(ctx context.Context, artifactHash string, prov
 }
 
 // verifyAttestationSignature validates the signature on the attestation
-// given a certificate and a validated signature time.
+// given a certificate and a validated signature time from a verified
+// Rekor entry.
 // The certificate is verified up to Fulcio, the signature is validated
 // using the certificate, and the signature generation time is checked
 // to be within the certificate validity period.

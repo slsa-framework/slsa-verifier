@@ -10,9 +10,11 @@ import (
 	"strings"
 
 	"golang.org/x/mod/semver"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
+	bundle_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
 
@@ -183,6 +185,61 @@ func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor,
 	}
 
 	return signedAttestation, nil
+}
+
+// VerifyProvenanceBundle verifies the DSSE envelope using the offline Rekor bundle and
+// returns the verified DSSE envelope containing the provenance
+// and the signing certificate given the provenance.
+func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte) (
+	*SignedAttestation, error) {
+	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
+	var bundle bundle_v1.Bundle
+	if err := protojson.Unmarshal(bundleBytes, &bundle); err != nil {
+		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
+	}
+
+	// We only expect one TLOG entry. If this changes in the future, we must iterate
+	// for a matching one.
+	if bundle.GetVerificationMaterial() == nil ||
+		len(bundle.GetVerificationMaterial().GetTlogEntries()) == 0 {
+		return nil, fmt.Errorf("bundle missing offline tlog verification material %d", len(bundle.GetVerificationMaterial().GetTlogEntries()))
+	}
+
+	// Verify tlog entry.
+	tlogEntry := bundle.GetVerificationMaterial().GetTlogEntries()[0]
+	rekorEntry, err := verifyRekorEntryFromBundle(ctx, tlogEntry)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract DSSE envelope.
+	env, err := getEnvelopeFromBundle(&bundle)
+	if err != nil {
+		return nil, err
+	}
+
+	// Match tlog entry signature with the envelope.
+	if err := matchRekorEntryWithEnvelope(tlogEntry, env); err != nil {
+		return nil, fmt.Errorf("matching bundle entry with content: %w", err)
+	}
+
+	// Get certificate from bundle.
+	cert, err := getCertFromBundle(&bundle)
+	if err != nil {
+		return nil, err
+	}
+
+	proposedSignedAtt := &SignedAttestation{
+		SigningCert: cert,
+		Envelope:    env,
+		RekorEntry:  rekorEntry,
+	}
+
+	if err := verifySignedAttestation(proposedSignedAtt); err != nil {
+		return nil, err
+	}
+
+	return proposedSignedAtt, nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
