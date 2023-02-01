@@ -17,6 +17,7 @@ var (
 	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 	e2eTestRepository        = "slsa-framework/example-package"
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
+	certSubjectRegexp        = "https://github.com/slsa-framework/slsa-github-generator/*"
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{

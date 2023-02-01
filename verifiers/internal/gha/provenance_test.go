@@ -1,7 +1,6 @@
 package gha
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -964,38 +963,6 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			}
 
 			err = VerifyVersionedTag(prov, tt.tag)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-		})
-	}
-}
-
-func Test_verifyBundle(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name     string
-		path     string
-		expected error
-	}{
-		{
-			name: "valid",
-			path: "./testdata/bundle/attestation.intoto.sigstore",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			ctx := context.Background()
-
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-
-			_, err = VerifyProvenanceBundle(ctx, content)
-
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}

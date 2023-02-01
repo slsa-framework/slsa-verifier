@@ -10,11 +10,9 @@ import (
 	"strings"
 
 	"golang.org/x/mod/semver"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
-	bundle_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
 
@@ -165,81 +163,34 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
-func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor,
+func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
+	rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
 	*SignedAttestation, error) {
+	// Collect trusted root material for verification (Rekor pubkeys, SCT pubkeys,
+	// Fulcio root certificates).
+	_, err := GetTrustedRoot(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// There are two cases, either we have an embedded certificate, or we need
 	// to use the Redis index for searching by artifact SHA.
 	if hasCertInEnvelope(provenance) {
 		// Get Rekor entries corresponding to provenance
-		return GetValidSignedAttestationWithCert(rClient, provenance)
+		return GetValidSignedAttestationWithCert(rClient, provenance, trustedRoot)
 	}
 
 	// Fallback on using the redis search index to get matching UUIDs.
 	fmt.Fprintf(os.Stderr, "No certificate provided, trying Redis search index to find entries by subject digest\n")
 
 	// Verify the provenance and return the signing certificate.
-	signedAttestation, err := SearchValidSignedAttestation(ctx, artifactHash, provenance, rClient)
+	signedAttestation, err := SearchValidSignedAttestation(ctx, artifactHash, provenance, rClient, trustedRoot)
 	if err != nil {
 		return nil, err
 	}
 
 	return signedAttestation, nil
-}
-
-// VerifyProvenanceBundle verifies the DSSE envelope using the offline Rekor bundle and
-// returns the verified DSSE envelope containing the provenance
-// and the signing certificate given the provenance.
-func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte) (
-	*SignedAttestation, error) {
-	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
-	var bundle bundle_v1.Bundle
-	if err := protojson.Unmarshal(bundleBytes, &bundle); err != nil {
-		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
-	}
-
-	// We only expect one TLOG entry. If this changes in the future, we must iterate
-	// for a matching one.
-	if bundle.GetVerificationMaterial() == nil ||
-		len(bundle.GetVerificationMaterial().GetTlogEntries()) == 0 {
-		return nil, fmt.Errorf("bundle missing offline tlog verification material %d", len(bundle.GetVerificationMaterial().GetTlogEntries()))
-	}
-
-	// Verify tlog entry.
-	tlogEntry := bundle.GetVerificationMaterial().GetTlogEntries()[0]
-	rekorEntry, err := verifyRekorEntryFromBundle(ctx, tlogEntry)
-	if err != nil {
-		return nil, err
-	}
-
-	// Extract DSSE envelope.
-	env, err := getEnvelopeFromBundle(&bundle)
-	if err != nil {
-		return nil, err
-	}
-
-	// Match tlog entry signature with the envelope.
-	if err := matchRekorEntryWithEnvelope(tlogEntry, env); err != nil {
-		return nil, fmt.Errorf("matching bundle entry with content: %w", err)
-	}
-
-	// Get certificate from bundle.
-	cert, err := getCertFromBundle(&bundle)
-	if err != nil {
-		return nil, err
-	}
-
-	proposedSignedAtt := &SignedAttestation{
-		SigningCert: cert,
-		Envelope:    env,
-		RekorEntry:  rekorEntry,
-	}
-
-	if err := verifySignedAttestation(proposedSignedAtt); err != nil {
-		return nil, err
-	}
-
-	return proposedSignedAtt, nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {

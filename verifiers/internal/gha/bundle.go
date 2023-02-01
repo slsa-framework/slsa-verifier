@@ -13,10 +13,20 @@ import (
 	bundle_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
 	v1 "github.com/sigstore/protobuf-specs/gen/pb-go/rekor/v1"
 	"github.com/sigstore/rekor/pkg/generated/models"
+	"google.golang.org/protobuf/encoding/protojson"
+)
+
+// Bundle specific errors
+var (
+	ErrorMismatchSignature       = errors.New("bundle tlog entry does not match signature")
+	ErrorUnexpectedEntryType     = errors.New("unexpected tlog entry type")
+	ErrorMissingCertInBundle     = errors.New("missing signing certificate in bundle")
+	ErrorUnexpectedBundleContent = errors.New("expected DSSE bundle content")
 )
 
 // verifyRekorEntryFromBundle extracts the Rekor entry from the Sigstore bundle verification material.
-func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyLogEntry) (
+func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyLogEntry,
+	trustedRoot *TrustedRoot) (
 	*models.LogEntryAnon, error) {
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
 	logID := hex.EncodeToString(tlogEntry.GetLogId().GetKeyId())
@@ -31,7 +41,8 @@ func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyL
 	}
 
 	// Verify tlog entry.
-	if _, err := verifyTlogEntry(ctx, *rekorEntry, false); err != nil {
+	if _, err := verifyTlogEntry(ctx, *rekorEntry, false,
+		trustedRoot.RekorPubKeys); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +53,7 @@ func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyL
 func getEnvelopeFromBundle(bundle *bundle_v1.Bundle) (*dsselib.Envelope, error) {
 	dsseEnvelope := bundle.GetDsseEnvelope()
 	if dsseEnvelope == nil {
-		return nil, errors.New("bundle does not sign over a DSSE envelope")
+		return nil, ErrorUnexpectedBundleContent
 	}
 	env := &dsselib.Envelope{
 		PayloadType: dsseEnvelope.GetPayloadType(),
@@ -61,7 +72,7 @@ func getEnvelopeFromBundle(bundle *bundle_v1.Bundle) (*dsselib.Envelope, error) 
 func getCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
 	certChain := bundle.GetVerificationMaterial().GetX509CertificateChain().GetCertificates()
 	if len(certChain) == 0 {
-		return nil, errors.New("missing signing certificate in bundle")
+		return nil, ErrorMissingCertInBundle
 	}
 	certBytes := certChain[0].GetRawBytes()
 	return x509.ParseCertificate(certBytes)
@@ -71,23 +82,25 @@ func getCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
 // DSSE envelope. It MUST verify that the signatures match to ensure that the
 // tlog timestamp attests to the signature creation time.
 func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
-	if tlogEntry.GetKindVersion().Kind != "intoto" &&
-		tlogEntry.GetKindVersion().Version != "0.0.2" {
-		return errors.New("unexpected canonical entry kind and version, expected intoto:0.0.2")
+	kindVersion := tlogEntry.GetKindVersion()
+	if kindVersion.Kind != "intoto" &&
+		kindVersion.Version != "0.0.2" {
+		return fmt.Errorf("%w: expected intoto:0.0.2, got %s:%s", ErrorUnexpectedEntryType,
+			kindVersion.Kind, kindVersion.Version)
 	}
 
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
 	var toto models.Intoto
 	var intotoObj models.IntotoV002Schema
 	if err := json.Unmarshal(canonicalBody, &toto); err != nil {
-		return err
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
 	}
 	specMarshal, err := json.Marshal(toto.Spec)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
 	}
 	if err := json.Unmarshal(specMarshal, &intotoObj); err != nil {
-		return err
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
 	}
 
 	if len(env.Signatures) != len(intotoObj.Content.Envelope.Signatures) {
@@ -107,8 +120,64 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 			}
 		}
 		if matchCanonical != true {
-			return errors.New("could not find envelope signature in canonical rekor entry")
+			return ErrorMismatchSignature
 		}
 	}
 	return nil
+}
+
+// VerifyProvenanceBundle verifies the DSSE envelope using the offline Rekor bundle and
+// returns the verified DSSE envelope containing the provenance
+// and the signing certificate given the provenance.
+func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
+	trustedRoot *TrustedRoot) (
+	*SignedAttestation, error) {
+	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
+	var bundle bundle_v1.Bundle
+	if err := protojson.Unmarshal(bundleBytes, &bundle); err != nil {
+		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
+	}
+
+	// We only expect one TLOG entry. If this changes in the future, we must iterate
+	// for a matching one.
+	if bundle.GetVerificationMaterial() == nil ||
+		len(bundle.GetVerificationMaterial().GetTlogEntries()) == 0 {
+		return nil, fmt.Errorf("bundle missing offline tlog verification material %d", len(bundle.GetVerificationMaterial().GetTlogEntries()))
+	}
+
+	// Verify tlog entry.
+	tlogEntry := bundle.GetVerificationMaterial().GetTlogEntries()[0]
+	rekorEntry, err := verifyRekorEntryFromBundle(ctx, tlogEntry, trustedRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract DSSE envelope.
+	env, err := getEnvelopeFromBundle(&bundle)
+	if err != nil {
+		return nil, err
+	}
+
+	// Match tlog entry signature with the envelope.
+	if err := matchRekorEntryWithEnvelope(tlogEntry, env); err != nil {
+		return nil, fmt.Errorf("matching bundle entry with content: %w", err)
+	}
+
+	// Get certificate from bundle.
+	cert, err := getCertFromBundle(&bundle)
+	if err != nil {
+		return nil, err
+	}
+
+	proposedSignedAtt := &SignedAttestation{
+		SigningCert: cert,
+		Envelope:    env,
+		RekorEntry:  rekorEntry,
+	}
+
+	if err := verifySignedAttestation(proposedSignedAtt, trustedRoot); err != nil {
+		return nil, err
+	}
+
+	return proposedSignedAtt, nil
 }
