@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// Bundle specific errors
+// Bundle specific errors.
 var (
 	ErrorMismatchSignature       = errors.New("bundle tlog entry does not match signature")
 	ErrorUnexpectedEntryType     = errors.New("unexpected tlog entry type")
@@ -24,7 +24,8 @@ var (
 	ErrorUnexpectedBundleContent = errors.New("expected DSSE bundle content")
 )
 
-// verifyRekorEntryFromBundle extracts the Rekor entry from the Sigstore bundle verification material.
+// verifyRekorEntryFromBundle extracts and verifies the Rekor entry from the Sigstore
+// bundle verification material, validating the SignedEntryTimestamp.
 func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyLogEntry,
 	trustedRoot *TrustedRoot) (
 	*models.LogEntryAnon, error) {
@@ -68,12 +69,15 @@ func getEnvelopeFromBundle(bundle *bundle_v1.Bundle) (*dsselib.Envelope, error) 
 	return env, nil
 }
 
-// getCertFromBundle extracts the signing cert from the Sigstore bundle.
-func getCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
+// getLeafCertFromBundle extracts the signing cert from the Sigstore bundle.
+func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
 	certChain := bundle.GetVerificationMaterial().GetX509CertificateChain().GetCertificates()
 	if len(certChain) == 0 {
 		return nil, ErrorMissingCertInBundle
 	}
+
+	// The first certificate is the leaf cert: see
+	// https://github.com/sigstore/protobuf-specs/blob/16541696de137c6281d66d075a4924d9bbd181ff/protos/sigstore_common.proto#L170
 	certBytes := certChain[0].GetRawBytes()
 	return x509.ParseCertificate(certBytes)
 }
@@ -119,7 +123,7 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 				matchCanonical = true
 			}
 		}
-		if matchCanonical != true {
+		if !matchCanonical {
 			return ErrorMismatchSignature
 		}
 	}
@@ -164,7 +168,7 @@ func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
 	}
 
 	// Get certificate from bundle.
-	cert, err := getCertFromBundle(&bundle)
+	cert, err := getLeafCertFromBundle(&bundle)
 	if err != nil {
 		return nil, err
 	}
