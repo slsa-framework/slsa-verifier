@@ -17,7 +17,9 @@ var (
 	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 	e2eTestRepository        = "slsa-framework/example-package"
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
-	certSubjectRegexp        = "https://github.com/slsa-framework/slsa-github-generator/*"
+	// This is used in cosign's CheckOpts for validating the certificate. We
+	// do specific builder verification after this.
+	certSubjectRegexp = "https://github.com/*"
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
