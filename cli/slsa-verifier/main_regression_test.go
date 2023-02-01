@@ -513,7 +513,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			},
 			err:       serrors.ErrorMismatchWorkflowInputs,
 			noversion: true,
-		}
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
