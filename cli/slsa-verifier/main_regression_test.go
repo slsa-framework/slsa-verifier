@@ -574,7 +574,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// before GA. Add the tests for tag verification.
 				if version != "" && semver.Compare(version, "v1.0.0") > 0 {
 					builderIDs = append(builderIDs, []*string{
-						// pString(builder + "@" + sv),
+						pString(builder + "@" + sv),
 						pString(builder + "@refs/tags/" + sv),
 					}...)
 				}
@@ -595,6 +595,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						BuildWorkflowInputs: tt.inputs,
 					}
 
+					// The outBuilderID is the actual builder ID from the provenance.
+					// This is always long form for the GHA builders.
 					outBuilderID, err := cmd.Exec(context.Background(), artifacts)
 					if !errCmp(err, tt.err) {
 						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
@@ -609,15 +611,6 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed (1): %v", err))
 						}
-					}
-
-					if bid == nil {
-						continue
-					}
-
-					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(*bid, false); err != nil {
-						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 
 					// Smoke test against the CLI command
@@ -650,6 +643,18 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					cliErr := cliCmd.Execute()
 					if !errCmp(cliErr, tt.err) {
 						t.Errorf("%v: %v", v, cmp.Diff(cliErr, tt.err, cmpopts.EquateErrors()))
+					}
+
+					if bid == nil {
+						continue
+					}
+
+					// If we have a generated a user-provided bid, then validate it against the
+					// resulting builderID returned by the provenance check.
+					// Since this a GHA and the certificate ID is in long form,
+					// we pass `allowRef = true`.
+					if err := outBuilderID.Matches(*bid, true); err != nil {
+						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 				}
 			}
@@ -800,7 +805,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 				//	3. With only the name of the builder.
 				//	4. With no builder ID.
 				builderIDs := []*string{
-					// pString(builder + "@" + sv),
+					pString(builder + "@" + sv),
 					pString(builder + "@refs/tags/" + sv),
 					pString(builder),
 					nil,
@@ -840,8 +845,12 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					if bid == nil {
 						return
 					}
-					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(*bid, false); err != nil {
+
+					// If we have a generated a user-provided bid, then validate it against the
+					// resulting builderID returned by the provenance check.
+					// Since this a GHA and the certificate ID is in long form,
+					// we pass `allowRef = true`.
+					if err := outBuilderID.Matches(*bid, true); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
