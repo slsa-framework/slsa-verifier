@@ -13,16 +13,16 @@ import (
 
 type Provenance interface {
 	// BuilderID returns the builder id in the predicate.
-	BuilderID() string
+	BuilderID() (string, error)
 
 	// SourceURI is the full URI (including tag) of the source material.
 	SourceURI() (string, error)
 
 	// ConfigURI is the full URI (including tag) of the configuration material.
-	ConfigURI() string
+	ConfigURI() (string, error)
 
 	// Subject is the list of intoto subjects in the provenance.
-	Subjects() []intoto.Subject
+	Subjects() ([]intoto.Subject, error)
 
 	// GetStringFromEnvironment retrieves a string parameter from the environment
 	// attested to in the provenance.

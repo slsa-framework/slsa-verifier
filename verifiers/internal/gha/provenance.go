@@ -44,9 +44,13 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 // This function does an exact comparison, and expects certBuilderID to be the full
 // `name@refs/tags/<name>`.
 func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, certBuilderID string) error {
-	if certBuilderID != prov.BuilderID() {
+	builderID, err := prov.BuilderID()
+	if err != nil {
+		return err
+	}
+	if certBuilderID != builderID {
 		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
-			certBuilderID, prov.BuilderID())
+			certBuilderID, builderID)
 	}
 
 	return nil
@@ -76,13 +80,17 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	}
 
 	// Verify source from ConfigSource field.
-	configURI, err := sourceFromURI(prov.ConfigURI(), false)
+	fullConfigURI, err := prov.ConfigURI()
+	if err != nil {
+		return err
+	}
+	configURI, err := sourceFromURI(fullConfigURI, false)
 	if err != nil {
 		return err
 	}
 	if configURI != source {
 		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", serrors.ErrorMismatchSource,
-			source, prov.ConfigURI())
+			source, fullConfigURI)
 	}
 
 	// Verify source from material section.
@@ -101,10 +109,10 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 
 	// Last, verify that both fields match.
 	// We use the full URI to match on the tag as well.
-	if prov.ConfigURI() != materialSourceURI {
+	if fullConfigURI != materialSourceURI {
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			serrors.ErrorInvalidDssePayload,
-			prov.ConfigURI(), materialSourceURI)
+			fullConfigURI, materialSourceURI)
 	}
 
 	return nil
@@ -129,11 +137,12 @@ func sourceFromURI(uri string, allowNotTag bool) (string, error) {
 
 // Verify SHA256 Subject Digest from the provenance statement.
 func verifySha256Digest(prov slsaprovenance.Provenance, expectedHash string) error {
-	if len(prov.Subjects()) == 0 {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
+	subjects, err := prov.Subjects()
+	if err != nil {
+		return err
 	}
 
-	for _, subject := range prov.Subjects() {
+	for _, subject := range subjects {
 		digestSet := subject.Digest
 		hash, exists := digestSet["sha256"]
 		if !exists {

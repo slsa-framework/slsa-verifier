@@ -21,12 +21,13 @@ type ProvenanceV02 struct {
 	*intoto.ProvenanceStatement
 }
 
+// This returns a new, empty instance of the v0.2 provenance.
 func New() slsaprovenance.Provenance {
 	return &ProvenanceV02{}
 }
 
-func (prov *ProvenanceV02) BuilderID() string {
-	return prov.Predicate.Builder.ID
+func (prov *ProvenanceV02) BuilderID() (string, error) {
+	return prov.Predicate.Builder.ID, nil
 }
 
 func (prov *ProvenanceV02) SourceURI() (string, error) {
@@ -36,12 +37,16 @@ func (prov *ProvenanceV02) SourceURI() (string, error) {
 	return prov.Predicate.Materials[0].URI, nil
 }
 
-func (prov *ProvenanceV02) ConfigURI() string {
-	return prov.Predicate.Invocation.ConfigSource.URI
+func (prov *ProvenanceV02) ConfigURI() (string, error) {
+	return prov.Predicate.Invocation.ConfigSource.URI, nil
 }
 
-func (prov *ProvenanceV02) Subjects() []intoto.Subject {
-	return prov.Subject
+func (prov *ProvenanceV02) Subjects() ([]intoto.Subject, error) {
+	subj := prov.Subject
+	if len(subj) == 0 {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
+	}
+	return subj, nil
 }
 
 func (prov *ProvenanceV02) GetStringFromEnvironment(name string) (string, error) {
