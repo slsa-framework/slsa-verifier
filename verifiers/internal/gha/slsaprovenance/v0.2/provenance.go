@@ -8,40 +8,43 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 )
 
+// TODO(asraa): Use a static mapping.
+//
+//nolint:gochecknoinits
 func init() {
 	slsaprovenance.ProvenanceMap.Store(
 		"https://slsa.dev/provenance/v0.2",
 		New)
 }
 
-type Provenance_v02 struct {
+type ProvenanceV02 struct {
 	*intoto.ProvenanceStatement
 }
 
 func New() slsaprovenance.Provenance {
-	return &Provenance_v02{}
+	return &ProvenanceV02{}
 }
 
-func (prov *Provenance_v02) BuilderID() string {
+func (prov *ProvenanceV02) BuilderID() string {
 	return prov.Predicate.Builder.ID
 }
 
-func (prov *Provenance_v02) SourceURI() (string, error) {
+func (prov *ProvenanceV02) SourceURI() (string, error) {
 	if len(prov.Predicate.Materials) == 0 {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
 	}
 	return prov.Predicate.Materials[0].URI, nil
 }
 
-func (prov *Provenance_v02) ConfigURI() string {
+func (prov *ProvenanceV02) ConfigURI() string {
 	return prov.Predicate.Invocation.ConfigSource.URI
 }
 
-func (prov *Provenance_v02) Subjects() []intoto.Subject {
+func (prov *ProvenanceV02) Subjects() []intoto.Subject {
 	return prov.Subject
 }
 
-func (prov *Provenance_v02) GetStringFromEnvironment(name string) (string, error) {
+func (prov *ProvenanceV02) GetStringFromEnvironment(name string) (string, error) {
 	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
@@ -58,7 +61,7 @@ func (prov *Provenance_v02) GetStringFromEnvironment(name string) (string, error
 	return i, nil
 }
 
-func (prov *Provenance_v02) GetAnyFromEnvironment(name string) (interface{}, error) {
+func (prov *ProvenanceV02) GetAnyFromEnvironment(name string) (interface{}, error) {
 	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
@@ -71,7 +74,7 @@ func (prov *Provenance_v02) GetAnyFromEnvironment(name string) (interface{}, err
 	return val, nil
 }
 
-func (prov *Provenance_v02) GetInputs() (map[string]interface{}, error) {
+func (prov *ProvenanceV02) GetInputs() (map[string]interface{}, error) {
 	eventPayload, err := prov.GetAnyFromEnvironment("github_event_payload")
 	if err != nil {
 		return nil, err

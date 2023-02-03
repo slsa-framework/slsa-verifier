@@ -51,7 +51,7 @@ func ProvenanceFromEnvelope(env *dsselib.Envelope) (Provenance, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 
-	// Get the predicateType, a requried field.
+	// Get the predicateType, a required field.
 	pred := struct {
 		PredicateType string `json:"predicateType"`
 	}{}
