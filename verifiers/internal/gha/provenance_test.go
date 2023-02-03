@@ -349,7 +349,7 @@ func Test_verifySourceURI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov := &v02.Provenance_v02{
+			prov := &v02.ProvenanceV02{
 				ProvenanceStatement: tt.prov,
 			}
 
@@ -440,7 +440,7 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov := &v02.Provenance_v02{
+			prov := &v02.ProvenanceV02{
 				ProvenanceStatement: tt.prov,
 			}
 
