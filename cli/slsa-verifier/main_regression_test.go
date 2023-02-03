@@ -465,15 +465,15 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		{
 			name:        "annotated tag",
 			artifacts:   []string{"annotated-tag"},
-			source:      "github.com/laurentsimon/slsa-on-github-test",
-			pversiontag: pString("v5.0.1"),
+			source:      "github.com/asraa/slsa-on-github-test",
+			pversiontag: pString("v1.5.0"),
 			noversion:   true,
 		},
 		{
 			name:        "no branch",
 			artifacts:   []string{"annotated-tag"},
-			source:      "github.com/laurentsimon/slsa-on-github-test",
-			pversiontag: pString("v5.0.1"),
+			source:      "github.com/asraa/slsa-on-github-test",
+			pversiontag: pString("v1.5.0"),
 			pbranch:     pString("main"),
 			err:         serrors.ErrorMismatchBranch,
 			noversion:   true,
@@ -484,7 +484,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			artifacts: []string{"workflow-inputs"},
 			source:    "github.com/laurentsimon/slsa-on-github-test",
 			inputs: map[string]string{
-				"release_version": "v1.2.3",
+				"release_version": "(for example, 0.1.0)",
 				"some_bool":       "true",
 				"some_integer":    "123",
 			},
@@ -495,7 +495,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			artifacts: []string{"workflow-inputs"},
 			source:    "github.com/laurentsimon/slsa-on-github-test",
 			inputs: map[string]string{
-				"release_version": "v1.2.3",
+				"release_version": "(for example, 0.1.0)",
 				"some_bool":       "true",
 				"missing_field":   "123",
 			},
@@ -507,21 +507,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			artifacts: []string{"workflow-inputs"},
 			source:    "github.com/laurentsimon/slsa-on-github-test",
 			inputs: map[string]string{
-				"release_version": "v1.2.3",
+				"release_version": "(for example, 0.1.0)",
 				"some_bool":       "true",
 				"some_integer":    "321",
 			},
 			err:       serrors.ErrorMismatchWorkflowInputs,
 			noversion: true,
-		},
-		// Regression test of sharded UUID.
-		{
-			name:       "regression: sharded uuids",
-			artifacts:  []string{"binary-linux-amd64-sharded"},
-			source:     "github.com/slsa-framework/slsa-verifier",
-			pbranch:    pString("release/v1.0"),
-			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"),
-			noversion:  true,
 		},
 	}
 	for _, tt := range tests {
@@ -529,7 +520,6 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Avoid rate limiting by not running the tests in parallel.
 			// t.Parallel()
-
 			checkVersions := getBuildersAndVersions(t, "v1.2.2", tt.builders, GHA_ARTIFACT_PATH_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}

@@ -163,21 +163,29 @@ func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) e
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
-func VerifyProvenanceSignature(ctx context.Context, rClient *client.Rekor,
+func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
+	rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
 	*SignedAttestation, error) {
+	// Collect trusted root material for verification (Rekor pubkeys, SCT pubkeys,
+	// Fulcio root certificates).
+	_, err := GetTrustedRoot(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// There are two cases, either we have an embedded certificate, or we need
 	// to use the Redis index for searching by artifact SHA.
 	if hasCertInEnvelope(provenance) {
 		// Get Rekor entries corresponding to provenance
-		return GetValidSignedAttestationWithCert(rClient, provenance)
+		return GetValidSignedAttestationWithCert(rClient, provenance, trustedRoot)
 	}
 
 	// Fallback on using the redis search index to get matching UUIDs.
 	fmt.Fprintf(os.Stderr, "No certificate provided, trying Redis search index to find entries by subject digest\n")
 
 	// Verify the provenance and return the signing certificate.
-	signedAttestation, err := SearchValidSignedAttestation(ctx, artifactHash, provenance, rClient)
+	signedAttestation, err := SearchValidSignedAttestation(ctx, artifactHash, provenance, rClient, trustedRoot)
 	if err != nil {
 		return nil, err
 	}

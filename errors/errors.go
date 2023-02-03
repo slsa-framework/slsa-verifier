@@ -31,4 +31,6 @@ var (
 	ErrorImageHash                 = errors.New("cannot retrieve sha256 of image")
 	ErrorInvalidEncoding           = errors.New("invalid encoding")
 	ErrorInternal                  = errors.New("internal error")
+	ErrorInvalidRekorEntry         = errors.New("invalid Rekor entry")
+	ErrorRekorPubKey               = errors.New("error retrieving Rekor public keys")
 )
