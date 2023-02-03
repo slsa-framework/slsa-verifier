@@ -3,7 +3,6 @@ package gha
 import (
 	"context"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
@@ -19,6 +17,10 @@ import (
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+
+	// Load provenance types.
+	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
 )
 
 // SignedAttestation contains a signed DSSE envelope
@@ -38,29 +40,17 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 	return
 }
 
-func provenanceFromEnv(env *dsselib.Envelope) (prov *intoto.ProvenanceStatement, err error) {
-	if env.PayloadType != "application/vnd.in-toto+json" {
-		return nil, fmt.Errorf("%w: expected payload type 'application/vnd.in-toto+json', got '%s'",
-			serrors.ErrorInvalidDssePayload, env.PayloadType)
-	}
-	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	prov = &intoto.ProvenanceStatement{}
-	if err := json.Unmarshal(pyld, prov); err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	return
-}
-
 // Verify Builder ID in provenance statement.
 // This function does an exact comparison, and expects certBuilderID to be the full
 // `name@refs/tags/<name>`.
-func verifyBuilderIDExactMatch(prov *intoto.ProvenanceStatement, certBuilderID string) error {
-	if certBuilderID != prov.Predicate.Builder.ID {
+func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, certBuilderID string) error {
+	builderID, err := prov.BuilderID()
+	if err != nil {
+		return err
+	}
+	if certBuilderID != builderID {
 		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
-			certBuilderID, prov.Predicate.Builder.ID)
+			certBuilderID, builderID)
 	}
 
 	return nil
@@ -80,7 +70,7 @@ func asURI(s string) string {
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string) error {
+func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) error {
 	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -90,34 +80,39 @@ func verifySourceURI(prov *intoto.ProvenanceStatement, expectedSourceURI string)
 	}
 
 	// Verify source from ConfigSource field.
-	configURI, err := sourceFromURI(prov.Predicate.Invocation.ConfigSource.URI, false)
+	fullConfigURI, err := prov.ConfigURI()
+	if err != nil {
+		return err
+	}
+	configURI, err := sourceFromURI(fullConfigURI, false)
 	if err != nil {
 		return err
 	}
 	if configURI != source {
 		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", serrors.ErrorMismatchSource,
-			source, prov.Predicate.Invocation.ConfigSource.URI)
+			source, fullConfigURI)
 	}
 
 	// Verify source from material section.
-	if len(prov.Predicate.Materials) == 0 {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
+	materialSourceURI, err := prov.SourceURI()
+	if err != nil {
+		return err
 	}
-	materialURI, err := sourceFromURI(prov.Predicate.Materials[0].URI, false)
+	materialURI, err := sourceFromURI(materialSourceURI, false)
 	if err != nil {
 		return err
 	}
 	if materialURI != source {
 		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", serrors.ErrorMismatchSource,
-			source, prov.Predicate.Materials[0].URI)
+			source, materialSourceURI)
 	}
 
 	// Last, verify that both fields match.
 	// We use the full URI to match on the tag as well.
-	if prov.Predicate.Invocation.ConfigSource.URI != prov.Predicate.Materials[0].URI {
+	if fullConfigURI != materialSourceURI {
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			serrors.ErrorInvalidDssePayload,
-			prov.Predicate.Invocation.ConfigSource.URI, prov.Predicate.Materials[0].URI)
+			fullConfigURI, materialSourceURI)
 	}
 
 	return nil
@@ -141,12 +136,13 @@ func sourceFromURI(uri string, allowNotTag bool) (string, error) {
 }
 
 // Verify SHA256 Subject Digest from the provenance statement.
-func verifySha256Digest(prov *intoto.ProvenanceStatement, expectedHash string) error {
-	if len(prov.Subject) == 0 {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
+func verifySha256Digest(prov slsaprovenance.Provenance, expectedHash string) error {
+	subjects, err := prov.Subjects()
+	if err != nil {
+		return err
 	}
 
-	for _, subject := range prov.Subject {
+	for _, subject := range subjects {
 		digestSet := subject.Digest
 		hash, exists := digestSet["sha256"]
 		if !exists {
@@ -185,16 +181,12 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 	fmt.Fprintf(os.Stderr, "No certificate provided, trying Redis search index to find entries by subject digest\n")
 
 	// Verify the provenance and return the signing certificate.
-	signedAttestation, err := SearchValidSignedAttestation(ctx, artifactHash, provenance, rClient, trustedRoot)
-	if err != nil {
-		return nil, err
-	}
-
-	return signedAttestation, nil
+	return SearchValidSignedAttestation(ctx, artifactHash,
+		provenance, rClient, trustedRoot)
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
-	prov, err := provenanceFromEnv(env)
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
 		return err
 	}
@@ -247,14 +239,9 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	return nil
 }
 
-func VerifyWorkflowInputs(prov *intoto.ProvenanceStatement, inputs map[string]string) error {
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-	}
-
+func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]string) error {
 	// Verify it's a workflow_dispatch trigger.
-	triggerName, err := getAsString(environment, "github_event_name")
+	triggerName, err := prov.GetStringFromEnvironment("github_event_name")
 	if err != nil {
 		return err
 	}
@@ -264,19 +251,9 @@ func VerifyWorkflowInputs(prov *intoto.ProvenanceStatement, inputs map[string]st
 	}
 
 	// Assume no nested level.
-	payload, err := getEventPayload(environment)
+	pyldInputs, err := prov.GetInputs()
 	if err != nil {
 		return err
-	}
-
-	payloadInputs, err := getAsAny(payload, "inputs")
-	if err != nil {
-		return fmt.Errorf("%w: error retrieving 'inputs': %v", serrors.ErrorInvalidDssePayload, err)
-	}
-
-	pyldInputs, ok := payloadInputs.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type inputs")
 	}
 
 	// Verify all inputs.
@@ -295,7 +272,7 @@ func VerifyWorkflowInputs(prov *intoto.ProvenanceStatement, inputs map[string]st
 	return nil
 }
 
-func VerifyBranch(prov *intoto.ProvenanceStatement, expectedBranch string) error {
+func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
 	branch, err := getBranch(prov)
 	if err != nil {
 		return err
@@ -309,7 +286,7 @@ func VerifyBranch(prov *intoto.ProvenanceStatement, expectedBranch string) error
 	return nil
 }
 
-func VerifyTag(prov *intoto.ProvenanceStatement, expectedTag string) error {
+func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	tag, err := getTag(prov)
 	if err != nil {
 		return err
@@ -323,7 +300,7 @@ func VerifyTag(prov *intoto.ProvenanceStatement, expectedTag string) error {
 	return nil
 }
 
-func VerifyVersionedTag(prov *intoto.ProvenanceStatement, expectedTag string) error {
+func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	// Validate and canonicalize the provenance tag.
 	if !semver.IsValid(expectedTag) {
 		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
@@ -402,8 +379,17 @@ func extractFromVersion(v string, i int) (string, error) {
 	return parts[i], nil
 }
 
-func getAsString(environment map[string]interface{}, field string) (string, error) {
-	value, ok := environment[field]
+func getAsAny(payload map[string]any, field string) (any, error) {
+	value, ok := payload[field]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
+			fmt.Sprintf("payload type for %s", field))
+	}
+	return value, nil
+}
+
+func getAsString(pyld map[string]interface{}, field string) (string, error) {
+	value, ok := pyld[field]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
 			fmt.Sprintf("environment type for %s", field))
@@ -416,19 +402,10 @@ func getAsString(environment map[string]interface{}, field string) (string, erro
 	return i, nil
 }
 
-func getAsAny(environment map[string]any, field string) (any, error) {
-	value, ok := environment[field]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
-			fmt.Sprintf("environment type for %s", field))
-	}
-	return value, nil
-}
-
-func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
-	eventPayload, ok := environment["github_event_payload"]
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type event payload")
+func getEventPayload(prov slsaprovenance.Provenance) (map[string]interface{}, error) {
+	eventPayload, err := prov.GetAnyFromEnvironment("github_event_payload")
+	if err != nil {
+		return nil, err
 	}
 
 	payload, ok := eventPayload.(map[string]interface{})
@@ -439,8 +416,8 @@ func getEventPayload(environment map[string]interface{}) (map[string]interface{}
 	return payload, nil
 }
 
-func getBaseRef(environment map[string]interface{}) (string, error) {
-	baseRef, err := getAsString(environment, "github_base_ref")
+func getBaseRef(prov slsaprovenance.Provenance) (string, error) {
+	baseRef, err := prov.GetStringFromEnvironment("github_base_ref")
 	if err != nil {
 		return "", err
 	}
@@ -453,7 +430,7 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 	// Look at the event payload instead.
 	// We don't do that for all triggers because the payload
 	// is event-specific; and only the `push` event seems to have a `base_ref`.
-	eventName, err := getAsString(environment, "github_event_name")
+	eventName, err := prov.GetStringFromEnvironment("github_event_name")
 	if err != nil {
 		return "", err
 	}
@@ -462,7 +439,7 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 		return "", nil
 	}
 
-	payload, err := getEventPayload(environment)
+	payload, err := getEventPayload(prov)
 	if err != nil {
 		return "", err
 	}
@@ -481,8 +458,8 @@ func getBaseRef(environment map[string]interface{}) (string, error) {
 	return v, nil
 }
 
-func getTargetCommittish(environment map[string]interface{}) (string, error) {
-	eventName, err := getAsString(environment, "github_event_name")
+func getTargetCommittish(prov slsaprovenance.Provenance) (string, error) {
+	eventName, err := prov.GetStringFromEnvironment("github_event_name")
 	if err != nil {
 		return "", err
 	}
@@ -491,7 +468,7 @@ func getTargetCommittish(environment map[string]interface{}) (string, error) {
 		return "", nil
 	}
 
-	payload, err := getEventPayload(environment)
+	payload, err := getEventPayload(prov)
 	if err != nil {
 		return "", err
 	}
@@ -515,25 +492,20 @@ func getTargetCommittish(environment map[string]interface{}) (string, error) {
 	return "refs/heads/" + branch, nil
 }
 
-func getBranchForTag(environment map[string]interface{}) (string, error) {
+func getBranchForTag(prov slsaprovenance.Provenance) (string, error) {
 	// First try the base_ref.
-	branch, err := getBaseRef(environment)
+	branch, err := getBaseRef(prov)
 	if branch != "" || err != nil {
 		return branch, err
 	}
 
 	// Second try the target comittish.
-	return getTargetCommittish(environment)
+	return getTargetCommittish(prov)
 }
 
 // Get tag from the provenance invocation parameters.
-func getTag(prov *intoto.ProvenanceStatement) (string, error) {
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-	}
-
-	refType, err := getAsString(environment, "github_ref_type")
+func getTag(prov slsaprovenance.Provenance) (string, error) {
+	refType, err := prov.GetStringFromEnvironment("github_ref_type")
 	if err != nil {
 		return "", err
 	}
@@ -542,7 +514,7 @@ func getTag(prov *intoto.ProvenanceStatement) (string, error) {
 	case "branch":
 		return "", nil
 	case "tag":
-		return getAsString(environment, "github_ref")
+		return prov.GetStringFromEnvironment("github_ref")
 	default:
 		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
@@ -550,22 +522,17 @@ func getTag(prov *intoto.ProvenanceStatement) (string, error) {
 }
 
 // Get branch from the provenance invocation parameters.
-func getBranch(prov *intoto.ProvenanceStatement) (string, error) {
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-	}
-
-	refType, err := getAsString(environment, "github_ref_type")
+func getBranch(prov slsaprovenance.Provenance) (string, error) {
+	refType, err := prov.GetStringFromEnvironment("github_ref_type")
 	if err != nil {
 		return "", err
 	}
 
 	switch refType {
 	case "branch":
-		return getAsString(environment, "github_ref")
+		return prov.GetStringFromEnvironment("github_ref")
 	case "tag":
-		return getBranchForTag(environment)
+		return getBranchForTag(prov)
 	default:
 		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
