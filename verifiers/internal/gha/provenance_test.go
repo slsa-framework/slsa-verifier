@@ -11,14 +11,16 @@ import (
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	v02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
 )
 
-func provenanceFromBytes(payload []byte) (*intoto.ProvenanceStatement, error) {
+func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
 	env, err := EnvelopeFromBytes(payload)
 	if err != nil {
 		return nil, err
 	}
-	return provenanceFromEnv(env)
+	return slsaprovenance.ProvenanceFromEnvelope(env)
 }
 
 func Test_VerifySha256Subject(t *testing.T) {
@@ -347,7 +349,11 @@ func Test_verifySourceURI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := verifySourceURI(tt.prov, tt.sourceURI)
+			prov := &v02.Provenance_v02{
+				ProvenanceStatement: tt.prov,
+			}
+
+			err := verifySourceURI(prov, tt.sourceURI)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -434,7 +440,11 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := verifyBuilderIDExactMatch(tt.prov, tt.id)
+			prov := &v02.Provenance_v02{
+				ProvenanceStatement: tt.prov,
+			}
+
+			err := verifyBuilderIDExactMatch(prov, tt.id)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -564,7 +574,7 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 				"some_bool":       "true",
 				"some_integer":    "123",
 			},
-			expected: serrors.ErrorInvalidDssePayload,
+			expected: serrors.ErrorMismatchWorkflowInputs,
 		},
 	}
 	for _, tt := range tests {
