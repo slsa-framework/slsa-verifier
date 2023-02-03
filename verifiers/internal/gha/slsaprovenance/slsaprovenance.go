@@ -24,12 +24,16 @@ type Provenance interface {
 	// Subject is the list of intoto subjects in the provenance.
 	Subjects() []intoto.Subject
 
-	// GetFromEnvironment retrieves a parameter from the environment attested to
-	// in the provenance.
+	// GetStringFromEnvironment retrieves a string parameter from the environment
+	// attested to in the provenance.
 	GetStringFromEnvironment(name string) (string, error)
 
+	// GetAnyFromEnvironment retrieves an object parameter from the environment
+	// attested to in the provenance.
 	GetAnyFromEnvironment(name string) (interface{}, error)
 
+	// GetInputs retrieves the inputs from the provenance. Only succeeds for event
+	// relevant event types (workflow_inputs).
 	GetInputs() (map[string]interface{}, error)
 }
 
@@ -47,6 +51,7 @@ func ProvenanceFromEnvelope(env *dsselib.Envelope) (Provenance, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 
+	// Get the predicateType, a requried field.
 	pred := struct {
 		PredicateType string `json:"predicateType"`
 	}{}
@@ -54,6 +59,7 @@ func ProvenanceFromEnvelope(env *dsselib.Envelope) (Provenance, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 
+	// Load the appropriate structure and unmarshal.
 	ptype, ok := ProvenanceMap.Load(pred.PredicateType)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload, "unexpected predicate type ", pred.PredicateType)
