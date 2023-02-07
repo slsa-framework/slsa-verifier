@@ -183,7 +183,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/sigstore/fulcio v1.0.0 // indirect
-	github.com/sigstore/protobuf-specs v0.1.1-0.20230120212552-16541696de13
+	github.com/sigstore/protobuf-specs v0.1.1-0.20230203122711-9b722b68a717
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
