@@ -18,6 +18,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
@@ -240,25 +241,14 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 }
 
 func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]string) error {
-	// Verify it's a workflow_dispatch trigger.
-	triggerName, err := prov.GetStringFromEnvironment("github_event_name")
-	if err != nil {
-		return err
-	}
-	if triggerName != "workflow_dispatch" {
-		return fmt.Errorf("%w: expected 'workflow_dispatch' trigger, got %s",
-			serrors.ErrorMismatchWorkflowInputs, triggerName)
-	}
-
-	// Assume no nested level.
-	pyldInputs, err := prov.GetInputs()
+	pyldInputs, err := prov.GetWorkflowInputs()
 	if err != nil {
 		return err
 	}
 
 	// Verify all inputs.
 	for k, v := range inputs {
-		value, err := getAsString(pyldInputs, k)
+		value, err := utils.GetAsString(pyldInputs, k)
 		if err != nil {
 			return fmt.Errorf("%w: cannot retrieve value of '%s'", serrors.ErrorMismatchWorkflowInputs, k)
 		}
@@ -273,7 +263,7 @@ func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]stri
 }
 
 func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
-	branch, err := getBranch(prov)
+	branch, err := prov.GetBranch()
 	if err != nil {
 		return err
 	}
@@ -287,7 +277,7 @@ func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
 }
 
 func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
-	tag, err := getTag(prov)
+	tag, err := prov.GetTag()
 	if err != nil {
 		return err
 	}
@@ -310,7 +300,7 @@ func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) erro
 	// Note: prerelease is validated as part of patch validation
 	// and must be equal. Build is discarded as per https://semver.org/:
 	// "Build metadata MUST be ignored when determining version precedence",
-	tag, err := getTag(prov)
+	tag, err := prov.GetTag()
 	if err != nil {
 		return err
 	}
@@ -377,166 +367,6 @@ func extractFromVersion(v string, i int) (string, error) {
 		return "", fmt.Errorf("%s: %w", v, serrors.ErrorInvalidSemver)
 	}
 	return parts[i], nil
-}
-
-func getAsAny(payload map[string]any, field string) (any, error) {
-	value, ok := payload[field]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
-			fmt.Sprintf("payload type for %s", field))
-	}
-	return value, nil
-}
-
-func getAsString(pyld map[string]interface{}, field string) (string, error) {
-	value, ok := pyld[field]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
-			fmt.Sprintf("environment type for %s", field))
-	}
-
-	i, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("%w: %s '%s'", serrors.ErrorInvalidDssePayload, "environment type string", field)
-	}
-	return i, nil
-}
-
-func getEventPayload(prov slsaprovenance.Provenance) (map[string]interface{}, error) {
-	eventPayload, err := prov.GetAnyFromEnvironment("github_event_payload")
-	if err != nil {
-		return nil, err
-	}
-
-	payload, ok := eventPayload.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type payload")
-	}
-
-	return payload, nil
-}
-
-func getBaseRef(prov slsaprovenance.Provenance) (string, error) {
-	baseRef, err := prov.GetStringFromEnvironment("github_base_ref")
-	if err != nil {
-		return "", err
-	}
-
-	// This `base_ref` seems to always be "".
-	if baseRef != "" {
-		return baseRef, nil
-	}
-
-	// Look at the event payload instead.
-	// We don't do that for all triggers because the payload
-	// is event-specific; and only the `push` event seems to have a `base_ref`.
-	eventName, err := prov.GetStringFromEnvironment("github_event_name")
-	if err != nil {
-		return "", err
-	}
-
-	if eventName != "push" {
-		return "", nil
-	}
-
-	payload, err := getEventPayload(prov)
-	if err != nil {
-		return "", err
-	}
-
-	value, err := getAsAny(payload, "base_ref")
-	if err != nil {
-		return "", err
-	}
-
-	// The `base_ref` field may be nil if the build was from
-	// a specific commit rather than a branch.
-	v, ok := value.(string)
-	if !ok {
-		return "", nil
-	}
-	return v, nil
-}
-
-func getTargetCommittish(prov slsaprovenance.Provenance) (string, error) {
-	eventName, err := prov.GetStringFromEnvironment("github_event_name")
-	if err != nil {
-		return "", err
-	}
-
-	if eventName != "release" {
-		return "", nil
-	}
-
-	payload, err := getEventPayload(prov)
-	if err != nil {
-		return "", err
-	}
-
-	// For a release event, we look for release.target_commitish.
-	releasePayload, ok := payload["release"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "release absent from payload")
-	}
-
-	release, ok := releasePayload.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type releasePayload")
-	}
-
-	branch, err := getAsString(release, "target_commitish")
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", err, "target_commitish not present")
-	}
-
-	return "refs/heads/" + branch, nil
-}
-
-func getBranchForTag(prov slsaprovenance.Provenance) (string, error) {
-	// First try the base_ref.
-	branch, err := getBaseRef(prov)
-	if branch != "" || err != nil {
-		return branch, err
-	}
-
-	// Second try the target comittish.
-	return getTargetCommittish(prov)
-}
-
-// Get tag from the provenance invocation parameters.
-func getTag(prov slsaprovenance.Provenance) (string, error) {
-	refType, err := prov.GetStringFromEnvironment("github_ref_type")
-	if err != nil {
-		return "", err
-	}
-
-	switch refType {
-	case "branch":
-		return "", nil
-	case "tag":
-		return prov.GetStringFromEnvironment("github_ref")
-	default:
-		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
-			"unknown ref type", refType)
-	}
-}
-
-// Get branch from the provenance invocation parameters.
-func getBranch(prov slsaprovenance.Provenance) (string, error) {
-	refType, err := prov.GetStringFromEnvironment("github_ref_type")
-	if err != nil {
-		return "", err
-	}
-
-	switch refType {
-	case "branch":
-		return prov.GetStringFromEnvironment("github_ref")
-	case "tag":
-		return getBranchForTag(prov)
-	default:
-		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
-			"unknown ref type", refType)
-	}
 }
 
 // hasCertInEnvelope checks if a valid x509 certificate is present in the

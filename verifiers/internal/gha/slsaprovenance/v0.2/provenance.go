@@ -6,6 +6,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // TODO(asraa): Use a static mapping.
@@ -49,49 +50,74 @@ func (prov *ProvenanceV02) Subjects() ([]intoto.Subject, error) {
 	return subj, nil
 }
 
-func (prov *ProvenanceV02) GetStringFromEnvironment(name string) (string, error) {
+func (prov *ProvenanceV02) GetBranch() (string, error) {
+	// GetBranch gets the branch from the invocation parameters.
 	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
-	val, ok := environment[name]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
-			fmt.Sprintf("environment type for %s", name))
+
+	refType, err := utils.GetAsString(environment, "github_ref_type")
+	if err != nil {
+		return "", err
 	}
-	i, ok := val.(string)
-	if !ok {
-		return "", fmt.Errorf("%w: %s '%s'", serrors.ErrorInvalidDssePayload, "environment type string", name)
+
+	switch refType {
+	case "branch":
+		return utils.GetAsString(environment, "github_ref")
+	case "tag":
+		return getBranchForTag(prov)
+	default:
+		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
+			"unknown ref type", refType)
 	}
-	return i, nil
 }
 
-func (prov *ProvenanceV02) GetAnyFromEnvironment(name string) (interface{}, error) {
+func (prov *ProvenanceV02) GetTag() (string, error) {
 	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
-	val, ok := environment[name]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
-			fmt.Sprintf("environment type for %s", name))
+
+	refType, err := utils.GetAsString(environment, "github_ref_type")
+	if err != nil {
+		return "", err
 	}
-	return val, nil
+
+	switch refType {
+	case "branch":
+		return "", nil
+	case "tag":
+		return utils.GetAsString(environment, "github_ref")
+	default:
+		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
+			"unknown ref type", refType)
+	}
 }
 
-func (prov *ProvenanceV02) GetInputs() (map[string]interface{}, error) {
-	eventPayload, err := prov.GetAnyFromEnvironment("github_event_payload")
+func (prov *ProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
+	// Verify it's a workflow_dispatch trigger.
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	}
+
+	triggerName, err := utils.GetAsString(environment, "github_event_name")
+	if err != nil {
+		return nil, err
+	}
+	if triggerName != "workflow_dispatch" {
+		return nil, fmt.Errorf("%w: expected 'workflow_dispatch' trigger, got %s",
+			serrors.ErrorMismatchWorkflowInputs, triggerName)
+	}
+
+	payload, err := getEventPayload(environment)
 	if err != nil {
 		return nil, err
 	}
 
-	payload, ok := eventPayload.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type payload")
-	}
-
-	payloadInputs, ok := payload["inputs"]
-	if !ok {
+	payloadInputs, err := getAsAny(payload, "inputs")
+	if err != nil {
 		return nil, fmt.Errorf("%w: error retrieving 'inputs': %v", serrors.ErrorInvalidDssePayload, err)
 	}
 
@@ -100,4 +126,95 @@ func (prov *ProvenanceV02) GetInputs() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type inputs")
 	}
 	return pyldInputs, nil
+}
+
+func getBranchForTag(prov *ProvenanceV02) (string, error) {
+	// First try the base_ref.
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	}
+
+	baseRef, err := utils.GetAsString(environment, "github_base_ref")
+	if err != nil {
+		return "", err
+	}
+
+	// This `base_ref` seems to always be "".
+	if baseRef != "" {
+		return baseRef, nil
+	}
+
+	// Look at the event payload instead.
+	eventName, err := utils.GetAsString(environment, "github_event_name")
+	if err != nil {
+		return "", err
+	}
+
+	payload, err := getEventPayload(environment)
+	if err != nil {
+		return "", err
+	}
+
+	// We don't do that for all triggers because the payload
+	// is event-specific. Only `push` events seem to have a `base_ref`, and
+	// `release` events specify a branch in `target_commitish`.
+	switch eventName {
+	case "push":
+		value, err := getAsAny(payload, "base_ref")
+		if err != nil {
+			return "", err
+		}
+
+		// The `base_ref` field may be nil if the build was from
+		// a specific commit rather than a branch.
+		v, ok := value.(string)
+		if !ok {
+			return "", nil
+		}
+		return v, nil
+	case "release":
+		// For a release event, we look for release.target_commitish.
+		releasePayload, ok := payload["release"]
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "release absent from payload")
+		}
+
+		release, ok := releasePayload.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type releasePayload")
+		}
+
+		branch, err := utils.GetAsString(release, "target_commitish")
+		if err != nil {
+			return "", fmt.Errorf("%w: %s", err, "target_commitish not present")
+		}
+
+		return "refs/heads/" + branch, nil
+	default:
+		return "", nil
+	}
+}
+
+func getAsAny(environment map[string]any, field string) (any, error) {
+	value, ok := environment[field]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
+			fmt.Sprintf("environment type for %s", field))
+	}
+	return value, nil
+}
+
+func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
+	eventPayload, ok := environment["github_event_payload"]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type event payload")
+	}
+
+	payload, ok := eventPayload.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type payload")
+	}
+
+	return payload, nil
 }

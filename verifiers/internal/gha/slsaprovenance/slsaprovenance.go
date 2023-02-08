@@ -24,17 +24,15 @@ type Provenance interface {
 	// Subject is the list of intoto subjects in the provenance.
 	Subjects() ([]intoto.Subject, error)
 
-	// GetStringFromEnvironment retrieves a string parameter from the environment
-	// attested to in the provenance.
-	GetStringFromEnvironment(name string) (string, error)
+	// GetBranch retrieves the branch name of the source from the provenance.
+	GetBranch() (string, error)
 
-	// GetAnyFromEnvironment retrieves an object parameter from the environment
-	// attested to in the provenance.
-	GetAnyFromEnvironment(name string) (interface{}, error)
+	// GetTag retrieves the tag of the source from the provenance.
+	GetTag() (string, error)
 
-	// GetInputs retrieves the inputs from the provenance. Only succeeds for event
+	// GetWorkflowInputs retrieves the inputs from the provenance. Only succeeds for event
 	// relevant event types (workflow_inputs).
-	GetInputs() (map[string]interface{}, error)
+	GetWorkflowInputs() (map[string]interface{}, error)
 }
 
 // ProvenanceMap stores the different provenance version types.
