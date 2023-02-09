@@ -23,6 +23,9 @@ type ProvenanceOpts struct {
 
 	// ExpectedWorkflowInputs is a map of key=value inputs.
 	ExpectedWorkflowInputs map[string]string
+
+	// Bundle containing information to verify the provenance offline.
+	ProvenanceBundle []byte
 }
 
 // BuildOpts are the options for checking the builder.

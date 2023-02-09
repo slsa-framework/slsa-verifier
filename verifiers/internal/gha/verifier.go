@@ -96,11 +96,15 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, nil, err
 	}
 
+	var signedAtt *SignedAttestation
 	/* Verify signature on the intoto attestation. */
-	// TODO(https://github.com/slsa-framework/slsa-github-generator/issues/716):
-	// We will also need to support bundles when those are complete.
-	signedAtt, err := VerifyProvenanceSignature(ctx, trustedRoot, rClient,
-		provenance, artifactHash)
+	if provenanceOpts.ProvenanceBundle != nil {
+		signedAtt, err = VerifyProvenanceBundle(ctx, provenanceOpts.ProvenanceBundle,
+			trustedRoot)
+	} else {
+		signedAtt, err = VerifyProvenanceSignature(ctx, trustedRoot, rClient,
+			provenance, artifactHash)
+	}
 	if err != nil {
 		return nil, nil, err
 	}

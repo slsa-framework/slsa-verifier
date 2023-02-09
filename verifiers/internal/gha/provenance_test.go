@@ -9,10 +9,12 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1.0"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	v02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
 func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
@@ -79,6 +81,58 @@ func Test_VerifySha256Subject(t *testing.T) {
 			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorMismatchHash,
 		},
+		{
+			name:         "slsa 1.0 invalid dsse: not SLSA predicate",
+			path:         "./testdata/dsse-not-slsa-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorInvalidDssePayload,
+		},
+
+		{
+			name:         "invalid dsse: nil subject",
+			path:         "./testdata/dsse-no-subject-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorInvalidDssePayload,
+		},
+
+		{
+			name:         "invalid dsse: no sha256 subject digest",
+			path:         "./testdata/dsse-no-subject-hash-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:         "mismatched artifact hash with env",
+			path:         "./testdata/dsse-valid-v1.intoto.jsonl",
+			artifactHash: "1ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorMismatchHash,
+		},
+
+		{
+			name:         "valid entry",
+			path:         "./testdata/dsse-valid-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+
+		{
+			name:         "valid entry multiple subjects last entry",
+			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			artifactHash: "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+		{
+			name:         "valid multiple subjects second entry",
+			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			artifactHash: "02e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+		{
+			name:         "multiple subjects invalid hash",
+			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorMismatchHash,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -109,6 +163,8 @@ func Test_verifySourceURI(t *testing.T) {
 		prov      *intoto.ProvenanceStatement
 		sourceURI string
 		expected  error
+		// v1 provenance does not include materials
+		skipv1 bool
 	}{
 		{
 			name: "source has no @",
@@ -137,6 +193,7 @@ func Test_verifySourceURI(t *testing.T) {
 			},
 			sourceURI: "git+https://github.com/some/repo",
 			expected:  serrors.ErrorInvalidDssePayload,
+			skipv1:    true,
 		},
 		{
 			name: "empty configSource",
@@ -284,6 +341,7 @@ func Test_verifySourceURI(t *testing.T) {
 				},
 			},
 			sourceURI: "git+https://github.com/some/repo",
+			skipv1:    true,
 			expected:  serrors.ErrorInvalidDssePayload,
 		},
 		{
@@ -349,11 +407,32 @@ func Test_verifySourceURI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov := &v02.ProvenanceV02{
+			prov02 := &v02.ProvenanceV02{
 				ProvenanceStatement: tt.prov,
 			}
 
-			err := verifySourceURI(prov, tt.sourceURI)
+			err := verifySourceURI(prov02, tt.sourceURI)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+
+			if tt.skipv1 {
+				return
+			}
+
+			// Update to v1 SLSA provenance.
+			prov1 := &v1.ProvenanceV1{
+				Predicate: slsa1.ProvenancePredicate{
+					BuildDefinition: slsa1.ProvenanceBuildDefinition{
+						ExternalParameters: map[string]interface{}{
+							"source": slsa1.ArtifactReference{
+								URI: tt.prov.Predicate.Invocation.ConfigSource.URI,
+							},
+						},
+					},
+				},
+			}
+			err = verifySourceURI(prov1, tt.sourceURI)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -445,6 +524,22 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 			}
 
 			err := verifyBuilderIDExactMatch(prov, tt.id)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+
+			// Update to v1 SLSA provenance.
+			prov1 := &v1.ProvenanceV1{
+				Predicate: slsa1.ProvenancePredicate{
+					RunDetails: slsa1.ProvenanaceRunDetails{
+						Builder: slsa1.Builder{
+							ID: tt.prov.Predicate.Builder.ID,
+						},
+					},
+				},
+			}
+
+			err = verifyBuilderIDExactMatch(prov1, tt.id)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
