@@ -81,6 +81,58 @@ func Test_VerifySha256Subject(t *testing.T) {
 			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorMismatchHash,
 		},
+		{
+			name:         "slsa 1.0 invalid dsse: not SLSA predicate",
+			path:         "./testdata/dsse-not-slsa-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorInvalidDssePayload,
+		},
+
+		{
+			name:         "invalid dsse: nil subject",
+			path:         "./testdata/dsse-no-subject-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorInvalidDssePayload,
+		},
+
+		{
+			name:         "invalid dsse: no sha256 subject digest",
+			path:         "./testdata/dsse-no-subject-hash-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:         "mismatched artifact hash with env",
+			path:         "./testdata/dsse-valid-v1.intoto.jsonl",
+			artifactHash: "1ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorMismatchHash,
+		},
+
+		{
+			name:         "valid entry",
+			path:         "./testdata/dsse-valid-v1.intoto.jsonl",
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+
+		{
+			name:         "valid entry multiple subjects last entry",
+			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			artifactHash: "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+		{
+			name:         "valid multiple subjects second entry",
+			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			artifactHash: "02e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     nil,
+		},
+		{
+			name:         "multiple subjects invalid hash",
+			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+			expected:     serrors.ErrorMismatchHash,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
