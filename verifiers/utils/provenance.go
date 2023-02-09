@@ -6,7 +6,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
-func GetAsString(environment map[string]interface{}, field string) (string, error) {
+func GetAsString(environment map[string]any, field string) (string, error) {
 	value, ok := environment[field]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,

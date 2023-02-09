@@ -9,7 +9,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// TODO(asraa): Use a static mapping.
+// TODO(https://github.com/slsa-framework/slsa-verifier/issues/473): Use a static mapping.
 //
 //nolint:gochecknoinits
 func init() {
@@ -205,13 +205,13 @@ func getAsAny(environment map[string]any, field string) (any, error) {
 	return value, nil
 }
 
-func getEventPayload(environment map[string]interface{}) (map[string]interface{}, error) {
+func getEventPayload(environment map[string]any) (map[string]any, error) {
 	eventPayload, ok := environment["github_event_payload"]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type event payload")
 	}
 
-	payload, ok := eventPayload.(map[string]interface{})
+	payload, ok := eventPayload.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type payload")
 	}

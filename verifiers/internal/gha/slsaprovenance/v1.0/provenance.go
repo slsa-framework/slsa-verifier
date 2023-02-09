@@ -10,7 +10,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 )
 
-// TODO(asraa): Use a static mapping.
+// TODO(https://github.com/slsa-framework/slsa-verifier/issues/473): Use a static mapping.
 //
 //nolint:gochecknoinits
 func init() {
@@ -63,10 +63,12 @@ func (prov *ProvenanceV1) Subjects() ([]intoto.Subject, error) {
 }
 
 func (prov *ProvenanceV1) GetBranch() (string, error) {
+	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
 	return "", errors.New("unimplemented")
 }
 
 func (prov *ProvenanceV1) GetTag() (string, error) {
+	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetTag() support.
 	return "", errors.New("unimplemented")
 }
 
