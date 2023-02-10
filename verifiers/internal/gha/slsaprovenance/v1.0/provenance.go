@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"errors"
 	"fmt"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -15,18 +14,21 @@ import (
 //nolint:gochecknoinits
 func init() {
 	slsaprovenance.ProvenanceMap.Store(
-		"https://slsa.dev/provenance/v1.0?draft",
+		slsaprovenance.ProvenanceV1DraftType,
 		New)
 }
 
 type ProvenanceV1 struct {
 	intoto.StatementHeader
-	Predicate slsa1.ProvenancePredicate `json:"predicate"`
+	Predicate     slsa1.ProvenancePredicate `json:"predicate"`
+	predicateType string
 }
 
 // This returns a new, empty instance of the v0.2 provenance.
 func New() slsaprovenance.Provenance {
-	return &ProvenanceV1{}
+	return &ProvenanceV1{
+		predicateType: slsaprovenance.ProvenanceV1DraftType,
+	}
 }
 
 func (prov *ProvenanceV1) BuilderID() (string, error) {
@@ -64,14 +66,26 @@ func (prov *ProvenanceV1) Subjects() ([]intoto.Subject, error) {
 
 func (prov *ProvenanceV1) GetBranch() (string, error) {
 	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
-	return "", errors.New("unimplemented")
+	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+
+	return slsaprovenance.GetBranch(sysParams, prov.predicateType)
 }
 
 func (prov *ProvenanceV1) GetTag() (string, error) {
-	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetTag() support.
-	return "", errors.New("unimplemented")
+	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+	return slsaprovenance.GetTag(sysParams, prov.predicateType)
 }
 
 func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
-	return nil, errors.New("unimplemented")
+	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+	return slsaprovenance.GetWorkflowInputs(sysParams, prov.predicateType)
 }
