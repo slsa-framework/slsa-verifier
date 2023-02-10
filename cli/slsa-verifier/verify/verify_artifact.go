@@ -30,7 +30,6 @@ import (
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
 type VerifyArtifactCommand struct {
 	ProvenancePath      string
-	BundlePath          string
 	BuilderID           *string
 	SourceURI           string
 	SourceBranch        *string
@@ -63,20 +62,10 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			ExpectedID: c.BuilderID,
 		}
 
-		var provenance []byte
-		if c.ProvenancePath != "" {
-			provenance, err = os.ReadFile(c.ProvenancePath)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
-				return nil, err
-			}
-		} else {
-			bundle, err := os.ReadFile(c.BundlePath)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
-				return nil, err
-			}
-			provenanceOpts.ProvenanceBundle = bundle
+		provenance, err := os.ReadFile(c.ProvenancePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
 		}
 
 		verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
