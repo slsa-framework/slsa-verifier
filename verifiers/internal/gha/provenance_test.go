@@ -3,6 +3,7 @@ package gha
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -586,6 +587,42 @@ func Test_VerifyBranch(t *testing.T) {
 			branch:   "main",
 			expected: serrors.ErrorMismatchBranch,
 		},
+
+		{
+			name:   "ref main",
+			path:   "./testdata/dsse-main-ref-v1.intoto.jsonl",
+			branch: "main",
+		},
+		{
+			name:   "ref branch3",
+			path:   "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
+			branch: "branch3",
+		},
+
+		{
+			name:     "invalid ref type",
+			path:     "./testdata/dsse-invalid-ref-type-v1.intoto.jsonl",
+			expected: serrors.ErrorInvalidDssePayload,
+		},
+
+		{
+			name:   "tag branch2 push trigger",
+			path:   "./testdata/dsse-branch2-tag-v1.intoto.jsonl",
+			branch: "branch2",
+		},
+
+		{
+			name:   "v10.0.1 release trigger",
+			path:   "./testdata/dsse-v10.0.1-release-v1.intoto.jsonl",
+			branch: "main",
+		},
+
+		{
+			name:     "from commit push - no branch",
+			path:     "./testdata/dsse-annotated-tag-v1.intoto.jsonl",
+			branch:   "main",
+			expected: serrors.ErrorMismatchBranch,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -671,6 +708,60 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 			},
 			expected: serrors.ErrorMismatchWorkflowInputs,
 		},
+		{
+			name: "match all",
+			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"some_integer":    "123",
+			},
+		},
+		{
+			name: "match subset",
+			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_integer":    "123",
+			},
+		},
+		{
+			name: "missing field",
+			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"missing_field":   "123",
+			},
+			expected: serrors.ErrorMismatchWorkflowInputs,
+		},
+		{
+			name: "mismatch field release_version",
+			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
+			inputs: map[string]string{
+				"release_version": "v1.2.4",
+				"some_integer":    "123",
+			},
+			expected: serrors.ErrorMismatchWorkflowInputs,
+		},
+		{
+			name: "mismatch field some_integer",
+			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_integer":    "124",
+			},
+			expected: serrors.ErrorMismatchWorkflowInputs,
+		},
+		{
+			name: "not workflow_dispatch trigger",
+			path: "./testdata/dsse-workflow-inputs-wrong-trigger-v1.intoto.jsonl",
+			inputs: map[string]string{
+				"release_version": "v1.2.3",
+				"some_bool":       "true",
+				"some_integer":    "123",
+			},
+			expected: serrors.ErrorMismatchWorkflowInputs,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -720,6 +811,26 @@ func Test_VerifyTag(t *testing.T) {
 		{
 			name: "tag vslsa1",
 			path: "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			tag:  "vslsa1",
+		},
+		{
+			name:     "ref main",
+			path:     "./testdata/dsse-main-ref-v1.intoto.jsonl",
+			expected: serrors.ErrorMismatchTag,
+		},
+		{
+			name:     "ref branch3",
+			path:     "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
+			expected: serrors.ErrorMismatchTag,
+		},
+		{
+			name:     "invalid ref type",
+			path:     "./testdata/dsse-invalid-ref-type-v1.intoto.jsonl",
+			expected: serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name: "tag vslsa1",
+			path: "./testdata/dsse-vslsa1-tag-v1.intoto.jsonl",
 			tag:  "vslsa1",
 		},
 	}
@@ -1058,18 +1169,23 @@ func Test_VerifyVersionedTag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-			prov, err := provenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("provenanceFromBytes: %w", err))
-			}
+			for _, version := range []string{"", "-v1"} {
+				pathParts := strings.Split(tt.path, ".intoto")
+				pathName := []string{pathParts[0] + version}
+				pathName = append(pathName, pathParts[1:]...)
+				content, err := os.ReadFile(strings.Join(pathName, ".intoto"))
+				if err != nil {
+					panic(fmt.Errorf("os.ReadFile: %w", err))
+				}
+				prov, err := provenanceFromBytes(content)
+				if err != nil {
+					panic(fmt.Errorf("provenanceFromBytes: %w", err))
+				}
 
-			err = VerifyVersionedTag(prov, tt.tag)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				err = VerifyVersionedTag(prov, tt.tag)
+				if !errCmp(err, tt.expected) {
+					t.Errorf(cmp.Diff(err, tt.expected))
+				}
 			}
 		})
 	}

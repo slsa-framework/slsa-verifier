@@ -11,6 +11,11 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
+const (
+	ProvenanceV1DraftType = "https://slsa.dev/provenance/v1.0?draft"
+	ProvenanceV02Type     = "https://slsa.dev/provenance/v0.2"
+)
+
 type Provenance interface {
 	// BuilderID returns the builder id in the predicate.
 	BuilderID() (string, error)
