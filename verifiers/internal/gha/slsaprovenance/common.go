@@ -8,7 +8,7 @@ import (
 )
 
 // GetWorkflowInputs gets the workflow inputs from the GitHub environment map
-// and convers the keys to the necessary casing depending on predicate type.
+// and converts the keys to the necessary casing depending on predicate type.
 func GetWorkflowInputs(environment map[string]any, predicateType string) (map[string]any, error) {
 	// Verify it's a workflow_dispatch trigger.
 	eventKey, err := convertKey("github_event_name", predicateType)
@@ -62,7 +62,7 @@ func GetEventPayload(environment map[string]any, predicateType string) (map[stri
 	return payload, nil
 }
 
-func convertKey(key string, predicateType string) (string, error) {
+func convertKey(key, predicateType string) (string, error) {
 	switch predicateType {
 	case ProvenanceV1DraftType:
 		return strings.ToUpper(key), nil
