@@ -18,7 +18,6 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
@@ -249,7 +248,7 @@ func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]stri
 
 	// Verify all inputs.
 	for k, v := range inputs {
-		value, err := utils.GetAsString(pyldInputs, k)
+		value, err := slsaprovenance.GetAsString(pyldInputs, k)
 		if err != nil {
 			return fmt.Errorf("%w: cannot retrieve value of '%s'", serrors.ErrorMismatchWorkflowInputs, k)
 		}
