@@ -39,7 +39,6 @@ type VerifyOptions struct {
 	BuilderID           string
 	/* Other */
 	ProvenancePath  string
-	BundlePath      string
 	PrintProvenance bool
 }
 
@@ -68,17 +67,11 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
 		"path to a provenance file")
 
-	cmd.Flags().StringVar(&o.BundlePath, "bundle-path", "",
-		"path to a Sigstore provenance bundle file containing offline information.")
-
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"[optional] print the verified provenance to stdout")
 
 	cmd.MarkFlagRequired("source-uri")
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
-
-	// Enforce exactly one of --provenance-path and --bundle-path.
-	cmd.MarkFlagsMutuallyExclusive("provenance-path", "bundle-path")
 }
 
 type workflowInputs struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -85,6 +86,11 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
+	isSigstoreBundle := IsSigstoreBundle(provenance)
+	if isSigstoreBundle && !options.ExperimentalEnabled() {
+		return nil, nil, errors.New("sigstore bundle support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
+	}
+
 	// This includes a default retry count of 3.
 	rClient, err := client.GetRekorClient(defaultRekorAddr)
 	if err != nil {
@@ -98,9 +104,8 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 
 	var signedAtt *SignedAttestation
 	/* Verify signature on the intoto attestation. */
-	if provenanceOpts.ProvenanceBundle != nil {
-		signedAtt, err = VerifyProvenanceBundle(ctx, provenanceOpts.ProvenanceBundle,
-			trustedRoot)
+	if isSigstoreBundle {
+		signedAtt, err = VerifyProvenanceBundle(ctx, provenance, trustedRoot)
 	} else {
 		signedAtt, err = VerifyProvenanceSignature(ctx, trustedRoot, rClient,
 			provenance, artifactHash)

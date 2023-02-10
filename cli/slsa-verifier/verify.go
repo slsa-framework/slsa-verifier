@@ -43,7 +43,6 @@ func verifyArtifactCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyArtifactCommand{
 				ProvenancePath:      o.ProvenancePath,
-				BundlePath:          o.BundlePath,
 				SourceURI:           o.SourceURI,
 				PrintProvenance:     o.PrintProvenance,
 				BuildWorkflowInputs: o.BuildWorkflowInputs.AsMap(),
@@ -61,21 +60,6 @@ func verifyArtifactCmd() *cobra.Command {
 				v.BuilderID = &o.BuilderID
 			}
 
-			// In experimental mode, we allow either provenance or bundle path, but exactly
-			// one must be set. We already check to ensure that they are mutually exclusive.
-			if ExperimentalEnabled() {
-				if !(cmd.Flags().Changed("provenance-path") ||
-					cmd.Flags().Changed("bundle-path")) {
-					fmt.Fprintf(os.Stderr, "%s\n%s", cmd.UsageString(),
-						"exactly one of --provenance-path or --bundle-path must be supplied")
-					os.Exit(1)
-				}
-			} else if !cmd.Flags().Changed("provenance-path") {
-				// --provenance-path must be set.
-				fmt.Fprintf(os.Stderr, "%s\n%s\n", cmd.UsageString(), "--provenance-path must be supplied")
-				os.Exit(1)
-			}
-
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
 				os.Exit(1)
@@ -86,6 +70,8 @@ func verifyArtifactCmd() *cobra.Command {
 	}
 
 	o.AddFlags(cmd)
+	// --provenance-path must be supplied when verifying an artifact.
+	cmd.MarkFlagRequired("provenance-path")
 	return cmd
 }
 

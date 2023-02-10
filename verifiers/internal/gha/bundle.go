@@ -24,6 +24,15 @@ var (
 	ErrorUnexpectedBundleContent = errors.New("expected DSSE bundle content")
 )
 
+// IsSigstoreBundle checks if the provenance is a Sigstore bundle.
+func IsSigstoreBundle(bytes []byte) bool {
+	var bundle bundle_v1.Bundle
+	if err := protojson.Unmarshal(bytes, &bundle); err != nil {
+		return false
+	}
+	return true
+}
+
 // verifyRekorEntryFromBundle extracts and verifies the Rekor entry from the Sigstore
 // bundle verification material, validating the SignedEntryTimestamp.
 func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyLogEntry,
