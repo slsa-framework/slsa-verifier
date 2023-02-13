@@ -111,6 +111,8 @@ github.com/Azure/azure-sdk-for-go v67.1.0+incompatible h1:oziYcaopbnIKfM69DL05wX
 github.com/Azure/azure-sdk-for-go v67.1.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v67.3.0+incompatible h1:QEvenaO+Y9ShPeCWsSAtolzVUcb0T0tPeek5TDsovuM=
 github.com/Azure/azure-sdk-for-go v67.3.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
+github.com/Azure/azure-sdk-for-go v68.0.0+incompatible h1:fcYLmCpyNYRnvJbPerq7U0hS+6+I79yEDJBqVNcqUzU=
+github.com/Azure/azure-sdk-for-go v68.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-service-bus-go v0.9.1/go.mod h1:yzBx6/BUGfjfeqbRZny9AQIbIe3AcV9WZbAdpkoXOa0=
 github.com/Azure/azure-storage-blob-go v0.8.0/go.mod h1:lPI3aLPpuLTeUwh1sViKXFxwl2B6teiRqI0deQUvsw0=
 github.com/Azure/go-autorest v12.0.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
@@ -130,6 +132,8 @@ github.com/Azure/go-autorest/autorest/adal v0.9.21/go.mod h1:zua7mBUaCc5YnSLKYgG
 github.com/Azure/go-autorest/autorest/azure/auth v0.5.2/go.mod h1:q98IH4qgc3eWM4/WOeR5+YPmBuy8Lq0jNRDwSM0CuFk=
 github.com/Azure/go-autorest/autorest/azure/auth v0.5.11 h1:P6bYXFoao05z5uhOQzbC3Qd8JqF3jUoocoTeIxkp2cA=
 github.com/Azure/go-autorest/autorest/azure/auth v0.5.11/go.mod h1:84w/uV8E37feW2NCJ08uT9VBfjfUHpgLVnG2InYD6cg=
+github.com/Azure/go-autorest/autorest/azure/auth v0.5.12 h1:wkAZRgT/pn8HhFyzfe9UnqOjJYqlembgCTi72Bm/xKk=
+github.com/Azure/go-autorest/autorest/azure/auth v0.5.12/go.mod h1:84w/uV8E37feW2NCJ08uT9VBfjfUHpgLVnG2InYD6cg=
 github.com/Azure/go-autorest/autorest/azure/cli v0.4.1/go.mod h1:JfDgiIO1/RPu6z42AdQTyjOoCM2MFhLqSBDvMEkDgcg=
 github.com/Azure/go-autorest/autorest/azure/cli v0.4.5/go.mod h1:ADQAXrkgm7acgWVUNamOgh8YNrv4p27l3Wc55oVfpzg=
 github.com/Azure/go-autorest/autorest/azure/cli v0.4.6 h1:w77/uPk80ZET2F+AfQExZyEWtn+0Rk/uw17m9fv5Ajc=
@@ -754,6 +758,8 @@ github.com/google/go-containerregistry v0.13.0/go.mod h1:J9FQ+eSS4a1aC2GNZxvNpbW
 github.com/google/go-github/v28 v28.1.1/go.mod h1:bsqJWQX05omyWVmc00nEUql9mhQyv38lDZ8kPZcQVoM=
 github.com/google/go-github/v45 v45.2.0 h1:5oRLszbrkvxDDqBCNj2hjDZMKmvexaZ1xw/FCD+K3FI=
 github.com/google/go-github/v45 v45.2.0/go.mod h1:FObaZJEDSTa/WGCzZ2Z3eoCDXWJKMenWWTrd8jrta28=
+github.com/google/go-github/v50 v50.0.0 h1:gdO1AeuSZZK4iYWwVbjni7zg8PIQhp7QfmPunr016Jk=
+github.com/google/go-github/v50 v50.0.0/go.mod h1:Ev4Tre8QoKiolvbpOSG3FIi4Mlon3S2Nt9W5JYqKiwA=
 github.com/google/go-licenses v0.0.0-20210329231322-ce1d9163b77d/go.mod h1:+TYOmkVoJOpwnS0wfdsJCV9CoD5nJYsHoFk/0CrTK4M=
 github.com/google/go-querystring v1.0.0/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD/fhyJ8=
@@ -1291,6 +1297,8 @@ github.com/sigstore/cosign v1.13.1 h1:+5oF8jisEcDw2TuXxCADC1u5//HfdnJhGbpv9Isiwu
 github.com/sigstore/cosign v1.13.1/go.mod h1:PlfJODkovUOKsLrGI7Su57Ie/Eb/Ks7hRHw3tn5hQS4=
 github.com/sigstore/cosign/v2 v2.0.0-rc.1 h1:ppOhIqG8xFtTtNwy/Zme9Yum+PIvES14KmsRuUPfkls=
 github.com/sigstore/cosign/v2 v2.0.0-rc.1/go.mod h1:XqEFZWibYcygXD+mqXWSbj90fi1vMR9EFFoxiD8wauM=
+github.com/sigstore/cosign/v2 v2.0.0-rc.2 h1:LDSSQYzThg7uKHJqFBp03kaObTDuWfifJqBiAK1elUU=
+github.com/sigstore/cosign/v2 v2.0.0-rc.2/go.mod h1:oKIsv9cCwtfakSd64Rzief3Izk/cPSkougoWU/F3OBI=
 github.com/sigstore/fulcio v0.6.0 h1:YNfnGm9EjYPlzHiPDcIVhslYj846jkPtHQH+FTKNncw=
 github.com/sigstore/fulcio v0.6.0/go.mod h1:lwxzHDYYQ0lVVWqaj68ZQNkcP847aoF7AIa7ra9rRqA=
 github.com/sigstore/fulcio v1.0.0 h1:hBZW6qg9GXTtCX8jOg1hmyjYLrmsEKZGeMwAbW3XNEg=
@@ -1456,6 +1464,8 @@ github.com/xanzy/go-gitlab v0.73.1 h1:UMagqUZLJdjss1SovIC+kJCH4k2AZWXl58gJd38Y/h
 github.com/xanzy/go-gitlab v0.73.1/go.mod h1:d/a0vswScO7Agg1CZNz15Ic6SSvBG9vfw8egL99t4kA=
 github.com/xanzy/go-gitlab v0.79.0 h1:mIxGAHJbGkM/eWspvUXA6MgnYKYTFPDcunz2/uEJg1Y=
 github.com/xanzy/go-gitlab v0.79.0/go.mod h1:DlByVTSXhPsJMYL6+cm8e8fTJjeBmhrXdC/yvkKKt6M=
+github.com/xanzy/go-gitlab v0.79.1 h1:ZmEei8RZYlqk4D7nYrWWZqywmKBOd7vmPMlJbueZXUU=
+github.com/xanzy/go-gitlab v0.79.1/go.mod h1:DlByVTSXhPsJMYL6+cm8e8fTJjeBmhrXdC/yvkKKt6M=
 github.com/xanzy/ssh-agent v0.2.1/go.mod h1:mLlQY/MoOhWBj+gOGMQkOeiEvkx+8pJSI+0Bx9h2kr4=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
 github.com/xdg-go/scram v1.0.2/go.mod h1:1WAq6h33pAW+iRreB34OORO2Nf7qel3VV3fjBj+hCSs=
@@ -1587,6 +1597,8 @@ go.opentelemetry.io/proto/otlp v0.16.0 h1:WHzDWdXUvbc5bG2ObdrGfaNpQz7ft7QN9HHmJl
 go.opentelemetry.io/proto/otlp v0.16.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.step.sm/crypto v0.23.1 h1:Yr9vlzjGqIKVi88KcpZtEcNTcpDkt1nVR7tumW4h+CU=
 go.step.sm/crypto v0.23.1/go.mod h1:djAhDYpNAuWF2LkzbCVcf0JDy1UWgrxR3eQ7pQ8EQ/w=
+go.step.sm/crypto v0.24.0 h1:9qzl0cQWHvKxajHLyVrJET+dauYzoVB3PVQDLMYs+HE=
+go.step.sm/crypto v0.24.0/go.mod h1:kr1rzO6SzeQnLm6Zu6lNtksHZLiFe9k8LolSJNhoc94=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
@@ -1819,6 +1831,8 @@ golang.org/x/oauth2 v0.3.0 h1:6l90koy8/LaBLmLu8jpHeHexzMwEita0zFfYlggy2F8=
 golang.org/x/oauth2 v0.3.0/go.mod h1:rQrIauxkUhJ6CuwEXwymO2/eh4xz2ZWF1nBkcxS+tGk=
 golang.org/x/oauth2 v0.4.0 h1:NF0gk8LVPg1Ml7SSbGyySuoxdsXitj7TvgvuRxIMc/M=
 golang.org/x/oauth2 v0.4.0/go.mod h1:RznEsdpjGAINPTOF0UH/t+xJ75L18YO3Ho6Pyn+uRec=
+golang.org/x/oauth2 v0.5.0 h1:HuArIo48skDwlrvM3sEdHXElYslAMsf3KwRkkW4MC4s=
+golang.org/x/oauth2 v0.5.0/go.mod h1:9/XBHVqLaWO3/BRHs5jbpYCnOZVjj5V0ndyaAM7KB4I=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20181108010431-42b317875d0f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
