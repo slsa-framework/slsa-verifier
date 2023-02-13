@@ -19,7 +19,7 @@ require (
 	github.com/google/go-containerregistry v0.13.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sigstore/cosign v1.13.1
-	github.com/sigstore/cosign/v2 v2.0.0-rc.1
+	github.com/sigstore/cosign/v2 v2.0.0-rc.2
 	github.com/slsa-framework/slsa-github-generator v1.4.0
 	github.com/spf13/cobra v1.6.1
 	github.com/transparency-dev/merkle v0.0.1
@@ -32,10 +32,11 @@ require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20221212123742-001c36b64ec3 // indirect
 	github.com/digitorus/timestamp v0.0.0-20221019182153-ef3b63b79b31 // indirect
+	github.com/google/go-github/v50 v50.0.0 // indirect
 	github.com/sigstore/timestamp-authority v0.2.1 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.1.2 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect
-	go.step.sm/crypto v0.23.1 // indirect
+	go.step.sm/crypto v0.24.0 // indirect
 )
 
 require (
@@ -43,11 +44,11 @@ require (
 	cloud.google.com/go/compute v1.15.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/alibabacloudsdkgo/helper v0.2.0 // indirect
-	github.com/Azure/azure-sdk-for-go v67.3.0+incompatible // indirect
+	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.21 // indirect
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11 // indirect
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.12 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.6 // indirect
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
@@ -206,7 +207,7 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/urfave/cli v1.22.7 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
-	github.com/xanzy/go-gitlab v0.79.0 // indirect
+	github.com/xanzy/go-gitlab v0.79.1 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0 // indirect
@@ -235,7 +236,7 @@ require (
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127 // indirect
 	golang.org/x/net v0.6.0 // indirect
-	golang.org/x/oauth2 v0.4.0 // indirect
+	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
