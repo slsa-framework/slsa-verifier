@@ -1,10 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base", 
-    ":gitSignOff"
-  ],
+  "extends": ["config:base", ":gitSignOff"],
   "schedule": ["every weekend"],
+  "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
