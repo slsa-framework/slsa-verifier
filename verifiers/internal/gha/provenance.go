@@ -85,7 +85,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	if err != nil {
 		return err
 	}
-	configURI, err := sourceFromURI(fullConfigURI, false)
+	configURI, err := sourceFromURI(fullConfigURI)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	if err != nil {
 		return err
 	}
-	materialURI, err := sourceFromURI(materialSourceURI, false)
+	materialURI, err := sourceFromURI(materialSourceURI)
 	if err != nil {
 		return err
 	}
@@ -119,13 +119,13 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	return nil
 }
 
-func sourceFromURI(uri string, allowNotTag bool) (string, error) {
+func sourceFromURI(uri string) (string, error) {
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
 	r := strings.SplitN(uri, "@", 2)
-	if len(r) < 2 && !allowNotTag {
+	if len(r) < 2 {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}

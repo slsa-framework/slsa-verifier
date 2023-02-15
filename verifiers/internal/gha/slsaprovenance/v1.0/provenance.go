@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -44,8 +45,12 @@ func (prov *ProvenanceV1) SourceURI() (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source")
 	}
-	sourceRef, ok := source.(slsa1.ArtifactReference)
-	if !ok {
+	sourceBytes, err := json.Marshal(source)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
+	}
+	var sourceRef slsa1.ArtifactReference
+	if err := json.Unmarshal(sourceBytes, &sourceRef); err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source type")
 	}
 	return sourceRef.URI, nil
