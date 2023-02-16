@@ -121,3 +121,50 @@ func verifyImageCmd() *cobra.Command {
 	o.AddFlags(cmd)
 	return cmd
 }
+
+func verifyNpmPackageCmd() *cobra.Command {
+	o := &verify.VerifyNpmOptions{}
+
+	cmd := &cobra.Command{
+		Use: "verify-npm-package [flags] tarball",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errors.New("expects a single path to an image")
+			}
+			return nil
+		},
+		Short: "Verifies SLSA provenance for an npm package tarball [experimental]",
+		Run: func(cmd *cobra.Command, args []string) {
+			v := verify.VerifyNpmPackageCommand{
+				SourceURI:           o.SourceURI,
+				PrintProvenance:     o.PrintProvenance,
+				BuildWorkflowInputs: o.BuildWorkflowInputs.AsMap(),
+			}
+			if cmd.Flags().Changed("attestations-path") {
+				v.AttestationsPath = o.AttestationsPath
+			}
+			if cmd.Flags().Changed("source-branch") {
+				v.SourceBranch = &o.SourceBranch
+			}
+			if cmd.Flags().Changed("source-tag") {
+				v.SourceTag = &o.SourceTag
+			}
+			if cmd.Flags().Changed("source-versioned-tag") {
+				v.SourceVersionTag = &o.SourceVersionTag
+			}
+			if cmd.Flags().Changed("builder-id") {
+				v.BuilderID = &o.BuilderID
+			}
+
+			if _, err := v.Exec(cmd.Context(), args); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				os.Exit(1)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+			}
+		},
+	}
+
+	o.AddFlags(cmd)
+	return cmd
+}

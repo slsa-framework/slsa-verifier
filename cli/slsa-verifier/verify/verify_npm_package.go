@@ -16,6 +16,7 @@ package verify
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -24,9 +25,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
-type VerifyArtifactCommand struct {
-	ProvenancePath      string
+type VerifyNpmPackageCommand struct {
+	AttestationsPath    string
 	BuilderID           *string
 	SourceURI           string
 	SourceBranch        *string
@@ -36,20 +36,28 @@ type VerifyArtifactCommand struct {
 	PrintProvenance     bool
 }
 
-func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
+func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (*utils.TrustedBuilderID, error) {
 	var builderID *utils.TrustedBuilderID
-
-	for _, artifact := range artifacts {
-		artifactHash, err := computeFileHash(artifact)
+	if !options.ExperimentalEnabled() {
+		err := errors.New("feature support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
+		fmt.Fprintf(os.Stderr, "Verifying npm package: FAILED: %v\n\n", err)
+		return nil, err
+	}
+	for _, tarball := range tarballs {
+		tarballHash, err := computeFileHash(tarball)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
 			return nil, err
 		}
 
+		if c.AttestationsPath == "" {
+			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
+			return nil, err
+		}
 		provenanceOpts := &options.ProvenanceOpts{
 			ExpectedSourceURI:      c.SourceURI,
 			ExpectedBranch:         c.SourceBranch,
-			ExpectedDigest:         artifactHash,
+			ExpectedDigest:         tarballHash,
 			ExpectedVersionedTag:   c.SourceVersionTag,
 			ExpectedTag:            c.SourceTag,
 			ExpectedWorkflowInputs: c.BuildWorkflowInputs,
@@ -59,15 +67,15 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			ExpectedID: c.BuilderID,
 		}
 
-		provenance, err := os.ReadFile(c.ProvenancePath)
+		attestations, err := os.ReadFile(c.AttestationsPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
 			return nil, err
 		}
 
-		verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
+		verifiedProvenance, outBuilderID, err := verifiers.VerifyNpmPackage(ctx, attestations, tarballHash, provenanceOpts, builderOpts)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
 			return nil, err
 		}
 
@@ -79,10 +87,10 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			builderID = outBuilderID
 		} else if *builderID != *outBuilderID {
 			err := fmt.Errorf("encountered different builderIDs %v %v", builderID, outBuilderID)
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
 			return nil, err
 		}
-		fmt.Fprintf(os.Stderr, "Verifying artifact %s: PASSED\n\n", artifact)
+		fmt.Fprintf(os.Stderr, "Verifying npm package %s: PASSED\n\n", tarball)
 	}
 
 	return builderID, nil

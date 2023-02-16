@@ -39,6 +39,15 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	return nil, nil, serrors.ErrorNotSupported
 }
 
+// VerifyNpmPackage verifies an npm package tarball
+func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
+	attestations []byte, tarballHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	return nil, nil, serrors.ErrorNotSupported
+}
+
 // VerifyImage verifies provenance for an OCI image.
 func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string,
