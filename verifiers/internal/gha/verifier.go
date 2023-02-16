@@ -186,5 +186,34 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
+	fmt.Println(string(attestations))
+	provenanceBundle, publishBundle, err := getNpmBundles(attestations)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	trustedRoot, err := GetTrustedRoot(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	signedProvenance, err := VerifyProvenanceBundle(ctx, provenanceBundle, trustedRoot)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fmt.Println(*signedProvenance)
+
+	signedPublish, err := VerifyNpmPublishBundle(ctx, publishBundle, trustedRoot)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fmt.Println(*signedPublish)
+
+	// return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
+	// 	provenanceOpts, builderOpts,
+	// 	defaultArtifactTrustedReusableWorkflows)
+
 	return []byte("TODO"), &utils.TrustedBuilderID{}, nil
 }
