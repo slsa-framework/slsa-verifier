@@ -33,4 +33,5 @@ var (
 	ErrorInternal                  = errors.New("internal error")
 	ErrorInvalidRekorEntry         = errors.New("invalid Rekor entry")
 	ErrorRekorPubKey               = errors.New("error retrieving Rekor public keys")
+	ErrorInvalidPackageName        = errors.New("invalid package name")
 )

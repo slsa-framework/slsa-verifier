@@ -187,33 +187,44 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	fmt.Println(string(attestations))
-	provenanceBundle, publishBundle, err := getNpmBundles(attestations)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	trustedRoot, err := GetTrustedRoot(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	signedProvenance, err := VerifyProvenanceBundle(ctx, provenanceBundle, trustedRoot)
+	npm, err := NpmNew(ctx, trustedRoot, attestations)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	fmt.Println(*signedProvenance)
+	fmt.Println(npm)
 
-	signedPublish, err := VerifyNpmPublishBundle(ctx, publishBundle, trustedRoot)
-	if err != nil {
+	// Verify provenance signature.
+	if err := npm.verifyProvenanceAttestationSignature(); err != nil {
 		return nil, nil, err
 	}
 
-	fmt.Println(*signedPublish)
+	// Verify publish attesttation signature.
+	if err := npm.verifyPublishAttesttationSignature(); err != nil {
+		return nil, nil, err
+	}
 
+	// Verify certificate information
+	// verifyEnvAndCert
+
+	// Verify certificate information + extract it.
 	// return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
 	// 	provenanceOpts, builderOpts,
 	// 	defaultArtifactTrustedReusableWorkflows)
+
+	// Verify certificate info matches provenance info.
+	// Verify package names match.
+	if provenanceOpts != nil {
+		if err := npm.verifyPackageName(provenanceOpts.ExpectedPackageName); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	return []byte("TODO"), &utils.TrustedBuilderID{}, nil
 }

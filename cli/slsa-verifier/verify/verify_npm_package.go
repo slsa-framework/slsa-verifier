@@ -32,6 +32,7 @@ type VerifyNpmPackageCommand struct {
 	SourceBranch        *string
 	SourceTag           *string
 	SourceVersionTag    *string
+	PackageName         *string
 	BuildWorkflowInputs map[string]string
 	PrintProvenance     bool
 }
@@ -61,6 +62,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 			ExpectedVersionedTag:   c.SourceVersionTag,
 			ExpectedTag:            c.SourceTag,
 			ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+			ExpectedPackageName:    c.PackageName,
 		}
 
 		builderOpts := &options.BuilderOpts{
