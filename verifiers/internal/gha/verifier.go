@@ -213,6 +213,11 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	// Verify certificate information
 	// verifyEnvAndCert
 
+	// verifySourceURI and others in provenance.
+	//  verify matches of field and in cert... or ignore for now...
+
+	// verify
+
 	// Verify certificate information + extract it.
 	// return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
 	// 	provenanceOpts, builderOpts,
@@ -225,6 +230,8 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 			return nil, nil, err
 		}
 	}
+
+	// TODO: package version
 
 	return []byte("TODO"), &utils.TrustedBuilderID{}, nil
 }
