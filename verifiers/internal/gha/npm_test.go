@@ -781,6 +781,11 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 			err:  serrors.ErrorInvalidDssePayload,
 		},
 		{
+			name: "prov incorrect stmt type",
+			path: "npm-stmt-mismatch-prov-type.intoto.sigstore",
+			err:  serrors.ErrorInvalidDssePayload,
+		},
+		{
 			name: "prov incorrect att payload type",
 			path: "npm-att-mismatch-prov-payloadtype.intoto.sigstore",
 			err:  serrors.ErrorInvalidDssePayload,
@@ -793,6 +798,11 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 		{
 			name: "pub incorrect att payload type",
 			path: "npm-att-mismatch-pub-payloadtype.intoto.sigstore",
+			err:  serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name: "pub incorrect stmt type",
+			path: "npm-stmt-mismatch-pub-type.intoto.sigstore",
 			err:  serrors.ErrorInvalidDssePayload,
 		},
 	}
