@@ -146,6 +146,9 @@ func verifyNpmPackageCmd() *cobra.Command {
 			if cmd.Flags().Changed("package-name") {
 				v.PackageName = &o.PackageName
 			}
+			if cmd.Flags().Changed("package-version") {
+				v.PackageVersion = &o.PackageVersion
+			}
 			if cmd.Flags().Changed("source-branch") {
 				v.SourceBranch = &o.SourceBranch
 			}

@@ -87,6 +87,7 @@ type VerifyNpmOptions struct {
 	/* Other */
 	AttestationsPath string
 	PackageName      string
+	PackageVersion   string
 	PrintProvenance  bool
 }
 
@@ -116,6 +117,9 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.PackageName, "package-name", "",
 		"[optional] the package name")
+
+	cmd.Flags().StringVar(&o.PackageVersion, "package-version", "",
+		"[optional] the package version")
 
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"[optional] print the verified provenance to stdout")

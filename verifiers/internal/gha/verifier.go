@@ -210,6 +210,11 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		return nil, nil, err
 	}
 
+	// Verify attestation headers.
+	if err := npm.verifyIntotoHeaders(); err != nil {
+		return nil, nil, err
+	}
+
 	// Verify certificate information
 	// verifyEnvAndCert
 
@@ -224,9 +229,15 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	// 	defaultArtifactTrustedReusableWorkflows)
 
 	// Verify certificate info matches provenance info.
+	// verify subject disgests match.
+	// TDO: add support fo redicate.name and version
 	// Verify package names match.
 	if provenanceOpts != nil {
 		if err := npm.verifyPackageName(provenanceOpts.ExpectedPackageName); err != nil {
+			return nil, nil, err
+		}
+
+		if err := npm.verifyPackageVersion(provenanceOpts.ExpectedPackageVersion); err != nil {
 			return nil, nil, err
 		}
 	}

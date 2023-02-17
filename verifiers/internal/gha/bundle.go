@@ -79,6 +79,19 @@ func getEnvelopeFromBundle(bundle *bundle_v1.Bundle) (*dsselib.Envelope, error) 
 	return env, nil
 }
 
+func getEnvelopeFromBundleBytes(content []byte) (*dsselib.Envelope, error) {
+	var bundle bundle_v1.Bundle
+	if err := protojson.Unmarshal(content, &bundle); err != nil {
+		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
+	}
+	env, err := getEnvelopeFromBundle(&bundle)
+	if err != nil {
+		return nil, err
+	}
+
+	return env, nil
+}
+
 // getLeafCertFromBundle extracts the signing cert from the Sigstore bundle.
 func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
 	certChain := bundle.GetVerificationMaterial().GetX509CertificateChain().GetCertificates()

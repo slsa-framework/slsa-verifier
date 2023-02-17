@@ -12,13 +12,14 @@ import (
 	"net/url"
 	"strings"
 
+	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 const (
-	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/v0.1"
+	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
@@ -66,14 +67,15 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 		return nil, fmt.Errorf("%w: invalid number of attestations: %v", errrorInvalidAttestations, len(attestations))
 	}
 
-	// Verify the provenance predicate.
-	if err := verifyPredicate(attestations[0], slsaprovenance.ProvenanceV02Type); err != nil {
-		return nil, err
+	// Attestation type verification.
+	if attestations[0].PredicateType != slsaprovenance.ProvenanceV02Type {
+		return nil, fmt.Errorf("%w: invalid predicate type: %v. Expected %v", errrorInvalidAttestations,
+			attestations[0].PredicateType, slsaprovenance.ProvenanceV02Type)
 	}
 
-	// Verify the publish predicate.
-	if err := verifyPredicate(attestations[1], publishAttestationV01); err != nil {
-		return nil, err
+	if !strings.HasPrefix(attestations[1].PredicateType, publishAttestationV01) {
+		return nil, fmt.Errorf("%w: invalid predicate type: %v. Expected %v", errrorInvalidAttestations,
+			attestations[1].PredicateType, publishAttestationV01)
 	}
 
 	return &Npm{
@@ -166,25 +168,188 @@ func (n *Npm) verifyPublishAttesttationSignature() error {
 	return nil
 }
 
+func (n *Npm) verifyIntotoHeaders() error {
+	if err := verifyIntotoTypes(n.verifiedProvenanceAtt,
+		slsaprovenance.ProvenanceV02Type, intoto.PayloadType, false); err != nil {
+		return err
+	}
+	if err := verifyIntotoTypes(n.verifiedPublishAtt,
+		publishAttestationV01, intoto.PayloadType, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func verifyIntotoTypes(att *SignedAttestation, predicateType, payloadType string, prefix bool) error {
+	env := att.Envelope
+	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+
+	var statement intoto.Statement
+	if err := json.Unmarshal(pyld, &statement); err != nil {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+
+	// Envelope verification.
+	if env.PayloadType != payloadType {
+		return fmt.Errorf("%w: expected payload type '%v', got '%s'",
+			serrors.ErrorInvalidDssePayload, payloadType, env.PayloadType)
+	}
+
+	// Statement verification.
+	if statement.Type != intoto.StatementInTotoV01 {
+		return fmt.Errorf("%w: expected statement type '%v', got '%s'",
+			serrors.ErrorInvalidDssePayload, intoto.StatementInTotoV01, statement.Type)
+	}
+
+	if !prefix && statement.PredicateType != predicateType {
+		return fmt.Errorf("%w: expected predicate type '%v', got '%s'",
+			serrors.ErrorInvalidDssePayload, predicateType, statement.PredicateType)
+	}
+	if prefix && !strings.HasPrefix(statement.PredicateType, predicateType) {
+		return fmt.Errorf("%w: expected predicate type '%v', got '%s'",
+			serrors.ErrorInvalidDssePayload, predicateType, statement.PredicateType)
+	}
+
+	return nil
+}
+
 func (n *Npm) verifyPackageName(name *string) error {
 	if name == nil {
 		return nil
 	}
 
-	// Verify name in provenance.
-	if err := verifyName(n.verifiedProvenanceAtt, *name); err != nil {
+	// Verify subject name in provenance.
+	if err := verifyProvenanceSubjectName(n.verifiedProvenanceAtt, *name); err != nil {
 		return err
 	}
 
-	// Verify name in publish attestation.
-	if err := verifyName(n.verifiedPublishAtt, *name); err != nil {
+	// Verify subject name in publish attestation.
+	if err := verifyPublishSubjectName(n.verifiedPublishAtt, *name); err != nil {
+		return err
+	}
+
+	// Verify predicate name in publish attestation.
+	if err := verifyPublishPredicateName(n.verifiedPublishAtt, *name); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func verifyName(att *SignedAttestation, name string) error {
+func (n *Npm) verifyPackageVersion(version *string) error {
+	if version == nil {
+		return nil
+	}
+
+	// Verify subject version in provenance.
+	if err := verifyProvenanceSubjectVersion(n.verifiedProvenanceAtt, *version); err != nil {
+		return err
+	}
+
+	// Verify subject version in publish attestation.
+	if err := verifyPublishSubjectVersion(n.verifiedPublishAtt, *version); err != nil {
+		return err
+	}
+
+	// Verify predicate version in publish attestation.
+	if err := verifyPublishPredicateVersion(n.verifiedPublishAtt, *version); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func verifyPublishPredicateVersion(att *SignedAttestation, expectedVersion string) error {
+	_, version, err := getPublishPredicateData(att)
+	if err != nil {
+		return err
+	}
+	if version != expectedVersion {
+		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageVersion,
+			version, expectedVersion)
+	}
+	return nil
+}
+
+func verifyPublishPredicateName(att *SignedAttestation, expectedName string) error {
+	name, _, err := getPublishPredicateData(att)
+	if err != nil {
+		return err
+	}
+	if name != expectedName {
+		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageName,
+			name, expectedName)
+	}
+	return nil
+}
+
+func getPublishPredicateData(att *SignedAttestation) (string, string, error) {
+	env := att.Envelope
+	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+
+	statement := struct {
+		intoto.StatementHeader
+		Predicate struct {
+			Version string `json:"version"`
+			Name    string `json:"name"`
+		} `json:"predicate"`
+	}{}
+	if err := json.Unmarshal(pyld, &statement); err != nil {
+		return "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	}
+
+	return statement.Predicate.Name, statement.Predicate.Version, nil
+}
+
+func verifyProvenanceSubjectVersion(att *SignedAttestation, expectedVersion string) error {
+	subject, err := getSubject(att)
+	if err != nil {
+		return err
+	}
+
+	subVersion, err := getPackageVersion(string(subject))
+	if err != nil {
+		return err
+	}
+
+	if subVersion != expectedVersion {
+		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageVersion,
+			subVersion, expectedVersion)
+	}
+
+	return nil
+}
+
+func verifyPublishSubjectVersion(att *SignedAttestation, expectedVersion string) error {
+	_, version, err := getPublishPredicateData(att)
+	if err != nil {
+		return err
+	}
+
+	if version != expectedVersion {
+		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageVersion,
+			version, expectedVersion)
+	}
+
+	return nil
+}
+
+func verifyPublishSubjectName(att *SignedAttestation, expectedName string) error {
+	name, _, err := getPublishPredicateData(att)
+	if err != nil {
+		return err
+	}
+
+	return verifyName(name, expectedName)
+}
+
+func verifyProvenanceSubjectName(att *SignedAttestation, expectedName string) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(att.Envelope)
 	if err != nil {
 		return nil
@@ -192,10 +357,10 @@ func verifyName(att *SignedAttestation, name string) error {
 
 	subjects, err := prov.Subjects()
 	if err != nil {
-		return fmt.Errorf("%w")
+		return fmt.Errorf("%w", serrors.ErrorInvalidDssePayload)
 	}
 	if len(subjects) != 1 {
-		return fmt.Errorf("TODO")
+		return fmt.Errorf("%w: expected 1 subject, got %v", serrors.ErrorInvalidDssePayload, len(subjects))
 	}
 
 	// Package name starts with a prefix.
@@ -204,40 +369,37 @@ func verifyName(att *SignedAttestation, name string) error {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidPackageName, subjects[0].Name)
 	}
 
-	// URL decode the package name fr the attestation.
-	subject, err := url.QueryUnescape(subjects[0].Name[len(prefix):])
+	// URL decode the package name from the attestation.
+	subjectName, err := url.QueryUnescape(subjects[0].Name[len(prefix):])
 	if err != nil {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidEncoding, err)
 	}
 
-	subName, subTag, err := getNameAndTag(string(subject))
-	if err != nil {
-		return err
-	}
-	expName, expTag, err := getNameAndTag(name)
+	return verifyName(subjectName, expectedName)
+}
+
+func verifyName(actual, expected string) error {
+	subName, err := getPackageName(actual)
 	if err != nil {
 		return err
 	}
 
-	if subName != expName {
-		return fmt.Errorf("TODO:different names")
-	}
-
-	if expTag != "" && expTag != subTag {
-		return fmt.Errorf("TODO:different tags")
+	if subName != expected {
+		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageName,
+			subName, expected)
 	}
 
 	return nil
 }
 
-func getNameAndTag(name string) (string, string, error) {
+func getPackageName(name string) (string, error) {
 	n := name
 	if strings.HasPrefix(name, "@") {
 		n = n[1:]
 	}
 	parts := strings.Split(n, "@")
 	if len(parts) > 2 {
-		return "", "", fmt.Errorf("%w: %v", serrors.ErrorInvalidPackageName, name)
+		return "", fmt.Errorf("%w: %v", serrors.ErrorInvalidPackageName, name)
 	}
 
 	pkgname := parts[0]
@@ -245,20 +407,55 @@ func getNameAndTag(name string) (string, string, error) {
 		pkgname = "@" + pkgname
 	}
 
+	return pkgname, nil
+}
+
+func getPackageVersion(name string) (string, error) {
+	n := name
+	if strings.HasPrefix(name, "@") {
+		n = n[1:]
+	}
+	parts := strings.Split(n, "@")
+	if len(parts) > 2 {
+		return "", fmt.Errorf("%w: %v", serrors.ErrorInvalidPackageName, name)
+	}
+
 	var pkgtag string
 	if len(parts) == 2 {
 		pkgtag = parts[1]
 	}
 
-	return pkgname, pkgtag, nil
+	return pkgtag, nil
+}
+
+func getSubject(att *SignedAttestation) (string, error) {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(att.Envelope)
+	if err != nil {
+		return "", err
+	}
+
+	subjects, err := prov.Subjects()
+	if err != nil {
+		return "", fmt.Errorf("%w", err)
+	}
+	if len(subjects) != 1 {
+		return "", fmt.Errorf("TODO")
+	}
+
+	// Package name starts with a prefix.
+	prefix := "pkg:npm/"
+	if !strings.HasPrefix(string(subjects[0].Name), prefix) {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidPackageName, subjects[0].Name)
+	}
+
+	// URL decode the package name from the attestation.
+	subject, err := url.QueryUnescape(subjects[0].Name[len(prefix):])
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidEncoding, err)
+	}
+	return subject, err
 }
 
 // verifyEnvAndCert
 
-func verifyPredicate(att attestation, perdicateType string) error {
-	if att.PredicateType != perdicateType {
-		return fmt.Errorf("%w: invalid predicate type: %v. Expected %v", errrorInvalidAttestations,
-			att.PredicateType, perdicateType)
-	}
-	return nil
-}
+// TODO: intotoheader
