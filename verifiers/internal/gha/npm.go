@@ -37,18 +37,6 @@ func (b *BundleBytes) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// type BundleWrap struct {
-// 	bundle_v1.Bundle
-// }
-
-// NOTE: do not unmarshal the bundle field.
-// func (b *BundleWrap) UnmarshalJSON(data []byte) error {
-// 	if err := protojson.Unmarshal(data, b); err != nil {
-// 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidEncoding, err)
-// 	}
-// 	return nil
-// }
-
 type Npm struct {
 	ctx                   context.Context
 	root                  *TrustedRoot
@@ -129,7 +117,7 @@ func (n *Npm) verifyPublishAttesttationSignature() error {
 
 	// The registry signs with a single, static, non-rotated key.
 	sig := env.Signatures[0].Sig
-	// TODO: verify the keyid, both in DSSE and hint.
+	// TODO(#496): verify the keyid, both in DSSE and hint.
 
 	// Verify the signature.
 	/*
@@ -164,7 +152,6 @@ func (n *Npm) verifyPublishAttesttationSignature() error {
 		return fmt.Errorf("%w: public key not of type ECDSA", err)
 	}
 
-	// TODO: check the keyid
 	rsig, err := utils.DecodeSignature(sig)
 	if err != nil {
 		return fmt.Errorf("decodeSigature: %w: %s", serrors.ErrorInvalidEncoding, err)
