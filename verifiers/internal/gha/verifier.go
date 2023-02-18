@@ -100,7 +100,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	// TODO: verify certificate information matches
+	// TODO(#493): verify certificate information matches
 	// the provenance if possible in the future.
 	// Today it's not possible due to lack of information in the cert.
 
@@ -124,7 +124,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	// TODO: change this strng.
+	// TODO: Update this string
 	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
 		provenanceOpts.ExpectedBuilderID,
 		workflowInfo.CallerHash)
@@ -243,8 +243,6 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	fmt.Println(string(attestations))
-
 	trustedRoot, err := GetTrustedRoot(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -254,8 +252,6 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	if err != nil {
 		return nil, nil, err
 	}
-
-	fmt.Println(npm)
 
 	// Verify provenance signature.
 	if err := npm.verifyProvenanceAttestationSignature(); err != nil {
@@ -272,22 +268,6 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		return nil, nil, err
 	}
 
-	// Verify certificate information
-	// verifyEnvAndCert
-
-	// verifySourceURI and others in provenance.
-	//  verify matches of field and in cert... or ignore for now...
-
-	// verify
-
-	// Verify certificate information + extract it.
-	// return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
-	// 	provenanceOpts, builderOpts,
-	// 	defaultArtifactTrustedReusableWorkflows)
-
-	// Verify certificate info matches provenance info.
-	// verify subject disgests match.
-	// TDO: add support fo redicate.name and version
 	// Verify package names match.
 	if provenanceOpts != nil {
 		if err := npm.verifyPackageName(provenanceOpts.ExpectedPackageName); err != nil {
@@ -299,6 +279,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		}
 	}
 
+	// Verify certificaate information.
 	prov, builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
 		npm.ProvenanceLeafCertificate(),
 		provenanceOpts, builderOpts,
