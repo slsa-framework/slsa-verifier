@@ -16,6 +16,7 @@ package verify
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 
@@ -40,7 +41,7 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 	var builderID *utils.TrustedBuilderID
 
 	for _, artifact := range artifacts {
-		artifactHash, err := computeFileHash(artifact)
+		artifactHash, err := computeFileHash(artifact, sha256.New())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
 			return nil, err

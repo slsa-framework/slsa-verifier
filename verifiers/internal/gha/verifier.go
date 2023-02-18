@@ -80,6 +80,52 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	return r, builderID, nil
 }
 
+func verifyNpmEnvAndCert(env *dsse.Envelope,
+	cert *x509.Certificate,
+	provenanceOpts *options.ProvenanceOpts,
+	defaultBuilders map[string]bool,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	/* Verify properties of the signing identity. */
+	// Get the workflow info given the certificate information.
+	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Verify the workflow identity.
+	trustedBuilderID, err := VerifyNpmWorkflowIdentity(workflowInfo,
+		provenanceOpts.ExpectedSourceURI, defaultBuilders)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// TODO: verify certificate information matches
+	// the provenance if possible in the future.
+	// Today it's not possible due to lack of information in the cert.
+
+	// Verify properties of the SLSA provenance.
+	// Unpack and verify info in the provenance, including the Subject Digest.
+	// WARNING: builderID may be empty if it's not a reusable builder workflow.
+	if trustedBuilderID != nil {
+		provenanceOpts.ExpectedBuilderID = trustedBuilderID.String()
+	}
+
+	if err := VerifyNpmPackageProvenance(env, provenanceOpts); err != nil {
+		return nil, nil, err
+	}
+
+	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
+		workflowInfo.JobWobWorkflowRef,
+		workflowInfo.CallerHash)
+	// Return verified provenance.
+	r, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return r, trustedBuilderID, nil
+}
+
 // VerifyArtifact verifies provenance for an artifact.
 func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
@@ -242,7 +288,12 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		}
 	}
 
-	// TODO: package version
+	prov, builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
+		npm.ProvenanceLeafCertificate(),
+		provenanceOpts, defaultBYOBReusableWorkflows)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return []byte("TODO"), &utils.TrustedBuilderID{}, nil
+	return prov, builder, nil
 }

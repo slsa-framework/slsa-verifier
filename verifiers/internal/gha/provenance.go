@@ -95,7 +95,9 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	}
 
 	// Verify source from material section.
-	materialSourceURI, err := prov.SourceURI()
+	// TODO(https://github.com/gh-community/npm-provenance-private-beta-community/issues/8): re-enable this code,
+	// or remove it.
+	/*materialSourceURI, err := prov.SourceURI()
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			serrors.ErrorInvalidDssePayload,
 			fullConfigURI, materialSourceURI)
-	}
+	}*/
 
 	return nil
 }
@@ -136,18 +138,21 @@ func sourceFromURI(uri string) (string, error) {
 	return r[0], nil
 }
 
-// Verify SHA256 Subject Digest from the provenance statement.
-func verifySha256Digest(prov slsaprovenance.Provenance, expectedHash string) error {
+// Verify Subject Digest from the provenance statement.
+func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 	subjects, err := prov.Subjects()
 	if err != nil {
 		return err
 	}
 
+	// 8 bit represented in hex, so 8/2=4.
+	l := len(expectedHash) * 4
 	for _, subject := range subjects {
 		digestSet := subject.Digest
-		hash, exists := digestSet["sha256"]
+		hash, exists := digestSet[fmt.Sprintf("sha%v", l)]
+		fmt.Println(digestSet)
 		if !exists {
-			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no sha256 subject digest")
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, fmt.Sprintf("no sha%v subject digest", l))
 		}
 
 		if hash == expectedHash {
@@ -163,7 +168,8 @@ func verifySha256Digest(prov slsaprovenance.Provenance, expectedHash string) err
 func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 	rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
-	*SignedAttestation, error) {
+	*SignedAttestation, error,
+) {
 	// Collect trusted root material for verification (Rekor pubkeys, SCT pubkeys,
 	// Fulcio root certificates).
 	_, err := GetTrustedRoot(ctx)
@@ -186,7 +192,34 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 		provenance, rClient, trustedRoot)
 }
 
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
+func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+) error {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+	if err != nil {
+		return err
+	}
+
+	// Untrusted builder.
+	if provenanceOpts.ExpectedBuilderID == "" {
+		// verify it's the npm CLI
+		builderID, err := prov.BuilderID()
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(builderID, "https://github.com/npm/cli@") {
+			return fmt.Errorf("%w: expected 'https://github.com/npm/cli' in builder.id, got '%s'",
+				serrors.ErrorMismatchBuilderID, builderID)
+		}
+	} else if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+		return err
+	}
+	// NOTE: for the non trusted builders, the information may be forgeable.
+	// Also, the GitHub context is not recorded for the default builder.
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts)
+}
+
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
 		return err
@@ -199,13 +232,18 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		return err
 	}
 
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts)
+}
+
+func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpts *options.ProvenanceOpts,
+) error {
 	// Verify source.
 	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI); err != nil {
 		return err
 	}
 
 	// Verify subject digest.
-	if err := verifySha256Digest(prov, provenanceOpts.ExpectedDigest); err != nil {
+	if err := verifyDigest(prov, provenanceOpts.ExpectedDigest); err != nil {
 		return err
 	}
 

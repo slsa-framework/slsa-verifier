@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -55,6 +56,14 @@ type Npm struct {
 	verifiedPublishAtt    *SignedAttestation
 	provenanceAttestation *attestation
 	publishAttestation    *attestation
+}
+
+func (n *Npm) ProvenanceEnvelope() *dsse.Envelope {
+	return n.verifiedProvenanceAtt.Envelope
+}
+
+func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
+	return n.verifiedProvenanceAtt.SigningCert
 }
 
 func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*Npm, error) {

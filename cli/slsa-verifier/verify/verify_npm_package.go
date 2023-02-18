@@ -16,6 +16,7 @@ package verify
 
 import (
 	"context"
+	"crypto/sha512"
 	"errors"
 	"fmt"
 	"os"
@@ -46,7 +47,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 		return nil, err
 	}
 	for _, tarball := range tarballs {
-		tarballHash, err := computeFileHash(tarball)
+		tarballHash, err := computeFileHash(tarball, sha512.New())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
 			return nil, err

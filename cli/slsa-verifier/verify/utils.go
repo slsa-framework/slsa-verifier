@@ -15,19 +15,19 @@
 package verify
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
+	"hash"
 	"io"
 	"os"
 )
 
-func computeFileHash(filePath string) (string, error) {
+func computeFileHash(filePath string, h hash.Hash) (string, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
 	defer f.Close()
-	h := sha256.New()
+
 	if _, err := io.Copy(h, f); err != nil {
 		return "", err
 	}

@@ -32,6 +32,10 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
+var defaultBYOBReusableWorkflows = map[string]bool{
+	trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml": true,
+}
+
 // VerifyWorkflowIdentity verifies the signing certificate information
 // Builder IDs are verified against an expected builder ID provided in the
 // builerOpts, or against the set of defaultBuilders provided.
@@ -71,6 +75,57 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	if !strings.EqualFold(id.CallerRepository, expectedSource) {
 		return nil, fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
 			expectedSource, id.CallerRepository)
+	}
+
+	// Return the builder and its tag.
+	// Note: the tag has the format `refs/tags/v1.2.3`.
+	return builderID, nil
+}
+
+// VerifyNpmWorkflowIdentity verifies the signing certificate information
+// Any builder ID is allowed, but it must match the source repo as well
+// in the provenance.
+func VerifyNpmWorkflowIdentity(id *WorkflowIdentity, source string,
+	defaultBuilders map[string]bool,
+) (*utils.TrustedBuilderID, error) {
+	// cert URI path is /org/repo/path/to/workflow@ref
+	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
+	if len(workflowPath) < 2 {
+		return nil, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.JobWobWorkflowRef)
+	}
+
+	// Issuer verification.
+	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
+	}
+
+	// The caller repository in the x509 extension is not fully qualified. It only contains
+	// {org}/{repository}.
+	expectedSource := strings.TrimPrefix(source, "git+https://")
+	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
+	if !strings.EqualFold(id.CallerRepository, expectedSource) {
+		return nil, fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
+			expectedSource, id.CallerRepository)
+	}
+
+	// Verify trusted workflow.
+	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
+	reusableWorkflowTag := strings.Trim(workflowPath[1], "/")
+	// No expected builder ID verification in the certificate:
+	//  1. It's either one of our trusted builders.
+	//	2. Or it's any workflow in a repo.
+	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath, reusableWorkflowTag,
+		nil, defaultBuilders)
+	if err != nil {
+		// WARNING: the default npm builder is *not* one of our trusted builders.
+		// We return success but no trusted builder.
+		return nil, nil
+	}
+
+	// This is one of our trusted reusable workflows.
+	// Verify the ref is a full semantic version tag.
+	if err := verifyTrustedBuilderRef(id, reusableWorkflowTag); err != nil {
+		return nil, err
 	}
 
 	// Return the builder and its tag.
