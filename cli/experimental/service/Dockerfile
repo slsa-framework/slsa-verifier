@@ -1,4 +1,4 @@
-FROM golang:1.19@sha256:572f68065ea605e0bd7ab42aa036462318e680a15db0f41a0cadcd06affdabdb AS base
+FROM golang:1.19@sha256:7ce31d15a3a4dbf20446cccffa4020d3a2974ad2287d96123f55caf22c7adb71 AS base
 WORKDIR /src
 ENV CGO_ENABLED=0
 COPY . ./
