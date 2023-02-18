@@ -58,6 +58,8 @@ type Npm struct {
 	publishAttestation    *attestation
 }
 
+var builderGitHubRunnerID = "https://github.com/actions/runner"
+
 func (n *Npm) ProvenanceEnvelope() *dsse.Envelope {
 	return n.verifiedProvenanceAtt.Envelope
 }

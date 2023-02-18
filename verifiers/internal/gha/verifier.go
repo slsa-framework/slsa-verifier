@@ -83,6 +83,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 func verifyNpmEnvAndCert(env *dsse.Envelope,
 	cert *x509.Certificate,
 	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Verify properties of the signing identity. */
@@ -108,14 +109,24 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	// WARNING: builderID may be empty if it's not a reusable builder workflow.
 	if trustedBuilderID != nil {
 		provenanceOpts.ExpectedBuilderID = trustedBuilderID.String()
+	} else {
+		// TODO(#494): update the builder ID name.
+		if builderOpts == nil || builderOpts.ExpectedID == nil {
+			return nil, nil, fmt.Errorf("builder mistmatch. No builder ID provided by user , got '%v'", builderGitHubRunnerID)
+		}
+		if *builderOpts.ExpectedID != builderGitHubRunnerID {
+			return nil, nil, fmt.Errorf("builder mistmatch. Expected '%v', got '%v'",
+				*builderOpts.ExpectedID, builderGitHubRunnerID)
+		}
 	}
 
 	if err := VerifyNpmPackageProvenance(env, provenanceOpts); err != nil {
 		return nil, nil, err
 	}
 
+	// TODO: change this strng.
 	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.JobWobWorkflowRef,
+		provenanceOpts.ExpectedBuilderID,
 		workflowInfo.CallerHash)
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
@@ -290,7 +301,8 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 
 	prov, builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
 		npm.ProvenanceLeafCertificate(),
-		provenanceOpts, defaultBYOBReusableWorkflows)
+		provenanceOpts, builderOpts,
+		defaultBYOBReusableWorkflows)
 	if err != nil {
 		return nil, nil, err
 	}
