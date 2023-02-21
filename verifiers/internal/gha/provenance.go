@@ -150,7 +150,6 @@ func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 	for _, subject := range subjects {
 		digestSet := subject.Digest
 		hash, exists := digestSet[fmt.Sprintf("sha%v", l)]
-		fmt.Println(digestSet)
 		if !exists {
 			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, fmt.Sprintf("no sha%v subject digest", l))
 		}
