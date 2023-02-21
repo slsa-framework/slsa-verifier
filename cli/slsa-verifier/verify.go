@@ -97,18 +97,13 @@ func verifyImageCmd() *cobra.Command {
 				v.ProvenancePath = &o.ProvenancePath
 			}
 			if cmd.Flags().Changed("source-branch") {
-				fmt.Fprintf(os.Stderr, "%s: --source-branch not supported\n", FAILURE)
-				os.Exit(1)
+				v.SourceBranch = &o.SourceBranch
 			}
 			if cmd.Flags().Changed("source-tag") {
-				// TODO(#493): support source-tag.
-				fmt.Fprintf(os.Stderr, "%s: --source-tag not supported\n", FAILURE)
-				os.Exit(1)
+				v.SourceTag = &o.SourceTag
 			}
 			if cmd.Flags().Changed("source-versioned-tag") {
-				// TODO(#493): support source-versioned-tag.
-				fmt.Fprintf(os.Stderr, "%s: --source-versioned-tag not supported\n", FAILURE)
-				os.Exit(1)
+				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
 				v.BuilderID = &o.BuilderID
@@ -155,13 +150,16 @@ func verifyNpmPackageCmd() *cobra.Command {
 				v.PackageVersion = &o.PackageVersion
 			}
 			if cmd.Flags().Changed("source-branch") {
-				v.SourceBranch = &o.SourceBranch
+				fmt.Fprintf(os.Stderr, "%s: --source-branch not supported\n", FAILURE)
+				os.Exit(1)
 			}
 			if cmd.Flags().Changed("source-tag") {
-				v.SourceTag = &o.SourceTag
+				fmt.Fprintf(os.Stderr, "%s: --source-tag not supported\n", FAILURE)
+				os.Exit(1)
 			}
 			if cmd.Flags().Changed("source-versioned-tag") {
-				v.SourceVersionTag = &o.SourceVersionTag
+				fmt.Fprintf(os.Stderr, "%s: --source-versioned-tag not supported\n", FAILURE)
+				os.Exit(1)
 			}
 			if cmd.Flags().Changed("builder-id") {
 				v.BuilderID = &o.BuilderID
