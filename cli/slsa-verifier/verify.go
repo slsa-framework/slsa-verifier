@@ -161,6 +161,10 @@ func verifyNpmPackageCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "%s: --source-versioned-tag not supported\n", FAILURE)
 				os.Exit(1)
 			}
+			if cmd.Flags().Changed("print-provenance") {
+				fmt.Fprintf(os.Stderr, "%s: --print-provenance not supported\n", FAILURE)
+				os.Exit(1)
+			}
 			if cmd.Flags().Changed("builder-id") {
 				v.BuilderID = &o.BuilderID
 			}

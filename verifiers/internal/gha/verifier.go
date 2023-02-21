@@ -85,19 +85,19 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
-) ([]byte, *utils.TrustedBuilderID, error) {
+) (*utils.TrustedBuilderID, error) {
 	/* Verify properties of the signing identity. */
 	// Get the workflow info given the certificate information.
 	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Verify the workflow identity.
 	trustedBuilderID, err := VerifyNpmWorkflowIdentity(workflowInfo,
 		provenanceOpts.ExpectedSourceURI, defaultBuilders)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// TODO(#493): verify certificate information matches
@@ -112,29 +112,24 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	} else {
 		// TODO(#494): update the builder ID name.
 		if builderOpts == nil || builderOpts.ExpectedID == nil {
-			return nil, nil, fmt.Errorf("builder mistmatch. No builder ID provided by user , got '%v'", builderGitHubRunnerID)
+			return nil, fmt.Errorf("builder mistmatch. No builder ID provided by user , got '%v'", builderGitHubRunnerID)
 		}
 		if *builderOpts.ExpectedID != builderGitHubRunnerID {
-			return nil, nil, fmt.Errorf("builder mistmatch. Expected '%v', got '%v'",
+			return nil, fmt.Errorf("builder mistmatch. Expected '%v', got '%v'",
 				*builderOpts.ExpectedID, builderGitHubRunnerID)
 		}
 	}
 
 	if err := VerifyNpmPackageProvenance(env, provenanceOpts); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// TODO: Update this string
 	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
 		provenanceOpts.ExpectedBuilderID,
 		workflowInfo.CallerHash)
-	// Return verified provenance.
-	r, err := base64.StdEncoding.DecodeString(env.Payload)
-	if err != nil {
-		return nil, nil, err
-	}
 
-	return r, trustedBuilderID, nil
+	return trustedBuilderID, nil
 }
 
 // VerifyArtifact verifies provenance for an artifact.
@@ -279,11 +274,16 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		}
 	}
 
-	// Verify certificaate information.
-	prov, builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
+	// Verify certificate information.
+	builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
 		npm.ProvenanceLeafCertificate(),
 		provenanceOpts, builderOpts,
 		defaultBYOBReusableWorkflows)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	prov, err := npm.verifiedProvenanceBytes()
 	if err != nil {
 		return nil, nil, err
 	}
