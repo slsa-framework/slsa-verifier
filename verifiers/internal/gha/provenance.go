@@ -95,8 +95,9 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	}
 
 	// Verify source from material section.
-	// TODO(https://github.com/gh-community/npm-provenance-private-beta-community/issues/8): re-enable this code,
+	// TODO(#492): re-enable this code,
 	// or remove it.
+	// nolint: gocritic
 	/*materialSourceURI, err := prov.SourceURI()
 	if err != nil {
 		return err

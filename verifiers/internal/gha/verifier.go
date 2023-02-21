@@ -237,7 +237,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	return nil, nil, fmt.Errorf("%w", serrors.ErrorNoValidSignature)
 }
 
-// VerifyNpmPackage verifies an npm package tarball
+// VerifyNpmPackage verifies an npm package tarball.
 func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,

@@ -174,8 +174,8 @@ func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
 }
 
 // verifyBundleAndEntry validates the rekor entry inn the bundle
-// and that the entry (cert, signatures) matches the data in the bundle
-func verifyBundleAndEntry(ctx context.Context, bundle bundle_v1.Bundle,
+// and that the entry (cert, signatures) matches the data in the bundle.
+func verifyBundleAndEntry(ctx context.Context, bundle *bundle_v1.Bundle,
 	trustedRoot *TrustedRoot, requireCert bool,
 ) (*SignedAttestation, error) {
 	// We only expect one TLOG entry. If this changes in the future, we must iterate
@@ -193,7 +193,7 @@ func verifyBundleAndEntry(ctx context.Context, bundle bundle_v1.Bundle,
 	}
 
 	// Extract DSSE envelope.
-	env, err := getEnvelopeFromBundle(&bundle)
+	env, err := getEnvelopeFromBundle(bundle)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func verifyBundleAndEntry(ctx context.Context, bundle bundle_v1.Bundle,
 	// Get certificate from bundle.
 	var cert *x509.Certificate
 	if requireCert {
-		cert, err = getLeafCertFromBundle(&bundle)
+		cert, err = getLeafCertFromBundle(bundle)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,7 @@ func verifyBundleAndEntry(ctx context.Context, bundle bundle_v1.Bundle,
 }
 
 // verifyBundleAndEntryFromBytes validates the rekor entry inn the bundle
-// and that the entry (cert, signatures) matches the data in the bundle
+// and that the entry (cert, signatures) matches the data in the bundle.
 func verifyBundleAndEntryFromBytes(ctx context.Context, bundleBytes []byte,
 	trustedRoot *TrustedRoot, requireCert bool,
 ) (*SignedAttestation, error) {
@@ -230,6 +230,6 @@ func verifyBundleAndEntryFromBytes(ctx context.Context, bundleBytes []byte,
 		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
 	}
 
-	return verifyBundleAndEntry(ctx, bundle,
+	return verifyBundleAndEntry(ctx, &bundle,
 		trustedRoot, requireCert)
 }

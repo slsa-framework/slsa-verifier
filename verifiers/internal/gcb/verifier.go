@@ -39,7 +39,7 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	return nil, nil, serrors.ErrorNotSupported
 }
 
-// VerifyNpmPackage verifies an npm package tarball
+// VerifyNpmPackage verifies an npm package tarball.
 func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
