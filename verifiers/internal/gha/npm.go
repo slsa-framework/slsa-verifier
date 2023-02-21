@@ -311,7 +311,7 @@ func verifyProvenanceSubjectVersion(att *SignedAttestation, expectedVersion stri
 		return err
 	}
 
-	subVersion, err := getPackageVersion(string(subject))
+	subVersion, err := getPackageVersion(subject)
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func verifyProvenanceSubjectName(att *SignedAttestation, expectedName string) er
 
 	// Package name starts with a prefix.
 	prefix := "pkg:npm/"
-	if !strings.HasPrefix(string(subjects[0].Name), prefix) {
+	if !strings.HasPrefix(subjects[0].Name, prefix) {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidPackageName, subjects[0].Name)
 	}
 
@@ -442,7 +442,7 @@ func getSubject(att *SignedAttestation) (string, error) {
 
 	// Package name starts with a prefix.
 	prefix := "pkg:npm/"
-	if !strings.HasPrefix(string(subjects[0].Name), prefix) {
+	if !strings.HasPrefix(subjects[0].Name, prefix) {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidPackageName, subjects[0].Name)
 	}
 

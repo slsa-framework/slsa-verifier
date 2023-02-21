@@ -412,7 +412,7 @@ func Test_verifySourceURI(t *testing.T) {
 				ProvenanceStatement: tt.prov,
 			}
 
-			err := verifySourceURI(prov02, tt.sourceURI)
+			err := verifySourceURI(prov02, tt.sourceURI, true)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -433,7 +433,7 @@ func Test_verifySourceURI(t *testing.T) {
 					},
 				},
 			}
-			err = verifySourceURI(prov1, tt.sourceURI)
+			err = verifySourceURI(prov1, tt.sourceURI, true)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}

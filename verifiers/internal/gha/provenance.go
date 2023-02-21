@@ -71,7 +71,7 @@ func asURI(s string) string {
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) error {
+func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, verifyMaterials bool) error {
 	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -95,10 +95,11 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	}
 
 	// Verify source from material section.
-	// TODO(#492): re-enable this code,
-	// or remove it.
-	// nolint: gocritic
-	/*materialSourceURI, err := prov.SourceURI()
+	// TODO(#492): disable this option.
+	if !verifyMaterials {
+		return nil
+	}
+	materialSourceURI, err := prov.SourceURI()
 	if err != nil {
 		return err
 	}
@@ -117,7 +118,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			serrors.ErrorInvalidDssePayload,
 			fullConfigURI, materialSourceURI)
-	}*/
+	}
 
 	return nil
 }
@@ -215,7 +216,7 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.P
 	}
 	// NOTE: for the non trusted builders, the information may be forgeable.
 	// Also, the GitHub context is not recorded for the default builder.
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts)
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
@@ -232,13 +233,14 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		return err
 	}
 
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts)
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)
 }
 
 func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpts *options.ProvenanceOpts,
+	verifyMaterials bool,
 ) error {
 	// Verify source.
-	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI); err != nil {
+	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI, verifyMaterials); err != nil {
 		return err
 	}
 
