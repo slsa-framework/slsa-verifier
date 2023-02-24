@@ -46,7 +46,8 @@ type Npm struct {
 	publishAttestation    *attestation
 }
 
-var builderGitHubRunnerID = "https://github.com/actions/runner"
+// TODO(#494): update the builder name.
+var builderGitHubRunnerID = "https://github.com/actions/runner@v0.1"
 
 func (n *Npm) ProvenanceEnvelope() *dsse.Envelope {
 	return n.verifiedProvenanceAtt.Envelope
@@ -72,6 +73,7 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 			attestations[0].PredicateType, slsaprovenance.ProvenanceV02Type)
 	}
 
+	// Provenance type verification.
 	if !strings.HasPrefix(attestations[1].PredicateType, publishAttestationV01) {
 		return nil, fmt.Errorf("%w: invalid predicate type: %v. Expected %v", errrorInvalidAttestations,
 			attestations[1].PredicateType, publishAttestationV01)
@@ -86,7 +88,7 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 }
 
 func (n *Npm) verifyProvenanceAttestationSignature() error {
-	// We jut re-use the standard bundle verification.
+	// Re-use the standard bundle verification.
 	signedProvenance, err := VerifyProvenanceBundle(n.ctx, n.provenanceAttestation.BundleBytes, n.root)
 	if err != nil {
 		return err
@@ -102,7 +104,7 @@ func (n *Npm) verifyPublishAttesttationSignature() error {
 		return err
 	}
 
-	// Second, we verify the signature, which ues a static key.
+	// Second, we verify the signature, which uses a static key.
 	// Extract payload.
 	env := signedPublish.Envelope
 	payload, err := utils.PayloadFromEnvelope(env)

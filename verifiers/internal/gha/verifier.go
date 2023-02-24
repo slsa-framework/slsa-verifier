@@ -114,9 +114,13 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		if builderOpts == nil || builderOpts.ExpectedID == nil {
 			return nil, fmt.Errorf("builder mistmatch. No builder ID provided by user , got '%v'", builderGitHubRunnerID)
 		}
-		if *builderOpts.ExpectedID != builderGitHubRunnerID {
-			return nil, fmt.Errorf("builder mistmatch. Expected '%v', got '%v'",
-				*builderOpts.ExpectedID, builderGitHubRunnerID)
+
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(builderGitHubRunnerID)
+		if err != nil {
+			return nil, err
+		}
+		if err := trustedBuilderID.Matches(*builderOpts.ExpectedID, false); err != nil {
+			return nil, fmt.Errorf("builder mistmatch. %w", err)
 		}
 	}
 
@@ -124,8 +128,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		return nil, err
 	}
 
-	// TODO: Update this string
-	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
+	fmt.Fprintf(os.Stderr, "Verified build using builder %s at commit %s\n",
 		provenanceOpts.ExpectedBuilderID,
 		workflowInfo.CallerHash)
 

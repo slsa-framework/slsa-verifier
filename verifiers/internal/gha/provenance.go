@@ -202,11 +202,12 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.P
 
 	// Untrusted builder.
 	if provenanceOpts.ExpectedBuilderID == "" {
-		// verify it's the npm CLI
+		// Verify it's the npm CLI.
 		builderID, err := prov.BuilderID()
 		if err != nil {
 			return err
 		}
+		// TODO(#494): update the builder ID string.
 		if !strings.HasPrefix(builderID, "https://github.com/npm/cli@") {
 			return fmt.Errorf("%w: expected 'https://github.com/npm/cli' in builder.id, got '%s'",
 				serrors.ErrorMismatchBuilderID, builderID)
