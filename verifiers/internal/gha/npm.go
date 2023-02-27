@@ -447,7 +447,7 @@ func getSubject(att *SignedAttestation) (string, error) {
 		return "", fmt.Errorf("%w", err)
 	}
 	if len(subjects) != 1 {
-		return "", fmt.Errorf("TODO")
+		return "", fmt.Errorf("%w: subject length: %v", serrors.ErrorInvalidSubject, len(subjects))
 	}
 
 	// Package name starts with a prefix.

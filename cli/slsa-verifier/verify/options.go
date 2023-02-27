@@ -76,19 +76,11 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 
 // VerifyNpmOptions is the top-level options for the `verifyNpmPackage` command.
 type VerifyNpmOptions struct {
-	/* Source requirements */
-	SourceURI        string
-	SourceBranch     string
-	SourceTag        string
-	SourceVersionTag string
-	/* Builder Requirements */
-	BuildWorkflowInputs workflowInputs
-	BuilderID           string
+	VerifyOptions
 	/* Other */
 	AttestationsPath string
 	PackageName      string
 	PackageVersion   string
-	PrintProvenance  bool
 }
 
 var _ Interface = (*VerifyNpmOptions)(nil)

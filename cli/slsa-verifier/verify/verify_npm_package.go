@@ -88,13 +88,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 			fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 		}
 
-		if builderID == nil {
-			builderID = outBuilderID
-		} else if *builderID != *outBuilderID {
-			err := fmt.Errorf("encountered different builderIDs %v %v", builderID, outBuilderID)
-			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
-			return nil, err
-		}
+		builderID = outBuilderID
 		fmt.Fprintf(os.Stderr, "Verifying npm package %s: PASSED\n\n", tarball)
 	}
 

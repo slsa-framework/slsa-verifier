@@ -54,15 +54,19 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	// Verify the workflow identity.
-	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
-		provenanceOpts.ExpectedSourceURI, defaultBuilders)
+	// Verify the builder identity.
+	builderID, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// Verify the source repository from the certificate.
+	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
+		return nil, nil, err
+	}
+
 	// Verify properties of the SLSA provenance.
-	// Unpack and verify info in the provenance, including the Subject Digest.
+	// Unpack and verify info in the provenance, including the subject Digest.
 	provenanceOpts.ExpectedBuilderID = builderID.String()
 	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, nil, err
@@ -94,15 +98,21 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Verify the workflow identity.
-	trustedBuilderID, err := VerifyNpmWorkflowIdentity(workflowInfo,
+	trustedBuilderID, err := VerifyBuilderIdentity(workflowInfo,
 		provenanceOpts.ExpectedSourceURI, defaultBuilders)
-	if err != nil {
+	// We accept a non-trusted builder for the default npm builder
+	// that uses npm CLI.
+	if err != nil && !errors.Is(err, serrors.ErrorUntrustedReusableWorkflow) {
 		return nil, err
 	}
 
-	// TODO(#493): verify certificate information matches
-	// the provenance if possible in the future.
+	// TODO(#493): retrieve certificate information to match
+	// with the provenance.
 	// Today it's not possible due to lack of information in the cert.
+	// Verify the source repository frmo the certificate.
+	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
+		return nil, nil, err
+	}
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
@@ -110,11 +120,10 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	if trustedBuilderID != nil {
 		provenanceOpts.ExpectedBuilderID = trustedBuilderID.String()
 	} else {
-		// TODO(#494): update the builder ID name.
 		if builderOpts == nil || builderOpts.ExpectedID == nil {
 			return nil, fmt.Errorf("builder mistmatch. No builder ID provided by user , got '%v'", builderGitHubRunnerID)
 		}
-
+		// TODO(#494): update the builder ID name.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(builderGitHubRunnerID)
 		if err != nil {
 			return nil, err
@@ -129,7 +138,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	}
 
 	fmt.Fprintf(os.Stderr, "Verified build using builder %s at commit %s\n",
-		provenanceOpts.ExpectedBuilderID,
+		trustedBuilderID.String(),
 		workflowInfo.CallerHash)
 
 	return trustedBuilderID, nil
