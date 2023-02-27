@@ -108,7 +108,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	// TODO(#493): retrieve certificate information to match
 	// with the provenance.
 	// Today it's not possible due to lack of information in the cert.
-	// Verify the source repository frmo the certificate.
+	// Verify the source repository from the certificate.
 	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
 		return nil, err
 	}
