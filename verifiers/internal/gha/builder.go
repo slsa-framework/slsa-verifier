@@ -64,7 +64,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	}
 
 	// Issuer verification.
-	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
+	if id.Issuer != certOidcIssuer {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
 	}
 
@@ -72,7 +72,7 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 	// {org}/{repository}.
 	expectedSource := strings.TrimPrefix(source, "git+https://")
 	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
-	if !strings.EqualFold(id.CallerRepository, expectedSource) {
+	if id.CallerRepository != expectedSource {
 		return nil, fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
 			expectedSource, id.CallerRepository)
 	}

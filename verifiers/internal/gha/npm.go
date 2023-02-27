@@ -25,6 +25,24 @@ const (
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
 
+/*
+NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
+
+			https://docs.npmjs.com/about-registry-signatures
+		{
+		"keys": [
+		{
+			"expires": null,
+			"keyid": "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA",
+			"keytype": "ecdsa-sha2-nistp256",
+			"scheme": "ecdsa-sha2-nistp256",
+			"key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
+		}
+		]
+	}
+*/
+var npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
+
 type attestation struct {
 	PredicateType string      `json:"predicateType"`
 	BundleBytes   BundleBytes `json:"bundle"`
@@ -63,28 +81,41 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)
 	}
 
-	if len(attestations) != 2 {
-		return nil, fmt.Errorf("%w: invalid number of attestations: %v", errrorInvalidAttestations, len(attestations))
+	prov, pub, err := extractAttestations(attestations)
+	if err != nil {
+		return nil, err
 	}
-
-	// Attestation type verification.
-	if attestations[0].PredicateType != slsaprovenance.ProvenanceV02Type {
-		return nil, fmt.Errorf("%w: invalid predicate type: %v. Expected %v", errrorInvalidAttestations,
-			attestations[0].PredicateType, slsaprovenance.ProvenanceV02Type)
-	}
-
-	// Provenance type verification.
-	if !strings.HasPrefix(attestations[1].PredicateType, publishAttestationV01) {
-		return nil, fmt.Errorf("%w: invalid predicate type: %v. Expected %v", errrorInvalidAttestations,
-			attestations[1].PredicateType, publishAttestationV01)
-	}
-
 	return &Npm{
 		ctx:                   ctx,
 		root:                  root,
-		provenanceAttestation: &attestations[0],
-		publishAttestation:    &attestations[1],
+		provenanceAttestation: prov,
+		publishAttestation:    pub,
 	}, nil
+}
+
+func extractAttestations(attestations []attestation) (*attestation, *attestation, error) {
+	if len(attestations) < 2 {
+		return nil, nil, fmt.Errorf("%w: invalid number of attestations: %v", errrorInvalidAttestations, len(attestations))
+	}
+
+	var provenanceAttestation *attestation
+	var publishAttestation *attestation
+	for i := range attestations {
+		att := attestations[i]
+		// Provenance type verification.
+		if att.PredicateType == slsaprovenance.ProvenanceV02Type {
+			provenanceAttestation = &att
+		}
+		// Publish type verification.
+		if strings.HasPrefix(att.PredicateType, publishAttestationV01) {
+			publishAttestation = &att
+		}
+	}
+
+	if provenanceAttestation == nil || publishAttestation == nil {
+		return nil, nil, fmt.Errorf("%w: invalid attestation types", errrorInvalidAttestations)
+	}
+	return provenanceAttestation, publishAttestation, nil
 }
 
 func (n *Npm) verifyProvenanceAttestationSignature() error {
@@ -122,24 +153,8 @@ func (n *Npm) verifyPublishAttesttationSignature() error {
 	// TODO(#496): verify the keyid, both in DSSE and hint.
 
 	// Verify the signature.
-	/*
-		NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
-			  https://docs.npmjs.com/about-registry-signatures
-			{
-		  "keys": [
-		    {
-		      "expires": null,
-		      "keyid": "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA",
-		      "keytype": "ecdsa-sha2-nistp256",
-		      "scheme": "ecdsa-sha2-nistp256",
-		      "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
-		    }
-		  ]
-		}
-	*/
 	payloadHash := sha256.Sum256(payload)
-	b64key := "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
-	rawKey, err := base64.StdEncoding.DecodeString(b64key)
+	rawKey, err := base64.StdEncoding.DecodeString(npmRegistryPublicKey)
 	if err != nil {
 		return fmt.Errorf("DecodeString: %w", err)
 	}
@@ -320,7 +335,7 @@ func verifyProvenanceSubjectVersion(att *SignedAttestation, expectedVersion stri
 		return err
 	}
 
-	subVersion, err := getPackageVersion(subject)
+	_, subVersion, err := getPackageNameAndVersion(subject)
 	if err != nil {
 		return err
 	}
@@ -386,7 +401,7 @@ func verifyProvenanceSubjectName(att *SignedAttestation, expectedName string) er
 }
 
 func verifyName(actual, expected string) error {
-	subName, err := getPackageName(actual)
+	subName, _, err := getPackageNameAndVersion(actual)
 	if err != nil {
 		return err
 	}
@@ -399,40 +414,26 @@ func verifyName(actual, expected string) error {
 	return nil
 }
 
-func getPackageName(name string) (string, error) {
+func getPackageNameAndVersion(name string) (string, string, error) {
+	var pkgname, pkgtag string
 	n := name
 	if strings.HasPrefix(name, "@") {
 		n = n[1:]
 	}
 	parts := strings.Split(n, "@")
 	if len(parts) > 2 {
-		return "", fmt.Errorf("%w: %v", serrors.ErrorInvalidPackageName, name)
+		return "", "", fmt.Errorf("%w: %v", serrors.ErrorInvalidPackageName, name)
 	}
 
-	pkgname := parts[0]
+	pkgname = parts[0]
 	if strings.HasPrefix(name, "@") {
 		pkgname = "@" + pkgname
 	}
-
-	return pkgname, nil
-}
-
-func getPackageVersion(name string) (string, error) {
-	n := name
-	if strings.HasPrefix(name, "@") {
-		n = n[1:]
-	}
-	parts := strings.Split(n, "@")
-	if len(parts) > 2 {
-		return "", fmt.Errorf("%w: %v", serrors.ErrorInvalidPackageName, name)
-	}
-
-	var pkgtag string
 	if len(parts) == 2 {
 		pkgtag = parts[1]
 	}
 
-	return pkgtag, nil
+	return pkgname, pkgtag, nil
 }
 
 func getSubject(att *SignedAttestation) (string, error) {
@@ -462,7 +463,3 @@ func getSubject(att *SignedAttestation) (string, error) {
 	}
 	return subject, err
 }
-
-// verifyEnvAndCert
-
-// TODO: intotoheader
