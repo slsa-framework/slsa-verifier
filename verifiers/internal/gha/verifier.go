@@ -98,8 +98,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Verify the workflow identity.
-	trustedBuilderID, err := VerifyBuilderIdentity(workflowInfo,
-		provenanceOpts.ExpectedSourceURI, defaultBuilders)
+	trustedBuilderID, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
 	// We accept a non-trusted builder for the default npm builder
 	// that uses npm CLI.
 	if err != nil && !errors.Is(err, serrors.ErrorUntrustedReusableWorkflow) {
@@ -111,7 +110,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	// Today it's not possible due to lack of information in the cert.
 	// Verify the source repository frmo the certificate.
 	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Verify properties of the SLSA provenance.

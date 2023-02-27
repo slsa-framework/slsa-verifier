@@ -10,7 +10,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 )
 
-func Test_VerifyWorkflowIdentity(t *testing.T) {
+func Test_VerifyBuilderIdentity(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name      string
@@ -337,7 +337,7 @@ func Test_VerifyWorkflowIdentity(t *testing.T) {
 			if opts == nil {
 				opts = &options.BuilderOpts{}
 			}
-			id, err := VerifyWorkflowIdentity(tt.workflow, opts, tt.source,
+			id, err := VerifyBuilderIdentity(tt.workflow, opts, tt.source,
 				tt.defaults)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))

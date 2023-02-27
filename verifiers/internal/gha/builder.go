@@ -51,9 +51,10 @@ func VerifyCertficateSourceRepository(id *WorkflowIdentity,
 	return nil
 }
 
-// VerifyBuilderIdentity verifies the signing certificate information
+// VerifyBuilderIdentity verifies the signing certificate information.
 // Builder IDs are verified against an expected builder ID provided in the
-// builerOpts, or against the set of defaultBuilders provided.
+// builerOpts, or against the set of defaultBuilders provided. The identiy
+// in the certificate corresponds to a GitHub workflow's path.
 func VerifyBuilderIdentity(id *WorkflowIdentity,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
