@@ -836,7 +836,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					}
 
 					if err != nil {
-						return
+						continue
 					}
 
 					// Validate against test's expected builderID, if provided.
@@ -847,7 +847,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					}
 
 					if bid == nil {
-						return
+						continue
 					}
 
 					// If we have a generated a user-provided bid, then validate it against the
