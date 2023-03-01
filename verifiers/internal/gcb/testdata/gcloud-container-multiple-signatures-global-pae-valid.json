@@ -1,0 +1,118 @@
+{
+  "image_summary": {
+    "digest": "sha256:f54a58bc1aac5ea1a25d796ae155dc228b3f0e11d046ae276b39c4bf2f13d8c4",
+    "fully_qualified_digest": "us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/tagged-world-trigger-964a2eba-62f0-4a53-87d3-4e6dddcc70b3@sha256:f54a58bc1aac5ea1a25d796ae155dc228b3f0e11d046ae276b39c4bf2f13d8c4",
+    "registry": "us-central1-docker.pkg.dev",
+    "repository": "khalk-docker-ar"
+  },
+  "provenance_summary": {
+    "provenance": [
+      {
+        "build": {
+          "intotoStatement": {
+            "_type": "https://in-toto.io/Statement/v0.1",
+            "predicateType": "https://slsa.dev/provenance/v0.1",
+            "slsaProvenance": {
+              "builder": {
+                "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3"
+              },
+              "materials": [
+                {
+                  "digest": {
+                    "sha1": "75c21a6224914056801d5be2316d89de3ff24811"
+                  },
+                  "uri": "git+https://github.com/khalkie/gcb-repo-staging"
+                }
+              ],
+              "metadata": {
+                "buildFinishedOn": "2023-02-28T15:23:37.764882Z",
+                "buildInvocationId": "964a2eba-62f0-4a53-87d3-4e6dddcc70b3",
+                "buildStartedOn": "2023-02-28T15:23:26.521812356Z"
+              },
+              "recipe": {
+                "arguments": {
+                  "@type": "type.googleapis.com/google.devtools.cloudbuild.v1.Build",
+                  "id": "964a2eba-62f0-4a53-87d3-4e6dddcc70b3",
+                  "name": "projects/265426041527/locations/us-west1/builds/964a2eba-62f0-4a53-87d3-4e6dddcc70b3",
+                  "options": {
+                    "dynamicSubstitutions": true,
+                    "logging": "LEGACY",
+                    "pool": {},
+                    "requestedVerifyOption": "VERIFIED",
+                    "substitutionOption": "ALLOW_LOOSE"
+                  },
+                  "sourceProvenance": {},
+                  "steps": [
+                    {
+                      "args": [
+                        "tag",
+                        "hello-world",
+                        "us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/tagged-world-trigger-964a2eba-62f0-4a53-87d3-4e6dddcc70b3"
+                      ],
+                      "name": "gcr.io/cloud-builders/docker",
+                      "pullTiming": {
+                        "endTime": "2023-02-28T15:23:34.662245150Z",
+                        "startTime": "2023-02-28T15:23:34.654151260Z"
+                      },
+                      "status": "SUCCESS",
+                      "timing": {
+                        "endTime": "2023-02-28T15:23:35.584468354Z",
+                        "startTime": "2023-02-28T15:23:34.654151260Z"
+                      }
+                    }
+                  ],
+                  "substitutions": {
+                    "BRANCH_NAME": "main",
+                    "COMMIT_SHA": "75c21a6224914056801d5be2316d89de3ff24811",
+                    "REF_NAME": "main",
+                    "REPO_NAME": "gcb-repo-staging",
+                    "REVISION_ID": "75c21a6224914056801d5be2316d89de3ff24811",
+                    "SHORT_SHA": "75c21a6",
+                    "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+                    "TRIGGER_NAME": "github-trigger-staging"
+                  }
+                },
+                "entryPoint": "cloudbuild.yaml",
+                "type": "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1"
+              }
+            },
+            "subject": [
+              {
+                "digest": {
+                  "sha256": "f54a58bc1aac5ea1a25d796ae155dc228b3f0e11d046ae276b39c4bf2f13d8c4"
+                },
+                "name": "https://us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/tagged-world-trigger-964a2eba-62f0-4a53-87d3-4e6dddcc70b3"
+              },
+              {
+                "digest": {
+                  "sha256": "f54a58bc1aac5ea1a25d796ae155dc228b3f0e11d046ae276b39c4bf2f13d8c4"
+                },
+                "name": "https://us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/tagged-world-trigger-964a2eba-62f0-4a53-87d3-4e6dddcc70b3:latest"
+              }
+            ]
+          }
+        },
+        "createTime": "2023-02-28T15:23:39.650659Z",
+        "envelope": {
+          "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZSI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0dvb2dsZUhvc3RlZFdvcmtlckB2MC4zIn0sIm1hdGVyaWFscyI6W3siZGlnZXN0Ijp7InNoYTEiOiI3NWMyMWE2MjI0OTE0MDU2ODAxZDViZTIzMTZkODlkZTNmZjI0ODExIn0sInVyaSI6ImdpdCtodHRwczovL2dpdGh1Yi5jb20va2hhbGtpZS9nY2ItcmVwby1zdGFnaW5nIn1dLCJtZXRhZGF0YSI6eyJidWlsZEZpbmlzaGVkT24iOiIyMDIzLTAyLTI4VDE1OjIzOjM3Ljc2NDg4MloiLCJidWlsZEludm9jYXRpb25JZCI6Ijk2NGEyZWJhLTYyZjAtNGE1My04N2QzLTRlNmRkZGNjNzBiMyIsImJ1aWxkU3RhcnRlZE9uIjoiMjAyMy0wMi0yOFQxNToyMzoyNi41MjE4MTIzNTZaIn0sInJlY2lwZSI6eyJhcmd1bWVudHMiOnsiQHR5cGUiOiJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5kZXZ0b29scy5jbG91ZGJ1aWxkLnYxLkJ1aWxkIiwiaWQiOiI5NjRhMmViYS02MmYwLTRhNTMtODdkMy00ZTZkZGRjYzcwYjMiLCJuYW1lIjoicHJvamVjdHMvMjY1NDI2MDQxNTI3L2xvY2F0aW9ucy91cy13ZXN0MS9idWlsZHMvOTY0YTJlYmEtNjJmMC00YTUzLTg3ZDMtNGU2ZGRkY2M3MGIzIiwib3B0aW9ucyI6eyJkeW5hbWljU3Vic3RpdHV0aW9ucyI6dHJ1ZSwibG9nZ2luZyI6IkxFR0FDWSIsInBvb2wiOnt9LCJyZXF1ZXN0ZWRWZXJpZnlPcHRpb24iOiJWRVJJRklFRCIsInN1YnN0aXR1dGlvbk9wdGlvbiI6IkFMTE9XX0xPT1NFIn0sInNvdXJjZVByb3ZlbmFuY2UiOnt9LCJzdGVwcyI6W3siYXJncyI6WyJ0YWciLCJoZWxsby13b3JsZCIsInVzLWNlbnRyYWwxLWRvY2tlci5wa2cuZGV2L2FyZ28tbG9jYWwta2hhbGsva2hhbGstZG9ja2VyLWFyL3RhZ2dlZC13b3JsZC10cmlnZ2VyLTk2NGEyZWJhLTYyZjAtNGE1My04N2QzLTRlNmRkZGNjNzBiMyJdLCJuYW1lIjoiZ2NyLmlvL2Nsb3VkLWJ1aWxkZXJzL2RvY2tlciIsInB1bGxUaW1pbmciOnsiZW5kVGltZSI6IjIwMjMtMDItMjhUMTU6MjM6MzQuNjYyMjQ1MTUwWiIsInN0YXJ0VGltZSI6IjIwMjMtMDItMjhUMTU6MjM6MzQuNjU0MTUxMjYwWiJ9LCJzdGF0dXMiOiJTVUNDRVNTIiwidGltaW5nIjp7ImVuZFRpbWUiOiIyMDIzLTAyLTI4VDE1OjIzOjM1LjU4NDQ2ODM1NFoiLCJzdGFydFRpbWUiOiIyMDIzLTAyLTI4VDE1OjIzOjM0LjY1NDE1MTI2MFoifX1dLCJzdWJzdGl0dXRpb25zIjp7IkJSQU5DSF9OQU1FIjoibWFpbiIsIkNPTU1JVF9TSEEiOiI3NWMyMWE2MjI0OTE0MDU2ODAxZDViZTIzMTZkODlkZTNmZjI0ODExIiwiUkVGX05BTUUiOiJtYWluIiwiUkVQT19OQU1FIjoiZ2NiLXJlcG8tc3RhZ2luZyIsIlJFVklTSU9OX0lEIjoiNzVjMjFhNjIyNDkxNDA1NjgwMWQ1YmUyMzE2ZDg5ZGUzZmYyNDgxMSIsIlNIT1JUX1NIQSI6Ijc1YzIxYTYiLCJUUklHR0VSX0JVSUxEX0NPTkZJR19QQVRIIjoiY2xvdWRidWlsZC55YW1sIiwiVFJJR0dFUl9OQU1FIjoiZ2l0aHViLXRyaWdnZXItc3RhZ2luZyJ9fSwiZW50cnlQb2ludCI6ImNsb3VkYnVpbGQueWFtbCIsInR5cGUiOiJodHRwczovL2Nsb3VkYnVpbGQuZ29vZ2xlYXBpcy5jb20vQ2xvdWRCdWlsZFlhbWxAdjAuMSJ9fSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8vc2xzYS5kZXYvcHJvdmVuYW5jZS92MC4xIiwic2xzYVByb3ZlbmFuY2UiOnsiYnVpbGRlciI6eyJpZCI6Imh0dHBzOi8vY2xvdWRidWlsZC5nb29nbGVhcGlzLmNvbS9Hb29nbGVIb3N0ZWRXb3JrZXJAdjAuMyJ9LCJtYXRlcmlhbHMiOlt7ImRpZ2VzdCI6eyJzaGExIjoiNzVjMjFhNjIyNDkxNDA1NjgwMWQ1YmUyMzE2ZDg5ZGUzZmYyNDgxMSJ9LCJ1cmkiOiJnaXQraHR0cHM6Ly9naXRodWIuY29tL2toYWxraWUvZ2NiLXJlcG8tc3RhZ2luZyJ9XSwibWV0YWRhdGEiOnsiYnVpbGRGaW5pc2hlZE9uIjoiMjAyMy0wMi0yOFQxNToyMzozNy43NjQ4ODJaIiwiYnVpbGRJbnZvY2F0aW9uSWQiOiI5NjRhMmViYS02MmYwLTRhNTMtODdkMy00ZTZkZGRjYzcwYjMiLCJidWlsZFN0YXJ0ZWRPbiI6IjIwMjMtMDItMjhUMTU6MjM6MjYuNTIxODEyMzU2WiJ9LCJyZWNpcGUiOnsiYXJndW1lbnRzIjp7IkB0eXBlIjoidHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuZGV2dG9vbHMuY2xvdWRidWlsZC52MS5CdWlsZCIsImlkIjoiOTY0YTJlYmEtNjJmMC00YTUzLTg3ZDMtNGU2ZGRkY2M3MGIzIiwibmFtZSI6InByb2plY3RzLzI2NTQyNjA0MTUyNy9sb2NhdGlvbnMvdXMtd2VzdDEvYnVpbGRzLzk2NGEyZWJhLTYyZjAtNGE1My04N2QzLTRlNmRkZGNjNzBiMyIsIm9wdGlvbnMiOnsiZHluYW1pY1N1YnN0aXR1dGlvbnMiOnRydWUsImxvZ2dpbmciOiJMRUdBQ1kiLCJwb29sIjp7fSwicmVxdWVzdGVkVmVyaWZ5T3B0aW9uIjoiVkVSSUZJRUQiLCJzdWJzdGl0dXRpb25PcHRpb24iOiJBTExPV19MT09TRSJ9LCJzb3VyY2VQcm92ZW5hbmNlIjp7fSwic3RlcHMiOlt7ImFyZ3MiOlsidGFnIiwiaGVsbG8td29ybGQiLCJ1cy1jZW50cmFsMS1kb2NrZXIucGtnLmRldi9hcmdvLWxvY2FsLWtoYWxrL2toYWxrLWRvY2tlci1hci90YWdnZWQtd29ybGQtdHJpZ2dlci05NjRhMmViYS02MmYwLTRhNTMtODdkMy00ZTZkZGRjYzcwYjMiXSwibmFtZSI6Imdjci5pby9jbG91ZC1idWlsZGVycy9kb2NrZXIiLCJwdWxsVGltaW5nIjp7ImVuZFRpbWUiOiIyMDIzLTAyLTI4VDE1OjIzOjM0LjY2MjI0NTE1MFoiLCJzdGFydFRpbWUiOiIyMDIzLTAyLTI4VDE1OjIzOjM0LjY1NDE1MTI2MFoifSwic3RhdHVzIjoiU1VDQ0VTUyIsInRpbWluZyI6eyJlbmRUaW1lIjoiMjAyMy0wMi0yOFQxNToyMzozNS41ODQ0NjgzNTRaIiwic3RhcnRUaW1lIjoiMjAyMy0wMi0yOFQxNToyMzozNC42NTQxNTEyNjBaIn19XSwic3Vic3RpdHV0aW9ucyI6eyJCUkFOQ0hfTkFNRSI6Im1haW4iLCJDT01NSVRfU0hBIjoiNzVjMjFhNjIyNDkxNDA1NjgwMWQ1YmUyMzE2ZDg5ZGUzZmYyNDgxMSIsIlJFRl9OQU1FIjoibWFpbiIsIlJFUE9fTkFNRSI6ImdjYi1yZXBvLXN0YWdpbmciLCJSRVZJU0lPTl9JRCI6Ijc1YzIxYTYyMjQ5MTQwNTY4MDFkNWJlMjMxNmQ4OWRlM2ZmMjQ4MTEiLCJTSE9SVF9TSEEiOiI3NWMyMWE2IiwiVFJJR0dFUl9CVUlMRF9DT05GSUdfUEFUSCI6ImNsb3VkYnVpbGQueWFtbCIsIlRSSUdHRVJfTkFNRSI6ImdpdGh1Yi10cmlnZ2VyLXN0YWdpbmcifX0sImVudHJ5UG9pbnQiOiJjbG91ZGJ1aWxkLnlhbWwiLCJ0eXBlIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0Nsb3VkQnVpbGRZYW1sQHYwLjEifX0sInN1YmplY3QiOlt7ImRpZ2VzdCI6eyJzaGEyNTYiOiJmNTRhNThiYzFhYWM1ZWExYTI1ZDc5NmFlMTU1ZGMyMjhiM2YwZTExZDA0NmFlMjc2YjM5YzRiZjJmMTNkOGM0In0sIm5hbWUiOiJodHRwczovL3VzLWNlbnRyYWwxLWRvY2tlci5wa2cuZGV2L2FyZ28tbG9jYWwta2hhbGsva2hhbGstZG9ja2VyLWFyL3RhZ2dlZC13b3JsZC10cmlnZ2VyLTk2NGEyZWJhLTYyZjAtNGE1My04N2QzLTRlNmRkZGNjNzBiMyJ9LHsiZGlnZXN0Ijp7InNoYTI1NiI6ImY1NGE1OGJjMWFhYzVlYTFhMjVkNzk2YWUxNTVkYzIyOGIzZjBlMTFkMDQ2YWUyNzZiMzljNGJmMmYxM2Q4YzQifSwibmFtZSI6Imh0dHBzOi8vdXMtY2VudHJhbDEtZG9ja2VyLnBrZy5kZXYvYXJnby1sb2NhbC1raGFsay9raGFsay1kb2NrZXItYXIvdGFnZ2VkLXdvcmxkLXRyaWdnZXItOTY0YTJlYmEtNjJmMC00YTUzLTg3ZDMtNGU2ZGRkY2M3MGIzOmxhdGVzdCJ9XX0=",
+          "payloadType": "application/vnd.in-toto+json",
+          "signatures": [
+            {
+              "keyid": "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1",
+              "sig": "MEUCIQCJQRkaJuajYy_KKV71VYS13QLdp57pAdQMVXucy3Ev-wIgBCcaPtO16_WWhRrPWVpxrTxtypNVLAqIVeywNYk2-Xk="
+            },
+            {
+              "keyid": "projects/argo-qa/locations/us-west1/keyRings/attestor/cryptoKeys/builtByGCB/cryptoKeyVersions/1",
+              "sig": "THIS-IS-BAD-CY8BRxZGNBHktKHWQHnO0OKW2awEqorwGs9l2AIgKnoPsZAwVv5TSzbN8UlkEvTRRTVTTEAbfG9V1lCQzVw="
+            }
+          ]
+        },
+        "kind": "BUILD",
+        "name": "projects/argo-local-khalk/occurrences/26a014ac-3779-4a0b-98da-2d804f257f3d",
+        "noteName": "projects/argo-qa/notes/intoto_964a2eba-62f0-4a53-87d3-4e6dddcc70b3",
+        "resourceUri": "https://us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/tagged-world-trigger-964a2eba-62f0-4a53-87d3-4e6dddcc70b3@sha256:f54a58bc1aac5ea1a25d796ae155dc228b3f0e11d046ae276b39c4bf2f13d8c4",
+        "updateTime": "2023-02-28T15:23:39.650659Z"
+      }
+    ]
+  }
+}
