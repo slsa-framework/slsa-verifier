@@ -1,7 +1,6 @@
 package gcb
 
 import (
-	"crypto"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -26,9 +25,6 @@ var GCBBuilderIDs = []string{
 	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
 	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 }
-
-const GLOBAL_PAE_KEY_ID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
-const GLOBAL_PAE_PUBLIC_KEY_NAME = "global-pae"
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
@@ -69,45 +65,6 @@ type Provenance struct {
 	gcloudProv              *gloudProvenance
 	verifiedProvenance      *provenance
 	verifiedIntotoStatement *v01IntotoStatement
-}
-
-// Implementation of a DSSE verifier which will verify
-// a signature formatted in DSSE-conformant PAE.
-type DsseVerifier struct {
-	KeyId string
-}
-
-func (v *DsseVerifier) Verify(data, sig []byte) error {
-	payloadHash := sha256.Sum256(data)
-
-	pubKey, err := keys.PublicKeyNew(GLOBAL_PAE_PUBLIC_KEY_NAME)
-	if err != nil {
-		return err
-	}
-
-	// Verify the signature.
-	return pubKey.VerifySignature(payloadHash, sig)
-}
-
-func (v *DsseVerifier) KeyID() (string, error) {
-	return v.KeyId, nil
-}
-
-func (v *DsseVerifier) Public() crypto.PublicKey {
-	return nil
-}
-
-func (p *Provenance) VerifyDsseSignature(prov *provenance) error {
-	envVerifier, err := dsselib.NewEnvelopeVerifier(&DsseVerifier{KeyId: GLOBAL_PAE_KEY_ID})
-	if err != nil {
-		return err
-	}
-	_, err = envVerifier.Verify(&prov.Envelope)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
@@ -505,28 +462,25 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 	regionalKeyRegex := regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
 
 	for _, sig := range prov.Envelope.Signatures {
+		var region string
 		// if the signature is signed with the global PAE key, use a DSSE verifier
 		// to verify the DSSE/PAE-encoded signature
-		if sig.KeyID == GLOBAL_PAE_KEY_ID {
-			err = p.VerifyDsseSignature(prov)
+		if sig.KeyID == keys.GLOBAL_PAE_KEY_ID {
+			region = keys.GLOBAL_PAE_PUBLIC_KEY_NAME
+			globalPaeKey, err := keys.GlobalPaeKeyNew()
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			var statement v01IntotoStatement
-			if err := json.Unmarshal(payload, &statement); err != nil {
-				return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-			}
-			p.verifiedIntotoStatement = &statement
-			p.verifiedProvenance = prov
-			fmt.Fprintf(os.Stderr, "Verification succeeded with global PAE key\n")
-			return nil
-		}
 
-		match := regionalKeyRegex.FindStringSubmatch(sig.KeyID)
-		if len(match) == 2 {
-			// Create a public key instance for this region.
-			region := match[1]
+			err = globalPaeKey.VerifyEnvelope(&prov.Envelope)
+
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+		} else if match := regionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
+			region = match[1]
 			pubKey, err := keys.PublicKeyNew(region)
 			if err != nil {
 				errs = append(errs, err)
@@ -546,16 +500,18 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 				errs = append(errs, err)
 				continue
 			}
-
-			var statement v01IntotoStatement
-			if err := json.Unmarshal(payload, &statement); err != nil {
-				return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-			}
-			p.verifiedIntotoStatement = &statement
-			p.verifiedProvenance = prov
-			fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
-			return nil
+		} else {
+			continue
 		}
+
+		var statement v01IntotoStatement
+		if err := json.Unmarshal(payload, &statement); err != nil {
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		}
+		p.verifiedIntotoStatement = &statement
+		p.verifiedProvenance = prov
+		fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
+		return nil
 	}
 
 	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)

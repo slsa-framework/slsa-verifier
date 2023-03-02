@@ -1,7 +1,9 @@
 package keys
 
 import (
+	"crypto"
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"embed"
 	"encoding/pem"
@@ -9,11 +11,15 @@ import (
 	"io/fs"
 	"path"
 
+	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 //go:embed materials/*
 var publicKeys embed.FS
+
+const GLOBAL_PAE_KEY_ID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
+const GLOBAL_PAE_PUBLIC_KEY_NAME = "global-pae"
 
 type PublicKey struct {
 	value  []byte
@@ -60,4 +66,44 @@ func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
 	}
 
 	return nil
+}
+
+type GlobalPaeKey struct {
+	publicKey *PublicKey
+	Verifier  *dsselib.EnvelopeVerifier
+}
+
+func GlobalPaeKeyNew() (*GlobalPaeKey, error) {
+	publicKey, err := PublicKeyNew(GLOBAL_PAE_PUBLIC_KEY_NAME)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create public key for Global PAE key: %w", err)
+	}
+
+	globalPaeKey := &GlobalPaeKey{publicKey: publicKey}
+	envVerifier, err := dsselib.NewEnvelopeVerifier(globalPaeKey)
+	if err != nil {
+		return nil, err
+	}
+	globalPaeKey.Verifier = envVerifier
+	return globalPaeKey, nil
+}
+
+func (p *GlobalPaeKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
+	_, err := p.Verifier.Verify(envelope)
+	return err
+}
+
+// Implementation of a DSSE verifier which will verify
+// a signature formatted in DSSE-conformant PAE.
+func (v *GlobalPaeKey) Verify(data, sig []byte) error {
+	// Verify the signature.
+	return v.publicKey.VerifySignature(sha256.Sum256(data), sig)
+}
+
+func (v *GlobalPaeKey) KeyID() (string, error) {
+	return GLOBAL_PAE_KEY_ID, nil
+}
+
+func (v *GlobalPaeKey) Public() crypto.PublicKey {
+	return v.publicKey
 }
