@@ -65,7 +65,7 @@ func ProvenanceFromEnvelope(env *dsselib.Envelope) (Provenance, error) {
 	// Load the appropriate structure and unmarshal.
 	ptype, ok := ProvenanceMap.Load(pred.PredicateType)
 	if !ok {
-		return nil, fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload, "unexpected predicate type ", pred.PredicateType)
+		return nil, fmt.Errorf("%w: unexpected predicate type '%s'", serrors.ErrorInvalidDssePayload, pred.PredicateType)
 	}
 	prov := ptype.(func() Provenance)()
 

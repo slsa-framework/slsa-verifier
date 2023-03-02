@@ -29,6 +29,7 @@ For more information on SLSA, visit https://slsa.dev`,
 	c.AddCommand(version.Version())
 	c.AddCommand(verifyArtifactCmd())
 	c.AddCommand(verifyImageCmd())
+	c.AddCommand(verifyNpmPackageCmd())
 	// We print our own errors and usage in the check function.
 	c.SilenceErrors = true
 	return c

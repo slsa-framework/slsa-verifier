@@ -2,7 +2,6 @@ package gcb
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -77,17 +76,6 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 	return &Provenance{
 		gcloudProv: &prov,
 	}, nil
-}
-
-func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
-	payload, err := base64.StdEncoding.DecodeString(env.Payload)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	if payload == nil {
-		return nil, fmt.Errorf("%w: empty payload", serrors.ErrorInvalidFormat)
-	}
-	return payload, nil
 }
 
 func (p *Provenance) isVerified() error {
@@ -413,31 +401,6 @@ func (p *Provenance) VerifyVersionedTag(tag string) error {
 	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
 }
 
-func decodeSignature(s string) ([]byte, error) {
-	var errs []error
-	// First try the std decoding.
-	rsig, err := base64.StdEncoding.DecodeString(s)
-	if err == nil {
-		// No error, return the value.
-		return rsig, nil
-	}
-	errs = append(errs, err)
-
-	// If std decoding failed, try URL decoding.
-	// We try both because we encountered decoding failures
-	// during our tests. The DSSE documentation does not prescribe
-	// which encoding to use: `Either standard or URL-safe encoding is allowed`.
-	// https://github.com/secure-systems-lab/dsse/blob/27ce241dec575998dee8967c3c76d4edd5d6ee73/envelope.md#standard-json-envelope.
-	rsig, err = base64.URLEncoding.DecodeString(s)
-	if err == nil {
-		// No error, return the value.
-		return rsig, nil
-	}
-	errs = append(errs, err)
-
-	return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidEncoding, errs)
-}
-
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
 // It succeeds if one of them can be verified.
 func (p *Provenance) verifySignatures(prov *provenance) error {
@@ -447,7 +410,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 			serrors.ErrorInvalidDssePayload, intoto.PayloadType, prov.Envelope.PayloadType)
 	}
 
-	payload, err := payloadFromEnvelope(&prov.Envelope)
+	payload, err := utils.PayloadFromEnvelope(&prov.Envelope)
 	if err != nil {
 		return err
 	}
@@ -488,7 +451,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 			}
 
 			// Decode the signature.
-			rsig, err := decodeSignature(sig.Sig)
+			rsig, err := utils.DecodeSignature(sig.Sig)
 			if err != nil {
 				errs = append(errs, err)
 				continue

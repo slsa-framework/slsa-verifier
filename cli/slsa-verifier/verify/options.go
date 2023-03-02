@@ -74,6 +74,52 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
+// VerifyNpmOptions is the top-level options for the `verifyNpmPackage` command.
+type VerifyNpmOptions struct {
+	VerifyOptions
+	/* Other */
+	AttestationsPath string
+	PackageName      string
+	PackageVersion   string
+}
+
+var _ Interface = (*VerifyNpmOptions)(nil)
+
+// AddFlags implements Interface.
+func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
+	/* Builder options */
+	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions).")
+
+	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "[optional] the unique builder ID who created the provenance")
+
+	/* Source options */
+	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
+		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
+
+	cmd.Flags().StringVar(&o.SourceBranch, "source-branch", "", "[optional] expected branch the binary was compiled from")
+
+	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
+
+	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
+		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+
+	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
+		"path to a file containing the attestations")
+
+	cmd.Flags().StringVar(&o.PackageName, "package-name", "",
+		"[optional] the package name")
+
+	cmd.Flags().StringVar(&o.PackageVersion, "package-version", "",
+		"[optional] the package version")
+
+	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
+		"[optional] print the verified provenance to stdout")
+
+	cmd.MarkFlagRequired("source-uri")
+	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
+}
+
 type workflowInputs struct {
 	kv map[string]string
 }
