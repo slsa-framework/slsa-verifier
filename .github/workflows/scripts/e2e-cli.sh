@@ -39,4 +39,4 @@ cd -
 export BINARY=artifact1
 export PROVENANCE=attestation1.intoto.jsonl
 
-GITHUB_REPOSITORY="$repo" verify_provenance_authenticity "./__THIS_repo__/slsa-verifier" "HEAD"
+GITHUB_REPOSITORY="$repo" verify_provenance_authenticity "./__THIS_REPO__/slsa-verifier" "HEAD"
