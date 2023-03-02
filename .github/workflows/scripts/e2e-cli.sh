@@ -3,23 +3,24 @@
 repo="slsa-framework/example-package"
 api_version="X-GitHub-Api-Version: 2022-11-28"
 # Verify provenance authenticity with slsa-verifier at HEAD
+
 download_artifact(){
   local run_id="$1"
   local artifact_name="$2"
   # Get the artifact ID for 'artifact1'
-  artifact_id=$($GH api   -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/runs/$run_id/artifacts" | jq ".artifacts[] | select(.name == \"$artifact_name\") | .id")
+  artifact_id=$(gh api   -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/runs/$run_id/artifacts" | jq ".artifacts[] | select(.name == \"$artifact_name\") | .id")
   echo "artifact_id:$artifact_id"
 
-  $GH api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/artifacts/$artifact_id/zip" > "$artifact_name.zip"
+  gh api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/artifacts/$artifact_id/zip" > "$artifact_name.zip"
   unzip "$artifact_name".zip
 }
 
 # Get workflow ID.
-workflow_id=$($GH api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/workflows?per_page=100" | jq '.workflows[] | select(.path == ".github/workflows/e2e.generic.schedule.main.multi-uses.slsa3.yml") | .id')
+workflow_id=$(gh api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/workflows?per_page=100" | jq '.workflows[] | select(.path == ".github/workflows/e2e.generic.schedule.main.multi-uses.slsa3.yml") | .id')
 echo "workflow_id:$workflow_id"
 
 # Get the run ID for the most recent run.
-run_id=$($GH api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/workflows/$workflow_id/runs?per_page=1" | jq '.workflow_runs[0].id')
+run_id=$(gh api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/workflows/$workflow_id/runs?per_page=1" | jq '.workflow_runs[0].id')
 echo "run_id:$run_id"
 
 download_artifact "$run_id" "artifacts1"
