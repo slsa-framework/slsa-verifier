@@ -18,8 +18,8 @@ import (
 //go:embed materials/*
 var publicKeys embed.FS
 
-const GLOBAL_PAE_KEY_ID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
-const GLOBAL_PAE_PUBLIC_KEY_NAME = "global-pae"
+const GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
+const GlobalPAEPublicKeyName = "global-pae"
 
 type PublicKey struct {
 	value  []byte
@@ -28,7 +28,7 @@ type PublicKey struct {
 	// TODO: key type and size
 }
 
-func PublicKeyNew(region string) (*PublicKey, error) {
+func NewPublicKey(region string) (*PublicKey, error) {
 	content, err := fs.ReadFile(publicKeys, path.Join("materials", region+".key"))
 	if err != nil {
 		return nil, fmt.Errorf("%w: cannot read key materials", err)
@@ -68,18 +68,18 @@ func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
 	return nil
 }
 
-type GlobalPaeKey struct {
+type GlobalPAEKey struct {
 	publicKey *PublicKey
 	Verifier  *dsselib.EnvelopeVerifier
 }
 
-func GlobalPaeKeyNew() (*GlobalPaeKey, error) {
-	publicKey, err := PublicKeyNew(GLOBAL_PAE_PUBLIC_KEY_NAME)
+func NewGlobalPAEKey() (*GlobalPAEKey, error) {
+	publicKey, err := NewPublicKey(GlobalPAEPublicKeyName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create public key for Global PAE key: %w", err)
 	}
 
-	globalPaeKey := &GlobalPaeKey{publicKey: publicKey}
+	globalPaeKey := &GlobalPAEKey{publicKey: publicKey}
 	envVerifier, err := dsselib.NewEnvelopeVerifier(globalPaeKey)
 	if err != nil {
 		return nil, err
@@ -88,22 +88,24 @@ func GlobalPaeKeyNew() (*GlobalPaeKey, error) {
 	return globalPaeKey, nil
 }
 
-func (p *GlobalPaeKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
+func (p *GlobalPAEKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
 	_, err := p.Verifier.Verify(envelope)
 	return err
 }
 
-// Implementation of a DSSE verifier which will verify
+// Verify implements dsse.Verifier.Verify. It verifies
 // a signature formatted in DSSE-conformant PAE.
-func (v *GlobalPaeKey) Verify(data, sig []byte) error {
+func (v *GlobalPAEKey) Verify(data, sig []byte) error {
 	// Verify the signature.
 	return v.publicKey.VerifySignature(sha256.Sum256(data), sig)
 }
 
-func (v *GlobalPaeKey) KeyID() (string, error) {
-	return GLOBAL_PAE_KEY_ID, nil
+// KeyID implements dsse.Verifier.KeyID.
+func (v *GlobalPAEKey) KeyID() (string, error) {
+	return GlobalPAEKeyID, nil
 }
 
-func (v *GlobalPaeKey) Public() crypto.PublicKey {
+// Public implements dsse.Verifier.Public.
+func (v *GlobalPAEKey) Public() crypto.PublicKey {
 	return v.publicKey
 }

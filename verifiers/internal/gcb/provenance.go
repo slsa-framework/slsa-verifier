@@ -26,6 +26,8 @@ var GCBBuilderIDs = []string{
 	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 }
 
+var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
 type v01IntotoStatement struct {
 	intoto.StatementHeader
 	Predicate ProvenancePredicate `json:"predicate"`
@@ -459,29 +461,27 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 	}
 
 	var errs []error
-	regionalKeyRegex := regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
 
 	for _, sig := range prov.Envelope.Signatures {
 		var region string
-		// if the signature is signed with the global PAE key, use a DSSE verifier
-		// to verify the DSSE/PAE-encoded signature
-		if sig.KeyID == keys.GLOBAL_PAE_KEY_ID {
-			region = keys.GLOBAL_PAE_PUBLIC_KEY_NAME
-			globalPaeKey, err := keys.GlobalPaeKeyNew()
+		// If the signature is signed with the global PAE key, use a DSSE verifier
+		// to verify the DSSE/PAE-encoded signature.
+		if sig.KeyID == keys.GlobalPAEKeyID {
+			region = keys.GlobalPAEPublicKeyName
+			globalPaeKey, err := keys.NewGlobalPAEKey()
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 
 			err = globalPaeKey.VerifyEnvelope(&prov.Envelope)
-
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 		} else if match := regionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
 			region = match[1]
-			pubKey, err := keys.PublicKeyNew(region)
+			pubKey, err := keys.NewPublicKey(region)
 			if err != nil {
 				errs = append(errs, err)
 				continue
