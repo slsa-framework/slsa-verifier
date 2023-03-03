@@ -5,6 +5,8 @@ import "errors"
 var (
 	ErrorInvalidDssePayload        = errors.New("invalid DSSE envelope payload")
 	ErrorMismatchBranch            = errors.New("branch used to generate the binary does not match provenance")
+	ErrorMismatchPackageVersion    = errors.New("package version does not match provenance")
+	ErrorMismatchPackageName       = errors.New("package name does not match provenance")
 	ErrorMismatchBuilderID         = errors.New("builderID does not match provenance")
 	ErrorInvalidBuilderID          = errors.New("builderID is invalid")
 	ErrorMismatchSource            = errors.New("source used to generate the binary does not match provenance")
@@ -33,4 +35,6 @@ var (
 	ErrorInternal                  = errors.New("internal error")
 	ErrorInvalidRekorEntry         = errors.New("invalid Rekor entry")
 	ErrorRekorPubKey               = errors.New("error retrieving Rekor public keys")
+	ErrorInvalidPackageName        = errors.New("invalid package name")
+	ErrorInvalidSubject            = errors.New("invalid subject")
 )

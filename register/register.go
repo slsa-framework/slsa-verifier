@@ -28,6 +28,12 @@ type SLSAVerifier interface {
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
 	) ([]byte, *utils.TrustedBuilderID, error)
+
+	VerifyNpmPackage(ctx context.Context,
+		attestations []byte, tarballHash string,
+		provenanceOpts *options.ProvenanceOpts,
+		builderOpts *options.BuilderOpts,
+	) ([]byte, *utils.TrustedBuilderID, error)
 }
 
 func RegisterVerifier(name string, verifier SLSAVerifier) {

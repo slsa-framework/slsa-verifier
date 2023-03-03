@@ -37,7 +37,8 @@ func IsSigstoreBundle(bytes []byte) bool {
 // bundle verification material, validating the SignedEntryTimestamp.
 func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyLogEntry,
 	trustedRoot *TrustedRoot) (
-	*models.LogEntryAnon, error) {
+	*models.LogEntryAnon, error,
+) {
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
 	logID := hex.EncodeToString(tlogEntry.GetLogId().GetKeyId())
 	rekorEntry := &models.LogEntryAnon{
@@ -75,6 +76,19 @@ func getEnvelopeFromBundle(bundle *bundle_v1.Bundle) (*dsselib.Envelope, error) 
 			Sig:   base64.StdEncoding.EncodeToString(sig.GetSig()),
 		})
 	}
+	return env, nil
+}
+
+func getEnvelopeFromBundleBytes(content []byte) (*dsselib.Envelope, error) {
+	var bundle bundle_v1.Bundle
+	if err := protojson.Unmarshal(content, &bundle); err != nil {
+		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
+	}
+	env, err := getEnvelopeFromBundle(&bundle)
+	if err != nil {
+		return nil, err
+	}
+
 	return env, nil
 }
 
@@ -122,6 +136,7 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 			len(intotoObj.Content.Envelope.Signatures))
 	}
 
+	// TODO(#487): verify the certs match.
 	for _, sig := range env.Signatures {
 		// The signature in the canonical body is double base64-encoded.
 		encodedEnvSig := base64.StdEncoding.EncodeToString(
@@ -136,6 +151,7 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 			return ErrorMismatchSignature
 		}
 	}
+
 	return nil
 }
 
@@ -144,13 +160,24 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 // and the signing certificate given the provenance.
 func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
 	trustedRoot *TrustedRoot) (
-	*SignedAttestation, error) {
-	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
-	var bundle bundle_v1.Bundle
-	if err := protojson.Unmarshal(bundleBytes, &bundle); err != nil {
-		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
+	*SignedAttestation, error,
+) {
+	proposedSignedAtt, err := verifyBundleAndEntryFromBytes(ctx, bundleBytes, trustedRoot, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := verifySignedAttestation(proposedSignedAtt, trustedRoot); err != nil {
+		return nil, err
 	}
 
+	return proposedSignedAtt, nil
+}
+
+// verifyBundleAndEntry validates the rekor entry inn the bundle
+// and that the entry (cert, signatures) matches the data in the bundle.
+func verifyBundleAndEntry(ctx context.Context, bundle *bundle_v1.Bundle,
+	trustedRoot *TrustedRoot, requireCert bool,
+) (*SignedAttestation, error) {
 	// We only expect one TLOG entry. If this changes in the future, we must iterate
 	// for a matching one.
 	if bundle.GetVerificationMaterial() == nil ||
@@ -166,7 +193,7 @@ func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
 	}
 
 	// Extract DSSE envelope.
-	env, err := getEnvelopeFromBundle(&bundle)
+	env, err := getEnvelopeFromBundle(bundle)
 	if err != nil {
 		return nil, err
 	}
@@ -177,20 +204,32 @@ func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
 	}
 
 	// Get certificate from bundle.
-	cert, err := getLeafCertFromBundle(&bundle)
-	if err != nil {
-		return nil, err
+	var cert *x509.Certificate
+	if requireCert {
+		cert, err = getLeafCertFromBundle(bundle)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	proposedSignedAtt := &SignedAttestation{
+	return &SignedAttestation{
 		SigningCert: cert,
 		Envelope:    env,
 		RekorEntry:  rekorEntry,
+	}, nil
+}
+
+// verifyBundleAndEntryFromBytes validates the rekor entry inn the bundle
+// and that the entry (cert, signatures) matches the data in the bundle.
+func verifyBundleAndEntryFromBytes(ctx context.Context, bundleBytes []byte,
+	trustedRoot *TrustedRoot, requireCert bool,
+) (*SignedAttestation, error) {
+	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
+	var bundle bundle_v1.Bundle
+	if err := protojson.Unmarshal(bundleBytes, &bundle); err != nil {
+		return nil, fmt.Errorf("unmarshaling bundle: %w", err)
 	}
 
-	if err := verifySignedAttestation(proposedSignedAtt, trustedRoot); err != nil {
-		return nil, err
-	}
-
-	return proposedSignedAtt, nil
+	return verifyBundleAndEntry(ctx, &bundle,
+		trustedRoot, requireCert)
 }
