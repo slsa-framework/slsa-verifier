@@ -6,8 +6,6 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"embed"
-	"encoding/base64"
-	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"io/fs"
@@ -24,7 +22,7 @@ const GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/atte
 const GlobalPAEPublicKeyName = "global-pae"
 
 type PublicKey struct {
-	Value  []byte
+	value  []byte
 	pubKey *ecdsa.PublicKey
 	region string
 	// TODO: key type and size
@@ -52,7 +50,7 @@ func NewPublicKey(region string) (*PublicKey, error) {
 	}
 
 	return &PublicKey{
-		Value:  content,
+		value:  content,
 		pubKey: pubKey,
 		region: region,
 	}, nil
@@ -60,11 +58,9 @@ func NewPublicKey(region string) (*PublicKey, error) {
 
 func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
 
-	fmt.Printf("\nVerifySignature - hash = %s sig = %s", base64.StdEncoding.EncodeToString(digest[:]), base64.StdEncoding.EncodeToString(sig))
 	if p.pubKey == nil {
 		return fmt.Errorf("%w: key is empty", serrors.ErrorInternal)
 	}
-	fmt.Printf("Public Key : %s", p.Value)
 	if !ecdsa.VerifyASN1(p.pubKey, digest[:], sig) {
 		return fmt.Errorf("%w: cannot verify with public key '%v'",
 			serrors.ErrorInvalidSignature, p.region)
@@ -101,10 +97,8 @@ func (v *GlobalPAEKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
 // Verify implements dsse.Verifier.Verify. It verifies
 // a signature formatted in DSSE-conformant PAE.
 func (v *GlobalPAEKey) Verify(data, sig []byte) error {
-	fmt.Printf("DSSE data %s\n", data)
 	// Verify the signature.
 	digest := sha256.Sum256(data)
-	fmt.Printf("\nVerify - hash = %s\nhex dump = %s\nsig = %s", base64.StdEncoding.EncodeToString(digest[:]), hex.EncodeToString(digest[:]), base64.StdEncoding.EncodeToString(sig))
 	return v.publicKey.VerifySignature(digest, sig)
 }
 
