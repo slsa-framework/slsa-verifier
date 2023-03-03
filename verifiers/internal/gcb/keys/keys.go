@@ -57,7 +57,6 @@ func NewPublicKey(region string) (*PublicKey, error) {
 }
 
 func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
-
 	if p.pubKey == nil {
 		return fmt.Errorf("%w: key is empty", serrors.ErrorInternal)
 	}
