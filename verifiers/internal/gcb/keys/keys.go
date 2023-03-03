@@ -6,6 +6,8 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"embed"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"io/fs"
@@ -22,7 +24,7 @@ const GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/atte
 const GlobalPAEPublicKeyName = "global-pae"
 
 type PublicKey struct {
-	value  []byte
+	Value  []byte
 	pubKey *ecdsa.PublicKey
 	region string
 	// TODO: key type and size
@@ -50,16 +52,19 @@ func NewPublicKey(region string) (*PublicKey, error) {
 	}
 
 	return &PublicKey{
-		value:  content,
+		Value:  content,
 		pubKey: pubKey,
 		region: region,
 	}, nil
 }
 
 func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
+
+	fmt.Printf("\nVerifySignature - hash = %s sig = %s", base64.StdEncoding.EncodeToString(digest[:]), base64.StdEncoding.EncodeToString(sig))
 	if p.pubKey == nil {
 		return fmt.Errorf("%w: key is empty", serrors.ErrorInternal)
 	}
+	fmt.Printf("Public Key : %s", p.Value)
 	if !ecdsa.VerifyASN1(p.pubKey, digest[:], sig) {
 		return fmt.Errorf("%w: cannot verify with public key '%v'",
 			serrors.ErrorInvalidSignature, p.region)
@@ -88,16 +93,19 @@ func NewGlobalPAEKey() (*GlobalPAEKey, error) {
 	return globalPaeKey, nil
 }
 
-func (p *GlobalPAEKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
-	_, err := p.Verifier.Verify(envelope)
+func (v *GlobalPAEKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
+	_, err := v.Verifier.Verify(envelope)
 	return err
 }
 
 // Verify implements dsse.Verifier.Verify. It verifies
 // a signature formatted in DSSE-conformant PAE.
 func (v *GlobalPAEKey) Verify(data, sig []byte) error {
+	fmt.Printf("DSSE data %s\n", data)
 	// Verify the signature.
-	return v.publicKey.VerifySignature(sha256.Sum256(data), sig)
+	digest := sha256.Sum256(data)
+	fmt.Printf("\nVerify - hash = %s\nhex dump = %s\nsig = %s", base64.StdEncoding.EncodeToString(digest[:]), hex.EncodeToString(digest[:]), base64.StdEncoding.EncodeToString(sig))
+	return v.publicKey.VerifySignature(digest, sig)
 }
 
 // KeyID implements dsse.Verifier.KeyID.
