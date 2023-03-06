@@ -427,9 +427,9 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 
 	for _, sig := range prov.Envelope.Signatures {
 		var region string
-		// If the signature is signed with the global PAE key, use a DSSE verifier
-		// to verify the DSSE/PAE-encoded signature.
 		if sig.KeyID == keys.GlobalPAEKeyID {
+			// If the signature is signed with the global PAE key, use a DSSE verifier
+			// to verify the DSSE/PAE-encoded signature.
 			region = keys.GlobalPAEPublicKeyName
 			globalPaeKey, err := keys.NewGlobalPAEKey()
 			if err != nil {
@@ -437,12 +437,14 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 				continue
 			}
 
-			err = globalPaeKey.VerifyEnvelope(&prov.Envelope)
+			err = globalPaeKey.VerifyPAESignature(&prov.Envelope)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 		} else if match := regionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
+			// If the signature is signed with a regional key, verify the legacy
+			// signing which is over the envelope (not PAE-encoded).
 			region = match[1]
 			pubKey, err := keys.NewPublicKey(region)
 			if err != nil {

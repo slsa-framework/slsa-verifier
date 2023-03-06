@@ -88,7 +88,7 @@ func NewGlobalPAEKey() (*GlobalPAEKey, error) {
 	return globalPaeKey, nil
 }
 
-func (v *GlobalPAEKey) VerifyEnvelope(envelope *dsselib.Envelope) error {
+func (v *GlobalPAEKey) VerifyPAESignature(envelope *dsselib.Envelope) error {
 	_, err := v.Verifier.Verify(envelope)
 	return err
 }
