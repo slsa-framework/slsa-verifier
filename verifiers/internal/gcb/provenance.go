@@ -25,6 +25,8 @@ var GCBBuilderIDs = []string{
 	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 }
 
+var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
 type v01IntotoStatement struct {
 	intoto.StatementHeader
 	Predicate ProvenancePredicate `json:"predicate"`
@@ -416,20 +418,35 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 	}
 
 	payloadHash := sha256.Sum256(payload)
-
 	// Verify the signatures.
 	if len(prov.Envelope.Signatures) == 0 {
 		return fmt.Errorf("%w: no signatures found in envelope", serrors.ErrorNoValidSignature)
 	}
 
 	var errs []error
-	regex := regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
 	for _, sig := range prov.Envelope.Signatures {
-		match := regex.FindStringSubmatch(sig.KeyID)
-		if len(match) == 2 {
-			// Create a public key instance for this region.
-			region := match[1]
-			pubKey, err := keys.PublicKeyNew(region)
+		var region string
+		if sig.KeyID == keys.GlobalPAEKeyID {
+			// If the signature is signed with the global PAE key, use a DSSE verifier
+			// to verify the DSSE/PAE-encoded signature.
+			region = keys.GlobalPAEPublicKeyName
+			globalPaeKey, err := keys.NewGlobalPAEKey()
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			err = globalPaeKey.VerifyPAESignature(&prov.Envelope)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+		} else if match := regionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
+			// If the signature is signed with a regional key, verify the legacy
+			// signing which is over the envelope (not PAE-encoded).
+			region = match[1]
+			pubKey, err := keys.NewPublicKey(region)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -448,16 +465,18 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 				errs = append(errs, err)
 				continue
 			}
-
-			var statement v01IntotoStatement
-			if err := json.Unmarshal(payload, &statement); err != nil {
-				return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-			}
-			p.verifiedIntotoStatement = &statement
-			p.verifiedProvenance = prov
-			fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
-			return nil
+		} else {
+			continue
 		}
+
+		var statement v01IntotoStatement
+		if err := json.Unmarshal(payload, &statement); err != nil {
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		}
+		p.verifiedIntotoStatement = &statement
+		p.verifiedProvenance = prov
+		fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
+		return nil
 	}
 
 	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
