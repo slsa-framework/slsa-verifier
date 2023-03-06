@@ -54,15 +54,19 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	// Verify the workflow identity.
-	builderID, err := VerifyWorkflowIdentity(workflowInfo, builderOpts,
-		provenanceOpts.ExpectedSourceURI, defaultBuilders)
+	// Verify the builder identity.
+	builderID, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// Verify the source repository from the certificate.
+	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
+		return nil, nil, err
+	}
+
 	// Verify properties of the SLSA provenance.
-	// Unpack and verify info in the provenance, including the Subject Digest.
+	// Unpack and verify info in the provenance, including the subject Digest.
 	provenanceOpts.ExpectedBuilderID = builderID.String()
 	if err := VerifyProvenance(env, provenanceOpts); err != nil {
 		return nil, nil, err
@@ -78,6 +82,65 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	return r, builderID, nil
+}
+
+func verifyNpmEnvAndCert(env *dsse.Envelope,
+	cert *x509.Certificate,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+	defaultBuilders map[string]bool,
+) (*utils.TrustedBuilderID, error) {
+	/* Verify properties of the signing identity. */
+	// Get the workflow info given the certificate information.
+	workflowInfo, err := GetWorkflowInfoFromCertificate(cert)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the workflow identity.
+	trustedBuilderID, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
+	// We accept a non-trusted builder for the default npm builder
+	// that uses npm CLI.
+	if err != nil && !errors.Is(err, serrors.ErrorUntrustedReusableWorkflow) {
+		return nil, err
+	}
+
+	// TODO(#493): retrieve certificate information to match
+	// with the provenance.
+	// Today it's not possible due to lack of information in the cert.
+	// Verify the source repository from the certificate.
+	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
+		return nil, err
+	}
+
+	// Verify properties of the SLSA provenance.
+	// Unpack and verify info in the provenance, including the Subject Digest.
+	// WARNING: builderID may be empty if it's not a reusable builder workflow.
+	if trustedBuilderID != nil {
+		provenanceOpts.ExpectedBuilderID = trustedBuilderID.String()
+	} else {
+		if builderOpts == nil || builderOpts.ExpectedID == nil {
+			return nil, fmt.Errorf("builder mistmatch. No builder ID provided by user , got '%v'", builderGitHubRunnerID)
+		}
+		// TODO(#494): update the builder ID name.
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(builderGitHubRunnerID)
+		if err != nil {
+			return nil, err
+		}
+		if err := trustedBuilderID.Matches(*builderOpts.ExpectedID, false); err != nil {
+			return nil, fmt.Errorf("builder mistmatch. %w", err)
+		}
+	}
+
+	if err := VerifyNpmPackageProvenance(env, provenanceOpts); err != nil {
+		return nil, err
+	}
+
+	fmt.Fprintf(os.Stderr, "Verified build using builder %s at commit %s\n",
+		trustedBuilderID.String(),
+		workflowInfo.CallerHash)
+
+	return trustedBuilderID, nil
 }
 
 // VerifyArtifact verifies provenance for an artifact.
@@ -178,4 +241,63 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 		return nil, nil, fmt.Errorf("%w%s", errs[0], s)
 	}
 	return nil, nil, fmt.Errorf("%w", serrors.ErrorNoValidSignature)
+}
+
+// VerifyNpmPackage verifies an npm package tarball.
+func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
+	attestations []byte, tarballHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	trustedRoot, err := GetTrustedRoot(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	npm, err := NpmNew(ctx, trustedRoot, attestations)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Verify provenance signature.
+	if err := npm.verifyProvenanceAttestationSignature(); err != nil {
+		return nil, nil, err
+	}
+
+	// Verify publish attesttation signature.
+	if err := npm.verifyPublishAttesttationSignature(); err != nil {
+		return nil, nil, err
+	}
+
+	// Verify attestation headers.
+	if err := npm.verifyIntotoHeaders(); err != nil {
+		return nil, nil, err
+	}
+
+	// Verify package names match.
+	if provenanceOpts != nil {
+		if err := npm.verifyPackageName(provenanceOpts.ExpectedPackageName); err != nil {
+			return nil, nil, err
+		}
+
+		if err := npm.verifyPackageVersion(provenanceOpts.ExpectedPackageVersion); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// Verify certificate information.
+	builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
+		npm.ProvenanceLeafCertificate(),
+		provenanceOpts, builderOpts,
+		defaultBYOBReusableWorkflows)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	prov, err := npm.verifiedProvenanceBytes()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return prov, builder, nil
 }
