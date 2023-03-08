@@ -61,3 +61,17 @@ func VerifyArtifact(ctx context.Context,
 	return verifier.VerifyArtifact(ctx, provenance, artifactHash,
 		provenanceOpts, builderOpts)
 }
+
+func VerifyNpmPackage(ctx context.Context,
+	attestations []byte, tarballHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	verifier, err := getVerifier(builderOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
+		provenanceOpts, builderOpts)
+}

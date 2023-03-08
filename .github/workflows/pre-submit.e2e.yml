@@ -34,3 +34,5 @@ jobs:
 
       - name: Run verification script with testdata and slsa-verifier HEAD
         run: ./__THIS_REPO__/.github/workflows/scripts/e2e-cli.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Necessary to use the gh CLI.

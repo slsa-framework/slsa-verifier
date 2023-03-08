@@ -26,7 +26,7 @@ func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
 	return slsaprovenance.ProvenanceFromEnvelope(env)
 }
 
-func Test_VerifySha256Subject(t *testing.T) {
+func Test_VerifyDigest(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -149,7 +149,7 @@ func Test_VerifySha256Subject(t *testing.T) {
 				panic(fmt.Errorf("provenanceFromBytes: %w", err))
 			}
 
-			err = verifySha256Digest(prov, tt.artifactHash)
+			err = verifyDigest(prov, tt.artifactHash)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -412,7 +412,7 @@ func Test_verifySourceURI(t *testing.T) {
 				ProvenanceStatement: tt.prov,
 			}
 
-			err := verifySourceURI(prov02, tt.sourceURI)
+			err := verifySourceURI(prov02, tt.sourceURI, true)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -433,7 +433,7 @@ func Test_verifySourceURI(t *testing.T) {
 					},
 				},
 			}
-			err = verifySourceURI(prov1, tt.sourceURI)
+			err = verifySourceURI(prov1, tt.sourceURI, true)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
