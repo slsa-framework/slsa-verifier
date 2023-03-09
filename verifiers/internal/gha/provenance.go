@@ -126,7 +126,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 }
 
 // NOTE: `allowNoRef` is to allow for verification of npm packages
-// generated befoer GA. Their provenance did not have a ref,
+// generated before GA. Their provenance did not have a ref,
 // see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
 // `allowNoRef` should be set to `false` for all other cases.
 func sourceFromURI(uri string, allowNoRef bool) (string, error) {
