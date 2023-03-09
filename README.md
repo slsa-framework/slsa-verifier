@@ -144,7 +144,7 @@ import (
 
 1. Run the following commands. (It will create a go.sum file.)
 ```bash
-$ go mod init <your-project-name>-slsa-verifier
+$ go mod init <your-project-name>-tooling
 $ go mod tidy
 ```
 
