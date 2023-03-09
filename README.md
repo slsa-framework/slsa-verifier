@@ -127,8 +127,9 @@ $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.0.1
 $ slsa-verifier <options>
 ```
 
-If you install the verifier to run in your CI or an environment where you will need to receive updates.
-Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your dependencies. So we encourage you to do the following to keep the verifier up-to-date:
+Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your dependencies. 
+If you install the verifier in CI, we strongly recommend you follow the steps below to keep the verifier up-to-date:
+
 1. Create a tooling/slsa-verifier.go file containing the following:
 ```go
 //go:build tools
@@ -141,13 +142,13 @@ import (
 )
 ```
 
-1. Run the following commands. It will create a go.sum file.
+1. Run the following commands. (It will create a go.sum file.)
 ```
 $ go mod init <your-project-name>-slsa-verifier
 # go mod tidy
 ```
 
-1. Commit the slsa-verifier.go, go.mod and go.sum files to the repository.
+1. Commit the tooling folder (containing the 3 files slsa-verifier.go, go.mod and go.sum) to the repository.
 1. To install the verifier in your CI, run the following commands:
 ```
 $ cd tooling
