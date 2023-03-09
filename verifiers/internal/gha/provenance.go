@@ -71,7 +71,7 @@ func asURI(s string) string {
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, verifyMaterials bool) error {
+func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
 	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -85,7 +85,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, v
 	if err != nil {
 		return err
 	}
-	configURI, err := sourceFromURI(fullConfigURI)
+	configURI, err := sourceFromURI(fullConfigURI, false)
 	if err != nil {
 		return err
 	}
@@ -95,15 +95,11 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, v
 	}
 
 	// Verify source from material section.
-	// TODO(#492): disable this option.
-	if !verifyMaterials {
-		return nil
-	}
 	materialSourceURI, err := prov.SourceURI()
 	if err != nil {
 		return err
 	}
-	materialURI, err := sourceFromURI(materialSourceURI)
+	materialURI, err := sourceFromURI(materialSourceURI, allowNoMaterialRef)
 	if err != nil {
 		return err
 	}
@@ -114,6 +110,12 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, v
 
 	// Last, verify that both fields match.
 	// We use the full URI to match on the tag as well.
+	if allowNoMaterialRef && len(strings.Split(materialSourceURI, "@")) == 1 {
+		// NOTE: this is an exception for npm packages build before GA,
+		// see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
+		// We don't need to compare the ref since materialSourceURI does not contain it.
+		return nil
+	}
 	if fullConfigURI != materialSourceURI {
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			serrors.ErrorInvalidDssePayload,
@@ -123,13 +125,17 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, v
 	return nil
 }
 
-func sourceFromURI(uri string) (string, error) {
+// NOTE: `allowNoRef` is to allow for verification of npm packages
+// generated befoer GA. Their provenance did not have a ref,
+// see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
+// `allowNoRef` should be set to `false` for all other cases.
+func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
 	r := strings.SplitN(uri, "@", 2)
-	if len(r) < 2 {
+	if len(r) < 2 && !allowNoRef {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
@@ -217,7 +223,7 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.P
 	}
 	// NOTE: for the non trusted builders, the information may be forgeable.
 	// Also, the GitHub context is not recorded for the default builder.
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
@@ -234,14 +240,14 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		return err
 	}
 
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
 }
 
 func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpts *options.ProvenanceOpts,
-	verifyMaterials bool,
+	allowNoMaterialRef bool,
 ) error {
 	// Verify source.
-	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI, verifyMaterials); err != nil {
+	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI, allowNoMaterialRef); err != nil {
 		return err
 	}
 

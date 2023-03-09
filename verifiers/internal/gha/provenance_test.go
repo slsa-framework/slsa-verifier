@@ -160,10 +160,11 @@ func Test_VerifyDigest(t *testing.T) {
 func Test_verifySourceURI(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name      string
-		prov      *intoto.ProvenanceStatement
-		sourceURI string
-		expected  error
+		name               string
+		prov               *intoto.ProvenanceStatement
+		sourceURI          string
+		allowNoMaterialRef bool
+		expected           error
 		// v1 provenance does not include materials
 		skipv1 bool
 	}{
@@ -289,6 +290,45 @@ func Test_verifySourceURI(t *testing.T) {
 			sourceURI: "https://github.com/some/repo",
 		},
 		{
+			name: "match source no git no material ref",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsacommon.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo",
+						},
+					},
+				},
+			},
+			allowNoMaterialRef: true,
+			sourceURI:          "https://github.com/some/repo",
+		},
+		{
+			name: "match source no git no material ref ref not allowed",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Invocation: slsa02.ProvenanceInvocation{
+						ConfigSource: slsa02.ConfigSource{
+							URI: "git+https://github.com/some/repo@v1.2.3",
+						},
+					},
+					Materials: []slsacommon.ProvenanceMaterial{
+						{
+							URI: "git+https://github.com/some/repo",
+						},
+					},
+				},
+			},
+			sourceURI: "https://github.com/some/repo",
+			expected:  serrors.ErrorMalformedURI,
+			skipv1:    true,
+		},
+		{
 			name: "match source no git+https",
 			prov: &intoto.ProvenanceStatement{
 				Predicate: slsa02.ProvenancePredicate{
@@ -412,7 +452,7 @@ func Test_verifySourceURI(t *testing.T) {
 				ProvenanceStatement: tt.prov,
 			}
 
-			err := verifySourceURI(prov02, tt.sourceURI, true)
+			err := verifySourceURI(prov02, tt.sourceURI, tt.allowNoMaterialRef)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
@@ -433,7 +473,7 @@ func Test_verifySourceURI(t *testing.T) {
 					},
 				},
 			}
-			err = verifySourceURI(prov1, tt.sourceURI, true)
+			err = verifySourceURI(prov1, tt.sourceURI, tt.allowNoMaterialRef)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
