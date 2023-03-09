@@ -2,8 +2,8 @@ name: Scorecards supply-chain security
 on:
   # Only the default branch is supported.
   branch_protection_rule:
-  schedule:
-    - cron: "25 6 * * 5"
+  # schedule:
+  #   - cron: "25 6 * * 5"
   push:
     branches: ["main"]
 

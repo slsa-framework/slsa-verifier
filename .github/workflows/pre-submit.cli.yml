@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
   # Used in combination with schedule.cli.yml
   # to avoid duplicating the test code.
-  schedule:
-    - cron: "25 6 * * 5"
+  # schedule:
+  #   - cron: "25 6 * * 5"
 
 permissions: read-all
 

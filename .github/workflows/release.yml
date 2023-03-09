@@ -7,8 +7,8 @@ on:
     tags:
       - "*" # triggers only if push new tag version, like `0.8.4`.
   # Run daily as a dry-run/test.
-  schedule:
-    - cron: "0 1 * * *"
+  # schedule:
+  #   - cron: "0 1 * * *"
 
 permissions: read-all
 
