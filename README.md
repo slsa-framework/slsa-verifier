@@ -145,7 +145,7 @@ import (
 1. Run the following commands. (It will create a go.sum file.)
 ```bash
 $ go mod init <your-project-name>-slsa-verifier
-# go mod tidy
+$ go mod tidy
 ```
 
 1. Commit the tooling folder (containing the 3 files slsa-verifier.go, go.mod and go.sum) to the repository.
