@@ -111,7 +111,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 	// Last, verify that both fields match.
 	// We use the full URI to match on the tag as well.
 	if allowNoMaterialRef && len(strings.Split(materialSourceURI, "@")) == 1 {
-		// NOTE: this is an exception for npm packages build before GA,
+		// NOTE: this is an exception for npm packages built before GA,
 		// see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
 		// We don't need to compare the ref since materialSourceURI does not contain it.
 		return nil
