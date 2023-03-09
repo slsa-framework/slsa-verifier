@@ -349,6 +349,8 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
 	}
 	uri := materials[0].URI
+	// NOTE: the material URI did not contain 'git+' for GCB versions <= 0.3.
+	// Versions >= 0.3 contain the prefix (https://github.com/slsa-framework/slsa-verifier/pull/519).
 	uri = strings.TrimPrefix(uri, "git+")
 
 	// It is possible that GCS builds at level 2 use GCS sources, prefixed by gs://.
