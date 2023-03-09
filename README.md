@@ -122,7 +122,7 @@ You have two options to install the verifier.
 #### Option 1: Install via go
 
 If you want to install the verifier, you can run the following command:
-```
+```bash
 $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.0.1
 $ slsa-verifier <options>
 ```
@@ -143,21 +143,21 @@ import (
 ```
 
 1. Run the following commands. (It will create a go.sum file.)
-```
+```bash
 $ go mod init <your-project-name>-slsa-verifier
 # go mod tidy
 ```
 
 1. Commit the tooling folder (containing the 3 files slsa-verifier.go, go.mod and go.sum) to the repository.
 1. To install the verifier in your CI, run the following commands:
-```
+```bash
 $ cd tooling
 $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
 ``` 
 
 #### Option 2: Compile manually
 
-```
+```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier && git checkout v2.0.1
 $ go run ./cli/slsa-verifier <options>
@@ -175,7 +175,7 @@ Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob
 
 Verify the checksum:
 
-```
+```bash
 $ sha256sum -c --strict SHA256SUM.md
   slsa-verifier-linux-amd64: OK
 ```

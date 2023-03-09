@@ -16,6 +16,4 @@ uses: slsa-framework/slsa-verifier-installer@v2.0.1
 
 See https://github.com/slsa-framework/slsa-verifier/releases for the list of available `slsa-verifier` releases. Only versions greater or equal to v2.0.1 are supported.
 
-For a full example workflow, see [.github/workflows/pre-submit.actions.yml](../../.github/workflows/pre-submit.actions.yml).
-
 This action requires using GitHub-provided Linux runners.
