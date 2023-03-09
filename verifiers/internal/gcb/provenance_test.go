@@ -429,6 +429,12 @@ func Test_VerifySourceURI(t *testing.T) {
 			source:    "https://github.com/laurentsimon/gcb-tests",
 		},
 		{
+			name:      "v0.3 valid gcb provenance with git prefix",
+			path:      "./testdata/gcloud-container-github-v03-git.json",
+			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+			source:    "https://github.com/slsa-framework/example-package",
+		},
+		{
 			name:      "v0.3 mismatch name",
 			path:      "./testdata/gcloud-container-github-v03.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",

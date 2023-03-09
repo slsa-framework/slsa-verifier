@@ -349,6 +349,7 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
 	}
 	uri := materials[0].URI
+	uri = strings.TrimPrefix(uri, "git+")
 
 	// It is possible that GCS builds at level 2 use GCS sources, prefixed by gs://.
 	if strings.HasPrefix(uri, "https://") && !strings.HasPrefix(expectedSourceURI, "https://") {
