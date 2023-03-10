@@ -347,7 +347,7 @@ Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER
 
 This will occur only when verifying provenance generated with GitHub Actions.
 
-**Affected versions:** v1.3.0-v1.3.1, v1.2.0-v1.2.1, v1.1.0-v1.1.2, v1.1.1-v1.0.4
+**Affected versions:** v1.3.0-v1.3.1, v1.2.0-v1.2.1, v1.1.0-v1.1.2, v1.0.0-v1.0.4
 
 `slsa-verifier` will fail with the following error:
 
