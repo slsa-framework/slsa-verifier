@@ -112,7 +112,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 	// We use the full URI to match on the tag as well.
 	if allowNoMaterialRef && len(strings.Split(materialSourceURI, "@")) == 1 {
 		// NOTE: this is an exception for npm packages built before GA,
-		// see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
+		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
 		// We don't need to compare the ref since materialSourceURI does not contain it.
 		return nil
 	}
@@ -129,14 +129,14 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 //
 // NOTE: `allowNoRef` is to allow for verification of npm packages
 // generated before GA. Their provenance did not have a ref,
-// see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
+// see https://github.com/slsa-framework/slsa-verifier/issues/492.
 // `allowNoRef` should be set to `false` for all other cases.
 func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
-	r := strings.SplitN(uri, "@", 2)
+	r := strings.Split(uri, "@", 2)
 	if len(r) < 2 && !allowNoRef {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)

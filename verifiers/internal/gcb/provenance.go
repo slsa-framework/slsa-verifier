@@ -350,7 +350,7 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 	}
 	uri := materials[0].URI
 	// NOTE: the material URI did not contain 'git+' for GCB versions <= v0.3.
-	// A change occured sometimes in v0.3 witout version bump.
+	// A change occurred sometimes in v0.3 witout version bump.
 	// Versions >= 0.3 contain the prefix (https://github.com/slsa-framework/slsa-verifier/pull/519).
 	uri = strings.TrimPrefix(uri, "git+")
 
