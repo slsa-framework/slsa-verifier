@@ -10,7 +10,7 @@ flags:
 
 goos: windows
 goarch: amd64
-binary: slsa-verifier-{{ .Os }}-{{ .Arch }}
+binary: slsa-verifier-{{ .Os }}-{{ .Arch }}.exe
 dir: ./cli/slsa-verifier
 
 ldflags:
