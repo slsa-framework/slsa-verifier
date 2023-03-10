@@ -130,7 +130,7 @@ $ slsa-verifier <options>
 Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your dependencies. 
 If you install the verifier in CI, we strongly recommend you follow the steps below to keep the verifier up-to-date:
 
-1. Create a tooling/slsa-verifier.go file containing the following:
+1. Create a tooling/tooling_test.go file containing the following:
 ```go
 //go:build tools
 // +build tools
@@ -142,17 +142,17 @@ import (
 )
 ```
 
-1. Run the following commands. (It will create a go.sum file.)
+1. Run the following commands in the tooling directory. (It will create a go.sum file.)
 ```bash
 $ go mod init <your-project-name>-tooling
 $ go mod tidy
 ```
 
-1. Commit the tooling folder (containing the 3 files slsa-verifier.go, go.mod and go.sum) to the repository.
+1. Commit the tooling folder (containing the 3 files tooling_test.go, go.mod and go.sum) to the repository.
 1. To install the verifier in your CI, run the following commands:
 ```bash
 $ cd tooling
-$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
+$ grep _ tooling_test.go | cut -f2 -d '"' | xargs -n1 -t go install
 ``` 
 
 #### Option 2: Compile manually
@@ -347,7 +347,7 @@ Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER
 
 This will occur only when verifying provenance generated with GitHub Actions.
 
-**Affected versions:** v1.3.0-v1.3.1, v1.2.0-v1.2.1, v1.1.0-v1.1.2, v1.0.0-v1.0.4
+**Affected versions:** v1.3.0-v1.3.1, v1.2.0-v1.2.1, v1.1.0-v1.1.2, v1.1.1-v1.0.4
 
 `slsa-verifier` will fail with the following error:
 

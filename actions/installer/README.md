@@ -14,6 +14,6 @@ To install a specific version of `slsa-verifier`, use:
 uses: slsa-framework/slsa-verifier-installer@v2.0.1
 ```
 
-See https://github.com/slsa-framework/slsa-verifier/releases for the list of available `slsa-verifier` releases. Only versions greater or equal to v2.0.1 are supported.
+See https://github.com/slsa-framework/slsa-verifier/releases for the list of available `slsa-verifier` releases. Only versions greater or equal to 2.0.1 are supported.
 
 This action requires using GitHub-provided Linux runners.

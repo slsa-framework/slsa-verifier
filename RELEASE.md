@@ -110,10 +110,10 @@ $ sha256sum slsa-verifier-linux-amd64
 <the-hash>  slsa-verifier-linux-amd64
 ```
 
-3. Update the latest version in the [README.md](./README.md):
+3. Update the latest version in the main [README.md](./README.md) and the installer Action's [actions/installer/README.md](./actions/installer/README.md):
 
 ```shell
-$ sed -i "s/v1.0.0/v1.1.1/g" ./README.md
+$ sed -i "s/v1.0.0/v1.1.1/g" ./README.md ./actions/installer/README.md
 ```
 
 4. Send a pull request with the changes. In the description:

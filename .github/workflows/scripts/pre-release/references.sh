@@ -71,7 +71,7 @@ fi
 # Select all version numbers following a reference to slsa-verifier that are different
 # from the version defined in SHA256SUM.md
 results=$(
-    grep -Pon ".*?slsa-verifier.*?\d+\.\d+\.\d+" README.md |
+    grep -Pon ".*?slsa-verifier.*?v\d+\.\d+\.\d+" README.md actions/installer/README.md |
     grep -v "$RELEASE_TAG$" |
     sed -E 's/(.*)/  \1/' || true
 )
