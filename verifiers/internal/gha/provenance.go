@@ -125,6 +125,8 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 	return nil
 }
 
+// sourceFromURI retrieves the source repository given a repository URI with ref.
+//
 // NOTE: `allowNoRef` is to allow for verification of npm packages
 // generated before GA. Their provenance did not have a ref,
 // see https://github.com/gh-community/npm-provenance-private-beta-community/issues/8.
