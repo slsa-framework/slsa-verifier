@@ -20,6 +20,7 @@
   - [Compilation from source](#compilation-from-source)
     - [Option 1: Install via go](#option-1-install-via-go)
     - [Option 2: Compile manually](#option-2-compile-manually)
+    - [Option 3: Use the installer Action](#option-3-use-the-installer-action)
   - [Download the binary](#download-the-binary)
 - [Available options](#available-options)
 - [Option list](#option-list)
@@ -120,18 +121,51 @@ You have two options to install the verifier.
 
 #### Option 1: Install via go
 
-```
+If you want to install the verifier, you can run the following command:
+```bash
 $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.0.1
 $ slsa-verifier <options>
 ```
 
+Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your Go dependencies. 
+If you install the verifier binary in CI, we strongly recommend you create a placeholder `go.mod` containing slsa-verifier as a dependency to receive updates and keep the binary up-to-date. Use the following the steps:
+
+1. Create a tooling/tooling_test.go file containing the following:
+```go
+//go:build tools
+// +build tools
+
+package main
+
+import (
+	_ "github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier"
+)
+```
+
+1. Run the following commands in the tooling directory. (It will create a go.sum file.)
+```bash
+$ go mod init <your-project-name>-tooling
+$ go mod tidy
+```
+
+1. Commit the tooling folder (containing the 3 files tooling_test.go, go.mod and go.sum) to the repository.
+1. To install the verifier in your CI, run the following commands:
+```bash
+$ cd tooling
+$ grep _ tooling_test.go | cut -f2 -d '"' | xargs -n1 -t go install
+``` 
+
 #### Option 2: Compile manually
 
-```
+```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier && git checkout v2.0.1
 $ go run ./cli/slsa-verifier <options>
 ```
+
+#### Option 3: Use the installer Action
+
+If you need to install the verifier to run in a GitHub workflow, use the installer Action as described in [actions/installer/README.md](./actions/installer/README.md).
 
 ### Download the binary
 
@@ -141,7 +175,7 @@ Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob
 
 Verify the checksum:
 
-```
+```bash
 $ sha256sum -c --strict SHA256SUM.md
   slsa-verifier-linux-amd64: OK
 ```
