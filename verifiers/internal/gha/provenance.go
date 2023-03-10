@@ -136,7 +136,7 @@ func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
-	r := strings.Split(uri, "@", 2)
+	r := strings.Split(uri, "@")
 	if len(r) < 2 && !allowNoRef {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
