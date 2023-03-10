@@ -128,7 +128,7 @@ $ slsa-verifier <options>
 ```
 
 Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your dependencies. 
-If you install the verifier in CI, we strongly recommend you follow the steps below to keep the verifier up-to-date:
+If you install the verifier binary in CI, we strongly recommend you create a placeholder `go.mod` containing slsa-verifier as a dependency to receive updates and keep the binary up-to-date. Use the following the steps:
 
 1. Create a tooling/tooling_test.go file containing the following:
 ```go
