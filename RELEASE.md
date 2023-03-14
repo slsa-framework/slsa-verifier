@@ -125,6 +125,6 @@ $ sed -i "s/v1.0.0/v1.1.1/g" ./README.md ./actions/installer/README.md
 
 ## Update builders
 
-Send a similar pull request to update the hash and version of the verifier for the workflow [slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31](https://github.com/slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31). Explain the steps to verify the hash. If the pull request for the verifier is already merged, you can simply point to it instead.
+Send a similar pull request to update the hash and version of the verifier for the action [generate-builder](https://github.com/slsa-framework/slsa-github-generator/blob/6a2cc1cb559a81ffbbcd4248026c6ea89bdab2b6/.github/actions/generate-builder/action.yml#L70-L71). Explain the steps to verify the hash. If the pull request for the verifier is already merged, you can simply point to it instead.
 
 Note: you need not cut a release for the generator, unless the verifier has important changes that are required for the builders to work properly.
