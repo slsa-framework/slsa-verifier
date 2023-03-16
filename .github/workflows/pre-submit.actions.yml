@@ -51,7 +51,7 @@ jobs:
       - name: Check documentation is up-to-date
         run: |
           RELEASE_TAG=$(
-            echo "$BODY" | xargs | \
+            echo "$BODY" | \
             grep -oE '^[[:blank:]]*#label:release[[:blank:]]+v?[0-9]+\.[0-9]+\.[0-9]+' | \
             sed -E 's/.*([0-9]+\.[0-9]+\.[0-9])/\1/'
           )
