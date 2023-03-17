@@ -1,0 +1,29 @@
+name: References pre submits
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: read-all
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.pull_request.body, '#label:release') }}
+    env:
+      BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+
+      - name: Check documentation is up-to-date
+        run: |
+          RELEASE_TAG=$(:
+            echo "$BODY" |
+            grep -oE '^[[:blank:]]*#label:release[[:blank:]]+v?[0-9]+\.[0-9]+\.[0-9]+' |
+            sed -E 's/.*([0-9]+\.[0-9]+\.[0-9])/\1/'
+          )
+          if [[ -z "$RELEASE_TAG" ]]; then
+              echo 'Invalid release PR body. Must include `#label:release vX.Y.Z`'
+              exit 1
+          fi
+          RELEASE_TAG="${RELEASE_TAG}" ./.github/workflows/scripts/pre-release/references.sh
