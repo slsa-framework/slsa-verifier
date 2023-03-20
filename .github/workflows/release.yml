@@ -53,3 +53,36 @@ jobs:
       config-file: .slsa-goreleaser/${{matrix.os}}-${{matrix.arch}}.yml
       compile-builder: true
       evaluated-envs: "VERSION:${{needs.args.outputs.version}}"
+  
+  verification:
+    needs: [builder]
+    runs-on: ubuntu-latest
+    permissions: read-all
+    steps:
+      - name: Install the verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.1.0
+
+      - name: Download assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATT_FILE_NAME: "${{ needs.builder.outputs.go-binary-name }}.intoto.jsonl"
+          ARTIFACT: ${{ needs.builder.outputs.go-binary-name }}
+        run: |
+          set -euo pipefail
+
+          gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p $ARTIFACT
+          gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p "$ATT_FILE_NAME"
+
+      - name: Verify assets
+        env:
+          ARTIFACT: ${{ needs.builder.outputs.go-binary-name }}
+          ATT_FILE_NAME: "${{ needs.builder.outputs.go-binary-name }}.intoto.jsonl"
+        run: |
+          set -euo pipefail
+              
+          echo "Verifying $ARTIFACT using $ATT_FILE_NAME"
+          slsa-verifier verify-artifact --provenance-path "$ATT_FILE_NAME" \
+                                        --source-uri "github.com/$GITHUB_REPOSITORY" \
+                                        --source-tag "$GITHUB_REF_NAME" \
+                                        "$ARTIFACT"
+
