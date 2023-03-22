@@ -1054,6 +1054,24 @@ func Test_VerifyTag(t *testing.T) {
 			tag:  "v33.0.4",
 		},
 		{
+			name: "no match major only",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "no match major and minor only",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.0",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "no match major",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v34.0.4",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
 			name: "no substitutions field",
 			path: "./testdata/gcloud-container-github.json",
 			err:  serrors.ErrorMismatchTag,
