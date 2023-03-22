@@ -440,7 +440,6 @@ func (p *Provenance) getTag() (string, error) {
 func getSubstitutionsField(statement *v01IntotoStatement, name string) (string, error) {
 	arguments := statement.Predicate.Recipe.Arguments
 
-	// TODO: change error to local one
 	argsMap, ok := arguments.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: cannot cast arguments as map", errorSubstitutionError)
