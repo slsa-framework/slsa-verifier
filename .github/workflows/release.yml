@@ -53,7 +53,7 @@ jobs:
       config-file: .slsa-goreleaser/${{matrix.os}}-${{matrix.arch}}.yml
       compile-builder: true
       evaluated-envs: "VERSION:${{needs.args.outputs.version}}"
-  
+
   verification:
     needs: [builder]
     runs-on: ubuntu-latest
@@ -79,10 +79,9 @@ jobs:
           ATT_FILE_NAME: "${{ needs.builder.outputs.go-binary-name }}.intoto.jsonl"
         run: |
           set -euo pipefail
-              
+
           echo "Verifying $ARTIFACT using $ATT_FILE_NAME"
           slsa-verifier verify-artifact --provenance-path "$ATT_FILE_NAME" \
                                         --source-uri "github.com/$GITHUB_REPOSITORY" \
                                         --source-tag "$GITHUB_REF_NAME" \
                                         "$ARTIFACT"
-
