@@ -865,7 +865,6 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 
 func Test_runVerifyGCBArtifactImage(t *testing.T) {
 	t.Parallel()
-
 	// TODO: Is there a more uniform way of handling getting image digest for both
 	// remote and local images?
 	localDigestComputeFn := func(image string) (string, error) {
@@ -880,7 +879,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		if err != nil {
 			return "", err
 		}
-
 		return strings.TrimPrefix(h.String(), "sha256:"), nil
 	}
 
@@ -892,6 +890,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 		remote         bool
 		provenance     string
 		source         string
+		ptag           *string
+		pversiontag    *string
 		pBuilderID     *string
 		outBuilderID   string
 		err            error
@@ -1091,6 +1091,61 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			source:     "github.com/laurentsimon/gcb-tests",
 			err:        serrors.ErrorNoValidSignature,
 		},
+		// TODO(https://github.com/slsa-framework/slsa-verifier/issues/221#issuecomment-1478781973): improve the ptag/pversionedtag
+		// with a fully-qualified semver vx.y.z. Can check verifiers/internal/gcb/provenance_test.go Test_VerifyVersionedTag() and
+		// Test_VerifyTag() for a list of tests.
+		{
+			name:       "tag match",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			ptag:       pString("v39"),
+			minversion: "v0.3",
+		},
+		{
+			name:       "tag mismatch",
+			artifact:   "gcloud-container-github",
+			provenance: "gcloud-container-github.json",
+			source:     "github.com/laurentsimon/gcb-tests",
+			ptag:       pString("v38"),
+			minversion: "v0.3",
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag match",
+			artifact:    "gcloud-container-github",
+			provenance:  "gcloud-container-github.json",
+			source:      "github.com/laurentsimon/gcb-tests",
+			pversiontag: pString("v39"),
+			minversion:  "v0.3",
+		},
+		{
+			name:        "versioned tag mismatch patch",
+			artifact:    "gcloud-container-github",
+			provenance:  "gcloud-container-github.json",
+			source:      "github.com/laurentsimon/gcb-tests",
+			pversiontag: pString("v39.0.1"),
+			minversion:  "v0.3",
+			err:         serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name:        "versioned tag mismatch minor",
+			artifact:    "gcloud-container-github",
+			provenance:  "gcloud-container-github.json",
+			source:      "github.com/laurentsimon/gcb-tests",
+			pversiontag: pString("v39.1.0"),
+			minversion:  "v0.3",
+			err:         serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name:        "versioned tag mismatch main",
+			artifact:    "gcloud-container-github",
+			provenance:  "gcloud-container-github.json",
+			source:      "github.com/laurentsimon/gcb-tests",
+			pversiontag: pString("v38.0.0"),
+			minversion:  "v0.3",
+			err:         serrors.ErrorMismatchVersionedTag,
+		},
 		// TODO(388): verify the correct provenance is returned.
 		// This should also be done for all other entries in this test.
 		{
@@ -1203,8 +1258,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 						SourceURI:        tt.source,
 						SourceBranch:     nil,
 						BuilderID:        &bid,
-						SourceTag:        nil,
-						SourceVersionTag: nil,
+						SourceTag:        tt.ptag,
+						SourceVersionTag: tt.pversiontag,
 						DigestFn:         fn,
 						ProvenancePath:   &provenance,
 					}

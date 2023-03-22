@@ -51,7 +51,6 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	if err != nil {
 		return nil, err
 	}
-
 	// Verify that the reference is immutable.
 	if err := container.ValidateArtifactReference(artifactImage, digest); err != nil {
 		return nil, err
