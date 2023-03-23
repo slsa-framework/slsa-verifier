@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/mod/semver"
-
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
@@ -18,6 +16,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
@@ -340,11 +339,6 @@ func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 }
 
 func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) error {
-	// Validate and canonicalize the provenance tag.
-	if !semver.IsValid(expectedTag) {
-		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
-	}
-
 	// Retrieve, validate and canonicalize the provenance tag.
 	// Note: prerelease is validated as part of patch validation
 	// and must be equal. Build is discarded as per https://semver.org/:
@@ -353,69 +347,7 @@ func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) erro
 	if err != nil {
 		return err
 	}
-	semTag := semver.Canonical(strings.TrimPrefix(tag, "refs/tags/"))
-	if !semver.IsValid(semTag) {
-		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
-	}
-
-	// Major should always be the same.
-	expectedMajor := semver.Major(expectedTag)
-	major := semver.Major(semTag)
-	if major != expectedMajor {
-		return fmt.Errorf("%w: major version expected '%s', got '%s'",
-			serrors.ErrorMismatchVersionedTag, expectedMajor, major)
-	}
-
-	expectedMinor, err := minorVersion(expectedTag)
-	if err == nil {
-		// A minor version was provided by the user.
-		minor, err := minorVersion(semTag)
-		if err != nil {
-			return err
-		}
-
-		if minor != expectedMinor {
-			return fmt.Errorf("%w: minor version expected '%s', got '%s'",
-				serrors.ErrorMismatchVersionedTag, expectedMinor, minor)
-		}
-	}
-
-	expectedPatch, err := patchVersion(expectedTag)
-	if err == nil {
-		// A patch version was provided by the user.
-		patch, err := patchVersion(semTag)
-		if err != nil {
-			return err
-		}
-
-		if patch != expectedPatch {
-			return fmt.Errorf("%w: patch version expected '%s', got '%s'",
-				serrors.ErrorMismatchVersionedTag, expectedPatch, patch)
-		}
-	}
-
-	// Match.
-	return nil
-}
-
-func minorVersion(v string) (string, error) {
-	return extractFromVersion(v, 1)
-}
-
-func patchVersion(v string) (string, error) {
-	patch, err := extractFromVersion(v, 2)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSuffix(patch, semver.Build(v)), nil
-}
-
-func extractFromVersion(v string, i int) (string, error) {
-	parts := strings.Split(v, ".")
-	if len(parts) <= i {
-		return "", fmt.Errorf("%s: %w", v, serrors.ErrorInvalidSemver)
-	}
-	return parts[i], nil
+	return utils.VerifyVersionedTag(strings.TrimPrefix(tag, "refs/tags/"), expectedTag)
 }
 
 // hasCertInEnvelope checks if a valid x509 certificate is present in the

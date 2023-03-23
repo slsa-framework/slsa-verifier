@@ -3,6 +3,7 @@ package gcb
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -26,6 +27,8 @@ var GCBBuilderIDs = []string{
 }
 
 var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
+var errorSubstitutionError = errors.New("GCB substitution variable error")
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
@@ -399,12 +402,70 @@ func (p *Provenance) VerifyBranch(branch string) error {
 	return fmt.Errorf("%w: GCB branch verification", serrors.ErrorNotSupported)
 }
 
-func (p *Provenance) VerifyTag(tag string) error {
-	return fmt.Errorf("%w: GCB tag verification", serrors.ErrorNotSupported)
+func (p *Provenance) VerifyTag(expectedTag string) error {
+	provenanceTag, err := p.getTag()
+	if err != nil {
+		return fmt.Errorf("%w: %v", serrors.ErrorMismatchTag, err.Error())
+	}
+
+	if provenanceTag != expectedTag {
+		return fmt.Errorf("%w: expected '%s', got '%s'",
+			serrors.ErrorMismatchTag, expectedTag, provenanceTag)
+	}
+	return nil
 }
 
-func (p *Provenance) VerifyVersionedTag(tag string) error {
-	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
+func (p *Provenance) VerifyVersionedTag(expectedTag string) error {
+	provenanceTag, err := p.getTag()
+	if err != nil {
+		return fmt.Errorf("%w: %v", serrors.ErrorMismatchVersionedTag, err.Error())
+	}
+	return utils.VerifyVersionedTag(provenanceTag, expectedTag)
+}
+
+func (p *Provenance) getTag() (string, error) {
+	if err := p.isVerified(); err != nil {
+		return "", err
+	}
+
+	statement := p.verifiedIntotoStatement
+	provenanceTag, err := getSubstitutionsField(statement, "TAG_NAME")
+	if err != nil {
+		return "", err
+	}
+
+	return provenanceTag, nil
+}
+
+func getSubstitutionsField(statement *v01IntotoStatement, name string) (string, error) {
+	arguments := statement.Predicate.Recipe.Arguments
+
+	argsMap, ok := arguments.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: cannot cast arguments as map", errorSubstitutionError)
+	}
+
+	substitutions, ok := argsMap["substitutions"]
+	if !ok {
+		return "", fmt.Errorf("%w: no 'substitutions' field", errorSubstitutionError)
+	}
+
+	m, ok := substitutions.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: cannot convert substitutions to a map", errorSubstitutionError)
+	}
+
+	value, ok := m[name]
+	if !ok {
+		return "", fmt.Errorf("%w: no entry '%v' in substitution map", errorSubstitutionError, name)
+	}
+
+	valueStr, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: value '%v' is not a string", errorSubstitutionError, value)
+	}
+
+	return valueStr, nil
 }
 
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
