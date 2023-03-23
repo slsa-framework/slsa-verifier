@@ -28,7 +28,7 @@ var GCBBuilderIDs = []string{
 
 var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
 
-var errorSubstitutionError = errors.New("substitution error")
+var errorSubstitutionError = errors.New("GCB substitution variable error")
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
