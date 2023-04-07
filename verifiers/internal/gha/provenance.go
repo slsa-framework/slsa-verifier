@@ -317,7 +317,7 @@ func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
 	}
 
 	expectedBranch = "refs/heads/" + expectedBranch
-	if !strings.EqualFold(branch, expectedBranch) {
+	if branch != expectedBranch {
 		return fmt.Errorf("expected branch '%s', got '%s': %w", expectedBranch, branch, serrors.ErrorMismatchBranch)
 	}
 
@@ -331,7 +331,7 @@ func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	}
 
 	expectedTag = "refs/tags/" + expectedTag
-	if !strings.EqualFold(tag, expectedTag) {
+	if tag != expectedTag {
 		return fmt.Errorf("expected tag '%s', got '%s': %w", expectedTag, tag, serrors.ErrorMismatchTag)
 	}
 
