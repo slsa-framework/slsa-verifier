@@ -1300,144 +1300,144 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 // TODO(https://github.com/slsa-framework/slsa-verifier/issues/485): Version the test-cases
 // when a version for the builder is released.
-//func Test_runVerifyGHADockerBased(t *testing.T) {
-//	// We cannot use t.Setenv due to parallelized tests.
-//	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
+func Test_runVerifyGHADockerBased(t *testing.T) {
+	// We cannot use t.Setenv due to parallelized tests.
+	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
 
-//	t.Parallel()
+	t.Parallel()
 
-//	builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"
-//	tests := []struct {
-//		name        string
-//		artifacts   []string
-//		source      string
-//		pbranch     *string
-//		ptag        *string
-//		pversiontag *string
-//		pBuilderID  *string
-//		inputs      map[string]string
-//		err         error
-//	}{
-//		{
-//			name:       "valid main branch default",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/slsa-framework/example-package",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//		},
-//		{
-//			name:       "valid main branch default - invalid builderID",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/slsa-framework/example-package",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
-//			err:        serrors.ErrorUntrustedReusableWorkflow,
-//		},
-//		{
-//			name:       "valid main branch set",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/slsa-framework/example-package",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			pbranch:    pString("main"),
-//		},
+	builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"
+	tests := []struct {
+		name        string
+		artifacts   []string
+		source      string
+		pbranch     *string
+		ptag        *string
+		pversiontag *string
+		pBuilderID  *string
+		inputs      map[string]string
+		err         error
+	}{
+		{
+			name:       "valid main branch default",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/slsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+		},
+		{
+			name:       "valid main branch default - invalid builderID",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/slsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
+			err:        serrors.ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:       "valid main branch set",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/slsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			pbranch:    pString("main"),
+		},
 
-//		{
-//			name:       "wrong branch master",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/slsa-framework/example-package",
-//			pbranch:    pString("master"),
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			err:        serrors.ErrorMismatchBranch,
-//		},
-//		{
-//			name:       "wrong source append A",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/slsa-framework/example-packageA",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			err:        serrors.ErrorMismatchSource,
-//		},
-//		{
-//			name:       "wrong source prepend A",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "Agithub.com/slsa-framework/example-package",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			err:        serrors.ErrorMismatchSource,
-//		},
-//		{
-//			name:       "wrong source middle A",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/Aslsa-framework/example-package",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			err:        serrors.ErrorMismatchSource,
-//		},
-//		{
-//			name:       "tag no match empty tag workflow_dispatch",
-//			artifacts:  []string{"workflow_dispatch.main.default"},
-//			source:     "github.com/slsa-framework/example-package",
-//			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			ptag:       pString("v1.2.3"),
-//			err:        serrors.ErrorMismatchTag,
-//		},
-//		{
-//			name:        "versioned tag no match empty tag workflow_dispatch",
-//			artifacts:   []string{"workflow_dispatch.main.default"},
-//			source:      "github.com/slsa-framework/example-package",
-//			pBuilderID:  pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-//			pversiontag: pString("v1"),
-//			err:         serrors.ErrorInvalidSemver,
-//		},
-//	}
-//	for _, tt := range tests {
-//		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-//		t.Run(tt.name, func(t *testing.T) {
-//			t.Parallel()
+		{
+			name:       "wrong branch master",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/slsa-framework/example-package",
+			pbranch:    pString("master"),
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			err:        serrors.ErrorMismatchBranch,
+		},
+		{
+			name:       "wrong source append A",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/slsa-framework/example-packageA",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "wrong source prepend A",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "Agithub.com/slsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "wrong source middle A",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/Aslsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "tag no match empty tag workflow_dispatch",
+			artifacts:  []string{"workflow_dispatch.main.default"},
+			source:     "github.com/slsa-framework/example-package",
+			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			ptag:       pString("v1.2.3"),
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch",
+			artifacts:   []string{"workflow_dispatch.main.default"},
+			source:      "github.com/slsa-framework/example-package",
+			pBuilderID:  pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+			pversiontag: pString("v1"),
+			err:         serrors.ErrorInvalidSemver,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-//			checkVersions := getBuildersAndVersions(t, "", nil, GHA_ARTIFACT_DOCKER_BUILDERS)
+			checkVersions := getBuildersAndVersions(t, "", nil, GHA_ARTIFACT_DOCKER_BUILDERS)
 
-//			for _, v := range checkVersions {
-//				testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-//				provenancePath := fmt.Sprintf("%s.intoto.sigstore", testPath)
+			for _, v := range checkVersions {
+				testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
+				provenancePath := fmt.Sprintf("%s.intoto.sigstore", testPath)
 
-//				artifacts := make([]string, len(tt.artifacts))
-//				for i, artifact := range tt.artifacts {
-//					artifacts[i] = filepath.Clean(filepath.Join(TEST_DIR, v, artifact))
-//				}
+				artifacts := make([]string, len(tt.artifacts))
+				for i, artifact := range tt.artifacts {
+					artifacts[i] = filepath.Clean(filepath.Join(TEST_DIR, v, artifact))
+				}
 
-//				// For each test, we run 2 sub-tests:
-//				//	1. With the the full builderID including the semver in short form.
-//				//	2. With the the full builderID including the semver in long form.
-//				//	3. With only the name of the builder.
-//				//	4. With no builder ID.
-//				sv := path.Base(v)
-//				builderIDs := []*string{
-//					pString(builder + "@" + sv),
-//					pString(builder + "@refs/tags/" + sv),
-//					pString(builder),
-//					nil,
-//				}
+				// For each test, we run 2 sub-tests:
+				//	1. With the the full builderID including the semver in short form.
+				//	2. With the the full builderID including the semver in long form.
+				//	3. With only the name of the builder.
+				//	4. With no builder ID.
+				sv := path.Base(v)
+				builderIDs := []*string{
+					pString(builder + "@" + sv),
+					pString(builder + "@refs/tags/" + sv),
+					pString(builder),
+					nil,
+				}
 
-//				// If builder ID is set, use it.
-//				if tt.pBuilderID != nil {
-//					builderIDs = []*string{tt.pBuilderID}
-//				}
+				// If builder ID is set, use it.
+				if tt.pBuilderID != nil {
+					builderIDs = []*string{tt.pBuilderID}
+				}
 
-//				for _, bid := range builderIDs {
-//					cmd := verify.VerifyArtifactCommand{
-//						ProvenancePath:      provenancePath,
-//						SourceURI:           tt.source,
-//						SourceBranch:        tt.pbranch,
-//						BuilderID:           bid,
-//						SourceTag:           tt.ptag,
-//						SourceVersionTag:    tt.pversiontag,
-//						BuildWorkflowInputs: tt.inputs,
-//					}
+				for _, bid := range builderIDs {
+					cmd := verify.VerifyArtifactCommand{
+						ProvenancePath:      provenancePath,
+						SourceURI:           tt.source,
+						SourceBranch:        tt.pbranch,
+						BuilderID:           bid,
+						SourceTag:           tt.ptag,
+						SourceVersionTag:    tt.pversiontag,
+						BuildWorkflowInputs: tt.inputs,
+					}
 
-//					// The outBuilderID is the actual builder ID from the provenance.
-//					// This is always long form for the GHA builders.
-//					_, err := cmd.Exec(context.Background(), artifacts)
-//					if !errCmp(err, tt.err) {
-//						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
-//					}
-//				}
-//			}
-//		})
-//	}
-//}
+					// The outBuilderID is the actual builder ID from the provenance.
+					// This is always long form for the GHA builders.
+					_, err := cmd.Exec(context.Background(), artifacts)
+					if !errCmp(err, tt.err) {
+						t.Errorf("%v: %v", v, cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+					}
+				}
+			}
+		})
+	}
+}
