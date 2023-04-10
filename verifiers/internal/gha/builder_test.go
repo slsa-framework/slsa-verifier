@@ -673,6 +673,9 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 
 			if tt.testingEnabled {
 				t.Setenv("SLSA_VERIFIER_TESTING", "1")
+			} else {
+				// Ensure that the variable is not set.
+				t.Setenv("SLSA_VERIFIER_TESTING", "")
 			}
 
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)

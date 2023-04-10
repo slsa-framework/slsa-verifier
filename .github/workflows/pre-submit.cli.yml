@@ -34,9 +34,6 @@ jobs:
           path: ./event_name.txt
 
       - name: Run tests for verifier
-        # TODO(#554): Don't set SLSA_VERIFIER_TESTING
-        env:
-          SLSA_VERIFIER_TESTING: "true"
         run: |
           set -euo pipefail
           make regression-test
