@@ -131,7 +131,27 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	if (id.CallerRepository == trustedBuilderRepository ||
 		id.CallerRepository == e2eTestRepository) &&
-		strings.EqualFold("refs/heads/main", ref) {
+		options.TestingEnabled() {
+		// Allow verification on the main branch to support e2e tests.
+		if ref == "refs/heads/main" {
+			return nil
+		}
+
+		// Extract the tag.
+		pin, err := utils.TagFromGitHubRef(ref)
+		if err != nil {
+			return err
+		}
+
+		// Tags on trusted repositories should be a valid semver with version
+		// core including all three parts and no build identifier.
+		versionCore := strings.Split(pin, "-")[0]
+		if !semver.IsValid(pin) ||
+			len(strings.Split(versionCore, ".")) != 3 ||
+			semver.Build(pin) != "" {
+			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
+		}
+
 		return nil
 	}
 

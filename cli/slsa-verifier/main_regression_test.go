@@ -1303,6 +1303,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 func Test_runVerifyGHADockerBased(t *testing.T) {
 	// We cannot use t.Setenv due to parallelized tests.
 	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
+	os.Setenv("SLSA_VERIFIER_TESTING", "1")
 
 	t.Parallel()
 
