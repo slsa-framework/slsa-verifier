@@ -638,6 +638,12 @@ func Test_VerifyBranch(t *testing.T) {
 			path:   "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
 			branch: "branch3",
 		},
+		{
+			name:     "ref main case-sensitive",
+			path:     "./testdata/dsse-main-ref-v1.intoto.jsonl",
+			branch:   "Main",
+			expected: serrors.ErrorMismatchBranch,
+		},
 
 		{
 			name:     "invalid ref type",
@@ -869,7 +875,18 @@ func Test_VerifyTag(t *testing.T) {
 			expected: serrors.ErrorInvalidDssePayload,
 		},
 		{
+			name:     "tag vSLSA1 case-sensitive",
+			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			tag:      "vSLSA1",
+			expected: serrors.ErrorMismatchTag,
+		},
+		{
 			name: "tag vslsa1",
+			path: "./testdata/dsse-vslsa1-tag-v1.intoto.jsonl",
+			tag:  "vslsa1",
+		},
+		{
+			name: "case sensitive",
 			path: "./testdata/dsse-vslsa1-tag-v1.intoto.jsonl",
 			tag:  "vslsa1",
 		},

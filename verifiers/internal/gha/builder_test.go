@@ -488,18 +488,25 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 }
 
 func Test_verifyTrustedBuilderRef(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
-		name       string
-		callerRepo string
-		builderRef string
-		expected   error
+		name           string
+		callerRepo     string
+		builderRef     string
+		expected       error
+		testingEnabled bool
 	}{
 		// Trusted repo.
 		{
-			name:       "main allowed for builder",
+			name:       "main not allowed for builder",
 			callerRepo: trustedBuilderRepository,
 			builderRef: "refs/heads/main",
+			expected:   serrors.ErrorInvalidRef,
+		},
+		{
+			name:           "main allowed for builder w/ testing enabled",
+			callerRepo:     trustedBuilderRepository,
+			builderRef:     "refs/heads/main",
+			testingEnabled: true,
 		},
 		{
 			name:       "full semver for builder",
@@ -538,10 +545,18 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		},
 		// E2e tests repo.
 		{
-			name:       "main allowed for test repo",
+			name:       "main not allowed for test repo",
 			callerRepo: e2eTestRepository,
 			builderRef: "refs/heads/main",
+			expected:   serrors.ErrorInvalidRef,
 		},
+		{
+			name:           "main allowed for test repo w/ testing enabled",
+			callerRepo:     e2eTestRepository,
+			builderRef:     "refs/heads/main",
+			testingEnabled: true,
+		},
+
 		{
 			name:       "full semver for test repo",
 			callerRepo: e2eTestRepository,
@@ -585,6 +600,14 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			expected:   serrors.ErrorInvalidRef,
 		},
 		{
+			name:           "main not allowed for other repos w/ testing enabled",
+			callerRepo:     "some/repo",
+			builderRef:     "refs/heads/main",
+			testingEnabled: true,
+			expected:       serrors.ErrorInvalidRef,
+		},
+		{
+
 			name:       "full semver for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2.3",
@@ -608,10 +631,24 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			expected:   serrors.ErrorInvalidRef,
 		},
 		{
+			name:           "full semver with prerelease for other repos w/ testing enabled",
+			callerRepo:     "some/repo",
+			builderRef:     "refs/tags/v1.2.3-alpha",
+			testingEnabled: true,
+			expected:       serrors.ErrorInvalidRef,
+		},
+		{
 			name:       "full semver with build for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2.3+123",
 			expected:   serrors.ErrorInvalidRef,
+		},
+		{
+			name:           "full semver with build for other repos w/ testing enabled",
+			callerRepo:     "some/repo",
+			builderRef:     "refs/tags/v1.2.3+123",
+			testingEnabled: true,
+			expected:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:       "full semver with build/prerelease for other repos",
@@ -619,14 +656,26 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			builderRef: "refs/tags/v1.2.3-alpha+123",
 			expected:   serrors.ErrorInvalidRef,
 		},
+		{
+			name:           "full semver with build/prerelease for other repos w/ testing enabled",
+			callerRepo:     "some/repo",
+			builderRef:     "refs/tags/v1.2.3-alpha+123",
+			testingEnabled: true,
+			expected:       serrors.ErrorInvalidRef,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			wf := WorkflowIdentity{
 				CallerRepository: tt.callerRepo,
+			}
+
+			if tt.testingEnabled {
+				t.Setenv("SLSA_VERIFIER_TESTING", "1")
+			} else {
+				// Ensure that the variable is not set.
+				t.Setenv("SLSA_VERIFIER_TESTING", "")
 			}
 
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)

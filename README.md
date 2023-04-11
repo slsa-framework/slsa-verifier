@@ -154,6 +154,11 @@ $ go mod tidy
 $ cd tooling
 $ grep _ tooling_test.go | cut -f2 -d '"' | xargs -n1 -t go install
 ``` 
+Alternatively, if your project does not rely on additional tools and only uses slsa-verifier, you can instead run the following commands:
+```bash
+$ cd tooling
+$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
+``` 
 
 #### Option 2: Compile manually
 

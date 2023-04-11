@@ -970,19 +970,121 @@ func Test_VerifyBranch(t *testing.T) {
 	}
 }
 
+func Test_getSubstitutionsField(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name  string
+		path  string
+		field string
+		value string
+		err   error
+	}{
+		{
+			name:  "match tag",
+			path:  "./testdata/gcloud-container-tag.json",
+			field: "TAG_NAME",
+			value: "v33.0.4",
+		},
+		{
+			name:  "match repo name",
+			path:  "./testdata/gcloud-container-tag.json",
+			field: "REPO_NAME",
+			value: "example-package",
+		},
+		{
+			name:  "no substitutions field",
+			path:  "./testdata/gcloud-container-github.json",
+			field: "TAG_NAME",
+			err:   errorSubstitutionError,
+		},
+		{
+			name:  "tag not present",
+			path:  "./testdata/gcloud-container-tag-notpresent.json",
+			field: "TAG_NAME",
+			err:   errorSubstitutionError,
+		},
+		{
+			name:  "tag not string",
+			path:  "./testdata/gcloud-container-tag-notstring.json",
+			field: "TAG_NAME",
+			err:   errorSubstitutionError,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(tt.path)
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			prov, err := ProvenanceFromBytes(content)
+			if err != nil {
+				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
+			}
+
+			if err := setStatement(prov); err != nil {
+				panic(fmt.Errorf("setStatement: %w", err))
+			}
+
+			value, err := getSubstitutionsField(prov.verifiedIntotoStatement, tt.field)
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			}
+			if err != nil && !cmp.Equal(value, tt.value) {
+				t.Errorf(cmp.Diff(value, tt.value))
+			}
+		})
+	}
+}
+
 func Test_VerifyTag(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		path     string
-		tag      string
-		expected error
+		name string
+		path string
+		tag  string
+		err  error
 	}{
 		{
-			name:     "valid gcb provenance",
-			path:     "./testdata/gcloud-container-github.json",
-			tag:      "v1.2.3",
-			expected: serrors.ErrorNotSupported,
+			name: "match tag",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.0.4",
+		},
+		{
+			name: "no match major only",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "no match major and minor only",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.0",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "no match major",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v34.0.4",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "no substitutions field",
+			path: "./testdata/gcloud-container-github.json",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "tag not present",
+			path: "./testdata/gcloud-container-tag-notpresent.json",
+			err:  serrors.ErrorMismatchTag,
+		},
+		{
+			name: "tag not string",
+			path: "./testdata/gcloud-container-tag-notstring.json",
+			err:  serrors.ErrorMismatchTag,
 		},
 	}
 	for _, tt := range tests {
@@ -1005,8 +1107,8 @@ func Test_VerifyTag(t *testing.T) {
 			}
 
 			err = prov.VerifyTag(tt.tag)
-			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -1015,16 +1117,88 @@ func Test_VerifyTag(t *testing.T) {
 func Test_VerifyVersionedTag(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		path     string
-		tag      string
-		expected error
+		name string
+		path string
+		tag  string
+		err  error
 	}{
 		{
-			name:     "valid gcb provenance",
-			path:     "./testdata/gcloud-container-github.json",
-			tag:      "v1.2.3",
-			expected: serrors.ErrorNotSupported,
+			name: "match tag",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.0.4",
+		},
+		{
+			name: "match minor",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.0",
+		},
+		{
+			name: "no match minor",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.1",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no match minor with patch",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33.1.0",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "match major",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v33",
+		},
+		{
+			name: "no match major greater",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v34",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no match major greater with minor",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v34.0",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no match major greater with minor and patch",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v34.0.4",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no match major lower",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v32",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no match major lower with minor",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v32.0",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no match major lower with minor and patch",
+			path: "./testdata/gcloud-container-tag.json",
+			tag:  "v32.0.4",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "no substitutions field",
+			path: "./testdata/gcloud-container-github.json",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "tag not present",
+			path: "./testdata/gcloud-container-tag-notpresent.json",
+			err:  serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name: "tag not string",
+			path: "./testdata/gcloud-container-tag-notstring.json",
+			err:  serrors.ErrorMismatchVersionedTag,
 		},
 	}
 	for _, tt := range tests {
@@ -1047,8 +1221,8 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			}
 
 			err = prov.VerifyVersionedTag(tt.tag)
-			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}

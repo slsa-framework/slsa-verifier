@@ -38,22 +38,14 @@ type VerifyImageCommand struct {
 	SourceVersionTag    *string
 	BuildWorkflowInputs map[string]string
 	PrintProvenance     bool
-	DigestFn            ComputeDigestFn
 }
 
 func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
 	artifactImage := artifacts[0]
-	// Retrieve the image digest.
-	if c.DigestFn == nil {
-		c.DigestFn = container.GetImageDigest
-	}
-	digest, err := c.DigestFn(artifactImage)
-	if err != nil {
-		return nil, err
-	}
 
 	// Verify that the reference is immutable.
-	if err := container.ValidateArtifactReference(artifactImage, digest); err != nil {
+	digest, err := container.GetDigestFromImmutableReference(artifactImage)
+	if err != nil {
 		return nil, err
 	}
 
