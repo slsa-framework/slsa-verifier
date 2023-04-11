@@ -145,7 +145,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/sigstore/fulcio v1.0.0 // indirect
-	github.com/sigstore/protobuf-specs v0.1.1-0.20230310202450-c8a23a43dc1c
+	github.com/sigstore/protobuf-specs v0.1.1-0.20230403130340-4dbf10bc287d
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
