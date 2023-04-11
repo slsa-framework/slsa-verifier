@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/release-utils/version"
 )
@@ -13,6 +14,12 @@ func check(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+func envWarnings() {
+	if options.TestingEnabled() {
+		fmt.Fprintf(os.Stderr, "WARNING: Insecure SLSA_VERIFIER_TESTING is enabled.\n")
 	}
 }
 
@@ -36,5 +43,6 @@ For more information on SLSA, visit https://slsa.dev`,
 }
 
 func main() {
+	envWarnings()
 	check(rootCmd().Execute())
 }
