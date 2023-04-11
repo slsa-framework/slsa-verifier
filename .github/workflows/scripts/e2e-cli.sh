@@ -4,15 +4,15 @@ repo="slsa-framework/example-package"
 api_version="X-GitHub-Api-Version: 2022-11-28"
 # Verify provenance authenticity with slsa-verifier at HEAD
 
-download_artifact(){
-  local run_id="$1"
-  local artifact_name="$2"
-  # Get the artifact ID for 'artifact1'
-  artifact_id=$(gh api   -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/runs/$run_id/artifacts" | jq ".artifacts[] | select(.name == \"$artifact_name\") | .id")
-  echo "artifact_id:$artifact_id"
+download_artifact() {
+    local run_id="$1"
+    local artifact_name="$2"
+    # Get the artifact ID for 'artifact1'
+    artifact_id=$(gh api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/runs/$run_id/artifacts" | jq ".artifacts[] | select(.name == \"$artifact_name\") | .id")
+    echo "artifact_id:$artifact_id"
 
-  gh api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/artifacts/$artifact_id/zip" > "$artifact_name.zip"
-  unzip "$artifact_name".zip
+    gh api -H "Accept: application/vnd.github+json" -H "$api_version" "/repos/$repo/actions/artifacts/$artifact_id/zip" >"$artifact_name.zip"
+    unzip "$artifact_name".zip
 }
 
 # Get workflow ID.
@@ -26,7 +26,7 @@ echo "run_id:$run_id"
 download_artifact "$run_id" "artifacts1"
 download_artifact "$run_id" "attestation1.intoto.jsonl"
 
-cd __EXAMPLE_PACKAGE__
+cd __EXAMPLE_PACKAGE__ || exit 1
 # shellcheck source=/dev/null
 source "./.github/workflows/scripts/e2e-verify.common.sh"
 
@@ -35,7 +35,7 @@ export THIS_FILE=e2e.generic.schedule.main.multi-uses.slsa3.yml
 export BRANCH=main
 
 # Set BINARY and PROVENANCE
-cd -
+cd - || exit 1
 export BINARY=artifact1
 export PROVENANCE=attestation1.intoto.jsonl
 
