@@ -33,6 +33,7 @@ jobs:
           repository: slsa-framework/example-package
 
       - name: Run verification script with testdata and slsa-verifier HEAD
-        run: ./__THIS_REPO__/.github/workflows/scripts/e2e-cli.sh
         env:
+          SLSA_VERIFIER_TESTING: "true"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Necessary to use the gh CLI.
+        run: ./__THIS_REPO__/.github/workflows/scripts/e2e-cli.sh
