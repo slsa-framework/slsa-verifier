@@ -3,7 +3,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/slsa-framework/slsa-verifier/badge)](https://api.securityscorecards.dev/projects/github.com/slsa-framework/slsa-verifier)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6729/badge)](https://bestpractices.coreinfrastructure.org/projects/6729)
 [![Go Report Card](https://goreportcard.com/badge/github.com/slsa-framework/slsa-verifier)](https://goreportcard.com/report/github.com/slsa-framework/slsa-verifier)
-[![Slack](https://slack.babeljs.io/badge.svg)](https://slack.com/app_redirect?team=T019QHUBYQ3&channel=slsa-tooling)
+[![Slack](https://img.shields.io/static/v1?label=openssf.slack.com&message=%23slsa-tooling&color=4A154B&logo=slack)](https://slack.openssf.org/)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 <img align="right" src="https://slsa.dev/images/logo-mono.svg" width="140" height="140">
@@ -90,15 +90,17 @@ You have two options to install the verifier.
 #### Option 1: Install via go
 
 If you want to install the verifier, you can run the following command:
+
 ```bash
 $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.2.0
 $ slsa-verifier <options>
 ```
 
-Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your Go dependencies. 
+Tools like [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates) or [renovate](https://github.com/renovatebot/renovate) use your project's go.mod to identify the version of your Go dependencies.
 If you install the verifier binary in CI, we strongly recommend you create a placeholder `go.mod` containing slsa-verifier as a dependency to receive updates and keep the binary up-to-date. Use the following the steps:
 
 1. Create a tooling/tooling_test.go file containing the following:
+
 ```go
 //go:build tools
 // +build tools
@@ -111,6 +113,7 @@ import (
 ```
 
 1. Run the following commands in the tooling directory. (It will create a go.sum file.)
+
 ```bash
 $ go mod init <your-project-name>-tooling
 $ go mod tidy
@@ -118,15 +121,18 @@ $ go mod tidy
 
 1. Commit the tooling folder (containing the 3 files tooling_test.go, go.mod and go.sum) to the repository.
 1. To install the verifier in your CI, run the following commands:
+
 ```bash
 $ cd tooling
 $ grep _ tooling_test.go | cut -f2 -d '"' | xargs -n1 -t go install
-``` 
+```
+
 Alternatively, if your project does not rely on additional tools and only uses slsa-verifier, you can instead run the following commands:
+
 ```bash
 $ cd tooling
 $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
-``` 
+```
 
 #### Option 2: Compile manually
 
