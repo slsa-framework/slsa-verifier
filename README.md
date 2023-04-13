@@ -20,7 +20,7 @@
   - [Compilation from source](#compilation-from-source)
     - [Option 1: Install via go](#option-1-install-via-go)
     - [Option 2: Compile manually](#option-2-compile-manually)
-    - [Option 3: Use the installer Action](#option-3-use-the-installer-action)
+  - [Use the installer Action on GitHub](#use-the-installer-action-on-github-actions)
   - [Download the binary](#download-the-binary)
 - [Available options](#available-options)
 - [Option list](#option-list)
@@ -136,7 +136,7 @@ $ cd slsa-verifier && git checkout v2.1.0
 $ go run ./cli/slsa-verifier <options>
 ```
 
-#### Option 3: Use the installer Action
+### Use the installer Action on GitHub Actions
 
 If you need to install the verifier to run in a GitHub workflow, use the installer Action as described in [actions/installer/README.md](./actions/installer/README.md).
 
