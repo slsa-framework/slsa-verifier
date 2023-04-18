@@ -17,9 +17,11 @@ var (
 	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 	e2eTestRepository        = "slsa-framework/example-package"
 	certOidcIssuer           = "https://token.actions.githubusercontent.com"
+	githubCom                = "github.com/"
+	httpsGithubCom           = "https://" + githubCom
 	// This is used in cosign's CheckOpts for validating the certificate. We
 	// do specific builder verification after this.
-	certSubjectRegexp = "https://github.com/*"
+	certSubjectRegexp = httpsGithubCom + "*"
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
@@ -32,8 +34,10 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
+var delegatorGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
+
 var defaultBYOBReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml": true,
+	delegatorGenericReusableWorkflow: true,
 }
 
 // VerifyCertficateSourceRepository verifies the source repository.
@@ -43,7 +47,7 @@ func VerifyCertficateSourceRepository(id *WorkflowIdentity,
 	// The caller repository in the x509 extension is not fully qualified. It only contains
 	// {org}/{repository}.
 	expectedSource := strings.TrimPrefix(sourceRepo, "git+https://")
-	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
+	expectedSource = strings.TrimPrefix(expectedSource, githubCom)
 	if id.CallerRepository != expectedSource {
 		return fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
 			expectedSource, id.CallerRepository)
@@ -93,7 +97,7 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultBuilders map[string]bool) (*utils.TrustedBuilderID, error) {
 	var trustedBuilderID *utils.TrustedBuilderID
 	var err error
-	certBuilderName := "https://github.com/" + certPath
+	certBuilderName := httpsGithubCom + certPath
 	// WARNING: we don't validate the tag here, because we need to allow
 	// refs/heads/main for e2e tests. See verifyTrustedBuilderRef().
 	// No builder ID provided by user: use the default trusted workflows.
@@ -102,14 +106,14 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 			return nil, fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID == nil)
 		}
 		// Construct the builderID using the certificate's builder's name and tag.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName + "@" + certTag)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName + "@" + certTag)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +121,7 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 		// BuilderID provided by user should match the certificate.
 		// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
 		// so we pass `allowRef = true`.
-		if err := trustedBuilderID.Matches(*expectedBuilderID, true); err != nil {
+		if err := trustedBuilderID.MatchesLoose(*expectedBuilderID, true); err != nil {
 			return nil, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
 		}
 	}

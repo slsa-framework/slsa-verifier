@@ -21,6 +21,8 @@ import (
 
 const (
 	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
+	builderGitHubRunnerID = "https://github.com/actions/runner"
+	ossfNpmBuilderID      = "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
@@ -63,9 +65,6 @@ type Npm struct {
 	provenanceAttestation *attestation
 	publishAttestation    *attestation
 }
-
-// TODO(#494): update the builder name.
-var builderGitHubRunnerID = "https://github.com/actions/runner@v0.1"
 
 func (n *Npm) ProvenanceEnvelope() *dsse.Envelope {
 	return n.verifiedProvenanceAtt.Envelope

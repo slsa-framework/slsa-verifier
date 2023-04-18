@@ -96,29 +96,72 @@ func Test_BuilderIDNew(t *testing.T) {
 	tests := []struct {
 		name             string
 		trustedBuilderID string
+		needVersion      bool
 		builderName      string
 		builderVersion   string
 		err              error
 	}{
 		{
-			name:             "valid",
+			name:             "valid with version",
 			trustedBuilderID: "some/name@v1.2.3",
 			builderName:      "some/name",
 			builderVersion:   "v1.2.3",
+			needVersion:      true,
+		},
+		{
+			name:             "invalid without version",
+			trustedBuilderID: "some/name",
+			builderName:      "some/name",
+			needVersion:      true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "valid without version",
+			trustedBuilderID: "some/name",
+			builderName:      "some/name",
+			needVersion:      false,
 		},
 		{
 			name:             "empty version",
 			trustedBuilderID: "some/name@",
+			needVersion:      true,
 			err:              serrors.ErrorInvalidFormat,
 		},
 		{
 			name:             "too many '@' - need version",
 			trustedBuilderID: "some/name@vla@blo",
+			needVersion:      true,
 			err:              serrors.ErrorInvalidFormat,
 		},
 		{
 			name:             "too many '@' - no need version",
 			trustedBuilderID: "some/name@vla@blo",
+			needVersion:      true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "valid",
+			trustedBuilderID: "some/name@v1.2.3",
+			builderName:      "some/name",
+			builderVersion:   "v1.2.3",
+			needVersion:      false,
+		},
+		{
+			name:             "empty version",
+			trustedBuilderID: "some/name@",
+			needVersion:      false,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "too many '@' - need version",
+			trustedBuilderID: "some/name@vla@blo",
+			needVersion:      false,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "too many '@' - no need version",
+			trustedBuilderID: "some/name@vla@blo",
+			needVersion:      false,
 			err:              serrors.ErrorInvalidFormat,
 		},
 	}
@@ -127,7 +170,7 @@ func Test_BuilderIDNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID)
+			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID, tt.needVersion)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -153,53 +196,79 @@ func Test_BuilderIDNew(t *testing.T) {
 	}
 }
 
-func Test_Matches(t *testing.T) {
+func Test_MatchesLoose(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name             string
 		trustedBuilderID string
+		needVersion      bool
 		allowRef         bool
 		match            string
 		err              error
 	}{
 		{
-			name:             "match full",
+			name:             "match full need version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@v1.2.3",
+			needVersion:      true,
+		},
+		{
+			name:             "match full with ref",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match full no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.3",
+		},
+		{
+			name:             "match name no need version",
+			trustedBuilderID: "some/name",
+			match:            "some/name@v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
 			name:             "match name",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name",
+			needVersion:      true,
 		},
 		{
 			name:             "mismatch name",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name2",
+			needVersion:      true,
 			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
 			name:             "mismatch version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@v1.2.4",
+			needVersion:      true,
 			err:              serrors.ErrorMismatchBuilderID,
 		},
 		{
 			name:             "invalid empty version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@",
+			needVersion:      true,
 			err:              serrors.ErrorInvalidFormat,
 		},
 		{
 			name:             "too many '@' - need version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@vla@blo",
+			needVersion:      true,
 			err:              serrors.ErrorInvalidFormat,
 		},
 		{
 			name:             "too many '@' - no need version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@vla@blo",
+			needVersion:      true,
 			err:              serrors.ErrorInvalidFormat,
 		},
 		// Same as above with `allowRef: true`.
@@ -207,18 +276,41 @@ func Test_Matches(t *testing.T) {
 			name:             "match full",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			allowRef:         true,
+		},
+		{
+			name:             "match full no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.3",
+			allowRef:         true,
+		},
+		{
+			name:             "match name no need version",
+			trustedBuilderID: "some/name",
+			match:            "some/name@v1.2.3",
+			allowRef:         true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name",
+			needVersion:      true,
 			allowRef:         true,
 		},
 		{
 			name:             "match name",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name",
+			needVersion:      true,
 			allowRef:         true,
 		},
 		{
 			name:             "mismatch name",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name2",
+			needVersion:      true,
 			allowRef:         true,
 			err:              serrors.ErrorMismatchBuilderID,
 		},
@@ -226,6 +318,7 @@ func Test_Matches(t *testing.T) {
 			name:             "mismatch version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@v1.2.4",
+			needVersion:      true,
 			allowRef:         true,
 			err:              serrors.ErrorMismatchBuilderID,
 		},
@@ -233,6 +326,7 @@ func Test_Matches(t *testing.T) {
 			name:             "invalid empty version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@",
+			needVersion:      true,
 			allowRef:         true,
 			err:              serrors.ErrorInvalidFormat,
 		},
@@ -240,6 +334,7 @@ func Test_Matches(t *testing.T) {
 			name:             "too many '@' - need version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@vla@blo",
+			needVersion:      true,
 			allowRef:         true,
 			err:              serrors.ErrorInvalidFormat,
 		},
@@ -247,10 +342,47 @@ func Test_Matches(t *testing.T) {
 			name:             "too many '@' - no need version",
 			trustedBuilderID: "some/name@v1.2.3",
 			match:            "some/name@vla@blo",
+			needVersion:      true,
 			allowRef:         true,
 			err:              serrors.ErrorInvalidFormat,
 		},
 		// Mismatch of tag length.
+		{
+			name:             "match long tag match short",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			allowRef:         true,
+		},
+		{
+			name:             "long tag match short no ref",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match long tags",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			needVersion:      true,
+			allowRef:         true,
+		},
+		{
+			name:             "mismatch tag length",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch tag length inversed",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		// mismatch tag length no need version
 		{
 			name:             "match long tag match short",
 			trustedBuilderID: "some/name@refs/tags/v1.2.3",
@@ -287,12 +419,229 @@ func Test_Matches(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID)
+			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID, tt.needVersion)
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
 
-			err = trustedBuilderID.Matches(tt.match, tt.allowRef)
+			err = trustedBuilderID.MatchesLoose(tt.match, tt.allowRef)
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
+func Test_MatchesFull(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name             string
+		trustedBuilderID string
+		needVersion      bool
+		allowRef         bool
+		match            string
+		err              error
+	}{
+		{
+			name:             "match full",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+		},
+		{
+			name:             "match name no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name",
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match name full no need version",
+			trustedBuilderID: "some/name",
+			match:            "some/name",
+		},
+		{
+			name:             "match full no need version",
+			trustedBuilderID: "some/name",
+			match:            "some/name@v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name2",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.4",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "invalid empty version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@",
+			needVersion:      true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "too many '@' - need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			needVersion:      true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "too many '@' - no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			needVersion:      true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		// Same as above with `allowRef: true`.
+		{
+			name:             "match full",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			allowRef:         true,
+		},
+		{
+			name:             "match name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name",
+			needVersion:      true,
+			allowRef:         true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch name",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name2",
+			needVersion:      true,
+			allowRef:         true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@v1.2.4",
+			needVersion:      true,
+			allowRef:         true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "invalid empty version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@",
+			needVersion:      true,
+			allowRef:         true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "too many '@' - need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			needVersion:      true,
+			allowRef:         true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		{
+			name:             "too many '@' - no need version",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@vla@blo",
+			needVersion:      true,
+			allowRef:         true,
+			err:              serrors.ErrorInvalidFormat,
+		},
+		// Mismatch of tag length.
+		{
+			name:             "match long tag match short",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			allowRef:         true,
+		},
+		{
+			name:             "long tag match short no ref",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match long tags",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			needVersion:      true,
+			allowRef:         true,
+		},
+		{
+			name:             "mismatch tag length",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch tag length inversed",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			needVersion:      true,
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		// Mismatch of tag length no need version.
+		{
+			name:             "match long tag match short",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			allowRef:         true,
+		},
+		{
+			name:             "long tag match short no ref",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "match long tags",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			allowRef:         true,
+		},
+		{
+			name:             "mismatch tag length",
+			trustedBuilderID: "some/name@refs/tags/v1.2.3",
+			match:            "some/name@v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:             "mismatch tag length inversed",
+			trustedBuilderID: "some/name@v1.2.3",
+			match:            "some/name@refs/tags/v1.2.3",
+			err:              serrors.ErrorMismatchBuilderID,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID, tt.needVersion)
+			if err != nil {
+				panic(fmt.Errorf("BuilderIDNew: %w", err))
+			}
+
+			err = trustedBuilderID.MatchesFull(tt.match, tt.allowRef)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}

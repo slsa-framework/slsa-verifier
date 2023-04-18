@@ -117,6 +117,7 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 		"[optional] print the verified provenance to stdout")
 
 	cmd.MarkFlagRequired("source-uri")
+	cmd.MarkFlagRequired("builder-id")
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
