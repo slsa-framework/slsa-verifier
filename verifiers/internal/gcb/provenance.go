@@ -2,8 +2,8 @@ package gcb
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -25,6 +25,10 @@ var GCBBuilderIDs = []string{
 	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
 	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
 }
+
+var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
+var errorSubstitutionError = errors.New("GCB substitution variable error")
 
 type v01IntotoStatement struct {
 	intoto.StatementHeader
@@ -77,17 +81,6 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 	return &Provenance{
 		gcloudProv: &prov,
 	}, nil
-}
-
-func payloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
-	payload, err := base64.StdEncoding.DecodeString(env.Payload)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-	}
-	if payload == nil {
-		return nil, fmt.Errorf("%w: empty payload", serrors.ErrorInvalidFormat)
-	}
-	return payload, nil
 }
 
 func (p *Provenance) isVerified() error {
@@ -359,6 +352,10 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
 	}
 	uri := materials[0].URI
+	// NOTE: the material URI did not contain 'git+' for GCB versions <= v0.3.
+	// A change occurred sometimes in v0.3 witout version bump.
+	// Versions >= 0.3 contain the prefix (https://github.com/slsa-framework/slsa-verifier/pull/519).
+	uri = strings.TrimPrefix(uri, "git+")
 
 	// It is possible that GCS builds at level 2 use GCS sources, prefixed by gs://.
 	if strings.HasPrefix(uri, "https://") && !strings.HasPrefix(expectedSourceURI, "https://") {
@@ -405,37 +402,70 @@ func (p *Provenance) VerifyBranch(branch string) error {
 	return fmt.Errorf("%w: GCB branch verification", serrors.ErrorNotSupported)
 }
 
-func (p *Provenance) VerifyTag(tag string) error {
-	return fmt.Errorf("%w: GCB tag verification", serrors.ErrorNotSupported)
+func (p *Provenance) VerifyTag(expectedTag string) error {
+	provenanceTag, err := p.getTag()
+	if err != nil {
+		return fmt.Errorf("%w: %v", serrors.ErrorMismatchTag, err.Error())
+	}
+
+	if provenanceTag != expectedTag {
+		return fmt.Errorf("%w: expected '%s', got '%s'",
+			serrors.ErrorMismatchTag, expectedTag, provenanceTag)
+	}
+	return nil
 }
 
-func (p *Provenance) VerifyVersionedTag(tag string) error {
-	return fmt.Errorf("%w: GCB versioned-tag verification", serrors.ErrorNotSupported)
+func (p *Provenance) VerifyVersionedTag(expectedTag string) error {
+	provenanceTag, err := p.getTag()
+	if err != nil {
+		return fmt.Errorf("%w: %v", serrors.ErrorMismatchVersionedTag, err.Error())
+	}
+	return utils.VerifyVersionedTag(provenanceTag, expectedTag)
 }
 
-func decodeSignature(s string) ([]byte, error) {
-	var errs []error
-	// First try the std decoding.
-	rsig, err := base64.StdEncoding.DecodeString(s)
-	if err == nil {
-		// No error, return the value.
-		return rsig, nil
+func (p *Provenance) getTag() (string, error) {
+	if err := p.isVerified(); err != nil {
+		return "", err
 	}
-	errs = append(errs, err)
 
-	// If std decoding failed, try URL decoding.
-	// We try both because we encountered decoding failures
-	// during our tests. The DSSE documentation does not prescribe
-	// which encoding to use: `Either standard or URL-safe encoding is allowed`.
-	// https://github.com/secure-systems-lab/dsse/blob/27ce241dec575998dee8967c3c76d4edd5d6ee73/envelope.md#standard-json-envelope.
-	rsig, err = base64.URLEncoding.DecodeString(s)
-	if err == nil {
-		// No error, return the value.
-		return rsig, nil
+	statement := p.verifiedIntotoStatement
+	provenanceTag, err := getSubstitutionsField(statement, "TAG_NAME")
+	if err != nil {
+		return "", err
 	}
-	errs = append(errs, err)
 
-	return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidEncoding, errs)
+	return provenanceTag, nil
+}
+
+func getSubstitutionsField(statement *v01IntotoStatement, name string) (string, error) {
+	arguments := statement.Predicate.Recipe.Arguments
+
+	argsMap, ok := arguments.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: cannot cast arguments as map", errorSubstitutionError)
+	}
+
+	substitutions, ok := argsMap["substitutions"]
+	if !ok {
+		return "", fmt.Errorf("%w: no 'substitutions' field", errorSubstitutionError)
+	}
+
+	m, ok := substitutions.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: cannot convert substitutions to a map", errorSubstitutionError)
+	}
+
+	value, ok := m[name]
+	if !ok {
+		return "", fmt.Errorf("%w: no entry '%v' in substitution map", errorSubstitutionError, name)
+	}
+
+	valueStr, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: value '%v' is not a string", errorSubstitutionError, value)
+	}
+
+	return valueStr, nil
 }
 
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
@@ -447,33 +477,48 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 			serrors.ErrorInvalidDssePayload, intoto.PayloadType, prov.Envelope.PayloadType)
 	}
 
-	payload, err := payloadFromEnvelope(&prov.Envelope)
+	payload, err := utils.PayloadFromEnvelope(&prov.Envelope)
 	if err != nil {
 		return err
 	}
 
 	payloadHash := sha256.Sum256(payload)
-
 	// Verify the signatures.
 	if len(prov.Envelope.Signatures) == 0 {
 		return fmt.Errorf("%w: no signatures found in envelope", serrors.ErrorNoValidSignature)
 	}
 
 	var errs []error
-	regex := regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
 	for _, sig := range prov.Envelope.Signatures {
-		match := regex.FindStringSubmatch(sig.KeyID)
-		if len(match) == 2 {
-			// Create a public key instance for this region.
-			region := match[1]
-			pubKey, err := keys.PublicKeyNew(region)
+		var region string
+		if sig.KeyID == keys.GlobalPAEKeyID {
+			// If the signature is signed with the global PAE key, use a DSSE verifier
+			// to verify the DSSE/PAE-encoded signature.
+			region = keys.GlobalPAEPublicKeyName
+			globalPaeKey, err := keys.NewGlobalPAEKey()
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			err = globalPaeKey.VerifyPAESignature(&prov.Envelope)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+		} else if match := regionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
+			// If the signature is signed with a regional key, verify the legacy
+			// signing which is over the envelope (not PAE-encoded).
+			region = match[1]
+			pubKey, err := keys.NewPublicKey(region)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 
 			// Decode the signature.
-			rsig, err := decodeSignature(sig.Sig)
+			rsig, err := utils.DecodeSignature(sig.Sig)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -485,16 +530,18 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 				errs = append(errs, err)
 				continue
 			}
-
-			var statement v01IntotoStatement
-			if err := json.Unmarshal(payload, &statement); err != nil {
-				return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
-			}
-			p.verifiedIntotoStatement = &statement
-			p.verifiedProvenance = prov
-			fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
-			return nil
+		} else {
+			continue
 		}
+
+		var statement v01IntotoStatement
+		if err := json.Unmarshal(payload, &statement); err != nil {
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		}
+		p.verifiedIntotoStatement = &statement
+		p.verifiedProvenance = prov
+		fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
+		return nil
 	}
 
 	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)

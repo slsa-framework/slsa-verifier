@@ -23,6 +23,10 @@ type ProvenanceOpts struct {
 
 	// ExpectedWorkflowInputs is a map of key=value inputs.
 	ExpectedWorkflowInputs map[string]string
+
+	ExpectedPackageName *string
+
+	ExpectedPackageVersion *string
 }
 
 // BuildOpts are the options for checking the builder.

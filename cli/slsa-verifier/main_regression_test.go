@@ -18,10 +18,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/oci"
-	"github.com/sigstore/cosign/pkg/oci/layout"
 
 	"github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -673,44 +671,13 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 	container.RunCosignImageVerification = func(ctx context.Context,
 		image string, co *cosign.CheckOpts,
 	) ([]oci.Signature, bool, error) {
+		key := "@sha256:"
+		i := strings.Index(image, key)
+		if i < 0 {
+			return nil, false, fmt.Errorf("cannot find '%v' in '%v'", key, image)
+		}
+		image = image[:i]
 		return cosign.VerifyLocalImageAttestations(ctx, image, co)
-	}
-
-	// TODO: Is there a more uniform way of handling getting image digest for both
-	// remote and local images?
-	localDigestComputeFn := func(image string) (string, error) {
-		// This is copied from cosign's VerifyLocalImageAttestation code:
-		// https://github.com/sigstore/cosign/blob/fdceee4825dc5d56b130f3f431aab93137359e79/pkg/cosign/verify.go#L654
-		se, err := layout.SignedImageIndex(image)
-		if err != nil {
-			return "", err
-		}
-
-		var h v1.Hash
-		// Verify either an image index or image.
-		ii, err := se.SignedImageIndex(v1.Hash{})
-		if err != nil {
-			return "", err
-		}
-		i, err := se.SignedImage(v1.Hash{})
-		if err != nil {
-			return "", err
-		}
-		switch {
-		case ii != nil:
-			h, err = ii.Digest()
-			if err != nil {
-				return "", err
-			}
-		case i != nil:
-			h, err = i.Digest()
-			if err != nil {
-				return "", err
-			}
-		default:
-			return "", errors.New("must verify either an image index or image")
-		}
-		return strings.TrimPrefix(h.String(), "sha256:"), nil
 	}
 
 	builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml"
@@ -820,6 +787,13 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					builderIDs = []*string{tt.pBuilderID}
 				}
 
+				// Compute the digest and append it to the image so that's it 'immutable'.
+				digest, err := localDigestCompute(image)
+				if err != nil {
+					panic(fmt.Sprintf("digest computation %v", err))
+				}
+				image = fmt.Sprintf("%v@sha256:%v", image, digest)
+
 				for _, bid := range builderIDs {
 					cmd := verify.VerifyImageCommand{
 						SourceURI:        tt.source,
@@ -827,7 +801,6 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 						BuilderID:        bid,
 						SourceTag:        tt.ptag,
 						SourceVersionTag: tt.pversiontag,
-						DigestFn:         localDigestComputeFn,
 					}
 
 					outBuilderID, err := cmd.Exec(context.Background(), []string{image})
@@ -863,35 +836,28 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 	}
 }
 
+func localDigestCompute(image string) (string, error) {
+	filename := image + ".digest"
+	digest, err := os.ReadFile(filename)
+	if err != nil {
+		return "", fmt.Errorf("ReadFile fail: %w", err)
+	}
+	return strings.TrimPrefix(string(digest), "sha256:"), nil
+}
+
 func Test_runVerifyGCBArtifactImage(t *testing.T) {
 	t.Parallel()
-
-	// TODO: Is there a more uniform way of handling getting image digest for both
-	// remote and local images?
-	localDigestComputeFn := func(image string) (string, error) {
-		// This is copied from cosign's VerifyLocalImageAttestation code:
-		// https://github.com/sigstore/cosign/blob/fdceee4825dc5d56b130f3f431aab93137359e79/pkg/cosign/verify.go#L654
-		se, err := layout.SignedImageIndex(image)
-		if err != nil {
-			return "", err
-		}
-
-		h, err := se.Digest()
-		if err != nil {
-			return "", err
-		}
-
-		return strings.TrimPrefix(h.String(), "sha256:"), nil
-	}
-
 	builder := "https://cloudbuild.googleapis.com/GoogleHostedWorker"
 	tests := []struct {
 		name           string
 		artifact       string
 		artifactDigest map[string]string
+		noDigest       bool
 		remote         bool
 		provenance     string
 		source         string
+		ptag           *string
+		pversiontag    *string
 		pBuilderID     *string
 		outBuilderID   string
 		err            error
@@ -1091,6 +1057,92 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			source:     "github.com/laurentsimon/gcb-tests",
 			err:        serrors.ErrorNoValidSignature,
 		},
+		{
+			name:       "tag match",
+			artifact:   "gcloud-container-github-tag",
+			provenance: "gcloud-container-github-tag.json",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v33.0.4"),
+			minversion: "v0.3",
+		},
+		{
+			name:       "tag mismatch major",
+			artifact:   "gcloud-container-github-tag",
+			provenance: "gcloud-container-github-tag.json",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v34.0.4"),
+			minversion: "v0.3",
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:       "tag mismatch minor",
+			artifact:   "gcloud-container-github-tag",
+			provenance: "gcloud-container-github-tag.json",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v33.1.4"),
+			minversion: "v0.3",
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:       "tag mismatch patch",
+			artifact:   "gcloud-container-github-tag",
+			provenance: "gcloud-container-github-tag.json",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v33.0.5"),
+			minversion: "v0.3",
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag match major",
+			artifact:    "gcloud-container-github-tag",
+			provenance:  "gcloud-container-github-tag.json",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v33"),
+			minversion:  "v0.3",
+		},
+		{
+			name:        "versioned tag match minor",
+			artifact:    "gcloud-container-github-tag",
+			provenance:  "gcloud-container-github-tag.json",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v33.0"),
+			minversion:  "v0.3",
+		},
+		{
+			name:        "versioned tag match patch",
+			artifact:    "gcloud-container-github-tag",
+			provenance:  "gcloud-container-github-tag.json",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v33.0.4"),
+			minversion:  "v0.3",
+		},
+		{
+			name:        "versioned tag mismatch patch",
+			artifact:    "gcloud-container-github-tag",
+			provenance:  "gcloud-container-github-tag.json",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v33.0.5"),
+			minversion:  "v0.3",
+			err:         serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name:        "versioned tag mismatch minor",
+			artifact:    "gcloud-container-github-tag",
+			provenance:  "gcloud-container-github-tag.json",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v33.1"),
+			minversion:  "v0.3",
+			err:         serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name:        "versioned tag mismatch major",
+			artifact:    "gcloud-container-github-tag",
+			provenance:  "gcloud-container-github-tag.json",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v35"),
+			minversion:  "v0.3",
+			err:         serrors.ErrorMismatchVersionedTag,
+		},
 		// TODO(388): verify the correct provenance is returned.
 		// This should also be done for all other entries in this test.
 		{
@@ -1146,6 +1198,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			artifact:   "index.docker.io/laurentsimon/scorecard",
 			noversion:  true,
 			remote:     true,
+			noDigest:   true,
 			source:     "github.com/laurentsimon/gcb-tests",
 			provenance: "gcloud-container-github.json",
 			pBuilderID: pString(builder + "@v0.2"),
@@ -1170,7 +1223,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 				builderIDs := []string{builder + "@" + semver, builder}
 				provenance := filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenance))
 				image := tt.artifact
-				var fn verify.ComputeDigestFn
+				digestFn := container.GetImageDigest
 
 				// If builder ID is set, use it.
 				if tt.pBuilderID != nil {
@@ -1189,10 +1242,20 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 					}
 					image = fmt.Sprintf("%s@sha256:%s", image, digest)
 				}
+
 				// If it is a local image, change the digest computation.
 				if !tt.remote {
 					image = filepath.Clean(filepath.Join(TEST_DIR, v, image))
-					fn = localDigestComputeFn
+					digestFn = localDigestCompute
+				}
+
+				if len(tt.artifactDigest) == 0 && !tt.noDigest {
+					// Compute the digest and append it to the image so that's it 'immutable'.
+					digest, err := digestFn(image)
+					if err != nil {
+						panic(fmt.Sprintf("digest computation %v", err))
+					}
+					image = fmt.Sprintf("%v@sha256:%v", image, digest)
 				}
 
 				// We run the test for each builderID, in order to test
@@ -1203,9 +1266,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 						SourceURI:        tt.source,
 						SourceBranch:     nil,
 						BuilderID:        &bid,
-						SourceTag:        nil,
-						SourceVersionTag: nil,
-						DigestFn:         fn,
+						SourceTag:        tt.ptag,
+						SourceVersionTag: tt.pversiontag,
 						ProvenancePath:   &provenance,
 					}
 
@@ -1241,6 +1303,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 func Test_runVerifyGHADockerBased(t *testing.T) {
 	// We cannot use t.Setenv due to parallelized tests.
 	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
+	os.Setenv("SLSA_VERIFIER_TESTING", "1")
 
 	t.Parallel()
 

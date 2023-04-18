@@ -17,9 +17,7 @@ package verify
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -43,7 +41,7 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 	var builderID *utils.TrustedBuilderID
 
 	for _, artifact := range artifacts {
-		artifactHash, err := getArtifactHash(artifact)
+		artifactHash, err := computeFileHash(artifact, sha256.New())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
 			return nil, err
@@ -89,17 +87,4 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 	}
 
 	return builderID, nil
-}
-
-func getArtifactHash(artifactPath string) (string, error) {
-	f, err := os.Open(artifactPath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
 }

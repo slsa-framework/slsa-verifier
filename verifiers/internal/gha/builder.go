@@ -32,13 +32,39 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
-// VerifyWorkflowIdentity verifies the signing certificate information
+var defaultBYOBReusableWorkflows = map[string]bool{
+	trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml": true,
+}
+
+// VerifyCertficateSourceRepository verifies the source repository.
+func VerifyCertficateSourceRepository(id *WorkflowIdentity,
+	sourceRepo string,
+) error {
+	// The caller repository in the x509 extension is not fully qualified. It only contains
+	// {org}/{repository}.
+	expectedSource := strings.TrimPrefix(sourceRepo, "git+https://")
+	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
+	if id.CallerRepository != expectedSource {
+		return fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
+			expectedSource, id.CallerRepository)
+	}
+	return nil
+}
+
+// VerifyBuilderIdentity verifies the signing certificate information.
 // Builder IDs are verified against an expected builder ID provided in the
-// builerOpts, or against the set of defaultBuilders provided.
-func VerifyWorkflowIdentity(id *WorkflowIdentity,
-	builderOpts *options.BuilderOpts, source string,
+// builerOpts, or against the set of defaultBuilders provided. The identiy
+// in the certificate corresponds to a GitHub workflow's path.
+func VerifyBuilderIdentity(id *WorkflowIdentity,
+	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
 ) (*utils.TrustedBuilderID, error) {
+	// Issuer verification.
+	// NOTE: this is necessary before we do any further verification.
+	if id.Issuer != certOidcIssuer {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
+	}
+
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
@@ -59,22 +85,6 @@ func VerifyWorkflowIdentity(id *WorkflowIdentity,
 		return nil, err
 	}
 
-	// Issuer verification.
-	if !strings.EqualFold(id.Issuer, certOidcIssuer) {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
-	}
-
-	// The caller repository in the x509 extension is not fully qualified. It only contains
-	// {org}/{repository}.
-	expectedSource := strings.TrimPrefix(source, "git+https://")
-	expectedSource = strings.TrimPrefix(expectedSource, "github.com/")
-	if !strings.EqualFold(id.CallerRepository, expectedSource) {
-		return nil, fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
-			expectedSource, id.CallerRepository)
-	}
-
-	// Return the builder and its tag.
-	// Note: the tag has the format `refs/tags/v1.2.3`.
 	return builderID, nil
 }
 
@@ -121,7 +131,27 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	if (id.CallerRepository == trustedBuilderRepository ||
 		id.CallerRepository == e2eTestRepository) &&
-		strings.EqualFold("refs/heads/main", ref) {
+		options.TestingEnabled() {
+		// Allow verification on the main branch to support e2e tests.
+		if ref == "refs/heads/main" {
+			return nil
+		}
+
+		// Extract the tag.
+		pin, err := utils.TagFromGitHubRef(ref)
+		if err != nil {
+			return err
+		}
+
+		// Tags on trusted repositories should be a valid semver with version
+		// core including all three parts and no build identifier.
+		versionCore := strings.Split(pin, "-")[0]
+		if !semver.IsValid(pin) ||
+			len(strings.Split(versionCore, ".")) != 3 ||
+			semver.Build(pin) != "" {
+			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
+		}
+
 		return nil
 	}
 

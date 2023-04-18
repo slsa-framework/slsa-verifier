@@ -36,7 +36,7 @@ Do **NOT** submit any more code between now and the final release.
 
 Check the following:
 
-1. Ensure that the release is successful and provenance can be verified properly. 
+1. Ensure that the release is successful and provenance can be verified properly.
 2. Either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
 3. Ensure that the latest release can be installed via a `go install`.
 4. Verify that the version reported by the `version` command is correct:
@@ -94,7 +94,7 @@ If the provenance verification fails, delete the release and the tag. Otherwise,
 
 Follow these steps:
 
-1. Compute the hash of the binary. One of the following commands will do:
+1. Compute the hashes of all the binaries. One of the following commands will do:
 ```
 $ cat slsa-verifier-linux-amd64.intoto.jsonl | jq -r '.payload' | base64 -d | jq -r '.subject[0].digest.sha256'
 ```
@@ -103,17 +103,18 @@ or
 $ sha256sum slsa-verifier-linux-amd64
 ```
 
-2. Add an additional entry at the top of [SHA256SUM.md](./SHA256SUM.md):
+2. Add additional entries for each release binary at the top of [SHA256SUM.md](./SHA256SUM.md):
 
 ```
 ### [vX.Y.Z](https://github.com/slsa-framework/slsa-verifier/releases/tag/vX.Y.Z)
 <the-hash>  slsa-verifier-linux-amd64
+<the-hash>  slsa-verifier-linux-arm64
 ```
 
-3. Update the latest version in the [README.md](./README.md):
+3. Update the latest version in the main [README.md](./README.md) and the installer Action's [actions/installer/README.md](./actions/installer/README.md):
 
 ```shell
-$ sed -i "s/v1.0.0/v1.1.1/g" ./README.md
+$ sed -i "s/v1.0.0/v1.1.1/g" ./README.md ./actions/installer/README.md
 ```
 
 4. Send a pull request with the changes. In the description:
@@ -124,6 +125,6 @@ $ sed -i "s/v1.0.0/v1.1.1/g" ./README.md
 
 ## Update builders
 
-Send a similar pull request to update the hash and version of the verifier for the workflow [slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31](https://github.com/slsa-framework/slsa-github-generator/blob/main/.github/workflows/builder_go_slsa3.yml#L30-L31). Explain the steps to verify the hash. If the pull request for the verifier is already merged, you can simply point to it instead.
+Send a similar pull request to update the hash and version of the verifier for the action [generate-builder](https://github.com/slsa-framework/slsa-github-generator/blob/6a2cc1cb559a81ffbbcd4248026c6ea89bdab2b6/.github/actions/generate-builder/action.yml#L70-L71). Explain the steps to verify the hash. If the pull request for the verifier is already merged, you can simply point to it instead.
 
 Note: you need not cut a release for the generator, unless the verifier has important changes that are required for the builders to work properly.

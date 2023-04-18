@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/mod/semver"
-
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
@@ -18,6 +16,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
@@ -71,7 +70,7 @@ func asURI(s string) string {
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) error {
+func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
 	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -85,7 +84,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	if err != nil {
 		return err
 	}
-	configURI, err := sourceFromURI(fullConfigURI)
+	configURI, err := sourceFromURI(fullConfigURI, false)
 	if err != nil {
 		return err
 	}
@@ -99,7 +98,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	if err != nil {
 		return err
 	}
-	materialURI, err := sourceFromURI(materialSourceURI)
+	materialURI, err := sourceFromURI(materialSourceURI, allowNoMaterialRef)
 	if err != nil {
 		return err
 	}
@@ -110,6 +109,12 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 
 	// Last, verify that both fields match.
 	// We use the full URI to match on the tag as well.
+	if allowNoMaterialRef && len(strings.Split(materialSourceURI, "@")) == 1 {
+		// NOTE: this is an exception for npm packages built before GA,
+		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
+		// We don't need to compare the ref since materialSourceURI does not contain it.
+		return nil
+	}
 	if fullConfigURI != materialSourceURI {
 		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
 			serrors.ErrorInvalidDssePayload,
@@ -119,13 +124,19 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string) e
 	return nil
 }
 
-func sourceFromURI(uri string) (string, error) {
+// sourceFromURI retrieves the source repository given a repository URI with ref.
+//
+// NOTE: `allowNoRef` is to allow for verification of npm packages
+// generated before GA. Their provenance did not have a ref,
+// see https://github.com/slsa-framework/slsa-verifier/issues/492.
+// `allowNoRef` should be set to `false` for all other cases.
+func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
-	r := strings.SplitN(uri, "@", 2)
-	if len(r) < 2 {
+	r := strings.Split(uri, "@")
+	if len(r) < 2 && !allowNoRef {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
@@ -136,18 +147,20 @@ func sourceFromURI(uri string) (string, error) {
 	return r[0], nil
 }
 
-// Verify SHA256 Subject Digest from the provenance statement.
-func verifySha256Digest(prov slsaprovenance.Provenance, expectedHash string) error {
+// Verify Subject Digest from the provenance statement.
+func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 	subjects, err := prov.Subjects()
 	if err != nil {
 		return err
 	}
 
+	// 8 bit represented in hex, so 8/2=4.
+	l := len(expectedHash) * 4
 	for _, subject := range subjects {
 		digestSet := subject.Digest
-		hash, exists := digestSet["sha256"]
+		hash, exists := digestSet[fmt.Sprintf("sha%v", l)]
 		if !exists {
-			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no sha256 subject digest")
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, fmt.Sprintf("no sha%v subject digest", l))
 		}
 
 		if hash == expectedHash {
@@ -163,7 +176,8 @@ func verifySha256Digest(prov slsaprovenance.Provenance, expectedHash string) err
 func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 	rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
-	*SignedAttestation, error) {
+	*SignedAttestation, error,
+) {
 	// Collect trusted root material for verification (Rekor pubkeys, SCT pubkeys,
 	// Fulcio root certificates).
 	_, err := GetTrustedRoot(ctx)
@@ -186,7 +200,35 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 		provenance, rClient, trustedRoot)
 }
 
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts) error {
+func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+) error {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+	if err != nil {
+		return err
+	}
+
+	// Untrusted builder.
+	if provenanceOpts.ExpectedBuilderID == "" {
+		// Verify it's the npm CLI.
+		builderID, err := prov.BuilderID()
+		if err != nil {
+			return err
+		}
+		// TODO(#494): update the builder ID string.
+		if !strings.HasPrefix(builderID, "https://github.com/npm/cli@") {
+			return fmt.Errorf("%w: expected 'https://github.com/npm/cli' in builder.id, got '%s'",
+				serrors.ErrorMismatchBuilderID, builderID)
+		}
+	} else if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+		return err
+	}
+	// NOTE: for the non trusted builders, the information may be forgeable.
+	// Also, the GitHub context is not recorded for the default builder.
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)
+}
+
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
 		return err
@@ -199,13 +241,19 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		return err
 	}
 
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
+}
+
+func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpts *options.ProvenanceOpts,
+	allowNoMaterialRef bool,
+) error {
 	// Verify source.
-	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI); err != nil {
+	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI, allowNoMaterialRef); err != nil {
 		return err
 	}
 
 	// Verify subject digest.
-	if err := verifySha256Digest(prov, provenanceOpts.ExpectedDigest); err != nil {
+	if err := verifyDigest(prov, provenanceOpts.ExpectedDigest); err != nil {
 		return err
 	}
 
@@ -269,7 +317,7 @@ func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
 	}
 
 	expectedBranch = "refs/heads/" + expectedBranch
-	if !strings.EqualFold(branch, expectedBranch) {
+	if branch != expectedBranch {
 		return fmt.Errorf("expected branch '%s', got '%s': %w", expectedBranch, branch, serrors.ErrorMismatchBranch)
 	}
 
@@ -283,7 +331,7 @@ func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	}
 
 	expectedTag = "refs/tags/" + expectedTag
-	if !strings.EqualFold(tag, expectedTag) {
+	if tag != expectedTag {
 		return fmt.Errorf("expected tag '%s', got '%s': %w", expectedTag, tag, serrors.ErrorMismatchTag)
 	}
 
@@ -291,11 +339,6 @@ func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 }
 
 func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) error {
-	// Validate and canonicalize the provenance tag.
-	if !semver.IsValid(expectedTag) {
-		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
-	}
-
 	// Retrieve, validate and canonicalize the provenance tag.
 	// Note: prerelease is validated as part of patch validation
 	// and must be equal. Build is discarded as per https://semver.org/:
@@ -304,69 +347,7 @@ func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) erro
 	if err != nil {
 		return err
 	}
-	semTag := semver.Canonical(strings.TrimPrefix(tag, "refs/tags/"))
-	if !semver.IsValid(semTag) {
-		return fmt.Errorf("%s: %w", expectedTag, serrors.ErrorInvalidSemver)
-	}
-
-	// Major should always be the same.
-	expectedMajor := semver.Major(expectedTag)
-	major := semver.Major(semTag)
-	if major != expectedMajor {
-		return fmt.Errorf("%w: major version expected '%s', got '%s'",
-			serrors.ErrorMismatchVersionedTag, expectedMajor, major)
-	}
-
-	expectedMinor, err := minorVersion(expectedTag)
-	if err == nil {
-		// A minor version was provided by the user.
-		minor, err := minorVersion(semTag)
-		if err != nil {
-			return err
-		}
-
-		if minor != expectedMinor {
-			return fmt.Errorf("%w: minor version expected '%s', got '%s'",
-				serrors.ErrorMismatchVersionedTag, expectedMinor, minor)
-		}
-	}
-
-	expectedPatch, err := patchVersion(expectedTag)
-	if err == nil {
-		// A patch version was provided by the user.
-		patch, err := patchVersion(semTag)
-		if err != nil {
-			return err
-		}
-
-		if patch != expectedPatch {
-			return fmt.Errorf("%w: patch version expected '%s', got '%s'",
-				serrors.ErrorMismatchVersionedTag, expectedPatch, patch)
-		}
-	}
-
-	// Match.
-	return nil
-}
-
-func minorVersion(v string) (string, error) {
-	return extractFromVersion(v, 1)
-}
-
-func patchVersion(v string) (string, error) {
-	patch, err := extractFromVersion(v, 2)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSuffix(patch, semver.Build(v)), nil
-}
-
-func extractFromVersion(v string, i int) (string, error) {
-	parts := strings.Split(v, ".")
-	if len(parts) <= i {
-		return "", fmt.Errorf("%s: %w", v, serrors.ErrorInvalidSemver)
-	}
-	return parts[i], nil
+	return utils.VerifyVersionedTag(strings.TrimPrefix(tag, "refs/tags/"), expectedTag)
 }
 
 // hasCertInEnvelope checks if a valid x509 certificate is present in the

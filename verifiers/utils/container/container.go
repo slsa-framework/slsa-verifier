@@ -2,7 +2,6 @@ package container
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/crane"
@@ -18,36 +17,19 @@ func GetImageDigest(image string) (string, error) {
 	return strings.TrimPrefix(digest, "sha256:"), nil
 }
 
-// ValidateArtifactReference verifies that the reference is immutable
-// and has digest `digest`.
-func ValidateArtifactReference(image, expectedDigest string) error {
-	// Check if the image refers to a file.
-	// If it does, we don't expect users to provide an 'imutable'
-	// reference with `@sha256:xxx`.
-	_, err := os.Stat(image)
-	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("os.Stat(): %w", err)
-	}
-	if !os.IsNotExist(err) {
-		return nil
-	}
-
-	// For image in a registry, only allow immutable images.
+// GetDigestFromImmutableReference verifies that the reference is immutable
+// and returns the `digest`.
+func GetDigestFromImmutableReference(image string) (string, error) {
+	// Only allow immutable images.
 	ref, err := crname.ParseReference(image)
 	if err != nil {
-		return fmt.Errorf("crane.ParseReference(): %w", err)
+		return "", fmt.Errorf("crane.ParseReference(): %w", err)
 	}
 
 	if !strings.HasPrefix(ref.Identifier(), "sha256:") {
-		return fmt.Errorf("%w: expected '%s@sha256:%s', got '%s'",
-			serrors.ErrorMutableImage, image, expectedDigest, image)
+		return "", fmt.Errorf("%w: '%s'",
+			serrors.ErrorMutableImage, image)
 	}
 
-	digest := strings.TrimPrefix(ref.Identifier(), "sha256:")
-	if expectedDigest != digest {
-		return fmt.Errorf("%w: expected digest '%s', got '%s'",
-			serrors.ErrorInternal, expectedDigest, digest)
-	}
-
-	return nil
+	return strings.TrimPrefix(ref.Identifier(), "sha256:"), nil
 }
