@@ -22,7 +22,6 @@ import (
 const (
 	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
 	builderGitHubRunnerID = "https://github.com/actions/runner"
-	ossfNpmBuilderID      = "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
