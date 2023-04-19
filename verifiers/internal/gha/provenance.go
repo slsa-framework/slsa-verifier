@@ -41,18 +41,38 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 }
 
 // Verify Builder ID in provenance statement.
-// This function does an exact comparison, and expects certBuilderID to be the full
+// This function does an exact comparison, and expects expectedBuilderID to be the full
 // `name@refs/tags/<name>`.
-func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, certBuilderID string) error {
-	builderID, err := prov.BuilderID()
+func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, expectedBuilderID string) error {
+	id, err := prov.BuilderID()
 	if err != nil {
 		return err
 	}
-	if certBuilderID != builderID {
-		return fmt.Errorf("%w: expected '%s' in builder.id, got '%s'", serrors.ErrorMismatchBuilderID,
-			certBuilderID, builderID)
+	provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
+	if err != nil {
+		return err
 	}
+	if err := provBuilderID.MatchesFull(expectedBuilderID, true); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	return nil
+}
 
+// Verify Builder ID in provenance statement.
+// This function verifies the names match. If the expected builder ID contains a version,
+// it also verifies the versions match.
+func verifyBuilderIDLooseMatch(prov slsaprovenance.Provenance, expectedBuilderID string) error {
+	id, err := prov.BuilderID()
+	if err != nil {
+		return err
+	}
+	provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
+	if err != nil {
+		return err
+	}
+	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
+		return fmt.Errorf("%w", err)
+	}
 	return nil
 }
 
@@ -207,21 +227,14 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.P
 		return err
 	}
 
-	// Untrusted builder.
-	if provenanceOpts.ExpectedBuilderID == "" {
-		// Verify it's the npm CLI.
-		builderID, err := prov.BuilderID()
-		if err != nil {
-			return err
-		}
-		// TODO(#494): update the builder ID string.
-		if !strings.HasPrefix(builderID, "https://github.com/npm/cli@") {
-			return fmt.Errorf("%w: expected 'https://github.com/npm/cli' in builder.id, got '%s'",
-				serrors.ErrorMismatchBuilderID, builderID)
-		}
-	} else if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+	// TODO: Verify the buildType.
+	// This depends on the builder (delegator or CLI).
+
+	// Verify the builder ID.
+	if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 		return err
 	}
+
 	// NOTE: for the non trusted builders, the information may be forgeable.
 	// Also, the GitHub context is not recorded for the default builder.
 	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)

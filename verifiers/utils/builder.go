@@ -12,8 +12,8 @@ type TrustedBuilderID struct {
 }
 
 // TrustedBuilderIDNew creates a new BuilderID structure.
-func TrustedBuilderIDNew(builderID string) (*TrustedBuilderID, error) {
-	name, version, err := ParseBuilderID(builderID, true)
+func TrustedBuilderIDNew(builderID string, needVersion bool) (*TrustedBuilderID, error) {
+	name, version, err := ParseBuilderID(builderID, needVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func TrustedBuilderIDNew(builderID string) (*TrustedBuilderID, error) {
 // match. In this case, if the BuilderID version is a GitHub ref
 // `refs/tags/name`, we will consider it equal to user-provided
 // builderID `name`.
-func (b *TrustedBuilderID) Matches(builderID string, allowRef bool) error {
+func (b *TrustedBuilderID) MatchesLoose(builderID string, allowRef bool) error {
 	name, version, err := ParseBuilderID(builderID, false)
 	if err != nil {
 		return err
@@ -55,6 +55,32 @@ func (b *TrustedBuilderID) Matches(builderID string, allowRef bool) error {
 	return nil
 }
 
+// Matches matches the builderID string against the reference builderID.
+// Both the name and versions are always verified.
+func (b *TrustedBuilderID) MatchesFull(builderID string, allowRef bool) error {
+	name, version, err := ParseBuilderID(builderID, false)
+	if err != nil {
+		return err
+	}
+
+	if name != b.name {
+		return fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+			name, b.name)
+	}
+
+	if version != b.version {
+		// If allowRef is true, try the long version `refs/tags/<name>` match.
+		if allowRef &&
+			"refs/tags/"+version == b.version {
+			return nil
+		}
+		return fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+			version, b.version)
+	}
+
+	return nil
+}
+
 func (b *TrustedBuilderID) Name() string {
 	return b.name
 }
@@ -64,6 +90,9 @@ func (b *TrustedBuilderID) Version() string {
 }
 
 func (b *TrustedBuilderID) String() string {
+	if b.version == "" {
+		return b.name
+	}
 	return fmt.Sprintf("%s@%s", b.name, b.version)
 }
 

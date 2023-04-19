@@ -610,7 +610,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 					// Validate against test's expected builderID, if provided.
 					if tt.outBuilderID != "" {
-						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+						if err := outBuilderID.MatchesLoose(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed (1): %v", err))
 						}
 					}
@@ -655,7 +655,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					// resulting builderID returned by the provenance check.
 					// Since this a GHA and the certificate ID is in long form,
 					// we pass `allowRef = true`.
-					if err := outBuilderID.Matches(*bid, true); err != nil {
+					if err := outBuilderID.MatchesLoose(*bid, true); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed (2): %v", err))
 					}
 				}
@@ -814,7 +814,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 
 					// Validate against test's expected builderID, if provided.
 					if tt.outBuilderID != "" {
-						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+						if err := outBuilderID.MatchesLoose(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed: %v", err))
 						}
 					}
@@ -827,7 +827,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 					// resulting builderID returned by the provenance check.
 					// Since this a GHA and the certificate ID is in long form,
 					// we pass `allowRef = true`.
-					if err := outBuilderID.Matches(*bid, true); err != nil {
+					if err := outBuilderID.MatchesLoose(*bid, true); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}
@@ -1283,13 +1283,13 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 
 					// Validate against test's expected builderID, if provided.
 					if tt.outBuilderID != "" {
-						if err := outBuilderID.Matches(tt.outBuilderID, false); err != nil {
+						if err := outBuilderID.MatchesLoose(tt.outBuilderID, false); err != nil {
 							t.Errorf(fmt.Sprintf("matches failed: %v", err))
 						}
 					}
 
 					// Validate against builderID we generated automatically.
-					if err := outBuilderID.Matches(bid, false); err != nil {
+					if err := outBuilderID.MatchesLoose(bid, false); err != nil {
 						t.Errorf(fmt.Sprintf("matches failed: %v", err))
 					}
 				}

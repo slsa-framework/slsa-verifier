@@ -274,7 +274,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				return
 			}
 
-			if err := id.Matches(tt.builderID, true); err != nil {
+			if err := id.MatchesLoose(tt.builderID, true); err != nil {
 				t.Errorf("matches failed:%v", err)
 			}
 		})
@@ -480,7 +480,7 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 				return
 			}
 			expectedID := "https://github.com/" + tt.path + "@" + tt.tag
-			if err := id.Matches(expectedID, true); err != nil {
+			if err := id.MatchesLoose(expectedID, true); err != nil {
 				t.Errorf("matches failed:%v", err)
 			}
 		})
@@ -607,7 +607,6 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			expected:       serrors.ErrorInvalidRef,
 		},
 		{
-
 			name:       "full semver for other repos",
 			callerRepo: "some/repo",
 			builderRef: "refs/tags/v1.2.3",

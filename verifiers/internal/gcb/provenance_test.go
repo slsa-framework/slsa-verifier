@@ -236,7 +236,7 @@ func Test_VerifyBuilder(t *testing.T) {
 				panic("outBuilderID is nil")
 			}
 
-			if err := outBuilderID.Matches(tt.builderID, false); err != nil {
+			if err := outBuilderID.MatchesLoose(tt.builderID, false); err != nil {
 				t.Errorf(fmt.Sprintf("matches failed: %v", err))
 			}
 		})
@@ -299,7 +299,7 @@ func Test_validateRecipeType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			builderID, err := utils.TrustedBuilderIDNew(tt.builderID)
+			builderID, err := utils.TrustedBuilderIDNew(tt.builderID, true)
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
@@ -489,7 +489,7 @@ func Test_VerifySourceURI(t *testing.T) {
 				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
-			builderID, err := utils.TrustedBuilderIDNew(tt.builderID)
+			builderID, err := utils.TrustedBuilderIDNew(tt.builderID, true)
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}

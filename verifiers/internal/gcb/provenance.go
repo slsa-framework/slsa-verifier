@@ -270,14 +270,14 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		return nil, err
 	}
 
-	provBuilderID, err := utils.TrustedBuilderIDNew(predicateBuilderID)
+	provBuilderID, err := utils.TrustedBuilderIDNew(predicateBuilderID, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// Validate with user-provided value.
 	if builderOpts != nil && builderOpts.ExpectedID != nil {
-		if err := provBuilderID.Matches(*builderOpts.ExpectedID, false); err != nil {
+		if err := provBuilderID.MatchesLoose(*builderOpts.ExpectedID, false); err != nil {
 			return nil, err
 		}
 	}
