@@ -60,7 +60,7 @@ func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, expectedBuilderID
 
 // Verify Builder ID in provenance statement.
 // This function verifies the names match. If the expected builder ID contains a version,
-// it also evrifies the verisons match.
+// it also verifies the verisons match.
 func verifyBuilderIDLooseMatch(prov slsaprovenance.Provenance, expectedBuilderID string) error {
 	id, err := prov.BuilderID()
 	if err != nil {
