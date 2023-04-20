@@ -74,7 +74,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 
 		attestations, err := os.ReadFile(c.AttestationsPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed reading attestations %s: FAILED: %v\n\n", c.AttestationsPath, err)
+			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
 			return nil, err
 		}
 
