@@ -54,7 +54,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 		}
 
 		if c.AttestationsPath == "" {
-			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
+			fmt.Fprintf(os.Stderr, "--attestations-path is required.\n\n")
 			return nil, err
 		}
 		provenanceOpts := &options.ProvenanceOpts{
