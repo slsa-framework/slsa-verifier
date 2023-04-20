@@ -72,8 +72,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.JobWobWorkflowRef,
-		workflowInfo.CallerHash)
+		workflowInfo.SubjectWorkflowRef,
+		workflowInfo.SourceSha1)
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -143,6 +143,8 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// We may add support for verifying provenance from arbitrary re-usable workflows
 		// later; which may be useful for org-level builders.
 
+		// TODO(https://github.com/gh-community/npm-provenance-private-beta-community/issues/9#issuecomment-1516685721):
+		// update the builder ID based on self-vs-GitHub hosted status in the cert.
 		// The builder.id is set to builderGitHubRunnerID by the npm CLI.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(builderGitHubRunnerID, false)
 		if err != nil {
@@ -163,7 +165,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 
 	fmt.Fprintf(os.Stderr, "Verified build using builder %s at commit %s\n",
 		trustedBuilderID.String(),
-		workflowInfo.CallerHash)
+		workflowInfo.SourceSha1)
 
 	return trustedBuilderID, nil
 }

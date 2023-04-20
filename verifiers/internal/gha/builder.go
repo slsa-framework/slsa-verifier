@@ -2,6 +2,7 @@ package gha
 
 import (
 	"crypto/x509"
+	"encoding/asn1"
 	"errors"
 	"fmt"
 	"strings"
@@ -22,6 +23,7 @@ var (
 	// This is used in cosign's CheckOpts for validating the certificate. We
 	// do specific builder verification after this.
 	certSubjectRegexp = httpsGithubCom + "*"
+	mismatchClaim     = errors.New("mismatch certificate claims")
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
@@ -50,9 +52,9 @@ func VerifyCertficateSourceRepository(id *WorkflowIdentity,
 	// {org}/{repository}.
 	expectedSource := strings.TrimPrefix(sourceRepo, "git+https://")
 	expectedSource = strings.TrimPrefix(expectedSource, githubCom)
-	if id.CallerRepository != expectedSource {
+	if id.SourceRepository != expectedSource {
 		return fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
-			expectedSource, id.CallerRepository)
+			expectedSource, id.SourceRepository)
 	}
 	return nil
 }
@@ -72,9 +74,9 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 	}
 
 	// cert URI path is /org/repo/path/to/workflow@ref
-	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
+	workflowPath := strings.SplitN(id.SubjectWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return nil, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.JobWobWorkflowRef)
+		return nil, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.SubjectWorkflowRef)
 	}
 
 	// Verify trusted workflow.
@@ -135,8 +137,8 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	if (id.CallerRepository == trustedBuilderRepository ||
-		id.CallerRepository == e2eTestRepository) &&
+	if (id.SourceRepository == trustedBuilderRepository ||
+		id.SourceRepository == e2eTestRepository) &&
 		options.TestingEnabled() {
 		// Allow verification on the main branch to support e2e tests.
 		if ref == "refs/heads/main" {
@@ -177,39 +179,242 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	return nil
 }
 
-func getExtension(cert *x509.Certificate, oid string) string {
+func getExtension(cert *x509.Certificate, oid string, encoded bool) (string, error) {
 	for _, ext := range cert.Extensions {
 		if strings.Contains(ext.Id.String(), oid) {
-			return string(ext.Value)
+			if !encoded {
+				return string(ext.Value), nil
+			}
+
+			// Decode first.
+			var decoded string
+			rest, err := asn1.Unmarshal(ext.Value, &decoded)
+			if err != nil {
+				return "", fmt.Errorf("%w", err)
+			}
+			if len(rest) != 0 {
+				return "", fmt.Errorf("decoding has rest")
+			}
+			return decoded, nil
 		}
 	}
-	return ""
+	return "", nil
 }
 
+type Hosted int
+
+const (
+	HostedSelf Hosted = iota
+	HostedGitHub
+)
+
+// See https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md.
 type WorkflowIdentity struct {
-	// The caller repository
-	CallerRepository string `json:"caller"`
-	// The commit SHA where the workflow was triggered
-	CallerHash string `json:"commit"`
-	// Current workflow (reuseable workflow) ref
-	JobWobWorkflowRef string `json:"job_workflow_ref"`
-	// Trigger
-	Trigger string `json:"trigger"`
+	// The source repository
+	SourceRepository string
+	// The commit SHA where the workflow was BuildTriggered
+	SourceSha1 string
+	// Ref of the source.
+	SourceRef *string
+	// ID of the source repository.
+	SourceID *string
+	//  Source owner ID of repository.
+	SourceOwnerID *string
+
+	// Current workflow path (reuseable workflow or BuildTrigger workflow) ref
+	SubjectWorkflowRef string
+	// Subject commit sha1.
+	SubjectSha1 *string
+	// Hosted status of the subject.
+	SubjectHosted *Hosted
+
+	// Run ID
+	RunID *string
+	// BuildTrigger
+	BuildBuildTrigger string
 	// Issuer
-	Issuer string `json:"issuer"`
+	Issuer string
+}
+
+func getHosted(cert *x509.Certificate) (Hosted, error) {
+	ret := HostedSelf
+	runnerEnv, err := getExtension(cert, "1.3.6.1.4.1.57264.1.11", true)
+	if err != nil {
+		return ret, err
+	}
+	if runnerEnv == "github-hosted" {
+		return HostedGitHub, nil
+	}
+	return ret, nil
+}
+
+func validateClaimsEqual(deprecated, new string) error {
+	// derecated may be empty, but it more likely the cert is old and 'new' is empty.
+	if deprecated != "" && new != "" && deprecated != new {
+		return fmt.Errorf("%w: '%v' != '%v'", mismatchClaim, deprecated, new)
+	}
+	return nil
 }
 
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
-		return nil, errors.New("missing URI information from certificate")
+		return nil, fmt.Errorf("%w: missing URI information from certificate", mismatchClaim)
 	}
 
+	// 1.3.6.1.4.1.57264.1.2: DEPRECATED.
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726412--github-workflow-BuildTrigger-deprecated
+	deprecatedBuildTrigger, err := getExtension(cert, "1.3.6.1.4.1.57264.1.2", false)
+	if err != nil {
+		return nil, err
+	}
+	// 1.3.6.1.4.1.57264.1.20 | Build Trigger
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264120--build-trigger
+	buildTrigger, err := getExtension(cert, "1.3.6.1.4.1.57264.1.20", true)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateClaimsEqual(deprecatedBuildTrigger, buildTrigger); err != nil {
+		return nil, err
+	}
+	// Handle old certifcates.
+	if buildTrigger == "" {
+		buildTrigger = deprecatedBuildTrigger
+	}
+
+	// 1.3.6.1.4.1.57264.1.3: DEPRECATED.
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726413--github-workflow-sha-deprecated
+	deprecatedSourceSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.3", false)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.5: DEPRECATED.
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726415--github-workflow-repository-deprecated
+	deprecatedSourceRepository, err := getExtension(cert, "1.3.6.1.4.1.57264.1.5", false)
+	if err != nil {
+		return nil, err
+	}
+	// 1.3.6.1.4.1.57264.1.12 | Source Repository URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264112--source-repository-uri
+	sourceURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.12", true)
+	if err != nil {
+		return nil, err
+	}
+	if deprecatedSourceRepository != "" &&
+		"https://github.com/"+deprecatedSourceRepository != sourceURI {
+		return nil, fmt.Errorf("%w: '%v' != '%v'",
+			mismatchClaim, "https://github.com/"+deprecatedSourceRepository, sourceURI)
+	}
+	sourceRepository := strings.TrimPrefix(sourceURI, "https://github.com/")
+	// Handle old certifcates.
+	if sourceRepository == "" {
+		sourceRepository = deprecatedSourceRepository
+	}
+
+	// IssuerV1: 1.3.6.1.4.1.57264.1.8
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726411--issuer
+	issuerV1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.1", false)
+	if err != nil {
+		return nil, err
+	}
+
+	// IssuerV2: 1.3.6.1.4.1.57264.1.1
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726418--issuer-v2
+	issuerV2, err := getExtension(cert, "1.3.6.1.4.1.57264.1.8", true)
+	if err != nil {
+		return nil, err
+	}
+
+	if issuerV1 != issuerV2 {
+		return nil, fmt.Errorf("%w: issuers: '%v' != '%v'", mismatchClaim, issuerV1, issuerV2)
+	}
+
+	// 1.3.6.1.4.1.57264.1.10 | Build Signer Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264110--build-signer-digest
+	subjectSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.10", true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.11 | Runner Environment
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264111--runner-environment
+	subjectHosted, err := getHosted(cert)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.13 | Source Repository Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264113--source-repository-digest
+	sourceSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.13", true)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateClaimsEqual(deprecatedSourceSha1, sourceSha1); err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.14 | Source Repository Ref
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264114--source-repository-ref
+	sourceRef, err := getExtension(cert, "1.3.6.1.4.1.57264.1.14", true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.15 | Source Repository Identifier
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264115--source-repository-identifier
+	sourceID, err := getExtension(cert, "1.3.6.1.4.1.57264.1.15", true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.17 | Source Repository Owner Identifier
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264117--source-repository-owner-identifier
+	sourceOwnerID, err := getExtension(cert, "1.3.6.1.4.1.57264.1.17", true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.19 | Build Config Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264119--build-config-digest
+	buildConfigSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.19", true)
+	if err != nil {
+		return nil, err
+	}
+	if buildConfigSha1 != sourceSha1 {
+		return nil, fmt.Errorf("%w: '%v' != '%v'",
+			mismatchClaim, buildConfigSha1, sourceSha1)
+	}
+
+	// 1.3.6.1.4.1.57264.1.21 | Run Invocation URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264121--run-invocation-uri
+	runURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.21", true)
+	if err != nil {
+		return nil, err
+	}
+	runID := strings.TrimPrefix(runURI, fmt.Sprintf("https://github.com/%s/actions/runs/", sourceRepository))
+
+	fmt.Println("subjectSha1:", subjectSha1)
+	fmt.Println("subjectHosted:", subjectHosted)
+	fmt.Println("sourceRepository:", sourceRepository)
+	fmt.Println("SourceID:", sourceID)
+	fmt.Println("SourceOwnerID:", sourceOwnerID)
+	fmt.Println("runID:", runID)
 	return &WorkflowIdentity{
-		CallerRepository:  getExtension(cert, "1.3.6.1.4.1.57264.1.5"),
-		Issuer:            getExtension(cert, "1.3.6.1.4.1.57264.1.1"),
-		Trigger:           getExtension(cert, "1.3.6.1.4.1.57264.1.2"),
-		CallerHash:        getExtension(cert, "1.3.6.1.4.1.57264.1.3"),
-		JobWobWorkflowRef: cert.URIs[0].Path,
+		// Issuer.
+		Issuer: issuerV2,
+		// Subject
+		SubjectWorkflowRef: cert.URIs[0].Path,
+		SubjectSha1:        &subjectSha1,
+		SubjectHosted:      &subjectHosted,
+		// Source.
+		SourceRepository: sourceRepository,
+		SourceSha1:       sourceSha1,
+		SourceRef:        &sourceRef,
+		SourceID:         &sourceID,
+		SourceOwnerID:    &sourceOwnerID,
+		// Other.
+		BuildBuildTrigger: buildTrigger,
+		RunID:             &runID,
 	}, nil
 }
