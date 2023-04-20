@@ -44,6 +44,10 @@ NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
 */
 var npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
 
+type attestationSet struct {
+	Attestations []attestation `json:"attestations"`
+}
+
 type attestation struct {
 	PredicateType string      `json:"predicateType"`
 	BundleBytes   BundleBytes `json:"bundle"`
@@ -74,12 +78,12 @@ func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
 }
 
 func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*Npm, error) {
-	var attestations []attestation
-	if err := json.Unmarshal(attestationBytes, &attestations); err != nil {
+	var aSet attestationSet
+	if err := json.Unmarshal(attestationBytes, &aSet); err != nil {
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)
 	}
 
-	prov, pub, err := extractAttestations(attestations)
+	prov, pub, err := extractAttestations(aSet.Attestations)
 	if err != nil {
 		return nil, err
 	}
