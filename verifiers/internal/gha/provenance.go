@@ -19,7 +19,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
-	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
+
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
@@ -244,59 +244,6 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	// because for the non trusted builders, the information may be forgeable.
 	if !isTrustedBuilder {
 		return verifyProvenanceMatchesCertificate(prov, workflow)
-	}
-	return nil
-}
-
-func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
-	fmt.Println(prov)
-	/*
-			"environment": {
-		        "GITHUB_EVENT_NAME": "workflow_dispatch",
-		        "GITHUB_REF": "refs/heads/main",
-		        "GITHUB_REPOSITORY": "laurentsimon/provenance-npm-test",
-		        "GITHUB_REPOSITORY_ID": "602223945",
-		        "GITHUB_REPOSITORY_OWNER_ID": "64505099",
-		        "GITHUB_RUN_ATTEMPT": "1",
-		        "GITHUB_RUN_ID": "4757060009",
-		        "GITHUB_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14",
-		        "GITHUB_WORKFLOW_REF": "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
-		        "GITHUB_WORKFLOW_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14"
-		      }
-		    },
-		    "metadata": {
-		      "buildInvocationId": "4757060009-1",
-		      "completeness": {
-		        "parameters": false,
-		        "environment": false,
-		        "materials": false
-		      },
-		      "reproducible": false
-
-	*/
-	sysParams, err := prov.GetSystemParameters()
-	if err != nil {
-		return err
-	}
-	if len(sysParams) != 10 {
-		return fmt.Errorf("TODO")
-	}
-	eventName, err := slsaprovenance.GetAsString(sysParams, "GITHUB_EVENT_NAME")
-	if err != nil {
-		return err
-	}
-	fmt.Println("eventName:", eventName)
-	if eventName != workflow.BuildTrigger {
-		return fmt.Errorf("TODO")
-	}
-
-	ref, err := slsaprovenance.GetAsString(sysParams, "GITHUB_REF")
-	if err != nil {
-		return err
-	}
-	fmt.Println("ref:", ref)
-	if workflow.SourceRef == nil || ref != *workflow.SourceRef {
-		return fmt.Errorf("TODO")
 	}
 	return nil
 }

@@ -206,6 +206,11 @@ func GetBranch(environment map[string]any, predicateType string) (string, error)
 	}
 }
 
+func Exists(environment map[string]any, field string) bool {
+	_, ok := environment[field]
+	return ok
+}
+
 func GetAsString(environment map[string]any, field string) (string, error) {
 	value, ok := environment[field]
 	if !ok {

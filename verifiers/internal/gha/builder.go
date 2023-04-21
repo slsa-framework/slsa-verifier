@@ -3,7 +3,6 @@ package gha
 import (
 	"crypto/x509"
 	"encoding/asn1"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -23,7 +22,6 @@ var (
 	// This is used in cosign's CheckOpts for validating the certificate. We
 	// do specific builder verification after this.
 	certSubjectRegexp = httpsGithubCom + "*"
-	mismatchClaim     = errors.New("mismatch certificate claims")
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
@@ -228,10 +226,13 @@ type WorkflowIdentity struct {
 	// Hosted status of the subject.
 	SubjectHosted *Hosted
 
-	// Run ID
-	RunID *string
 	// BuildTrigger
 	BuildTrigger string
+	// Build config path, i.e. the trigger workflow.
+	BuildConfigPath *string
+
+	// Run ID
+	RunID *string
 	// Issuer
 	Issuer string
 }
@@ -251,7 +252,7 @@ func getHosted(cert *x509.Certificate) (Hosted, error) {
 func validateClaimsEqual(deprecated, new string) error {
 	// derecated may be empty, but it more likely the cert is old and 'new' is empty.
 	if deprecated != "" && new != "" && deprecated != new {
-		return fmt.Errorf("%w: '%v' != '%v'", mismatchClaim, deprecated, new)
+		return fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidFormat, deprecated, new)
 	}
 	return nil
 }
@@ -259,7 +260,7 @@ func validateClaimsEqual(deprecated, new string) error {
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
-		return nil, fmt.Errorf("%w: missing URI information from certificate", mismatchClaim)
+		return nil, fmt.Errorf("%w: missing URI information from certificate", serrors.ErrorInvalidFormat)
 	}
 
 	// 1.3.6.1.4.1.57264.1.2: DEPRECATED.
@@ -304,7 +305,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if deprecatedSourceRepository != "" &&
 		"https://github.com/"+deprecatedSourceRepository != sourceURI {
 		return nil, fmt.Errorf("%w: '%v' != '%v'",
-			mismatchClaim, "https://github.com/"+deprecatedSourceRepository, sourceURI)
+			serrors.ErrorInvalidFormat, "https://github.com/"+deprecatedSourceRepository, sourceURI)
 	}
 	sourceRepository := strings.TrimPrefix(sourceURI, "https://github.com/")
 	// Handle old certifcates.
@@ -327,7 +328,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 
 	if issuerV1 != issuerV2 {
-		return nil, fmt.Errorf("%w: issuers: '%v' != '%v'", mismatchClaim, issuerV1, issuerV2)
+		return nil, fmt.Errorf("%w: issuers: '%v' != '%v'", serrors.ErrorInvalidFormat, issuerV1, issuerV2)
 	}
 
 	// 1.3.6.1.4.1.57264.1.10 | Build Signer Digest
@@ -383,7 +384,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	if buildConfigSha1 != sourceSha1 {
 		return nil, fmt.Errorf("%w: '%v' != '%v'",
-			mismatchClaim, buildConfigSha1, sourceSha1)
+			serrors.ErrorInvalidFormat, buildConfigSha1, sourceSha1)
 	}
 
 	// 1.3.6.1.4.1.57264.1.21 | Run Invocation URI
@@ -394,6 +395,28 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	runID := strings.TrimPrefix(runURI, fmt.Sprintf("https://github.com/%s/actions/runs/", sourceRepository))
 
+	// 1.3.6.1.4.1.57264.1.18 | Build Config URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264118--build-config-uri
+	buildConfigURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.18", true)
+	if err != nil {
+		return nil, err
+	}
+	parts := strings.Split(buildConfigURI, "@")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("%w: '%v' != '%v'",
+			serrors.ErrorInvalidFormat, buildConfigURI)
+	}
+	prefix := fmt.Sprintf("https://github.com/%v/", sourceRepository)
+	if !strings.HasPrefix(parts[0], prefix) {
+		return nil, fmt.Errorf("%w: prefix: ",
+			serrors.ErrorInvalidFormat, parts[0])
+	}
+	buildConfigPath := strings.TrimPrefix(parts[0], prefix)
+
+	// Subject path.
+	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
+	}
 	fmt.Println("subjectSha1:", subjectSha1)
 	fmt.Println("subjectHosted:", subjectHosted)
 	fmt.Println("sourceRepository:", sourceRepository)
@@ -404,7 +427,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		// Issuer.
 		Issuer: issuerV2,
 		// Subject
-		SubjectWorkflowRef: cert.URIs[0].Path,
+		SubjectWorkflowRef: cert.URIs[0].Path[1:], // Remove the starting '/'
 		SubjectSha1:        &subjectSha1,
 		SubjectHosted:      &subjectHosted,
 		// Source.
@@ -413,8 +436,10 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		SourceRef:        &sourceRef,
 		SourceID:         &sourceID,
 		SourceOwnerID:    &sourceOwnerID,
+		// Build.
+		BuildTrigger:    buildTrigger,
+		BuildConfigPath: &buildConfigPath,
 		// Other.
-		BuildTrigger: buildTrigger,
-		RunID:        &runID,
+		RunID: &runID,
 	}, nil
 }

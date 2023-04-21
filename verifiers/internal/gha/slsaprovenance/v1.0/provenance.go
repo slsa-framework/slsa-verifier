@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
@@ -118,6 +119,22 @@ func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
 	}
 	// NOTE: return not supported to re-visit the implementation when v1.0 is supported.
 	return v, serrors.ErrorNotSupported
+}
+
+func (prov *ProvenanceV1) GetBuildID() (string, error) {
+	return prov.Predicate.RunDetails.BuildMetadata.InvocationID, nil
+}
+
+func (prov *ProvenanceV1) GetBuildStartTime() (*time.Time, error) {
+	return prov.Predicate.RunDetails.BuildMetadata.StartedOn, nil
+}
+
+func (prov *ProvenanceV1) GetBuildFinishTime() (*time.Time, error) {
+	return prov.Predicate.RunDetails.BuildMetadata.FinishedOn, nil
+}
+
+func (prov *ProvenanceV1) GetNumberResolvedDependencies() (int, error) {
+	return len(prov.Predicate.BuildDefinition.ResolvedDependencies), nil
 }
 
 func (prov *ProvenanceV1) GetSystemParameters() (map[string]any, error) {
