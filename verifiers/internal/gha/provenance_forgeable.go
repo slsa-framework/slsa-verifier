@@ -175,8 +175,7 @@ func verifyV02Metadata(prov slsaprovenance.Provenance) error {
 	}
 
 	completeness := prov02.Predicate.Metadata.Completeness
-	if completeness.Parameters || completeness.Parameters ||
-		completeness.Materials {
+	if completeness.Parameters || completeness.Materials {
 		return fmt.Errorf("%w: completeness: %v",
 			serrors.ErrorNonVerifiableClaim,
 			completeness)
@@ -344,7 +343,6 @@ func verifySystemParameter(params map[string]any, name string, certValue *string
 	if err != nil {
 		return err
 	}
-	fmt.Println("value:", provValue)
 	// The certificate must have the value. Old Fulcio certs are not
 	// supported.
 	return equalCertificateValue(certValue, provValue, name)

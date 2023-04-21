@@ -1,6 +1,8 @@
 package gha
 
 import (
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

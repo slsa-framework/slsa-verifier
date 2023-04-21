@@ -403,7 +403,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	parts := strings.Split(buildConfigURI, "@")
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("%w: '%v' != '%v'",
+		return nil, fmt.Errorf("%w: %v",
 			serrors.ErrorInvalidFormat, buildConfigURI)
 	}
 	prefix := fmt.Sprintf("https://github.com/%v/", sourceRepository)
