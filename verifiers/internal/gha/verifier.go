@@ -125,6 +125,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	}
 
 	// WARNING: builderID may be empty if it's not a trusted reusable builder workflow.
+	isTrustedBuilder := false
 	if trustedBuilderID != nil {
 		// We only support builders built using the BYOB framework.
 		// The builder is guaranteed to be delegatorGenericReusableWorkflow, since this is the builder
@@ -132,6 +133,11 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// The delegator workflow will set the builder ID to the caller's path,
 		// which is what users match against.
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
+
+		if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
+			return nil, fmt.Errorf("%w: self hosted re-usable workflow", serrors.ErrorMismatchBuilderID)
+		}
+		isTrustedBuilder = true
 	} else {
 		// NOTE: if the user created provenance using a re-usable workflow
 		// that does not integrate with the BYOB framework, this code will be run.
@@ -144,22 +150,34 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// later; which may be useful for org-level builders.
 
 		// TODO(https://github.com/gh-community/npm-provenance-private-beta-community/issues/9#issuecomment-1516685721):
-		// update the builder ID based on self-vs-GitHub hosted status in the cert.
-		// The builder.id is set to builderGitHubRunnerID by the npm CLI.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(builderGitHubRunnerID, false)
+		// Allow the user to provide one of 3 builders: self-hosted, github-hosted and legacy github-hosted.
+		// Verify that the value provided is consistent with certificate information.
+
+		switch *builderOpts.ExpectedID {
+		case builderLegacyGitHubRunnerID, builderGitHubHostedRunnerID:
+			if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
+				return nil, fmt.Errorf("%w: re-usable workflow is self-hosted", serrors.ErrorMismatchBuilderID)
+			}
+		case builderSelfHostedRunnerID:
+			if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedSelf {
+				return nil, fmt.Errorf("%w: re-usable workflow is GitHub-hosted", serrors.ErrorMismatchBuilderID)
+			}
+		default:
+			return nil, fmt.Errorf("%w: builder %v", serrors.ErrorNotSupported, *builderOpts.ExpectedID)
+		}
+
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(*builderOpts.ExpectedID, false)
 		if err != nil {
 			return nil, err
 		}
-		if err := trustedBuilderID.MatchesLoose(*builderOpts.ExpectedID, false); err != nil {
-			return nil, fmt.Errorf("%w", err)
-		}
+
 		// On GitHub we only support the default GitHub runner builder.
-		provenanceOpts.ExpectedBuilderID = builderGitHubRunnerID
+		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 	}
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := VerifyNpmPackageProvenance(env, provenanceOpts); err != nil {
+	if err := VerifyNpmPackageProvenance(env, workflowInfo, provenanceOpts, isTrustedBuilder); err != nil {
 		return nil, err
 	}
 

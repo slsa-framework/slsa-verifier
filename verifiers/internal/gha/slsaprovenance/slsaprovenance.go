@@ -34,6 +34,12 @@ type Provenance interface {
 	// GetTag retrieves the tag of the source from the provenance.
 	GetTag() (string, error)
 
+	// Get workflow trigger path.
+	GetBuildTriggerPath() (string, error)
+
+	// Get system pararmeters.
+	GetSystemParameters() (map[string]any, error)
+
 	// GetWorkflowInputs retrieves the inputs from the provenance. Only succeeds for event
 	// relevant event types (workflow_inputs).
 	GetWorkflowInputs() (map[string]interface{}, error)

@@ -77,3 +77,15 @@ func (prov *ProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
 
 	return slsaprovenance.GetWorkflowInputs(environment, prov.PredicateType)
 }
+
+func (prov *ProvenanceV02) GetBuildTriggerPath() (string, error) {
+	return prov.Predicate.Invocation.ConfigSource.EntryPoint, nil
+}
+
+func (prov *ProvenanceV02) GetSystemParameters() (map[string]any, error) {
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	}
+	return environment, nil
+}

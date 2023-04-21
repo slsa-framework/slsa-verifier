@@ -221,7 +221,7 @@ type WorkflowIdentity struct {
 	//  Source owner ID of repository.
 	SourceOwnerID *string
 
-	// Current workflow path (reuseable workflow or BuildTrigger workflow) ref
+	// Workflow path OIDC subject - ref of reuseable workflow or trigger workflow.
 	SubjectWorkflowRef string
 	// Subject commit sha1.
 	SubjectSha1 *string
@@ -231,7 +231,7 @@ type WorkflowIdentity struct {
 	// Run ID
 	RunID *string
 	// BuildTrigger
-	BuildBuildTrigger string
+	BuildTrigger string
 	// Issuer
 	Issuer string
 }
@@ -414,7 +414,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		SourceID:         &sourceID,
 		SourceOwnerID:    &sourceOwnerID,
 		// Other.
-		BuildBuildTrigger: buildTrigger,
-		RunID:             &runID,
+		BuildTrigger: buildTrigger,
+		RunID:        &runID,
 	}, nil
 }

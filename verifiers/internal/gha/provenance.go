@@ -182,7 +182,6 @@ func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 		if !exists {
 			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, fmt.Sprintf("no sha%v subject digest", l))
 		}
-
 		if hash == expectedHash {
 			return nil
 		}
@@ -220,7 +219,8 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 		provenance, rClient, trustedRoot)
 }
 
-func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentity,
+	provenanceOpts *options.ProvenanceOpts, isTrustedBuilder bool,
 ) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
@@ -235,9 +235,70 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.P
 		return err
 	}
 
-	// NOTE: for the non trusted builders, the information may be forgeable.
 	// Also, the GitHub context is not recorded for the default builder.
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)
+	if err := VerifyProvenanceCommonOptions(prov, provenanceOpts, true); err != nil {
+		return err
+	}
+
+	// Verify consistency between the provenance and the certificate.
+	// because for the non trusted builders, the information may be forgeable.
+	if !isTrustedBuilder {
+		return verifyProvenanceMatchesCertificate(prov, workflow)
+	}
+	return nil
+}
+
+func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
+	fmt.Println(prov)
+	/*
+			"environment": {
+		        "GITHUB_EVENT_NAME": "workflow_dispatch",
+		        "GITHUB_REF": "refs/heads/main",
+		        "GITHUB_REPOSITORY": "laurentsimon/provenance-npm-test",
+		        "GITHUB_REPOSITORY_ID": "602223945",
+		        "GITHUB_REPOSITORY_OWNER_ID": "64505099",
+		        "GITHUB_RUN_ATTEMPT": "1",
+		        "GITHUB_RUN_ID": "4757060009",
+		        "GITHUB_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14",
+		        "GITHUB_WORKFLOW_REF": "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+		        "GITHUB_WORKFLOW_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14"
+		      }
+		    },
+		    "metadata": {
+		      "buildInvocationId": "4757060009-1",
+		      "completeness": {
+		        "parameters": false,
+		        "environment": false,
+		        "materials": false
+		      },
+		      "reproducible": false
+
+	*/
+	sysParams, err := prov.GetSystemParameters()
+	if err != nil {
+		return err
+	}
+	if len(sysParams) != 10 {
+		return fmt.Errorf("TODO")
+	}
+	eventName, err := slsaprovenance.GetAsString(sysParams, "GITHUB_EVENT_NAME")
+	if err != nil {
+		return err
+	}
+	fmt.Println("eventName:", eventName)
+	if eventName != workflow.BuildTrigger {
+		return fmt.Errorf("TODO")
+	}
+
+	ref, err := slsaprovenance.GetAsString(sysParams, "GITHUB_REF")
+	if err != nil {
+		return err
+	}
+	fmt.Println("ref:", ref)
+	if workflow.SourceRef == nil || ref != *workflow.SourceRef {
+		return fmt.Errorf("TODO")
+	}
+	return nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,

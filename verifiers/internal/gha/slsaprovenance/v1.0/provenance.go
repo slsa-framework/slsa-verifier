@@ -94,3 +94,38 @@ func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 	}
 	return slsaprovenance.GetWorkflowInputs(sysParams, prov.predicateType)
 }
+
+// TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):
+// verify the ref and repo as well.
+func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
+	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+
+	w, ok := sysParams["workflow"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow parameters type")
+	}
+
+	wMap, ok := w.(map[string]string)
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
+	}
+	v, ok := wMap["path"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no path entry on workflow")
+	}
+	// NOTE: return not supported to re-visit the implementation when v1.0 is supported.
+	return v, serrors.ErrorNotSupported
+}
+
+func (prov *ProvenanceV1) GetSystemParameters() (map[string]any, error) {
+	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+
+	// NOTE: return not supported to re-visit the implementation when v1.0 is supported.
+	return sysParams, serrors.ErrorNotSupported
+}

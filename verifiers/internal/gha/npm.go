@@ -20,8 +20,10 @@ import (
 )
 
 const (
-	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
-	builderGitHubRunnerID = "https://github.com/actions/runner"
+	publishAttestationV01       = "https://github.com/npm/attestation/tree/main/specs/publish/"
+	builderLegacyGitHubRunnerID = "https://github.com/actions/runner"
+	builderGitHubHostedRunnerID = "https://github.com/actions/runner/github-hosted"
+	builderSelfHostedRunnerID   = "https://github.com/actions/runner/self-hosted"
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
