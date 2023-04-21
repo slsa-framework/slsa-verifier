@@ -408,7 +408,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	prefix := fmt.Sprintf("https://github.com/%v/", sourceRepository)
 	if !strings.HasPrefix(parts[0], prefix) {
-		return nil, fmt.Errorf("%w: prefix: ",
+		return nil, fmt.Errorf("%w: prefix: %v",
 			serrors.ErrorInvalidFormat, parts[0])
 	}
 	buildConfigPath := strings.TrimPrefix(parts[0], prefix)
@@ -417,12 +417,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
 	}
-	fmt.Println("subjectSha1:", subjectSha1)
-	fmt.Println("subjectHosted:", subjectHosted)
-	fmt.Println("sourceRepository:", sourceRepository)
-	fmt.Println("SourceID:", sourceID)
-	fmt.Println("SourceOwnerID:", sourceOwnerID)
-	fmt.Println("runID:", runID)
+
 	return &WorkflowIdentity{
 		// Issuer.
 		Issuer: issuerV2,
