@@ -113,12 +113,12 @@ func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
 	}
+
 	v, ok := wMap["path"]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no path entry on workflow")
 	}
-	// NOTE: return not supported to re-visit the implementation when v1.0 is supported.
-	return v, serrors.ErrorNotSupported
+	return v, nil
 }
 
 func (prov *ProvenanceV1) GetBuildID() (string, error) {

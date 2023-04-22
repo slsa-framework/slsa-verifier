@@ -55,6 +55,9 @@ func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow
 	// In addition, fields not defined in the structures will cause an error
 	// because we use stric unmarshaling in slsaprovenance.go.
 
+	// Other fields such as material and config source URI / sha are verified
+	// as part of the common verification.
+
 	// TODO(#566): verify fields for v1.0 provenance.
 
 	return nil
