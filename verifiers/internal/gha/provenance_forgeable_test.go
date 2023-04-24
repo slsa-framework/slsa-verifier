@@ -1093,7 +1093,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 		err                        error
 	}{
 		{
-			name: "all field populated",
+			name: "correct provenance",
 			subject: []intoto.Subject{
 				{
 					Digest: intotocommon.DigestSet{"sha512": "abcd"},

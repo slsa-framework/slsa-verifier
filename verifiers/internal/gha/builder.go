@@ -194,22 +194,24 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 
 func getExtension(cert *x509.Certificate, oid string, encoded bool) (string, error) {
 	for _, ext := range cert.Extensions {
-		if ext.Id.String() == oid {
-			if !encoded {
-				return string(ext.Value), nil
-			}
-
-			// Decode first.
-			var decoded string
-			rest, err := asn1.Unmarshal(ext.Value, &decoded)
-			if err != nil {
-				return "", fmt.Errorf("%w", err)
-			}
-			if len(rest) != 0 {
-				return "", fmt.Errorf("decoding has rest")
-			}
-			return decoded, nil
+		if ext.Id.String() != oid {
+			continue
 		}
+		if !encoded {
+			return string(ext.Value), nil
+		}
+
+		// Decode first.
+		var decoded string
+		rest, err := asn1.Unmarshal(ext.Value, &decoded)
+		if err != nil {
+			return "", fmt.Errorf("%w", err)
+		}
+		if len(rest) != 0 {
+			return "", fmt.Errorf("decoding has rest")
+		}
+		return decoded, nil
+
 	}
 	return "", nil
 }
@@ -268,12 +270,12 @@ func getHosted(cert *x509.Certificate) (*Hosted, error) {
 	return nil, nil
 }
 
-func validateClaimsEqual(deprecated, new string) error {
+func validateClaimsEqual(deprecated, existing string) error {
 	// derecated may be empty, but it more likely the cert is old and 'new' is empty.
-	if deprecated != "" && new != "" && deprecated != new {
-		return fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidFormat, deprecated, new)
+	if deprecated != "" && existing != "" && deprecated != existing {
+		return fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidFormat, deprecated, existing)
 	}
-	if deprecated == "" && new == "" {
+	if deprecated == "" && existing == "" {
 		return fmt.Errorf("%w: claims are empty", serrors.ErrorInvalidFormat)
 	}
 	return nil
@@ -281,6 +283,8 @@ func validateClaimsEqual(deprecated, new string) error {
 
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
 // See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
+//
+//nolint:gocyclo
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
 		return nil, fmt.Errorf("%w: missing URI information from certificate", serrors.ErrorInvalidFormat)
