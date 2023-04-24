@@ -1,8 +1,6 @@
 package gha
 
 import (
-	//"fmt"
-	// "os"
 	"testing"
 	"time"
 
@@ -145,7 +143,7 @@ func Test_verifyBuildConfig(t *testing.T) {
 			prov10 := &slsav10.ProvenanceV1{
 				Predicate: intotov10.ProvenancePredicate{
 					BuildDefinition: intotov10.ProvenanceBuildDefinition{
-						SystemParameters: map[string]interface{}{
+						ExternalParameters: map[string]interface{}{
 							"workflow": map[string]string{
 								"path": tt.path,
 							},
@@ -1064,6 +1062,168 @@ func Test_verifySystemParameters(t *testing.T) {
 				},
 			}
 			err = verifySystemParameters(prov10, &tt.workflow)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
+func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
+	t.Parallel()
+	expectedWorkflow := WorkflowIdentity{
+		BuildTrigger:       "workflow_dispatch",
+		BuildConfigPath:    asStringPointer("release/workflow/path"),
+		SubjectWorkflowRef: "path/to/trusted-builder@subject-ref",
+		SubjectSha1:        asStringPointer("subject-sha"),
+		SourceRepository:   "repo/name",
+		SourceRef:          asStringPointer("source-ref"),
+		SourceID:           asStringPointer("source-id"),
+		SourceOwnerID:      asStringPointer("source-owner-id"),
+		SourceSha1:         "source-sha",
+		RunID:              asStringPointer("run-id/attempt/run-attempt"),
+	}
+	tests := []struct {
+		name                       string
+		subject                    []intoto.Subject
+		numberResolvedDependencies int
+		workflowTriggerPath        string
+		environment                map[string]interface{}
+		workflow                   WorkflowIdentity
+		err                        error
+	}{
+		{
+			name: "all field populated",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha512": "abcd"},
+				},
+			},
+			numberResolvedDependencies: 1,
+			workflowTriggerPath:        "release/workflow/path",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "source-ref",
+				"GITHUB_REPOSITORY":          "repo/name",
+				"GITHUB_REPOSITORY_ID":       "source-id",
+				"GITHUB_REPOSITORY_OWNER_ID": "source-owner-id",
+				"GITHUB_RUN_ATTEMPT":         "run-attempt",
+				"GITHUB_RUN_ID":              "run-id",
+				"GITHUB_SHA":                 "source-sha",
+				"GITHUB_WORKFLOW_REF":        "path/to/trusted-builder@subject-ref",
+				"GITHUB_WORKFLOW_SHA":        "subject-sha",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "unknown field",
+			environment: map[string]interface{}{
+				"SOMETHING": "workflow_dispatch",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "too many resolved dependencies",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha512": "abcd"},
+				},
+			},
+			numberResolvedDependencies: 2,
+			workflowTriggerPath:        "release/workflow/path",
+			workflow:                   expectedWorkflow,
+			err:                        serrors.ErrorNonVerifiableClaim,
+		},
+		{
+			name: "incorrect digest name",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha256": "abcd"},
+				},
+			},
+			numberResolvedDependencies: 1,
+			workflowTriggerPath:        "release/workflow/path",
+			workflow:                   expectedWorkflow,
+			err:                        serrors.ErrorNonVerifiableClaim,
+		},
+		{
+			name: "invalid trigger path",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha512": "abcd"},
+				},
+			},
+			numberResolvedDependencies: 1,
+			workflowTriggerPath:        "release/workflow/path2",
+			workflow:                   expectedWorkflow,
+			err:                        serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "invalid trigger name",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha512": "abcd"},
+				},
+			},
+			numberResolvedDependencies: 1,
+			workflowTriggerPath:        "release/workflow/path",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME": "workflow_dispatch2",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			prov02 := &slsav02.ProvenanceV02{
+				&intoto.ProvenanceStatement{
+					StatementHeader: intoto.StatementHeader{
+						Subject: tt.subject,
+					},
+					Predicate: intotov02.ProvenancePredicate{
+						Invocation: intotov02.ProvenanceInvocation{
+							Environment: tt.environment,
+							ConfigSource: intotov02.ConfigSource{
+								EntryPoint: tt.workflowTriggerPath,
+							},
+						},
+					},
+				},
+			}
+
+			if tt.numberResolvedDependencies > 0 {
+				prov02.Predicate.Materials = make([]intotocommon.ProvenanceMaterial, tt.numberResolvedDependencies)
+			}
+
+			err := verifyProvenanceMatchesCertificate(prov02, &tt.workflow)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+
+			prov10 := &slsav10.ProvenanceV1{
+				StatementHeader: intoto.StatementHeader{
+					Subject: tt.subject,
+				},
+				Predicate: intotov10.ProvenancePredicate{
+					BuildDefinition: intotov10.ProvenanceBuildDefinition{
+						SystemParameters: tt.environment,
+						ExternalParameters: map[string]interface{}{
+							// TODO(#566): verify fields for v1.0 provenance.
+							"workflow": map[string]string{
+								"path": tt.workflowTriggerPath,
+							},
+						},
+					},
+				},
+			}
+			if tt.numberResolvedDependencies > 0 {
+				prov10.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov10.ArtifactReference, tt.numberResolvedDependencies)
+			}
+			err = verifyProvenanceMatchesCertificate(prov10, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}

@@ -751,19 +751,6 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	// TODO(#570): remove these definition.
-	OIDBuildTrigger := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 20}
-	OIDSourceRepositoryURI := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 12}
-	OIDIssuerV2 := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 8}
-	OIDSourceRepositoryDigest := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 13}
-	OIDRunnerEnvironment := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 11}
-	OIDSourceRepositoryRef := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 14}
-	OIDSourceRepositoryIdentifier := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 15}
-	OIDSourceRepositoryOwnerIdentifier := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 17}
-	OIDBuildConfigDigest := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 19}
-	OIDBuildConfigURI := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 18}
-	OIDRunInvocationURI := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 21}
-
 	tests := []struct {
 		name     string
 		cert     x509.Certificate

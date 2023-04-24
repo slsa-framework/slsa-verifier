@@ -13,6 +13,21 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
+// TODO(#570): remove these definition.
+var (
+	OIDBuildTrigger                    = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 20}
+	OIDSourceRepositoryURI             = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 12}
+	OIDIssuerV2                        = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 8}
+	OIDSourceRepositoryDigest          = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 13}
+	OIDRunnerEnvironment               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 11}
+	OIDSourceRepositoryRef             = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 14}
+	OIDSourceRepositoryIdentifier      = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 15}
+	OIDSourceRepositoryOwnerIdentifier = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 17}
+	OIDBuildConfigDigest               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 19}
+	OIDBuildConfigURI                  = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 18}
+	OIDRunInvocationURI                = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 21}
+)
+
 var (
 	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 	e2eTestRepository        = "slsa-framework/example-package"

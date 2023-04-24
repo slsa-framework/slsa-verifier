@@ -96,7 +96,7 @@ func verifyResolvedDependencies(prov slsaprovenance.Provenance) error {
 		return err
 	}
 	if n != 1 {
-		return fmt.Errorf("%w: too many resolved dependencies: %v",
+		return fmt.Errorf("%w: unexpected number of resolved dependencies: %v",
 			serrors.ErrorNonVerifiableClaim, n)
 	}
 	return nil

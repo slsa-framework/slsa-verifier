@@ -99,7 +99,7 @@ func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 // TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):
 // verify the ref and repo as well.
 func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
-	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	sysParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
