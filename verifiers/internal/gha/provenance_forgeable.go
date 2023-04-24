@@ -294,14 +294,14 @@ func verifySystemParameters(prov slsaprovenance.Provenance, workflow *WorkflowId
 		return err
 	}
 	// 6. GITHUB_REPOSITORY_SHA
-	if err := verifySystemParameter(sysParams, "GITHUB_REPOSITORY_SHA", &workflow.SourceSha1); err != nil {
+	if err := verifySystemParameter(sysParams, "GITHUB_SHA", &workflow.SourceSha1); err != nil {
 		return err
 	}
 	// 7. GITHUB_WORKFLOW_REF
 	if err := verifySystemParameter(sysParams, "GITHUB_WORKFLOW_REF", &workflow.SubjectWorkflowRef); err != nil {
 		return err
 	}
-	// 7. GITHUB_WORKFLOW_SHA
+	// 8. GITHUB_WORKFLOW_SHA
 	if err := verifySystemParameter(sysParams, "GITHUB_WORKFLOW_SHA", workflow.SubjectSha1); err != nil {
 		return err
 	}

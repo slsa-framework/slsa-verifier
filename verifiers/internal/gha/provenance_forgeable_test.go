@@ -1,7 +1,7 @@
 package gha
 
 import (
-	"fmt"
+	//"fmt"
 	// "os"
 	"testing"
 	"time"
@@ -410,6 +410,102 @@ func Test_verifyV02Metadata(t *testing.T) {
 	}
 }
 
+func Test_verifyV02Parameters(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		present bool
+		value   map[string]any
+		err     error
+	}{
+		{
+			name: "no parameters",
+		},
+		{
+			name:    "empty parameters",
+			present: true,
+		},
+		{
+			name:  "0-length parameters",
+			value: make(map[string]any, 0),
+		},
+		{
+			name:  "non-empty no parameters",
+			value: make(map[string]any, 1),
+		},
+		{
+			name:  "non-empty with parameters",
+			value: map[string]any{"param": "val"},
+			err:   serrors.ErrorNonVerifiableClaim,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			prov02 := &slsav02.ProvenanceV02{
+				&intoto.ProvenanceStatement{},
+			}
+			if tt.present || len(tt.value) > 0 {
+				prov02.Predicate.Invocation.Parameters = tt.value
+			}
+			err := verifyV02Parameters(prov02)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
+func Test_verifyV02BuildConfig(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		present bool
+		value   map[string]any
+		err     error
+	}{
+		{
+			name: "no parameters",
+		},
+		{
+			name:    "empty parameters",
+			present: true,
+		},
+		{
+			name:  "0-length parameters",
+			value: make(map[string]any, 0),
+		},
+		{
+			name:  "non-empty no parameters",
+			value: make(map[string]any, 1),
+		},
+		{
+			name:  "non-empty with parameters",
+			value: map[string]any{"param": "val"},
+			err:   serrors.ErrorNonVerifiableClaim,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			prov02 := &slsav02.ProvenanceV02{
+				&intoto.ProvenanceStatement{},
+			}
+			if tt.present || len(tt.value) > 0 {
+				prov02.Predicate.BuildConfig = tt.value
+			}
+			err := verifyV02BuildConfig(prov02)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
 func Test_verifyMetadata(t *testing.T) {
 	t.Parallel()
 	now := time.Now()
@@ -539,7 +635,6 @@ func Test_verifyMetadata(t *testing.T) {
 					},
 					Reproducible: tt.reproducible,
 				}
-				fmt.Println(prov02.Predicate.Metadata.Reproducible)
 				if tt.invocationID != nil {
 					prov02.Predicate.Metadata.BuildInvocationID = *tt.invocationID
 				}
@@ -570,6 +665,407 @@ func Test_verifyMetadata(t *testing.T) {
 			errV01 := verifyMetadata(prov10, &tt.workflow)
 			if !errCmp(errV01, tt.errV01) {
 				t.Errorf(cmp.Diff(errV01, tt.errV01))
+			}
+		})
+	}
+}
+
+func Test_verifySystemParameters(t *testing.T) {
+	t.Parallel()
+	expectedWorkflow := WorkflowIdentity{
+		BuildTrigger:       "workflow_dispatch",
+		SubjectWorkflowRef: "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+		SubjectSha1:        asStringPointer("b38894f2dda4355ea5606fccb166e61565e12a14"),
+		SourceRepository:   "laurentsimon/provenance-npm-test",
+		SourceRef:          asStringPointer("refs/heads/main"),
+		SourceID:           asStringPointer("602223945"),
+		SourceOwnerID:      asStringPointer("64505099"),
+		SourceSha1:         "b38894f2dda4355ea5606fccb166e61565e12a14",
+		RunID:              asStringPointer("4757060009/attempt/1"),
+	}
+	tests := []struct {
+		name        string
+		environment map[string]interface{}
+		workflow    WorkflowIdentity
+		err         error
+	}{
+		{
+			name: "all field populated",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "unknown field",
+			environment: map[string]interface{}{
+				"SOMETHING": "workflow_dispatch",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		// Correct partial populated fields.
+		{
+			name: "only GITHUB_EVENT_NAME field populated",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME": "workflow_dispatch",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_REF field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REF": "refs/heads/main",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_REPOSITORY field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REPOSITORY": "laurentsimon/provenance-npm-test",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_REPOSITORY_ID field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REPOSITORY_ID": "602223945",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_REPOSITORY_OWNER_ID field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_RUN_ATTEMPT field populated",
+			environment: map[string]interface{}{
+				"GITHUB_RUN_ATTEMPT": "1",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_RUN_ID field populated",
+			environment: map[string]interface{}{
+				"GITHUB_RUN_ID": "4757060009",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_SHA field populated",
+			environment: map[string]interface{}{
+				"GITHUB_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_WORKFLOW_REF field populated",
+			environment: map[string]interface{}{
+				"GITHUB_WORKFLOW_REF": "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+			},
+			workflow: expectedWorkflow,
+		},
+		{
+			name: "only GITHUB_WORKFLOW_SHA field populated",
+			environment: map[string]interface{}{
+				"GITHUB_WORKFLOW_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+		},
+		// All fields populated one mismatch.
+		{
+			name: "GITHUB_EVENT_NAME mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch2",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_REF mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main2",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_REPOSITORY mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test2",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_REPOSITORY_ID mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "6022239452",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_REPOSITORY_OWNER_ID mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "645050992",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_RUN_ATTEMPT mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "12",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_RUN_ID mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "47570600092",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_SHA mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a142",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_WORKFLOW_REF mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main2",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a14",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "GITHUB_WORKFLOW_SHA mismatch",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "refs/heads/main",
+				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
+				"GITHUB_REPOSITORY_ID":       "602223945",
+				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
+				"GITHUB_RUN_ATTEMPT":         "1",
+				"GITHUB_RUN_ID":              "4757060009",
+				"GITHUB_SHA":                 "b38894f2dda4355ea5606fccb166e61565e12a14",
+				"GITHUB_WORKFLOW_REF":        "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
+				"GITHUB_WORKFLOW_SHA":        "b38894f2dda4355ea5606fccb166e61565e12a142",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		// Incorrect partially populated fields.
+		{
+			name: "incorrect only GITHUB_EVENT_NAME field populated",
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME": "workflow_dispatch2",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_REF field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REF": "refs/heads/main2",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_REPOSITORY field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REPOSITORY": "laurentsimon/provenance-npm-test2",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_REPOSITORY_ID field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REPOSITORY_ID": "6022239452",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_REPOSITORY_OWNER_ID field populated",
+			environment: map[string]interface{}{
+				"GITHUB_REPOSITORY_OWNER_ID": "645050992",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_RUN_ATTEMPT field populated",
+			environment: map[string]interface{}{
+				"GITHUB_RUN_ATTEMPT": "12",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_RUN_ID field populated",
+			environment: map[string]interface{}{
+				"GITHUB_RUN_ID": "47570600092",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_SHA field populated",
+			environment: map[string]interface{}{
+				"GITHUB_SHA": "b38894f2dda4355ea5606fccb166e61565e12a142",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_WORKFLOW_REF field populated",
+			environment: map[string]interface{}{
+				"GITHUB_WORKFLOW_REF": "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main2",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+		{
+			name: "incorrect only GITHUB_WORKFLOW_SHA field populated",
+			environment: map[string]interface{}{
+				"GITHUB_WORKFLOW_SHA": "b38894f2dda4355ea5606fccb166e61565e12a142",
+			},
+			workflow: expectedWorkflow,
+			err:      serrors.ErrorMismatchCertificate,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			prov02 := &slsav02.ProvenanceV02{
+				&intoto.ProvenanceStatement{
+					Predicate: intotov02.ProvenancePredicate{
+						Invocation: intotov02.ProvenanceInvocation{
+							Environment: tt.environment,
+						},
+					},
+				},
+			}
+
+			err := verifySystemParameters(prov02, &tt.workflow)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+
+			prov10 := &slsav10.ProvenanceV1{
+				Predicate: intotov10.ProvenancePredicate{
+					BuildDefinition: intotov10.ProvenanceBuildDefinition{
+						SystemParameters: tt.environment,
+					},
+				},
+			}
+			err = verifySystemParameters(prov10, &tt.workflow)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
 			}
 		})
 	}

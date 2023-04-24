@@ -143,6 +143,5 @@ func (prov *ProvenanceV1) GetSystemParameters() (map[string]any, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
 
-	// NOTE: return not supported to re-visit the implementation when v1.0 is supported.
-	return sysParams, serrors.ErrorNotSupported
+	return sysParams, nil
 }
