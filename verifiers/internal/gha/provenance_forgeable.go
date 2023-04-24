@@ -113,6 +113,21 @@ func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) 
 			},
 			"reproducible": false
 	*/
+	if err := verifyCommonMetadata(prov, workflow); err != nil {
+		return err
+	}
+
+	// Verify v0.2 claims.
+	if err := verifyV02Metadata(prov); err != nil {
+		return err
+	}
+
+	// TODO(#566): verify fields for v1.0 provenance
+
+	return nil
+}
+
+func verifyCommonMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
 	// Verify build invocation ID.
 	buildID, err := prov.GetBuildID()
 	if err != nil {
@@ -124,11 +139,14 @@ func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) 
 		return err
 	}
 
-	expectedID := fmt.Sprintf("%v-%v", runID, runAttempt)
-	if buildID != expectedID {
-		return fmt.Errorf("%w: invocation ID: '%v' != '%v'",
-			serrors.ErrorMismatchCertificate, buildID,
-			expectedID)
+	// Only verify a non-empty buildID claim.
+	if buildID != "" {
+		expectedID := fmt.Sprintf("%v-%v", runID, runAttempt)
+		if buildID != expectedID {
+			return fmt.Errorf("%w: invocation ID: '%v' != '%v'",
+				serrors.ErrorMismatchCertificate, buildID,
+				expectedID)
+		}
 	}
 
 	// Verify start time.
@@ -150,14 +168,6 @@ func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) 
 		return fmt.Errorf("%w: build finish time: %v",
 			serrors.ErrorNonVerifiableClaim, *finishTime)
 	}
-
-	// Verify v0.2 claims.
-	if err := verifyV02Metadata(prov); err != nil {
-		return err
-	}
-
-	// TODO(#566): verify fields for v1.0 provenance
-
 	return nil
 }
 
@@ -178,7 +188,8 @@ func verifyV02Metadata(prov slsaprovenance.Provenance) error {
 	}
 
 	completeness := prov02.Predicate.Metadata.Completeness
-	if completeness.Parameters || completeness.Materials {
+	if completeness.Parameters || completeness.Materials ||
+		completeness.Environment {
 		return fmt.Errorf("%w: completeness: %v",
 			serrors.ErrorNonVerifiableClaim,
 			completeness)
@@ -303,6 +314,12 @@ func verifySystemParameters(prov slsaprovenance.Provenance, workflow *WorkflowId
 }
 
 func getRunIDs(workflow *WorkflowIdentity) (string, string, error) {
+	if workflow == nil {
+		return "", "", fmt.Errorf("%w: empty workflow", serrors.ErrorInvalidFormat)
+	}
+	if workflow.RunID == nil {
+		return "", "", nil
+	}
 	parts := strings.Split(*workflow.RunID, "/")
 	if len(parts) != 3 {
 		return "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, *workflow.RunID)

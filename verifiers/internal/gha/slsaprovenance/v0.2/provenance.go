@@ -101,7 +101,7 @@ func (prov *ProvenanceV02) GetBuildFinishTime() (*time.Time, error) {
 	if prov.Predicate.Metadata == nil {
 		return nil, nil
 	}
-	return prov.Predicate.Metadata.BuildStartedOn, nil
+	return prov.Predicate.Metadata.BuildFinishedOn, nil
 }
 
 func (prov *ProvenanceV02) GetNumberResolvedDependencies() (int, error) {
