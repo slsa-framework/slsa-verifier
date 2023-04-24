@@ -153,13 +153,16 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// Allow the user to provide one of 3 builders: self-hosted, github-hosted and legacy github-hosted.
 		// Verify that the value provided is consistent with certificate information.
 
+		if workflowInfo.SubjectHosted == nil {
+			return nil, fmt.Errorf("%w: hosted status unknonwn", serrors.ErrorNotSupported)
+		}
 		switch *builderOpts.ExpectedID {
 		case builderLegacyGitHubRunnerID, builderGitHubHostedRunnerID:
-			if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
+			if *workflowInfo.SubjectHosted != HostedGitHub {
 				return nil, fmt.Errorf("%w: re-usable workflow is self-hosted", serrors.ErrorMismatchBuilderID)
 			}
 		case builderSelfHostedRunnerID:
-			if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedSelf {
+			if *workflowInfo.SubjectHosted != HostedSelf {
 				return nil, fmt.Errorf("%w: re-usable workflow is GitHub-hosted", serrors.ErrorMismatchBuilderID)
 			}
 		default:

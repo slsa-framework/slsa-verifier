@@ -1,11 +1,16 @@
 package gha
 
 import (
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/asn1"
+	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 )
@@ -680,6 +685,445 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
 			if !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+			}
+		})
+	}
+}
+
+func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
+	t.Parallel()
+	// See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
+	trigger := "workflow_dispatch"
+	encodedTrigger, err := asn1.MarshalWithParams(trigger, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	repo := "org/repo"
+	encodedRepoURI, err := asn1.MarshalWithParams("https://github.com/"+repo, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	issuer := "the-issuer"
+	encodedIssuer, err := asn1.MarshalWithParams(issuer, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	digest := "abcdef"
+	encodedDigest, err := asn1.MarshalWithParams(digest, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	encodedHosted, err := asn1.MarshalWithParams("github-hosted", "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	hosted := HostedGitHub
+	ref := "refs/tags/v1.2.3"
+	encodedRef, err := asn1.MarshalWithParams(ref, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	sourceID := "12345"
+	encodedSourceID, err := asn1.MarshalWithParams(sourceID, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	sourceOwnerID := "12345"
+	encodedSourceOwnerID, err := asn1.MarshalWithParams(sourceOwnerID, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	buildConfigSha1 := "abcdef"
+	encodedBuildConfigSha1, err := asn1.MarshalWithParams(buildConfigSha1, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	buildConfigPath := "path/to/workflow"
+	encodedBuildConfigURI, err := asn1.MarshalWithParams("https://github.com/"+repo+"/"+buildConfigPath+"@"+ref, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	invocationID := "9207262"
+	encodedInvocationURI, err := asn1.MarshalWithParams("https://github.com/"+repo+"/actions/runs/"+invocationID, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	// TODO(#570): remove these definition.
+	OIDBuildTrigger := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 20}
+	OIDSourceRepositoryURI := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 12}
+	OIDIssuerV2 := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 8}
+	OIDSourceRepositoryDigest := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 13}
+	OIDRunnerEnvironment := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 11}
+	OIDSourceRepositoryRef := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 14}
+	OIDSourceRepositoryIdentifier := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 15}
+	OIDSourceRepositoryOwnerIdentifier := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 17}
+	OIDBuildConfigDigest := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 19}
+	OIDBuildConfigURI := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 18}
+	OIDRunInvocationURI := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 21}
+
+	tests := []struct {
+		name     string
+		cert     x509.Certificate
+		workflow WorkflowIdentity
+		err      error
+	}{
+		{
+			name: "old cert",
+			cert: x509.Certificate{
+				URIs: []*url.URL{
+					{
+						Path: "/" + repo + "/" + buildConfigPath,
+					},
+				},
+				Extensions: []pkix.Extension{
+					{
+						Id:    fulcio.OIDIssuer,
+						Value: []byte(issuer),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowTrigger,
+						Value: []byte(trigger),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowSHA,
+						Value: []byte(digest),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowRepository,
+						Value: []byte(repo),
+					},
+				},
+			},
+			workflow: WorkflowIdentity{
+				Issuer:             issuer,
+				SubjectWorkflowRef: repo + "/" + buildConfigPath,
+				SourceRepository:   repo,
+				SourceSha1:         digest,
+				BuildTrigger:       trigger,
+			},
+		},
+		{
+			name: "old cert empty URIs",
+			cert: x509.Certificate{
+				Extensions: []pkix.Extension{
+					{
+						Id:    fulcio.OIDIssuer,
+						Value: []byte(issuer),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowTrigger,
+						Value: []byte(trigger),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowSHA,
+						Value: []byte(digest),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowRepository,
+						Value: []byte(repo),
+					},
+				},
+			},
+			err: serrors.ErrorInvalidFormat,
+		},
+		{
+			name: "new cert",
+			cert: x509.Certificate{
+				URIs: []*url.URL{
+					{
+						Path: "/" + repo + "/" + buildConfigPath,
+					},
+				},
+				Extensions: []pkix.Extension{
+					// Deprecated claims.
+					{
+						Id:    fulcio.OIDIssuer,
+						Value: []byte(issuer),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowTrigger,
+						Value: []byte(trigger),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowSHA,
+						Value: []byte(digest),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowRepository,
+						Value: []byte(repo),
+					},
+					// New claims.
+					{
+						Id:    OIDBuildTrigger,
+						Value: encodedTrigger,
+					},
+					{
+						Id:    OIDSourceRepositoryURI,
+						Value: encodedRepoURI,
+					},
+					{
+						Id:    OIDIssuerV2,
+						Value: encodedIssuer,
+					},
+					{
+						Id:    OIDSourceRepositoryDigest,
+						Value: encodedDigest,
+					},
+					{
+						Id:    OIDRunnerEnvironment,
+						Value: encodedHosted,
+					},
+					{
+						Id:    OIDSourceRepositoryRef,
+						Value: encodedRef,
+					},
+					{
+						Id:    OIDSourceRepositoryIdentifier,
+						Value: encodedSourceID,
+					},
+					{
+						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Value: encodedSourceOwnerID,
+					},
+					{
+						Id:    OIDBuildConfigDigest,
+						Value: encodedBuildConfigSha1,
+					},
+					{
+						Id:    OIDBuildConfigURI,
+						Value: encodedBuildConfigURI,
+					},
+					{
+						Id:    OIDRunInvocationURI,
+						Value: encodedInvocationURI,
+					},
+				},
+			},
+			workflow: WorkflowIdentity{
+				Issuer:             issuer,
+				SubjectWorkflowRef: repo + "/" + buildConfigPath,
+				SourceRepository:   repo,
+				SourceSha1:         digest,
+				BuildTrigger:       trigger,
+				SubjectHosted:      &hosted,
+				SourceRef:          &ref,
+				SourceID:           &sourceID,
+				SourceOwnerID:      &sourceOwnerID,
+				BuildConfigPath:    &buildConfigPath,
+				RunID:              &invocationID,
+			},
+		},
+		{
+			name: "new cert empty URIs",
+			cert: x509.Certificate{
+				Extensions: []pkix.Extension{
+					// Deprecated claims.
+					{
+						Id:    fulcio.OIDIssuer,
+						Value: []byte(issuer),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowTrigger,
+						Value: []byte(trigger),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowSHA,
+						Value: []byte(digest),
+					},
+					{
+						Id:    fulcio.OIDGitHubWorkflowRepository,
+						Value: []byte(repo),
+					},
+					// New claims.
+					{
+						Id:    OIDBuildTrigger,
+						Value: encodedTrigger,
+					},
+					{
+						Id:    OIDSourceRepositoryURI,
+						Value: encodedRepoURI,
+					},
+					{
+						Id:    OIDIssuerV2,
+						Value: encodedIssuer,
+					},
+					{
+						Id:    OIDSourceRepositoryDigest,
+						Value: encodedDigest,
+					},
+					{
+						Id:    OIDRunnerEnvironment,
+						Value: encodedHosted,
+					},
+					{
+						Id:    OIDSourceRepositoryRef,
+						Value: encodedRef,
+					},
+					{
+						Id:    OIDSourceRepositoryIdentifier,
+						Value: encodedSourceID,
+					},
+					{
+						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Value: encodedSourceOwnerID,
+					},
+					{
+						Id:    OIDBuildConfigDigest,
+						Value: encodedBuildConfigSha1,
+					},
+					{
+						Id:    OIDBuildConfigURI,
+						Value: encodedBuildConfigURI,
+					},
+					{
+						Id:    OIDRunInvocationURI,
+						Value: encodedInvocationURI,
+					},
+				},
+			},
+			err: serrors.ErrorInvalidFormat,
+		},
+		{
+			name: "new cert no deprecated claims",
+			cert: x509.Certificate{
+				URIs: []*url.URL{
+					{
+						Path: "/" + repo + "/" + buildConfigPath,
+					},
+				},
+				Extensions: []pkix.Extension{
+					// New claims.
+					{
+						Id:    OIDBuildTrigger,
+						Value: encodedTrigger,
+					},
+					{
+						Id:    OIDSourceRepositoryURI,
+						Value: encodedRepoURI,
+					},
+					{
+						Id:    OIDIssuerV2,
+						Value: encodedIssuer,
+					},
+					{
+						Id:    OIDSourceRepositoryDigest,
+						Value: encodedDigest,
+					},
+					{
+						Id:    OIDRunnerEnvironment,
+						Value: encodedHosted,
+					},
+					{
+						Id:    OIDSourceRepositoryRef,
+						Value: encodedRef,
+					},
+					{
+						Id:    OIDSourceRepositoryIdentifier,
+						Value: encodedSourceID,
+					},
+					{
+						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Value: encodedSourceOwnerID,
+					},
+					{
+						Id:    OIDBuildConfigDigest,
+						Value: encodedBuildConfigSha1,
+					},
+					{
+						Id:    OIDBuildConfigURI,
+						Value: encodedBuildConfigURI,
+					},
+					{
+						Id:    OIDRunInvocationURI,
+						Value: encodedInvocationURI,
+					},
+				},
+			},
+			workflow: WorkflowIdentity{
+				Issuer:             issuer,
+				SubjectWorkflowRef: repo + "/" + buildConfigPath,
+				SourceRepository:   repo,
+				SourceSha1:         digest,
+				BuildTrigger:       trigger,
+				SubjectHosted:      &hosted,
+				SourceRef:          &ref,
+				SourceID:           &sourceID,
+				SourceOwnerID:      &sourceOwnerID,
+				BuildConfigPath:    &buildConfigPath,
+				RunID:              &invocationID,
+			},
+		},
+		{
+			name: "new cert no deprecated claims empty URIs",
+			cert: x509.Certificate{
+				Extensions: []pkix.Extension{
+					// New claims.
+					{
+						Id:    OIDBuildTrigger,
+						Value: encodedTrigger,
+					},
+					{
+						Id:    OIDSourceRepositoryURI,
+						Value: encodedRepoURI,
+					},
+					{
+						Id:    OIDIssuerV2,
+						Value: encodedIssuer,
+					},
+					{
+						Id:    OIDSourceRepositoryDigest,
+						Value: encodedDigest,
+					},
+					{
+						Id:    OIDRunnerEnvironment,
+						Value: encodedHosted,
+					},
+					{
+						Id:    OIDSourceRepositoryRef,
+						Value: encodedRef,
+					},
+					{
+						Id:    OIDSourceRepositoryIdentifier,
+						Value: encodedSourceID,
+					},
+					{
+						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Value: encodedSourceOwnerID,
+					},
+					{
+						Id:    OIDBuildConfigDigest,
+						Value: encodedBuildConfigSha1,
+					},
+					{
+						Id:    OIDBuildConfigURI,
+						Value: encodedBuildConfigURI,
+					},
+					{
+						Id:    OIDRunInvocationURI,
+						Value: encodedInvocationURI,
+					},
+				},
+			},
+			err: serrors.ErrorInvalidFormat,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			workflow, err := GetWorkflowInfoFromCertificate(&tt.cert)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			}
+			if err != nil {
+				return
+			}
+
+			if !cmp.Equal(*workflow, tt.workflow) {
+				t.Errorf(cmp.Diff(*workflow, tt.workflow))
 			}
 		})
 	}

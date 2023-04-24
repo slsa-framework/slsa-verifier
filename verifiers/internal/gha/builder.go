@@ -179,7 +179,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 
 func getExtension(cert *x509.Certificate, oid string, encoded bool) (string, error) {
 	for _, ext := range cert.Extensions {
-		if strings.Contains(ext.Id.String(), oid) {
+		if ext.Id.String() == oid {
 			if !encoded {
 				return string(ext.Value), nil
 			}
@@ -210,7 +210,7 @@ const (
 type WorkflowIdentity struct {
 	// The source repository
 	SourceRepository string
-	// The commit SHA where the workflow was BuildTriggered
+	// The commit SHA where the workflow was triggered.
 	SourceSha1 string
 	// Ref of the source.
 	SourceRef *string
@@ -237,16 +237,20 @@ type WorkflowIdentity struct {
 	Issuer string
 }
 
-func getHosted(cert *x509.Certificate) (Hosted, error) {
-	ret := HostedSelf
+func getHosted(cert *x509.Certificate) (*Hosted, error) {
 	runnerEnv, err := getExtension(cert, "1.3.6.1.4.1.57264.1.11", true)
 	if err != nil {
-		return ret, err
+		return nil, err
 	}
 	if runnerEnv == "github-hosted" {
-		return HostedGitHub, nil
+		r := HostedGitHub
+		return &r, nil
 	}
-	return ret, nil
+	if runnerEnv == "self-hosted" {
+		r := HostedSelf
+		return &r, nil
+	}
+	return nil, nil
 }
 
 func validateClaimsEqual(deprecated, new string) error {
@@ -254,10 +258,14 @@ func validateClaimsEqual(deprecated, new string) error {
 	if deprecated != "" && new != "" && deprecated != new {
 		return fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidFormat, deprecated, new)
 	}
+	if deprecated == "" && new == "" {
+		return fmt.Errorf("%w: claims are empty", serrors.ErrorInvalidFormat)
+	}
 	return nil
 }
 
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
+// See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
 		return nil, fmt.Errorf("%w: missing URI information from certificate", serrors.ErrorInvalidFormat)
@@ -302,7 +310,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if err != nil {
 		return nil, err
 	}
-	if deprecatedSourceRepository != "" &&
+	if deprecatedSourceRepository != "" && sourceURI != "" &&
 		"https://github.com/"+deprecatedSourceRepository != sourceURI {
 		return nil, fmt.Errorf("%w: '%v' != '%v'",
 			serrors.ErrorInvalidFormat, "https://github.com/"+deprecatedSourceRepository, sourceURI)
@@ -326,9 +334,11 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if err != nil {
 		return nil, err
 	}
-
-	if issuerV1 != issuerV2 {
-		return nil, fmt.Errorf("%w: issuers: '%v' != '%v'", serrors.ErrorInvalidFormat, issuerV1, issuerV2)
+	if err := validateClaimsEqual(issuerV1, issuerV2); err != nil {
+		return nil, err
+	}
+	if issuerV2 == "" {
+		issuerV2 = issuerV1
 	}
 
 	// 1.3.6.1.4.1.57264.1.10 | Build Signer Digest
@@ -353,6 +363,9 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	if err := validateClaimsEqual(deprecatedSourceSha1, sourceSha1); err != nil {
 		return nil, err
+	}
+	if sourceSha1 == "" {
+		sourceSha1 = deprecatedSourceSha1
 	}
 
 	// 1.3.6.1.4.1.57264.1.14 | Source Repository Ref
@@ -382,9 +395,36 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if err != nil {
 		return nil, err
 	}
-	if buildConfigSha1 != sourceSha1 {
-		return nil, fmt.Errorf("%w: '%v' != '%v'",
-			serrors.ErrorInvalidFormat, buildConfigSha1, sourceSha1)
+	// NOTE: sourceSha1 is *not* deprecated.
+	if deprecatedSourceSha1 != "" {
+		if err := validateClaimsEqual(deprecatedSourceSha1, buildConfigSha1); err != nil {
+			return nil, err
+		}
+	} else if sourceSha1 != "" {
+		if err := validateClaimsEqual(sourceSha1, buildConfigSha1); err != nil {
+			return nil, err
+		}
+	}
+
+	// 1.3.6.1.4.1.57264.1.18 | Build Config URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264118--build-config-uri
+	var buildConfigPath string
+	buildConfigURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.18", true)
+	if err != nil {
+		return nil, err
+	}
+	if buildConfigURI != "" {
+		parts := strings.Split(buildConfigURI, "@")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("%w: %v",
+				serrors.ErrorInvalidFormat, buildConfigURI)
+		}
+		prefix := fmt.Sprintf("https://github.com/%v/", sourceRepository)
+		if !strings.HasPrefix(parts[0], prefix) {
+			return nil, fmt.Errorf("%w: prefix: %v",
+				serrors.ErrorInvalidFormat, parts[0])
+		}
+		buildConfigPath = strings.TrimPrefix(parts[0], prefix)
 	}
 
 	// 1.3.6.1.4.1.57264.1.21 | Run Invocation URI
@@ -395,27 +435,29 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	runID := strings.TrimPrefix(runURI, fmt.Sprintf("https://github.com/%s/actions/runs/", sourceRepository))
 
-	// 1.3.6.1.4.1.57264.1.18 | Build Config URI
-	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264118--build-config-uri
-	buildConfigURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.18", true)
-	if err != nil {
-		return nil, err
-	}
-	parts := strings.Split(buildConfigURI, "@")
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("%w: %v",
-			serrors.ErrorInvalidFormat, buildConfigURI)
-	}
-	prefix := fmt.Sprintf("https://github.com/%v/", sourceRepository)
-	if !strings.HasPrefix(parts[0], prefix) {
-		return nil, fmt.Errorf("%w: prefix: %v",
-			serrors.ErrorInvalidFormat, parts[0])
-	}
-	buildConfigPath := strings.TrimPrefix(parts[0], prefix)
-
 	// Subject path.
 	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
+	}
+
+	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string
+	if subjectSha1 != "" {
+		pSubjectSha1 = &subjectSha1
+	}
+	if sourceID != "" {
+		pSourceID = &sourceID
+	}
+	if sourceRef != "" {
+		pSourceRef = &sourceRef
+	}
+	if sourceOwnerID != "" {
+		pSourceOwnerID = &sourceOwnerID
+	}
+	if buildConfigPath != "" {
+		pBuildConfigPath = &buildConfigPath
+	}
+	if runID != "" {
+		pRunID = &runID
 	}
 
 	return &WorkflowIdentity{
@@ -423,18 +465,18 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		Issuer: issuerV2,
 		// Subject
 		SubjectWorkflowRef: cert.URIs[0].Path[1:], // Remove the starting '/'
-		SubjectSha1:        &subjectSha1,
-		SubjectHosted:      &subjectHosted,
+		SubjectSha1:        pSubjectSha1,
+		SubjectHosted:      subjectHosted,
 		// Source.
 		SourceRepository: sourceRepository,
 		SourceSha1:       sourceSha1,
-		SourceRef:        &sourceRef,
-		SourceID:         &sourceID,
-		SourceOwnerID:    &sourceOwnerID,
+		SourceRef:        pSourceRef,
+		SourceID:         pSourceID,
+		SourceOwnerID:    pSourceOwnerID,
 		// Build.
 		BuildTrigger:    buildTrigger,
-		BuildConfigPath: &buildConfigPath,
+		BuildConfigPath: pBuildConfigPath,
 		// Other.
-		RunID: &runID,
+		RunID: pRunID,
 	}, nil
 }
