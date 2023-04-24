@@ -159,3 +159,63 @@ func Test_verifyBuildConfig(t *testing.T) {
 		})
 	}
 }
+
+func Test_verifyResolvedDependencies(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		n        int
+		workflow WorkflowIdentity
+		err      error
+	}{
+		{
+			name: "one entry",
+			n:    1,
+		},
+		// {
+		// 	name: "no certificate path",
+		// 	path: "the/path",
+		// 	err:  serrors.ErrorMismatchCertificate,
+		// },
+		// {
+		// 	name: "different path",
+		// 	path: "another/path",
+		// 	workflow: WorkflowIdentity{
+		// 		BuildConfigPath: asStringPointer("the/path"),
+		// 	},
+		// 	err: serrors.ErrorMismatchCertificate,
+		// },
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			prov02 := &slsav02.ProvenanceV02{
+				&intoto.ProvenanceStatement{
+					Predicate: intotov02.ProvenancePredicate{},
+				},
+			}
+			if tt.n > 0 {
+				prov02.Predicate.Materials = make([]intotocommon.ProvenanceMaterial, tt.n)
+			}
+			err := verifyResolvedDependencies(prov02)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+
+			prov10 := &slsav10.ProvenanceV1{
+				Predicate: intotov10.ProvenancePredicate{
+					BuildDefinition: intotov10.ProvenanceBuildDefinition{},
+				},
+			}
+			if tt.n > 0 {
+				prov10.Predicate.BuildDefinition.ResolvedDependencies = make([]slsav10.ResourceDescriptor, tt.n)
+			}
+			err = verifyResolvedDependencies(prov10)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
