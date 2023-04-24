@@ -121,7 +121,7 @@ func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
 	return v, nil
 }
 
-func (prov *ProvenanceV1) GetBuildID() (string, error) {
+func (prov *ProvenanceV1) GetBuildInvocationID() (string, error) {
 	return prov.Predicate.RunDetails.BuildMetadata.InvocationID, nil
 }
 

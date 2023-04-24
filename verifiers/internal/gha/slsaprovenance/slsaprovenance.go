@@ -43,7 +43,7 @@ type Provenance interface {
 	GetSystemParameters() (map[string]any, error)
 
 	// Get build invocation ID.
-	GetBuildID() (string, error)
+	GetBuildInvocationID() (string, error)
 
 	// Get build start time.
 	GetBuildStartTime() (*time.Time, error)

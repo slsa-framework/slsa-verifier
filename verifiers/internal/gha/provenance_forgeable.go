@@ -24,17 +24,17 @@ func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow
 		return err
 	}
 
-	// 	Verify metadata.
+	// Verify metadata.
 	if err := verifyMetadata(prov, workflow); err != nil {
 		return err
 	}
 
-	// 	Verify subjects.
+	// Verify subjects.
 	if err := verifySubjectDigestName(prov, "sha512"); err != nil {
 		return err
 	}
 
-	// 	Verify trigger config.
+	// Verify trigger config.
 	if err := verifyBuildConfig(prov, workflow); err != nil {
 		return err
 	}
@@ -54,6 +54,7 @@ func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow
 	// parameters and environment for v0.2.
 	// In addition, fields not defined in the structures will cause an error
 	// because we use stric unmarshaling in slsaprovenance.go.
+	// TODO(#571): add tests for additional fields in the provenance.
 
 	// Other fields such as material and config source URI / sha are verified
 	// as part of the common verification.
@@ -103,16 +104,6 @@ func verifyResolvedDependencies(prov slsaprovenance.Provenance) error {
 }
 
 func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
-	/*
-		v0.2:
-			"buildInvocationId": "4757060009-1",
-			"completeness": {
-				"parameters": false,
-				"environment": false,
-				"materials": false
-			},
-			"reproducible": false
-	*/
 	if err := verifyCommonMetadata(prov, workflow); err != nil {
 		return err
 	}
@@ -129,7 +120,7 @@ func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) 
 
 func verifyCommonMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
 	// Verify build invocation ID.
-	buildID, err := prov.GetBuildID()
+	invocationID, err := prov.GetBuildInvocationID()
 	if err != nil {
 		return err
 	}
@@ -140,11 +131,11 @@ func verifyCommonMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIden
 	}
 
 	// Only verify a non-empty buildID claim.
-	if buildID != "" {
+	if invocationID != "" {
 		expectedID := fmt.Sprintf("%v-%v", runID, runAttempt)
-		if buildID != expectedID {
+		if invocationID != expectedID {
 			return fmt.Errorf("%w: invocation ID: '%v' != '%v'",
-				serrors.ErrorMismatchCertificate, buildID,
+				serrors.ErrorMismatchCertificate, invocationID,
 				expectedID)
 		}
 	}
@@ -173,6 +164,16 @@ func verifyCommonMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIden
 
 func verifyV02Metadata(prov slsaprovenance.Provenance) error {
 	// https://github.com/in-toto/in-toto-golang/blob/master/in_toto/slsa_provenance/v0.2/provenance.go
+	/*
+		v0.2:
+			"buildInvocationId": "4757060009-1",
+			"completeness": {
+				"parameters": false,
+				"environment": false,
+				"materials": false
+			},
+			"reproducible": false
+	*/
 	prov02, ok := prov.(*slsav02.ProvenanceV02)
 	if !ok {
 		return nil

@@ -83,7 +83,7 @@ func (prov *ProvenanceV02) GetBuildTriggerPath() (string, error) {
 	return prov.Predicate.Invocation.ConfigSource.EntryPoint, nil
 }
 
-func (prov *ProvenanceV02) GetBuildID() (string, error) {
+func (prov *ProvenanceV02) GetBuildInvocationID() (string, error) {
 	if prov.Predicate.Metadata == nil {
 		return "", nil
 	}
