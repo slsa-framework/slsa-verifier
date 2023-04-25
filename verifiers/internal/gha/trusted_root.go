@@ -58,7 +58,10 @@ func GetTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 	}, nil
 }
 
-func TrustedRootSingleton(ctx context.Context, manager atomic.Value) (*TrustedRoot, error) {
+// Below function is currently used for tests.
+var manager atomic.Value
+
+func TrustedRootSingleton(ctx context.Context) (*TrustedRoot, error) {
 	root := manager.Load()
 	if root != nil {
 		return root.(*TrustedRoot), nil
