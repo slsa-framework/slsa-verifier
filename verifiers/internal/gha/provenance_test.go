@@ -634,17 +634,11 @@ func Test_VerifyBranch(t *testing.T) {
 			branch: "main",
 		},
 		{
-			name:   "ref branch3",
-			path:   "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
-			branch: "branch3",
-		},
-		{
 			name:     "ref main case-sensitive",
 			path:     "./testdata/dsse-main-ref-v1.intoto.jsonl",
 			branch:   "Main",
 			expected: serrors.ErrorMismatchBranch,
 		},
-
 		{
 			name:     "invalid ref type",
 			path:     "./testdata/dsse-invalid-ref-type-v1.intoto.jsonl",

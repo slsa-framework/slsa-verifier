@@ -211,7 +211,6 @@ func getExtension(cert *x509.Certificate, oid string, encoded bool) (string, err
 			return "", fmt.Errorf("decoding has rest")
 		}
 		return decoded, nil
-
 	}
 	return "", nil
 }
