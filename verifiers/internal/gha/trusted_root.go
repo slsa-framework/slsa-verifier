@@ -27,7 +27,7 @@ type TrustedRoot struct {
 	FulcioIntermediates *x509.CertPool
 }
 
-func GetTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
+func getTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 	rekorPubKeys, err := cosign.GetRekorPubs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, err)
@@ -58,7 +58,7 @@ func GetTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 	}, nil
 }
 
-// Below function is currently used for tests.
+// Cache the TUF roots to reduce traffic and read contention on the cached file.
 var manager atomic.Value
 
 func TrustedRootSingleton(ctx context.Context) (*TrustedRoot, error) {
@@ -66,7 +66,7 @@ func TrustedRootSingleton(ctx context.Context) (*TrustedRoot, error) {
 	if root != nil {
 		return root.(*TrustedRoot), nil
 	}
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := getTrustedRoot(ctx)
 	if err != nil {
 		return nil, err
 	}

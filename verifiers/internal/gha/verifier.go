@@ -209,7 +209,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, nil, err
 	}
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -301,7 +301,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
