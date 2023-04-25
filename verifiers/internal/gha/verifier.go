@@ -166,7 +166,8 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 				return nil, fmt.Errorf("%w: re-usable workflow is GitHub-hosted", serrors.ErrorMismatchBuilderID)
 			}
 		default:
-			return nil, fmt.Errorf("%w: builder %v", serrors.ErrorNotSupported, *builderOpts.ExpectedID)
+			return nil, fmt.Errorf("%w: builder %v. Expected one of %v, %v", serrors.ErrorNotSupported, *builderOpts.ExpectedID,
+				builderSelfHostedRunnerID, builderGitHubHostedRunnerID)
 		}
 
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(*builderOpts.ExpectedID, false)

@@ -19,11 +19,18 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
+type hosted string
+
+const (
+	hostedSelf   hosted = "self-hosted"
+	hostedGitHub hosted = "github-hosted"
+)
+
 const (
 	publishAttestationV01       = "https://github.com/npm/attestation/tree/main/specs/publish/"
 	builderLegacyGitHubRunnerID = "https://github.com/actions/runner"
-	builderGitHubHostedRunnerID = "https://github.com/actions/runner/github-hosted"
-	builderSelfHostedRunnerID   = "https://github.com/actions/runner/self-hosted"
+	builderGitHubHostedRunnerID = builderLegacyGitHubRunnerID + "/" + string(hostedGitHub)
+	builderSelfHostedRunnerID   = builderLegacyGitHubRunnerID + "/" + string(hostedSelf)
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")

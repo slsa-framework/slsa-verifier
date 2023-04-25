@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,6 +15,8 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 )
+
+var manager atomic.Value
 
 func Test_verifyName(t *testing.T) {
 	t.Parallel()
@@ -506,7 +509,7 @@ func Test_verifyPackageName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx, manager)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -584,7 +587,7 @@ func Test_verifyPackageVersion(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx, manager)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -760,7 +763,7 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx, manager)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -849,7 +852,7 @@ func Test_NpmNew(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx, manager)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
@@ -55,4 +56,18 @@ func GetTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 		RekorPubKeys:        rekorPubKeys,
 		CTPubKeys:           ctPubKeys,
 	}, nil
+}
+
+func TrustedRootSingleton(ctx context.Context, manager atomic.Value) (*TrustedRoot, error) {
+	root := manager.Load()
+	if root != nil {
+		return root.(*TrustedRoot), nil
+	}
+	trustedRoot, err := GetTrustedRoot(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	manager.Store(trustedRoot)
+	return trustedRoot, nil
 }

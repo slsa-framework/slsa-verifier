@@ -197,13 +197,6 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 	provenance []byte, artifactHash string) (
 	*SignedAttestation, error,
 ) {
-	// Collect trusted root material for verification (Rekor pubkeys, SCT pubkeys,
-	// Fulcio root certificates).
-	_, err := GetTrustedRoot(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// There are two cases, either we have an embedded certificate, or we need
 	// to use the Redis index for searching by artifact SHA.
 	if hasCertInEnvelope(provenance) {
@@ -232,7 +225,41 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 
 	// Verify the builder ID.
 	if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
-		return err
+		// Verification failed. Try again by appending or removing the the hosted status.
+		// Older provenance uses the shorted version without status, and recent provenance includes the status.
+		// We consider the short version witout status as github-hosted.
+		switch {
+		case !strings.HasSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub)):
+			{
+				// Append the status.
+				bid := provenanceOpts.ExpectedBuilderID + "/" + string(hostedGitHub)
+				oerr := verifyBuilderIDLooseMatch(prov, bid)
+				if oerr != nil {
+					// We do return the original error, since that's the caller the user provided.
+					return err
+				}
+				// Verification success.
+				err = nil
+			}
+		case strings.HasSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub)):
+			{
+				// Remove the status.
+				bid := strings.TrimSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub))
+				oerr := verifyBuilderIDLooseMatch(prov, bid)
+				if oerr != nil {
+					// We do return the original error, since that's the caller the user provided.
+					return err
+				}
+				// Verification success.
+				err = nil
+			}
+		default:
+			break
+		}
+
+		if err != nil {
+			return err
+		}
 	}
 
 	// Also, the GitHub context is not recorded for the default builder.
