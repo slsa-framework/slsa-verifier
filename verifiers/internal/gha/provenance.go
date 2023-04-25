@@ -230,29 +230,27 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 		// We consider the short version witout status as github-hosted.
 		switch {
 		case !strings.HasSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub)):
-			{
-				// Append the status.
-				bid := provenanceOpts.ExpectedBuilderID + "/" + string(hostedGitHub)
-				oerr := verifyBuilderIDLooseMatch(prov, bid)
-				if oerr != nil {
-					// We do return the original error, since that's the caller the user provided.
-					return err
-				}
-				// Verification success.
-				err = nil
+			// Append the status.
+			bid := provenanceOpts.ExpectedBuilderID + "/" + string(hostedGitHub)
+			oerr := verifyBuilderIDLooseMatch(prov, bid)
+			if oerr != nil {
+				// We do return the original error, since that's the caller the user provided.
+				return err
 			}
+			// Verification success.
+			err = nil
+
 		case strings.HasSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub)):
-			{
-				// Remove the status.
-				bid := strings.TrimSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub))
-				oerr := verifyBuilderIDLooseMatch(prov, bid)
-				if oerr != nil {
-					// We do return the original error, since that's the caller the user provided.
-					return err
-				}
-				// Verification success.
-				err = nil
+			// Remove the status.
+			bid := strings.TrimSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub))
+			oerr := verifyBuilderIDLooseMatch(prov, bid)
+			if oerr != nil {
+				// We do return the original error, since that's the caller the user provided.
+				return err
 			}
+			// Verification success.
+			err = nil
+
 		default:
 			break
 		}
