@@ -7,6 +7,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
+// TrustedBuilderID represents a builder ID that has been explicitly trusted.
 type TrustedBuilderID struct {
 	name, version string
 }
@@ -24,7 +25,7 @@ func TrustedBuilderIDNew(builderID string, needVersion bool) (*TrustedBuilderID,
 	}, nil
 }
 
-// Matches matches the builderID string against the reference builderID.
+// MatchesLoose matches the builderID string against the reference builderID.
 // If the builderID contains a semver, the full builderID must match.
 // Otherwise, only the name needs to match.
 // `allowRef: true` indicates that the matching need not be an eaxct
@@ -39,7 +40,7 @@ func (b *TrustedBuilderID) MatchesLoose(builderID string, allowRef bool) error {
 
 	if name != b.name {
 		return fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-			name, b.name)
+			b.name, name)
 	}
 
 	if version != "" && version != b.version {
@@ -55,7 +56,7 @@ func (b *TrustedBuilderID) MatchesLoose(builderID string, allowRef bool) error {
 	return nil
 }
 
-// Matches matches the builderID string against the reference builderID.
+// MatchesFull matches the builderID string against the reference builderID.
 // Both the name and versions are always verified.
 func (b *TrustedBuilderID) MatchesFull(builderID string, allowRef bool) error {
 	name, version, err := ParseBuilderID(builderID, false)
@@ -65,7 +66,7 @@ func (b *TrustedBuilderID) MatchesFull(builderID string, allowRef bool) error {
 
 	if name != b.name {
 		return fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-			name, b.name)
+			b.name, name)
 	}
 
 	if version != b.version {
@@ -81,14 +82,17 @@ func (b *TrustedBuilderID) MatchesFull(builderID string, allowRef bool) error {
 	return nil
 }
 
+// Name returns the trusted builder's name.
 func (b *TrustedBuilderID) Name() string {
 	return b.name
 }
 
+// Version returns the trusted builder's version reference if any.
 func (b *TrustedBuilderID) Version() string {
 	return b.version
 }
 
+// String returns the full trusted builder ID as a string.
 func (b *TrustedBuilderID) String() string {
 	if b.version == "" {
 		return b.name

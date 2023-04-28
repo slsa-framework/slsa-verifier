@@ -35,9 +35,11 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 }
 
 var delegatorGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
+var delegatorLowPermsReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_low-perms_slsa3.yml"
 
 var defaultBYOBReusableWorkflows = map[string]bool{
-	delegatorGenericReusableWorkflow: true,
+	delegatorGenericReusableWorkflow:  true,
+	delegatorLowPermsReusableWorkflow: true,
 }
 
 // VerifyCertficateSourceRepository verifies the source repository.
