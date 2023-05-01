@@ -118,6 +118,8 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.MarkFlagRequired("source-uri")
 	cmd.MarkFlagRequired("builder-id")
+	cmd.MarkFlagRequired("package-name")
+	cmd.MarkFlagRequired("package-version")
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
