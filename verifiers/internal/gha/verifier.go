@@ -101,7 +101,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	// We verify against the delegator re-usable workflow, not the user-provided
 	// builder. This is because the signing identity for delegator-based builders
 	// is *always* the delegator workflow.
-	expectedDelegatorWorkflow := httpsGithubCom + delegatorLowPermsReusableWorkflow
+	expectedDelegatorWorkflow := httpsGithubCom + delegatorLowPermsGenericReusableWorkflow
 	delegatorBuilderOpts := options.BuilderOpts{
 		ExpectedID: &expectedDelegatorWorkflow,
 	}
