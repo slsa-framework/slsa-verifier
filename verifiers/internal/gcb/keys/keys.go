@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/sha256"
@@ -89,13 +90,13 @@ func NewGlobalPAEKey() (*GlobalPAEKey, error) {
 }
 
 func (v *GlobalPAEKey) VerifyPAESignature(envelope *dsselib.Envelope) error {
-	_, err := v.Verifier.Verify(envelope)
+	_, err := v.Verifier.Verify(context.Background(), envelope)
 	return err
 }
 
 // Verify implements dsse.Verifier.Verify. It verifies
 // a signature formatted in DSSE-conformant PAE.
-func (v *GlobalPAEKey) Verify(data, sig []byte) error {
+func (v *GlobalPAEKey) Verify(_ context.Context, data, sig []byte) error {
 	// Verify the signature.
 	digest := sha256.Sum256(data)
 	return v.publicKey.VerifySignature(digest, sig)

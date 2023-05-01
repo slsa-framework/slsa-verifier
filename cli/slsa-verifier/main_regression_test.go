@@ -18,8 +18,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sigstore/cosign/pkg/cosign"
-	"github.com/sigstore/cosign/pkg/oci"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
+	"github.com/sigstore/cosign/v2/pkg/oci"
 
 	"github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"

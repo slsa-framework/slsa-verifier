@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1.0"
+	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 )
@@ -15,7 +15,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	slsaprovenance.ProvenanceMap.Store(
-		slsaprovenance.ProvenanceV1DraftType,
+		slsa1.PredicateSLSAProvenance,
 		New)
 }
 
@@ -28,7 +28,7 @@ type ProvenanceV1 struct {
 // This returns a new, empty instance of the v0.2 provenance.
 func New() slsaprovenance.Provenance {
 	return &ProvenanceV1{
-		predicateType: slsaprovenance.ProvenanceV1DraftType,
+		predicateType: slsa1.PredicateSLSAProvenance,
 	}
 }
 
@@ -49,7 +49,7 @@ func (prov *ProvenanceV1) SourceURI() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 	}
-	var sourceRef slsa1.ArtifactReference
+	var sourceRef slsa1.ResourceDescriptor
 	if err := json.Unmarshal(sourceBytes, &sourceRef); err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source type")
 	}
@@ -71,7 +71,7 @@ func (prov *ProvenanceV1) Subjects() ([]intoto.Subject, error) {
 
 func (prov *ProvenanceV1) GetBranch() (string, error) {
 	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
-	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
@@ -80,7 +80,7 @@ func (prov *ProvenanceV1) GetBranch() (string, error) {
 }
 
 func (prov *ProvenanceV1) GetTag() (string, error) {
-	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
@@ -88,7 +88,7 @@ func (prov *ProvenanceV1) GetTag() (string, error) {
 }
 
 func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
-	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
