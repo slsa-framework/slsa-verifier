@@ -8,12 +8,13 @@ import (
 
 	"golang.org/x/mod/semver"
 
+	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// TODO(#570): remove these definition.
+// TODO(#570): remove these definitions.
 var (
 	OIDBuildTrigger                    = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 20}
 	OIDSourceRepositoryURI             = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 12}
@@ -26,6 +27,7 @@ var (
 	OIDBuildConfigDigest               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 19}
 	OIDBuildConfigURI                  = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 18}
 	OIDRunInvocationURI                = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 21}
+	OIDBuildSignerDigest               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 10}
 )
 
 var (
@@ -49,8 +51,10 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
-var delegatorGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
-var delegatorLowPermsGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml"
+var (
+	delegatorGenericReusableWorkflow         = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
+	delegatorLowPermsGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml"
+)
 
 var defaultBYOBReusableWorkflows = map[string]bool{
 	delegatorGenericReusableWorkflow:         true,
@@ -192,9 +196,9 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	return nil
 }
 
-func getExtension(cert *x509.Certificate, oid string, encoded bool) (string, error) {
+func getExtension(cert *x509.Certificate, oid asn1.ObjectIdentifier, encoded bool) (string, error) {
 	for _, ext := range cert.Extensions {
-		if ext.Id.String() != oid {
+		if !ext.Id.Equal(oid) {
 			continue
 		}
 		if !encoded {
@@ -208,7 +212,7 @@ func getExtension(cert *x509.Certificate, oid string, encoded bool) (string, err
 			return "", fmt.Errorf("%w", err)
 		}
 		if len(rest) != 0 {
-			return "", fmt.Errorf("decoding has rest")
+			return "", fmt.Errorf("decoding has rest for oid %v", oid)
 		}
 		return decoded, nil
 	}
@@ -254,7 +258,7 @@ type WorkflowIdentity struct {
 }
 
 func getHosted(cert *x509.Certificate) (*Hosted, error) {
-	runnerEnv, err := getExtension(cert, "1.3.6.1.4.1.57264.1.11", true)
+	runnerEnv, err := getExtension(cert, OIDRunnerEnvironment, true)
 	if err != nil {
 		return nil, err
 	}
@@ -280,6 +284,31 @@ func validateClaimsEqual(deprecated, existing string) error {
 	return nil
 }
 
+func getAndValidateEqualClaims(cert *x509.Certificate, deprecatedOid, oid asn1.ObjectIdentifier) (string, error) {
+	deprecatedValue, err := getExtension(cert, deprecatedOid, false)
+	if err != nil {
+		return "", err
+	}
+	value, err := getExtension(cert, oid, true)
+	if err != nil {
+		return "", err
+	}
+	if err := validateClaimsEqual(deprecatedValue, value); err != nil {
+		return "", err
+	}
+	// New certificates.
+	if value != "" {
+		return value, nil
+	}
+	// Old certificates.
+	if deprecatedValue != "" {
+		return deprecatedValue, nil
+	}
+	// Both values are empty.
+	return "", fmt.Errorf("%w: empty fields %v and %v", serrors.ErrorInvalidCertificate,
+		deprecatedOid, oid)
+}
+
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
 // See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
 //
@@ -291,40 +320,49 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 
 	// 1.3.6.1.4.1.57264.1.2: DEPRECATED.
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726412--github-workflow-BuildTrigger-deprecated
-	deprecatedBuildTrigger, err := getExtension(cert, "1.3.6.1.4.1.57264.1.2", false)
-	if err != nil {
-		return nil, err
-	}
 	// 1.3.6.1.4.1.57264.1.20 | Build Trigger
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264120--build-trigger
-	buildTrigger, err := getExtension(cert, "1.3.6.1.4.1.57264.1.20", true)
+	buildTrigger, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowTrigger, OIDBuildTrigger)
 	if err != nil {
 		return nil, err
-	}
-	if err := validateClaimsEqual(deprecatedBuildTrigger, buildTrigger); err != nil {
-		return nil, err
-	}
-	// Handle old certifcates.
-	if buildTrigger == "" {
-		buildTrigger = deprecatedBuildTrigger
 	}
 
 	// 1.3.6.1.4.1.57264.1.3: DEPRECATED.
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726413--github-workflow-sha-deprecated
-	deprecatedSourceSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.3", false)
+	// 1.3.6.1.4.1.57264.1.13 | Source Repository Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264113--source-repository-digest
+	sourceSha1, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowSHA, OIDSourceRepositoryDigest)
+	if err != nil {
+		return nil, err
+	}
+	// 1.3.6.1.4.1.57264.1.19 | Build Config Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264119--build-config-digest
+	buildConfigSha1, err := getExtension(cert, OIDBuildConfigDigest, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateClaimsEqual(sourceSha1, buildConfigSha1); err != nil {
+		return nil, err
+	}
+
+	// IssuerV1: 1.3.6.1.4.1.57264.1.1
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726411--issuer
+	// IssuerV2: 1.3.6.1.4.1.57264.1.8
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726418--issuer-v2
+	issuer, err := getAndValidateEqualClaims(cert, fulcio.OIDIssuer, OIDIssuerV2)
 	if err != nil {
 		return nil, err
 	}
 
 	// 1.3.6.1.4.1.57264.1.5: DEPRECATED.
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726415--github-workflow-repository-deprecated
-	deprecatedSourceRepository, err := getExtension(cert, "1.3.6.1.4.1.57264.1.5", false)
+	deprecatedSourceRepository, err := getExtension(cert, fulcio.OIDGitHubWorkflowRepository, false)
 	if err != nil {
 		return nil, err
 	}
 	// 1.3.6.1.4.1.57264.1.12 | Source Repository URI
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264112--source-repository-uri
-	sourceURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.12", true)
+	sourceURI, err := getExtension(cert, OIDSourceRepositoryURI, true)
 	if err != nil {
 		return nil, err
 	}
@@ -339,29 +377,9 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		sourceRepository = deprecatedSourceRepository
 	}
 
-	// IssuerV1: 1.3.6.1.4.1.57264.1.8
-	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726411--issuer
-	issuerV1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.1", false)
-	if err != nil {
-		return nil, err
-	}
-
-	// IssuerV2: 1.3.6.1.4.1.57264.1.1
-	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726418--issuer-v2
-	issuerV2, err := getExtension(cert, "1.3.6.1.4.1.57264.1.8", true)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateClaimsEqual(issuerV1, issuerV2); err != nil {
-		return nil, err
-	}
-	if issuerV2 == "" {
-		issuerV2 = issuerV1
-	}
-
 	// 1.3.6.1.4.1.57264.1.10 | Build Signer Digest
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264110--build-signer-digest
-	subjectSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.10", true)
+	subjectSha1, err := getExtension(cert, OIDBuildSignerDigest, true)
 	if err != nil {
 		return nil, err
 	}
@@ -373,61 +391,31 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		return nil, err
 	}
 
-	// 1.3.6.1.4.1.57264.1.13 | Source Repository Digest
-	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264113--source-repository-digest
-	sourceSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.13", true)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateClaimsEqual(deprecatedSourceSha1, sourceSha1); err != nil {
-		return nil, err
-	}
-	if sourceSha1 == "" {
-		sourceSha1 = deprecatedSourceSha1
-	}
-
 	// 1.3.6.1.4.1.57264.1.14 | Source Repository Ref
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264114--source-repository-ref
-	sourceRef, err := getExtension(cert, "1.3.6.1.4.1.57264.1.14", true)
+	sourceRef, err := getExtension(cert, OIDSourceRepositoryRef, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// 1.3.6.1.4.1.57264.1.15 | Source Repository Identifier
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264115--source-repository-identifier
-	sourceID, err := getExtension(cert, "1.3.6.1.4.1.57264.1.15", true)
+	sourceID, err := getExtension(cert, OIDSourceRepositoryIdentifier, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// 1.3.6.1.4.1.57264.1.17 | Source Repository Owner Identifier
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264117--source-repository-owner-identifier
-	sourceOwnerID, err := getExtension(cert, "1.3.6.1.4.1.57264.1.17", true)
+	sourceOwnerID, err := getExtension(cert, OIDSourceRepositoryOwnerIdentifier, true)
 	if err != nil {
 		return nil, err
-	}
-
-	// 1.3.6.1.4.1.57264.1.19 | Build Config Digest
-	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264119--build-config-digest
-	buildConfigSha1, err := getExtension(cert, "1.3.6.1.4.1.57264.1.19", true)
-	if err != nil {
-		return nil, err
-	}
-	// NOTE: sourceSha1 is *not* deprecated.
-	if deprecatedSourceSha1 != "" {
-		if err := validateClaimsEqual(deprecatedSourceSha1, buildConfigSha1); err != nil {
-			return nil, err
-		}
-	} else if sourceSha1 != "" {
-		if err := validateClaimsEqual(sourceSha1, buildConfigSha1); err != nil {
-			return nil, err
-		}
 	}
 
 	// 1.3.6.1.4.1.57264.1.18 | Build Config URI
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264118--build-config-uri
 	var buildConfigPath string
-	buildConfigURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.18", true)
+	buildConfigURI, err := getExtension(cert, OIDBuildConfigURI, true)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +435,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 
 	// 1.3.6.1.4.1.57264.1.21 | Run Invocation URI
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264121--run-invocation-uri
-	runURI, err := getExtension(cert, "1.3.6.1.4.1.57264.1.21", true)
+	runURI, err := getExtension(cert, OIDRunInvocationURI, true)
 	if err != nil {
 		return nil, err
 	}
@@ -457,6 +445,8 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
 	}
+	// Remove the starting '/'.
+	subjectWorkflowRef := cert.URIs[0].Path[1:]
 
 	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string
 	if subjectSha1 != "" {
@@ -480,9 +470,9 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 
 	return &WorkflowIdentity{
 		// Issuer.
-		Issuer: issuerV2,
+		Issuer: issuer,
 		// Subject
-		SubjectWorkflowRef: cert.URIs[0].Path[1:], // Remove the starting '/'
+		SubjectWorkflowRef: subjectWorkflowRef,
 		SubjectSha1:        pSubjectSha1,
 		SubjectHosted:      subjectHosted,
 		// Source.

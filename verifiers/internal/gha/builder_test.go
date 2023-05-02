@@ -750,6 +750,11 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+	subjectSha1 := "subjectSha1"
+	encodedSubjectSha1, err := asn1.MarshalWithParams(subjectSha1, "utf8")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
 
 	tests := []struct {
 		name     string
@@ -887,18 +892,23 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 						Id:    OIDRunInvocationURI,
 						Value: encodedInvocationURI,
 					},
+					{
+						Id:    OIDBuildSignerDigest,
+						Value: encodedSubjectSha1,
+					},
 				},
 			},
 			workflow: WorkflowIdentity{
 				Issuer:             issuer,
+				SubjectSha1:        &subjectSha1,
+				SubjectHosted:      &hosted,
 				SubjectWorkflowRef: repo + "/" + buildConfigPath,
 				SourceRepository:   repo,
 				SourceSha1:         digest,
-				BuildTrigger:       trigger,
-				SubjectHosted:      &hosted,
 				SourceRef:          &ref,
 				SourceID:           &sourceID,
 				SourceOwnerID:      &sourceOwnerID,
+				BuildTrigger:       trigger,
 				BuildConfigPath:    &buildConfigPath,
 				RunID:              &invocationID,
 			},
