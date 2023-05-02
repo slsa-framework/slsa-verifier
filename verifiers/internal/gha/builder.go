@@ -311,8 +311,6 @@ func getAndValidateEqualClaims(cert *x509.Certificate, deprecatedOid, oid asn1.O
 
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
 // See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
-//
-//nolint:gocyclo
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
 		return nil, fmt.Errorf("%w: missing URI information from certificate", serrors.ErrorInvalidFormat)
