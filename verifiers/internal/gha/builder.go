@@ -274,7 +274,6 @@ func getHosted(cert *x509.Certificate) (*Hosted, error) {
 }
 
 func validateClaimsEqual(deprecated, existing string) error {
-	// derecated may be empty, but it more likely the cert is old and 'new' is empty.
 	if deprecated != "" && existing != "" && deprecated != existing {
 		return fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidFormat, deprecated, existing)
 	}
