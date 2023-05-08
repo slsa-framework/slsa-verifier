@@ -10,8 +10,7 @@ import (
 	"strings"
 
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
-	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
-	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/client"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -215,12 +214,15 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
-	roots, err := fulcio.GetRoots()
+	trustedRoot, err := GetTrustedRoot(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	opts := &cosign.CheckOpts{
-		RootCerts: roots,
+		RootCerts:         trustedRoot.FulcioRoot,
+		IntermediateCerts: trustedRoot.FulcioIntermediates,
+		RekorPubKeys:      trustedRoot.RekorPubKeys,
+		CTLogPubKeys:      trustedRoot.CTPubKeys,
 	}
 
 	atts, _, err := container.RunCosignImageVerification(ctx,
