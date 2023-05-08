@@ -10,7 +10,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
-	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1.0"
+	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
@@ -466,7 +466,7 @@ func Test_verifySourceURI(t *testing.T) {
 				Predicate: slsa1.ProvenancePredicate{
 					BuildDefinition: slsa1.ProvenanceBuildDefinition{
 						ExternalParameters: map[string]interface{}{
-							"source": slsa1.ArtifactReference{
+							"source": slsa1.ResourceDescriptor{
 								URI: tt.prov.Predicate.Invocation.ConfigSource.URI,
 							},
 						},
@@ -572,7 +572,7 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 			// Update to v1 SLSA provenance.
 			prov1 := &v1.ProvenanceV1{
 				Predicate: slsa1.ProvenancePredicate{
-					RunDetails: slsa1.ProvenanaceRunDetails{
+					RunDetails: slsa1.ProvenanceRunDetails{
 						Builder: slsa1.Builder{
 							ID: tt.prov.Predicate.Builder.ID,
 						},

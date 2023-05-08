@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	ProvenanceV1DraftType = "https://slsa.dev/provenance/v1.0?draft"
-	ProvenanceV02Type     = "https://slsa.dev/provenance/v0.2"
+	ProvenanceV02Type = "https://slsa.dev/provenance/v0.2"
 )
 
 type Provenance interface {

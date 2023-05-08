@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
@@ -64,7 +65,7 @@ func GetEventPayload(environment map[string]any, predicateType string) (map[stri
 
 func convertKey(key, predicateType string) (string, error) {
 	switch predicateType {
-	case ProvenanceV1DraftType:
+	case slsa1.PredicateSLSAProvenance:
 		return strings.ToUpper(key), nil
 	case ProvenanceV02Type:
 		return key, nil
