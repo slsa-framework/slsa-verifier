@@ -690,6 +690,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 	}
 }
 
+//nolint:staticcheck we want to disable SA1019 only to use deprecated methods but there is a bug in golangci-lint.
 func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 	t.Parallel()
 	// See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
