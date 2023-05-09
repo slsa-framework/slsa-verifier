@@ -20,7 +20,7 @@
   - [Compilation from source](#compilation-from-source)
     - [Option 1: Install via go](#option-1-install-via-go)
     - [Option 2: Compile manually](#option-2-compile-manually)
-  - [Use the installer Action on GitHub](#use-the-installer-action-on-github-actions)
+  - [Use the installer Action on GitHub Actions](#use-the-installer-action-on-github-actions)
   - [Download the binary](#download-the-binary)
 - [Available options](#available-options)
 - [Option list](#option-list)
@@ -31,6 +31,7 @@
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
+- [Verification for npm packages](#verification-for-npm-packages)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
@@ -319,6 +320,31 @@ PASSED: Verified SLSA provenance
 The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
 
 Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You _may_ match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
+
+## Verification for npm packages
+
+Verification of npm packages is currently an experimental feature. To verify a
+npm packages, first download the package tarball and attestations.
+
+```shell
+curl -Sso attestations.json $(npm view @ianlewis/actions-test --json | jq -r '.dist.attestations.url') && \
+curl -SsO "$(npm view @ianlewis/actions-test --json | jq -r '.dist.tarball')"
+```
+
+You can then verify the package by running the following command:
+
+```shell
+$ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test-0.1.126.tgz \
+  --attestations-path attestations.json \
+  --builder-id "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml@refs/tags/v1.6.0" \
+  --package-name "@ianlewis/actions-test" \
+  --package-version 0.1.126 \
+  --source-uri github.com/ianlewis/actions-test
+```
+
+The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+
+Only GitHub URIs are supported with the `--source-uri` flag. A tag should not be specified, even if the provenance was built at some tag. If you intend to do source versioning validation, use `--print-provenance` and inspect the commit SHA of the config source or materials.
 
 ## Known Issues
 

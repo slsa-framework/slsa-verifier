@@ -17,6 +17,10 @@ help: ## Shows all targets and help from the Makefile (this message).
 			} \
 		}'
 
+node_modules/.installed: package.json package-lock.json
+	npm ci
+	touch node_modules/.installed
+
 ## Testing
 #####################################################################
 
@@ -31,6 +35,26 @@ regression-test: ## Runs all regression and unit tests.
 	go mod vendor
 	# NOTE: go test builds packages even if there are no tests.
 	go test -mod=vendor -tags=regression -v -timeout=20m ./...
+
+## Tools
+#####################################################################
+
+.PHONY: markdown-toc
+markdown-toc: node_modules/.installed ## Runs markdown-toc on markdown files.
+	@# NOTE: Do not include issue templates since they contain Front Matter.
+	@# markdown-toc will update Front Matter even if there is no TOC in the file.
+	@# See: https://github.com/jonschlinkert/markdown-toc/issues/151
+	@set -euo pipefail; \
+		md_files=$$( \
+			find . -name '*.md' -type f \
+				-not -iwholename '*/.git/*' \
+				-not -iwholename '*/vendor/*' \
+				-not -iwholename '*/node_modules/*' \
+				-not -iwholename '*/.github/ISSUE_TEMPLATE/*' \
+		); \
+		for filename in $${md_files}; do \
+			npm run markdown-toc "$${filename}"; \
+		done;
 
 ## Linters
 #####################################################################
