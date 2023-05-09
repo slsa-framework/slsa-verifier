@@ -690,7 +690,6 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 	}
 }
 
-//nolint:staticcheck we want to disable SA1019 only to use deprecated methods but there is a bug in golangci-lint.
 func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 	t.Parallel()
 	// See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
@@ -773,18 +772,22 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				},
 				Extensions: []pkix.Extension{
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDIssuer,
 						Value: []byte(issuer),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowTrigger,
 						Value: []byte(trigger),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowSHA,
 						Value: []byte(digest),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowRepository,
 						Value: []byte(repo),
 					},
@@ -803,18 +806,22 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				Extensions: []pkix.Extension{
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDIssuer,
 						Value: []byte(issuer),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowTrigger,
 						Value: []byte(trigger),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowSHA,
 						Value: []byte(digest),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowRepository,
 						Value: []byte(repo),
 					},
@@ -833,18 +840,22 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				Extensions: []pkix.Extension{
 					// Deprecated claims.
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDIssuer,
 						Value: []byte(issuer),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowTrigger,
 						Value: []byte(trigger),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowSHA,
 						Value: []byte(digest),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowRepository,
 						Value: []byte(repo),
 					},
@@ -920,18 +931,22 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				Extensions: []pkix.Extension{
 					// Deprecated claims.
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDIssuer,
 						Value: []byte(issuer),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowTrigger,
 						Value: []byte(trigger),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowSHA,
 						Value: []byte(digest),
 					},
 					{
+						//nolint: staticcheck // SA1019: Need to support older signatures.
 						Id:    fulcio.OIDGitHubWorkflowRepository,
 						Value: []byte(repo),
 					},
