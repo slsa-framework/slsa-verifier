@@ -238,7 +238,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

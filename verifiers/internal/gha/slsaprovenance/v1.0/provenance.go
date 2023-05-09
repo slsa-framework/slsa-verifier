@@ -138,7 +138,7 @@ func (prov *ProvenanceV1) GetNumberResolvedDependencies() (int, error) {
 }
 
 func (prov *ProvenanceV1) GetSystemParameters() (map[string]any, error) {
-	sysParams, ok := prov.Predicate.BuildDefinition.SystemParameters.(map[string]interface{})
+	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}

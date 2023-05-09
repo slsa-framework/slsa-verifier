@@ -8,7 +8,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	intotocommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	intotov02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
-	intotov10 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1.0"
+	intotov1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	slsav02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
 	slsav10 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
@@ -77,12 +77,12 @@ func Test_verifySubjectDigestName(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{
+			prov1 := &slsav10.ProvenanceV1{
 				StatementHeader: intoto.StatementHeader{
 					Subject: tt.subject,
 				},
 			}
-			err = verifySubjectDigestName(prov10, tt.digestName)
+			err = verifySubjectDigestName(prov1, tt.digestName)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -140,9 +140,9 @@ func Test_verifyBuildConfig(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{
-				Predicate: intotov10.ProvenancePredicate{
-					BuildDefinition: intotov10.ProvenanceBuildDefinition{
+			prov1 := &slsav10.ProvenanceV1{
+				Predicate: intotov1.ProvenancePredicate{
+					BuildDefinition: intotov1.ProvenanceBuildDefinition{
 						ExternalParameters: map[string]interface{}{
 							"workflow": map[string]string{
 								"path": tt.path,
@@ -151,7 +151,7 @@ func Test_verifyBuildConfig(t *testing.T) {
 					},
 				},
 			}
-			err = verifyBuildConfig(prov10, &tt.workflow)
+			err = verifyBuildConfig(prov1, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -200,15 +200,15 @@ func Test_verifyResolvedDependencies(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{
-				Predicate: intotov10.ProvenancePredicate{
-					BuildDefinition: intotov10.ProvenanceBuildDefinition{},
+			prov1 := &slsav10.ProvenanceV1{
+				Predicate: intotov1.ProvenancePredicate{
+					BuildDefinition: intotov1.ProvenanceBuildDefinition{},
 				},
 			}
 			if tt.n > 0 {
-				prov10.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov10.ArtifactReference, tt.n)
+				prov1.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov1.ResourceDescriptor, tt.n)
 			}
-			err = verifyResolvedDependencies(prov10)
+			err = verifyResolvedDependencies(prov1)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -322,19 +322,19 @@ func Test_verifyCommonMetadata(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{}
+			prov1 := &slsav10.ProvenanceV1{}
 
 			if tt.invocationID != nil {
-				prov10.Predicate.RunDetails.BuildMetadata.InvocationID = *tt.invocationID
+				prov1.Predicate.RunDetails.BuildMetadata.InvocationID = *tt.invocationID
 			}
 			if tt.startTime != nil {
-				prov10.Predicate.RunDetails.BuildMetadata.StartedOn = tt.startTime
+				prov1.Predicate.RunDetails.BuildMetadata.StartedOn = tt.startTime
 			}
 			if tt.endTime != nil {
-				prov10.Predicate.RunDetails.BuildMetadata.FinishedOn = tt.endTime
+				prov1.Predicate.RunDetails.BuildMetadata.FinishedOn = tt.endTime
 			}
 
-			err = verifyCommonMetadata(prov10, &tt.workflow)
+			err = verifyCommonMetadata(prov1, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -648,19 +648,19 @@ func Test_verifyMetadata(t *testing.T) {
 				t.Errorf(cmp.Diff(errV02, tt.errV02))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{}
+			prov1 := &slsav10.ProvenanceV1{}
 
 			if tt.invocationID != nil {
-				prov10.Predicate.RunDetails.BuildMetadata.InvocationID = *tt.invocationID
+				prov1.Predicate.RunDetails.BuildMetadata.InvocationID = *tt.invocationID
 			}
 			if tt.startTime != nil {
-				prov10.Predicate.RunDetails.BuildMetadata.StartedOn = tt.startTime
+				prov1.Predicate.RunDetails.BuildMetadata.StartedOn = tt.startTime
 			}
 			if tt.endTime != nil {
-				prov10.Predicate.RunDetails.BuildMetadata.FinishedOn = tt.endTime
+				prov1.Predicate.RunDetails.BuildMetadata.FinishedOn = tt.endTime
 			}
 
-			errV01 := verifyMetadata(prov10, &tt.workflow)
+			errV01 := verifyMetadata(prov1, &tt.workflow)
 			if !errCmp(errV01, tt.errV01) {
 				t.Errorf(cmp.Diff(errV01, tt.errV01))
 			}
@@ -1054,14 +1054,14 @@ func Test_verifySystemParameters(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{
-				Predicate: intotov10.ProvenancePredicate{
-					BuildDefinition: intotov10.ProvenanceBuildDefinition{
-						SystemParameters: tt.environment,
+			prov1 := &slsav10.ProvenanceV1{
+				Predicate: intotov1.ProvenancePredicate{
+					BuildDefinition: intotov1.ProvenanceBuildDefinition{
+						InternalParameters: tt.environment,
 					},
 				},
 			}
-			err = verifySystemParameters(prov10, &tt.workflow)
+			err = verifySystemParameters(prov1, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -1204,13 +1204,13 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov10 := &slsav10.ProvenanceV1{
+			prov1 := &slsav10.ProvenanceV1{
 				StatementHeader: intoto.StatementHeader{
 					Subject: tt.subject,
 				},
-				Predicate: intotov10.ProvenancePredicate{
-					BuildDefinition: intotov10.ProvenanceBuildDefinition{
-						SystemParameters: tt.environment,
+				Predicate: intotov1.ProvenancePredicate{
+					BuildDefinition: intotov1.ProvenanceBuildDefinition{
+						InternalParameters: tt.environment,
 						ExternalParameters: map[string]interface{}{
 							// TODO(#566): verify fields for v1.0 provenance.
 							"workflow": map[string]string{
@@ -1221,9 +1221,9 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				},
 			}
 			if tt.numberResolvedDependencies > 0 {
-				prov10.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov10.ArtifactReference, tt.numberResolvedDependencies)
+				prov1.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov1.ResourceDescriptor, tt.numberResolvedDependencies)
 			}
-			err = verifyProvenanceMatchesCertificate(prov10, &tt.workflow)
+			err = verifyProvenanceMatchesCertificate(prov1, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
