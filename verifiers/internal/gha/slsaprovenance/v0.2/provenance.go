@@ -2,6 +2,7 @@ package v02
 
 import (
 	"fmt"
+	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -76,4 +77,41 @@ func (prov *ProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
 	}
 
 	return slsaprovenance.GetWorkflowInputs(environment, prov.PredicateType)
+}
+
+func (prov *ProvenanceV02) GetBuildTriggerPath() (string, error) {
+	return prov.Predicate.Invocation.ConfigSource.EntryPoint, nil
+}
+
+func (prov *ProvenanceV02) GetBuildInvocationID() (string, error) {
+	if prov.Predicate.Metadata == nil {
+		return "", nil
+	}
+	return prov.Predicate.Metadata.BuildInvocationID, nil
+}
+
+func (prov *ProvenanceV02) GetBuildStartTime() (*time.Time, error) {
+	if prov.Predicate.Metadata == nil {
+		return nil, nil
+	}
+	return prov.Predicate.Metadata.BuildStartedOn, nil
+}
+
+func (prov *ProvenanceV02) GetBuildFinishTime() (*time.Time, error) {
+	if prov.Predicate.Metadata == nil {
+		return nil, nil
+	}
+	return prov.Predicate.Metadata.BuildFinishedOn, nil
+}
+
+func (prov *ProvenanceV02) GetNumberResolvedDependencies() (int, error) {
+	return len(prov.Predicate.Materials), nil
+}
+
+func (prov *ProvenanceV02) GetSystemParameters() (map[string]any, error) {
+	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	}
+	return environment, nil
 }

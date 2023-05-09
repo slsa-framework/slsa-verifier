@@ -72,8 +72,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.JobWobWorkflowRef,
-		workflowInfo.CallerHash)
+		workflowInfo.SubjectWorkflowRef,
+		workflowInfo.SourceSha1)
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -125,6 +125,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	}
 
 	// WARNING: builderID may be empty if it's not a trusted reusable builder workflow.
+	isTrustedBuilder := false
 	if trustedBuilderID != nil {
 		// We only support builders built using the BYOB framework.
 		// The builder is guaranteed to be delegatorGenericReusableWorkflow, since this is the builder
@@ -132,6 +133,11 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// The delegator workflow will set the builder ID to the caller's path,
 		// which is what users match against.
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
+
+		if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
+			return nil, fmt.Errorf("%w: self hosted re-usable workflow", serrors.ErrorMismatchBuilderID)
+		}
+		isTrustedBuilder = true
 	} else {
 		// NOTE: if the user created provenance using a re-usable workflow
 		// that does not integrate with the BYOB framework, this code will be run.
@@ -143,27 +149,45 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// We may add support for verifying provenance from arbitrary re-usable workflows
 		// later; which may be useful for org-level builders.
 
-		// The builder.id is set to builderGitHubRunnerID by the npm CLI.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(builderGitHubRunnerID, false)
+		// TODO(https://github.com/gh-community/npm-provenance-private-beta-community/issues/9#issuecomment-1516685721):
+		// Allow the user to provide one of 3 builders: self-hosted, github-hosted and legacy github-hosted.
+		// Verify that the value provided is consistent with certificate information.
+
+		if workflowInfo.SubjectHosted == nil {
+			return nil, fmt.Errorf("%w: hosted status unknonwn", serrors.ErrorNotSupported)
+		}
+		switch *builderOpts.ExpectedID {
+		case builderLegacyGitHubRunnerID, builderGitHubHostedRunnerID:
+			if *workflowInfo.SubjectHosted != HostedGitHub {
+				return nil, fmt.Errorf("%w: re-usable workflow is self-hosted", serrors.ErrorMismatchBuilderID)
+			}
+		case builderSelfHostedRunnerID:
+			if *workflowInfo.SubjectHosted != HostedSelf {
+				return nil, fmt.Errorf("%w: re-usable workflow is GitHub-hosted", serrors.ErrorMismatchBuilderID)
+			}
+		default:
+			return nil, fmt.Errorf("%w: builder %v. Expected one of %v, %v", serrors.ErrorNotSupported, *builderOpts.ExpectedID,
+				builderSelfHostedRunnerID, builderGitHubHostedRunnerID)
+		}
+
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(*builderOpts.ExpectedID, false)
 		if err != nil {
 			return nil, err
 		}
-		if err := trustedBuilderID.MatchesLoose(*builderOpts.ExpectedID, false); err != nil {
-			return nil, fmt.Errorf("%w", err)
-		}
+
 		// On GitHub we only support the default GitHub runner builder.
-		provenanceOpts.ExpectedBuilderID = builderGitHubRunnerID
+		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 	}
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := VerifyNpmPackageProvenance(env, provenanceOpts); err != nil {
+	if err := VerifyNpmPackageProvenance(env, workflowInfo, provenanceOpts, isTrustedBuilder); err != nil {
 		return nil, err
 	}
 
 	fmt.Fprintf(os.Stderr, "Verified build using builder %s at commit %s\n",
 		trustedBuilderID.String(),
-		workflowInfo.CallerHash)
+		workflowInfo.SourceSha1)
 
 	return trustedBuilderID, nil
 }
@@ -185,7 +209,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, nil, err
 	}
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -214,7 +238,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -277,7 +301,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

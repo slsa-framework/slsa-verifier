@@ -19,7 +19,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
-	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
+
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
@@ -182,7 +182,6 @@ func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 		if !exists {
 			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, fmt.Sprintf("no sha%v subject digest", l))
 		}
-
 		if hash == expectedHash {
 			return nil
 		}
@@ -198,13 +197,6 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 	provenance []byte, artifactHash string) (
 	*SignedAttestation, error,
 ) {
-	// Collect trusted root material for verification (Rekor pubkeys, SCT pubkeys,
-	// Fulcio root certificates).
-	_, err := GetTrustedRoot(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// There are two cases, either we have an embedded certificate, or we need
 	// to use the Redis index for searching by artifact SHA.
 	if hasCertInEnvelope(provenance) {
@@ -220,7 +212,8 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 		provenance, rClient, trustedRoot)
 }
 
-func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentity,
+	provenanceOpts *options.ProvenanceOpts, isTrustedBuilder bool,
 ) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
@@ -232,12 +225,52 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, provenanceOpts *options.P
 
 	// Verify the builder ID.
 	if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+		// Verification failed. Try again by appending or removing the the hosted status.
+		// Older provenance uses the shorted version without status, and recent provenance includes the status.
+		// We consider the short version witout status as github-hosted.
+		switch {
+		case !strings.HasSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub)):
+			// Append the status.
+			bid := provenanceOpts.ExpectedBuilderID + "/" + string(hostedGitHub)
+			oerr := verifyBuilderIDLooseMatch(prov, bid)
+			if oerr != nil {
+				// We do return the original error, since that's the caller the user provided.
+				return err
+			}
+			// Verification success.
+			err = nil
+
+		case strings.HasSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub)):
+			// Remove the status.
+			bid := strings.TrimSuffix(provenanceOpts.ExpectedBuilderID, "/"+string(hostedGitHub))
+			oerr := verifyBuilderIDLooseMatch(prov, bid)
+			if oerr != nil {
+				// We do return the original error, since that's the caller the user provided.
+				return err
+			}
+			// Verification success.
+			err = nil
+
+		default:
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Also, the GitHub context is not recorded for the default builder.
+	if err := VerifyProvenanceCommonOptions(prov, provenanceOpts, true); err != nil {
 		return err
 	}
 
-	// NOTE: for the non trusted builders, the information may be forgeable.
-	// Also, the GitHub context is not recorded for the default builder.
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, true)
+	// Verify consistency between the provenance and the certificate.
+	// because for the non trusted builders, the information may be forgeable.
+	if !isTrustedBuilder {
+		return verifyProvenanceMatchesCertificate(prov, workflow)
+	}
+	return nil
 }
 
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,

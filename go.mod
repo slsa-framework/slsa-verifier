@@ -147,7 +147,7 @@ require (
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
-	github.com/sigstore/fulcio v1.2.0 // indirect
+	github.com/sigstore/fulcio v1.2.0
 	github.com/sigstore/protobuf-specs v0.1.1-0.20230503063121-91485b44360d
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect

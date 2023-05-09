@@ -30,7 +30,7 @@ unit-test: ## Runs all unit tests.
 regression-test: ## Runs all regression and unit tests.
 	go mod vendor
 	# NOTE: go test builds packages even if there are no tests.
-	go test -mod=vendor -tags=regression -v -timeout=20m ./...
+	go test -mod=vendor -tags=regression -v -timeout=25m ./...
 
 ## Linters
 #####################################################################

@@ -2,12 +2,13 @@ package gha
 
 import (
 	"crypto/x509"
-	"errors"
+	"encoding/asn1"
 	"fmt"
 	"strings"
 
 	"golang.org/x/mod/semver"
 
+	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -34,8 +35,10 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
 }
 
-var delegatorGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
-var delegatorLowPermsGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml"
+var (
+	delegatorGenericReusableWorkflow         = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
+	delegatorLowPermsGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml"
+)
 
 var defaultBYOBReusableWorkflows = map[string]bool{
 	delegatorGenericReusableWorkflow:         true,
@@ -50,9 +53,9 @@ func VerifyCertficateSourceRepository(id *WorkflowIdentity,
 	// {org}/{repository}.
 	expectedSource := strings.TrimPrefix(sourceRepo, "git+https://")
 	expectedSource = strings.TrimPrefix(expectedSource, githubCom)
-	if id.CallerRepository != expectedSource {
+	if id.SourceRepository != expectedSource {
 		return fmt.Errorf("%w: expected source '%s', got '%s'", serrors.ErrorMismatchSource,
-			expectedSource, id.CallerRepository)
+			expectedSource, id.SourceRepository)
 	}
 	return nil
 }
@@ -72,9 +75,9 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 	}
 
 	// cert URI path is /org/repo/path/to/workflow@ref
-	workflowPath := strings.SplitN(id.JobWobWorkflowRef, "@", 2)
+	workflowPath := strings.SplitN(id.SubjectWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return nil, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.JobWobWorkflowRef)
+		return nil, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.SubjectWorkflowRef)
 	}
 
 	// Verify trusted workflow.
@@ -135,8 +138,8 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	if (id.CallerRepository == trustedBuilderRepository ||
-		id.CallerRepository == e2eTestRepository) &&
+	if (id.SourceRepository == trustedBuilderRepository ||
+		id.SourceRepository == e2eTestRepository) &&
 		options.TestingEnabled() {
 		// Allow verification on the main branch to support e2e tests.
 		if ref == "refs/heads/main" {
@@ -177,39 +180,295 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	return nil
 }
 
-func getExtension(cert *x509.Certificate, oid string) string {
+func getExtension(cert *x509.Certificate, oid asn1.ObjectIdentifier, encoded bool) (string, error) {
 	for _, ext := range cert.Extensions {
-		if strings.Contains(ext.Id.String(), oid) {
-			return string(ext.Value)
+		if !ext.Id.Equal(oid) {
+			continue
 		}
+		if !encoded {
+			return string(ext.Value), nil
+		}
+
+		// Decode first.
+		var decoded string
+		rest, err := asn1.Unmarshal(ext.Value, &decoded)
+		if err != nil {
+			return "", fmt.Errorf("%w", err)
+		}
+		if len(rest) != 0 {
+			return "", fmt.Errorf("decoding has rest for oid %v", oid)
+		}
+		return decoded, nil
 	}
-	return ""
+	return "", nil
 }
 
+type Hosted int
+
+const (
+	HostedSelf Hosted = iota
+	HostedGitHub
+)
+
+// See https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md.
 type WorkflowIdentity struct {
-	// The caller repository
-	CallerRepository string `json:"caller"`
-	// The commit SHA where the workflow was triggered
-	CallerHash string `json:"commit"`
-	// Current workflow (reuseable workflow) ref
-	JobWobWorkflowRef string `json:"job_workflow_ref"`
-	// Trigger
-	Trigger string `json:"trigger"`
+	// The source repository
+	SourceRepository string
+	// The commit SHA where the workflow was triggered.
+	SourceSha1 string
+	// Ref of the source.
+	SourceRef *string
+	// ID of the source repository.
+	SourceID *string
+	//  Source owner ID of repository.
+	SourceOwnerID *string
+
+	// Workflow path OIDC subject - ref of reuseable workflow or trigger workflow.
+	SubjectWorkflowRef string
+	// Subject commit sha1.
+	SubjectSha1 *string
+	// Hosted status of the subject.
+	SubjectHosted *Hosted
+
+	// BuildTrigger
+	BuildTrigger string
+	// Build config path, i.e. the trigger workflow.
+	BuildConfigPath *string
+
+	// Run ID
+	RunID *string
 	// Issuer
-	Issuer string `json:"issuer"`
+	Issuer string
+}
+
+func getHosted(cert *x509.Certificate) (*Hosted, error) {
+	runnerEnv, err := getExtension(cert, fulcio.OIDRunnerEnvironment, true)
+	if err != nil {
+		return nil, err
+	}
+	if runnerEnv == "github-hosted" {
+		r := HostedGitHub
+		return &r, nil
+	}
+	if runnerEnv == "self-hosted" {
+		r := HostedSelf
+		return &r, nil
+	}
+	return nil, nil
+}
+
+func validateClaimsEqual(deprecated, existing string) error {
+	if deprecated != "" && existing != "" && deprecated != existing {
+		return fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidFormat, deprecated, existing)
+	}
+	if deprecated == "" && existing == "" {
+		return fmt.Errorf("%w: claims are empty", serrors.ErrorInvalidFormat)
+	}
+	return nil
+}
+
+func getAndValidateEqualClaims(cert *x509.Certificate, deprecatedOid, oid asn1.ObjectIdentifier) (string, error) {
+	deprecatedValue, err := getExtension(cert, deprecatedOid, false)
+	if err != nil {
+		return "", err
+	}
+	value, err := getExtension(cert, oid, true)
+	if err != nil {
+		return "", err
+	}
+	if err := validateClaimsEqual(deprecatedValue, value); err != nil {
+		return "", err
+	}
+	// New certificates.
+	if value != "" {
+		return value, nil
+	}
+	// Old certificates.
+	if deprecatedValue != "" {
+		return deprecatedValue, nil
+	}
+	// Both values are empty.
+	return "", fmt.Errorf("%w: empty fields %v and %v", serrors.ErrorInvalidCertificate,
+		deprecatedOid, oid)
 }
 
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
+// See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
+// https://github.com/golangci/golangci-lint/issues/741#issuecomment-784171870.
+//
+//nolint:staticcheck // we want to disable SA1019 only to use deprecated methods but there is a bug in golangci-lint.
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
-		return nil, errors.New("missing URI information from certificate")
+		return nil, fmt.Errorf("%w: missing URI information from certificate", serrors.ErrorInvalidFormat)
+	}
+
+	// 1.3.6.1.4.1.57264.1.2: DEPRECATED.
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726412--github-workflow-BuildTrigger-deprecated
+	// 1.3.6.1.4.1.57264.1.20 | Build Trigger
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264120--build-trigger
+	buildTrigger, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowTrigger, fulcio.OIDBuildTrigger)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.3: DEPRECATED.
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726413--github-workflow-sha-deprecated
+	// 1.3.6.1.4.1.57264.1.13 | Source Repository Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264113--source-repository-digest
+	sourceSha1, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowSHA, fulcio.OIDSourceRepositoryDigest)
+	if err != nil {
+		return nil, err
+	}
+	// 1.3.6.1.4.1.57264.1.19 | Build Config Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264119--build-config-digest
+	buildConfigSha1, err := getExtension(cert, fulcio.OIDBuildConfigDigest, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateClaimsEqual(sourceSha1, buildConfigSha1); err != nil {
+		return nil, err
+	}
+
+	// IssuerV1: 1.3.6.1.4.1.57264.1.1
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726411--issuer
+	// IssuerV2: 1.3.6.1.4.1.57264.1.8
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726418--issuer-v2
+	issuer, err := getAndValidateEqualClaims(cert, fulcio.OIDIssuer, fulcio.OIDIssuerV2)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.5: DEPRECATED.
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726415--github-workflow-repository-deprecated
+	deprecatedSourceRepository, err := getExtension(cert, fulcio.OIDGitHubWorkflowRepository, false)
+	if err != nil {
+		return nil, err
+	}
+	// 1.3.6.1.4.1.57264.1.12 | Source Repository URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264112--source-repository-uri
+	sourceURI, err := getExtension(cert, fulcio.OIDSourceRepositoryURI, true)
+	if err != nil {
+		return nil, err
+	}
+	if deprecatedSourceRepository != "" && sourceURI != "" &&
+		"https://github.com/"+deprecatedSourceRepository != sourceURI {
+		return nil, fmt.Errorf("%w: '%v' != '%v'",
+			serrors.ErrorInvalidFormat, "https://github.com/"+deprecatedSourceRepository, sourceURI)
+	}
+	sourceRepository := strings.TrimPrefix(sourceURI, "https://github.com/")
+	// Handle old certifcates.
+	if sourceRepository == "" {
+		sourceRepository = deprecatedSourceRepository
+	}
+
+	// 1.3.6.1.4.1.57264.1.10 | Build Signer Digest
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264110--build-signer-digest
+	subjectSha1, err := getExtension(cert, fulcio.OIDBuildSignerDigest, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.11 | Runner Environment
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264111--runner-environment
+	subjectHosted, err := getHosted(cert)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.14 | Source Repository Ref
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264114--source-repository-ref
+	sourceRef, err := getExtension(cert, fulcio.OIDSourceRepositoryRef, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.15 | Source Repository Identifier
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264115--source-repository-identifier
+	sourceID, err := getExtension(cert, fulcio.OIDSourceRepositoryIdentifier, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.17 | Source Repository Owner Identifier
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264117--source-repository-owner-identifier
+	sourceOwnerID, err := getExtension(cert, fulcio.OIDSourceRepositoryOwnerIdentifier, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.3.6.1.4.1.57264.1.18 | Build Config URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264118--build-config-uri
+	var buildConfigPath string
+	buildConfigURI, err := getExtension(cert, fulcio.OIDBuildConfigURI, true)
+	if err != nil {
+		return nil, err
+	}
+	if buildConfigURI != "" {
+		parts := strings.Split(buildConfigURI, "@")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("%w: %v",
+				serrors.ErrorInvalidFormat, buildConfigURI)
+		}
+		prefix := fmt.Sprintf("https://github.com/%v/", sourceRepository)
+		if !strings.HasPrefix(parts[0], prefix) {
+			return nil, fmt.Errorf("%w: prefix: %v",
+				serrors.ErrorInvalidFormat, parts[0])
+		}
+		buildConfigPath = strings.TrimPrefix(parts[0], prefix)
+	}
+
+	// 1.3.6.1.4.1.57264.1.21 | Run Invocation URI
+	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264121--run-invocation-uri
+	runURI, err := getExtension(cert, fulcio.OIDRunInvocationURI, true)
+	if err != nil {
+		return nil, err
+	}
+	runID := strings.TrimPrefix(runURI, fmt.Sprintf("https://github.com/%s/actions/runs/", sourceRepository))
+
+	// Subject path.
+	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
+	}
+	// Remove the starting '/'.
+	subjectWorkflowRef := cert.URIs[0].Path[1:]
+
+	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string
+	if subjectSha1 != "" {
+		pSubjectSha1 = &subjectSha1
+	}
+	if sourceID != "" {
+		pSourceID = &sourceID
+	}
+	if sourceRef != "" {
+		pSourceRef = &sourceRef
+	}
+	if sourceOwnerID != "" {
+		pSourceOwnerID = &sourceOwnerID
+	}
+	if buildConfigPath != "" {
+		pBuildConfigPath = &buildConfigPath
+	}
+	if runID != "" {
+		pRunID = &runID
 	}
 
 	return &WorkflowIdentity{
-		CallerRepository:  getExtension(cert, "1.3.6.1.4.1.57264.1.5"),
-		Issuer:            getExtension(cert, "1.3.6.1.4.1.57264.1.1"),
-		Trigger:           getExtension(cert, "1.3.6.1.4.1.57264.1.2"),
-		CallerHash:        getExtension(cert, "1.3.6.1.4.1.57264.1.3"),
-		JobWobWorkflowRef: cert.URIs[0].Path,
+		// Issuer.
+		Issuer: issuer,
+		// Subject
+		SubjectWorkflowRef: subjectWorkflowRef,
+		SubjectSha1:        pSubjectSha1,
+		SubjectHosted:      subjectHosted,
+		// Source.
+		SourceRepository: sourceRepository,
+		SourceSha1:       sourceSha1,
+		SourceRef:        pSourceRef,
+		SourceID:         pSourceID,
+		SourceOwnerID:    pSourceOwnerID,
+		// Build.
+		BuildTrigger:    buildTrigger,
+		BuildConfigPath: pBuildConfigPath,
+		// Other.
+		RunID: pRunID,
 	}, nil
 }

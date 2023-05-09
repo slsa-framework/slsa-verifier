@@ -26,6 +26,42 @@ func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
 	return slsaprovenance.ProvenanceFromEnvelope(env)
 }
 
+func Test_ProvenanceFromEnvelope(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		path     string
+		expected error
+	}{
+		{
+			name:     "invalid dsse: not SLSA predicate",
+			path:     "./testdata/dsse-not-slsa.intoto.jsonl",
+			expected: serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:     "slsa 1.0 invalid dsse: not SLSA predicate",
+			path:     "./testdata/dsse-not-slsa-v1.intoto.jsonl",
+			expected: serrors.ErrorInvalidDssePayload,
+		},
+		// TODO(#573): add more copliance tests.
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(tt.path)
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+			_, err = provenanceFromBytes(content)
+			if !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
 func Test_VerifyDigest(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -35,22 +71,15 @@ func Test_VerifyDigest(t *testing.T) {
 		expected     error
 	}{
 		{
-			name:         "invalid dsse: not SLSA predicate",
-			path:         "./testdata/dsse-not-slsa.intoto.jsonl",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:         "invalid dsse: nil subject",
-			path:         "./testdata/dsse-no-subject.intoto.jsonl",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorInvalidDssePayload,
-		},
-		{
 			name:         "invalid dsse: no sha256 subject digest",
 			path:         "./testdata/dsse-no-subject-hash.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:     "invalid dsse: nil subject",
+			path:     "./testdata/dsse-no-subject.intoto.jsonl",
+			expected: serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name:         "mismatched artifact hash with env",
@@ -83,19 +112,11 @@ func Test_VerifyDigest(t *testing.T) {
 			expected:     serrors.ErrorMismatchHash,
 		},
 		{
-			name:         "slsa 1.0 invalid dsse: not SLSA predicate",
-			path:         "./testdata/dsse-not-slsa-v1.intoto.jsonl",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorInvalidDssePayload,
-		},
-
-		{
 			name:         "invalid dsse: nil subject",
 			path:         "./testdata/dsse-no-subject-v1.intoto.jsonl",
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorInvalidDssePayload,
 		},
-
 		{
 			name:         "invalid dsse: no sha256 subject digest",
 			path:         "./testdata/dsse-no-subject-hash-v1.intoto.jsonl",
@@ -634,11 +655,6 @@ func Test_VerifyBranch(t *testing.T) {
 			branch: "main",
 		},
 		{
-			name:   "ref branch3",
-			path:   "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
-			branch: "branch3",
-		},
-		{
 			name:     "ref main case-sensitive",
 			path:     "./testdata/dsse-main-ref-v1.intoto.jsonl",
 			branch:   "Main",
@@ -858,6 +874,11 @@ func Test_VerifyTag(t *testing.T) {
 			name: "tag vslsa1",
 			path: "./testdata/dsse-vslsa1-tag.intoto.jsonl",
 			tag:  "vslsa1",
+		},
+		{
+			name:     "ref branch3",
+			path:     "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
+			expected: serrors.ErrorMismatchTag,
 		},
 		{
 			name:     "ref main",

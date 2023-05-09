@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
@@ -93,4 +94,54 @@ func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
 	return slsaprovenance.GetWorkflowInputs(sysParams, prov.predicateType)
+}
+
+// TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):
+// verify the ref and repo as well.
+func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
+	sysParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+
+	w, ok := sysParams["workflow"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow parameters type")
+	}
+
+	wMap, ok := w.(map[string]string)
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
+	}
+
+	v, ok := wMap["path"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no path entry on workflow")
+	}
+	return v, nil
+}
+
+func (prov *ProvenanceV1) GetBuildInvocationID() (string, error) {
+	return prov.Predicate.RunDetails.BuildMetadata.InvocationID, nil
+}
+
+func (prov *ProvenanceV1) GetBuildStartTime() (*time.Time, error) {
+	return prov.Predicate.RunDetails.BuildMetadata.StartedOn, nil
+}
+
+func (prov *ProvenanceV1) GetBuildFinishTime() (*time.Time, error) {
+	return prov.Predicate.RunDetails.BuildMetadata.FinishedOn, nil
+}
+
+func (prov *ProvenanceV1) GetNumberResolvedDependencies() (int, error) {
+	return len(prov.Predicate.BuildDefinition.ResolvedDependencies), nil
+}
+
+func (prov *ProvenanceV1) GetSystemParameters() (map[string]any, error) {
+	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+
+	return sysParams, nil
 }
