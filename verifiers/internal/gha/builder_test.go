@@ -849,51 +849,51 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 					},
 					// New claims.
 					{
-						Id:    OIDBuildTrigger,
+						Id:    fulcio.OIDBuildTrigger,
 						Value: encodedTrigger,
 					},
 					{
-						Id:    OIDSourceRepositoryURI,
+						Id:    fulcio.OIDSourceRepositoryURI,
 						Value: encodedRepoURI,
 					},
 					{
-						Id:    OIDIssuerV2,
+						Id:    fulcio.OIDIssuerV2,
 						Value: encodedIssuer,
 					},
 					{
-						Id:    OIDSourceRepositoryDigest,
+						Id:    fulcio.OIDSourceRepositoryDigest,
 						Value: encodedDigest,
 					},
 					{
-						Id:    OIDRunnerEnvironment,
+						Id:    fulcio.OIDRunnerEnvironment,
 						Value: encodedHosted,
 					},
 					{
-						Id:    OIDSourceRepositoryRef,
+						Id:    fulcio.OIDSourceRepositoryRef,
 						Value: encodedRef,
 					},
 					{
-						Id:    OIDSourceRepositoryIdentifier,
+						Id:    fulcio.OIDSourceRepositoryIdentifier,
 						Value: encodedSourceID,
 					},
 					{
-						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Id:    fulcio.OIDSourceRepositoryOwnerIdentifier,
 						Value: encodedSourceOwnerID,
 					},
 					{
-						Id:    OIDBuildConfigDigest,
+						Id:    fulcio.OIDBuildConfigDigest,
 						Value: encodedBuildConfigSha1,
 					},
 					{
-						Id:    OIDBuildConfigURI,
+						Id:    fulcio.OIDBuildConfigURI,
 						Value: encodedBuildConfigURI,
 					},
 					{
-						Id:    OIDRunInvocationURI,
+						Id:    fulcio.OIDRunInvocationURI,
 						Value: encodedInvocationURI,
 					},
 					{
-						Id:    OIDBuildSignerDigest,
+						Id:    fulcio.OIDBuildSignerDigest,
 						Value: encodedSubjectSha1,
 					},
 				},
@@ -936,47 +936,47 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 					},
 					// New claims.
 					{
-						Id:    OIDBuildTrigger,
+						Id:    fulcio.OIDBuildTrigger,
 						Value: encodedTrigger,
 					},
 					{
-						Id:    OIDSourceRepositoryURI,
+						Id:    fulcio.OIDSourceRepositoryURI,
 						Value: encodedRepoURI,
 					},
 					{
-						Id:    OIDIssuerV2,
+						Id:    fulcio.OIDIssuerV2,
 						Value: encodedIssuer,
 					},
 					{
-						Id:    OIDSourceRepositoryDigest,
+						Id:    fulcio.OIDSourceRepositoryDigest,
 						Value: encodedDigest,
 					},
 					{
-						Id:    OIDRunnerEnvironment,
+						Id:    fulcio.OIDRunnerEnvironment,
 						Value: encodedHosted,
 					},
 					{
-						Id:    OIDSourceRepositoryRef,
+						Id:    fulcio.OIDSourceRepositoryRef,
 						Value: encodedRef,
 					},
 					{
-						Id:    OIDSourceRepositoryIdentifier,
+						Id:    fulcio.OIDSourceRepositoryIdentifier,
 						Value: encodedSourceID,
 					},
 					{
-						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Id:    fulcio.OIDSourceRepositoryOwnerIdentifier,
 						Value: encodedSourceOwnerID,
 					},
 					{
-						Id:    OIDBuildConfigDigest,
+						Id:    fulcio.OIDBuildConfigDigest,
 						Value: encodedBuildConfigSha1,
 					},
 					{
-						Id:    OIDBuildConfigURI,
+						Id:    fulcio.OIDBuildConfigURI,
 						Value: encodedBuildConfigURI,
 					},
 					{
-						Id:    OIDRunInvocationURI,
+						Id:    fulcio.OIDRunInvocationURI,
 						Value: encodedInvocationURI,
 					},
 				},
@@ -994,47 +994,47 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				Extensions: []pkix.Extension{
 					// New claims.
 					{
-						Id:    OIDBuildTrigger,
+						Id:    fulcio.OIDBuildTrigger,
 						Value: encodedTrigger,
 					},
 					{
-						Id:    OIDSourceRepositoryURI,
+						Id:    fulcio.OIDSourceRepositoryURI,
 						Value: encodedRepoURI,
 					},
 					{
-						Id:    OIDIssuerV2,
+						Id:    fulcio.OIDIssuerV2,
 						Value: encodedIssuer,
 					},
 					{
-						Id:    OIDSourceRepositoryDigest,
+						Id:    fulcio.OIDSourceRepositoryDigest,
 						Value: encodedDigest,
 					},
 					{
-						Id:    OIDRunnerEnvironment,
+						Id:    fulcio.OIDRunnerEnvironment,
 						Value: encodedHosted,
 					},
 					{
-						Id:    OIDSourceRepositoryRef,
+						Id:    fulcio.OIDSourceRepositoryRef,
 						Value: encodedRef,
 					},
 					{
-						Id:    OIDSourceRepositoryIdentifier,
+						Id:    fulcio.OIDSourceRepositoryIdentifier,
 						Value: encodedSourceID,
 					},
 					{
-						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Id:    fulcio.OIDSourceRepositoryOwnerIdentifier,
 						Value: encodedSourceOwnerID,
 					},
 					{
-						Id:    OIDBuildConfigDigest,
+						Id:    fulcio.OIDBuildConfigDigest,
 						Value: encodedBuildConfigSha1,
 					},
 					{
-						Id:    OIDBuildConfigURI,
+						Id:    fulcio.OIDBuildConfigURI,
 						Value: encodedBuildConfigURI,
 					},
 					{
-						Id:    OIDRunInvocationURI,
+						Id:    fulcio.OIDRunInvocationURI,
 						Value: encodedInvocationURI,
 					},
 				},
@@ -1059,47 +1059,47 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				Extensions: []pkix.Extension{
 					// New claims.
 					{
-						Id:    OIDBuildTrigger,
+						Id:    fulcio.OIDBuildTrigger,
 						Value: encodedTrigger,
 					},
 					{
-						Id:    OIDSourceRepositoryURI,
+						Id:    fulcio.OIDSourceRepositoryURI,
 						Value: encodedRepoURI,
 					},
 					{
-						Id:    OIDIssuerV2,
+						Id:    fulcio.OIDIssuerV2,
 						Value: encodedIssuer,
 					},
 					{
-						Id:    OIDSourceRepositoryDigest,
+						Id:    fulcio.OIDSourceRepositoryDigest,
 						Value: encodedDigest,
 					},
 					{
-						Id:    OIDRunnerEnvironment,
+						Id:    fulcio.OIDRunnerEnvironment,
 						Value: encodedHosted,
 					},
 					{
-						Id:    OIDSourceRepositoryRef,
+						Id:    fulcio.OIDSourceRepositoryRef,
 						Value: encodedRef,
 					},
 					{
-						Id:    OIDSourceRepositoryIdentifier,
+						Id:    fulcio.OIDSourceRepositoryIdentifier,
 						Value: encodedSourceID,
 					},
 					{
-						Id:    OIDSourceRepositoryOwnerIdentifier,
+						Id:    fulcio.OIDSourceRepositoryOwnerIdentifier,
 						Value: encodedSourceOwnerID,
 					},
 					{
-						Id:    OIDBuildConfigDigest,
+						Id:    fulcio.OIDBuildConfigDigest,
 						Value: encodedBuildConfigSha1,
 					},
 					{
-						Id:    OIDBuildConfigURI,
+						Id:    fulcio.OIDBuildConfigURI,
 						Value: encodedBuildConfigURI,
 					},
 					{
-						Id:    OIDRunInvocationURI,
+						Id:    fulcio.OIDRunInvocationURI,
 						Value: encodedInvocationURI,
 					},
 				},

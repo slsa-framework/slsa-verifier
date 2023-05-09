@@ -14,22 +14,6 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// TODO(#570): remove these definitions.
-var (
-	OIDBuildTrigger                    = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 20}
-	OIDSourceRepositoryURI             = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 12}
-	OIDIssuerV2                        = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 8}
-	OIDSourceRepositoryDigest          = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 13}
-	OIDRunnerEnvironment               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 11}
-	OIDSourceRepositoryRef             = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 14}
-	OIDSourceRepositoryIdentifier      = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 15}
-	OIDSourceRepositoryOwnerIdentifier = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 17}
-	OIDBuildConfigDigest               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 19}
-	OIDBuildConfigURI                  = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 18}
-	OIDRunInvocationURI                = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 21}
-	OIDBuildSignerDigest               = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 57264, 1, 10}
-)
-
 var (
 	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 	e2eTestRepository        = "slsa-framework/example-package"
@@ -258,7 +242,7 @@ type WorkflowIdentity struct {
 }
 
 func getHosted(cert *x509.Certificate) (*Hosted, error) {
-	runnerEnv, err := getExtension(cert, OIDRunnerEnvironment, true)
+	runnerEnv, err := getExtension(cert, fulcio.OIDRunnerEnvironment, true)
 	if err != nil {
 		return nil, err
 	}
@@ -310,6 +294,7 @@ func getAndValidateEqualClaims(cert *x509.Certificate, deprecatedOid, oid asn1.O
 
 // GetWorkflowFromCertificate gets the workflow identity from the Fulcio authenticated content.
 // See https://github.com/sigstore/fulcio/blob/e763d76e3f7786b52db4b27ab87dc446da24895a/pkg/certificate/extensions.go.
+// nolint:SA1019
 func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, error) {
 	if len(cert.URIs) == 0 {
 		return nil, fmt.Errorf("%w: missing URI information from certificate", serrors.ErrorInvalidFormat)
@@ -319,7 +304,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726412--github-workflow-BuildTrigger-deprecated
 	// 1.3.6.1.4.1.57264.1.20 | Build Trigger
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264120--build-trigger
-	buildTrigger, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowTrigger, OIDBuildTrigger)
+	buildTrigger, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowTrigger, fulcio.OIDBuildTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -328,13 +313,13 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726413--github-workflow-sha-deprecated
 	// 1.3.6.1.4.1.57264.1.13 | Source Repository Digest
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264113--source-repository-digest
-	sourceSha1, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowSHA, OIDSourceRepositoryDigest)
+	sourceSha1, err := getAndValidateEqualClaims(cert, fulcio.OIDGitHubWorkflowSHA, fulcio.OIDSourceRepositoryDigest)
 	if err != nil {
 		return nil, err
 	}
 	// 1.3.6.1.4.1.57264.1.19 | Build Config Digest
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264119--build-config-digest
-	buildConfigSha1, err := getExtension(cert, OIDBuildConfigDigest, true)
+	buildConfigSha1, err := getExtension(cert, fulcio.OIDBuildConfigDigest, true)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +331,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726411--issuer
 	// IssuerV2: 1.3.6.1.4.1.57264.1.8
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#1361415726418--issuer-v2
-	issuer, err := getAndValidateEqualClaims(cert, fulcio.OIDIssuer, OIDIssuerV2)
+	issuer, err := getAndValidateEqualClaims(cert, fulcio.OIDIssuer, fulcio.OIDIssuerV2)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +344,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	}
 	// 1.3.6.1.4.1.57264.1.12 | Source Repository URI
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264112--source-repository-uri
-	sourceURI, err := getExtension(cert, OIDSourceRepositoryURI, true)
+	sourceURI, err := getExtension(cert, fulcio.OIDSourceRepositoryURI, true)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +361,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 
 	// 1.3.6.1.4.1.57264.1.10 | Build Signer Digest
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264110--build-signer-digest
-	subjectSha1, err := getExtension(cert, OIDBuildSignerDigest, true)
+	subjectSha1, err := getExtension(cert, fulcio.OIDBuildSignerDigest, true)
 	if err != nil {
 		return nil, err
 	}
@@ -390,21 +375,21 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 
 	// 1.3.6.1.4.1.57264.1.14 | Source Repository Ref
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264114--source-repository-ref
-	sourceRef, err := getExtension(cert, OIDSourceRepositoryRef, true)
+	sourceRef, err := getExtension(cert, fulcio.OIDSourceRepositoryRef, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// 1.3.6.1.4.1.57264.1.15 | Source Repository Identifier
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264115--source-repository-identifier
-	sourceID, err := getExtension(cert, OIDSourceRepositoryIdentifier, true)
+	sourceID, err := getExtension(cert, fulcio.OIDSourceRepositoryIdentifier, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// 1.3.6.1.4.1.57264.1.17 | Source Repository Owner Identifier
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264117--source-repository-owner-identifier
-	sourceOwnerID, err := getExtension(cert, OIDSourceRepositoryOwnerIdentifier, true)
+	sourceOwnerID, err := getExtension(cert, fulcio.OIDSourceRepositoryOwnerIdentifier, true)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +397,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	// 1.3.6.1.4.1.57264.1.18 | Build Config URI
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264118--build-config-uri
 	var buildConfigPath string
-	buildConfigURI, err := getExtension(cert, OIDBuildConfigURI, true)
+	buildConfigURI, err := getExtension(cert, fulcio.OIDBuildConfigURI, true)
 	if err != nil {
 		return nil, err
 	}
@@ -432,7 +417,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 
 	// 1.3.6.1.4.1.57264.1.21 | Run Invocation URI
 	// https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md#13614157264121--run-invocation-uri
-	runURI, err := getExtension(cert, OIDRunInvocationURI, true)
+	runURI, err := getExtension(cert, fulcio.OIDRunInvocationURI, true)
 	if err != nil {
 		return nil, err
 	}
