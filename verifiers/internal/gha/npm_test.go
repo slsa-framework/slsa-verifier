@@ -506,7 +506,7 @@ func Test_verifyPackageName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -584,7 +584,7 @@ func Test_verifyPackageVersion(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -760,7 +760,7 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -849,7 +849,7 @@ func Test_NpmNew(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

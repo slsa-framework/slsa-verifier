@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
@@ -26,7 +27,7 @@ type TrustedRoot struct {
 	FulcioIntermediates *x509.CertPool
 }
 
-func GetTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
+func getTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 	rekorPubKeys, err := cosign.GetRekorPubs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, err)
@@ -55,4 +56,21 @@ func GetTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 		RekorPubKeys:        rekorPubKeys,
 		CTPubKeys:           ctPubKeys,
 	}, nil
+}
+
+// Cache the TUF roots to reduce traffic and read contention on the cached file.
+var manager atomic.Value
+
+func TrustedRootSingleton(ctx context.Context) (*TrustedRoot, error) {
+	root := manager.Load()
+	if root != nil {
+		return root.(*TrustedRoot), nil
+	}
+	trustedRoot, err := getTrustedRoot(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	manager.Store(trustedRoot)
+	return trustedRoot, nil
 }

@@ -1,10 +1,12 @@
 package slsaprovenance
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
@@ -33,6 +35,24 @@ type Provenance interface {
 
 	// GetTag retrieves the tag of the source from the provenance.
 	GetTag() (string, error)
+
+	// Get workflow trigger path.
+	GetBuildTriggerPath() (string, error)
+
+	// Get system pararmeters.
+	GetSystemParameters() (map[string]any, error)
+
+	// Get build invocation ID.
+	GetBuildInvocationID() (string, error)
+
+	// Get build start time.
+	GetBuildStartTime() (*time.Time, error)
+
+	// Get build finish time.
+	GetBuildFinishTime() (*time.Time, error)
+
+	// Get number of resolved dependencies.
+	GetNumberResolvedDependencies() (int, error)
 
 	// GetWorkflowInputs retrieves the inputs from the provenance. Only succeeds for event
 	// relevant event types (workflow_inputs).
@@ -68,7 +88,12 @@ func ProvenanceFromEnvelope(env *dsselib.Envelope) (Provenance, error) {
 	}
 	prov := ptype.(func() Provenance)()
 
-	if err := json.Unmarshal(pyld, prov); err != nil {
+	// Strict unmarshal.
+	// NOTE: this supports extensions because they are
+	// only used as part of interface{}-defined fields.
+	dec := json.NewDecoder(bytes.NewReader(pyld))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(prov); err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 	return prov, nil
