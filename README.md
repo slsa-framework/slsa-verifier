@@ -33,7 +33,7 @@
   - [Containers](#containers-1)
 - [Verification for npm packages](#verification-for-npm-packages)
   - [The verify-npm-package command](#the-verify-npm-package-command)
-  - [Verify npm packages built using the SLSA3 Node.js builder.](#verify-npm-packages-built-using-the-slsa3-nodejs-builder)
+  - [Verify npm packages built using the SLSA3 Node.js builder](#verify-npm-packages-built-using-the-slsa3-nodejs-builder)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
@@ -357,7 +357,7 @@ Flags:
       --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
-### Verify npm packages built using the SLSA3 Node.js builder.
+### Verify npm packages built using the SLSA3 Node.js builder
 
 This section describes how to verify packages built using the SLSA Build L3
 [Node.js builder](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/nodejs/README.md).
