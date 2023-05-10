@@ -218,11 +218,17 @@ Verified build using builder https://github.com/slsa-framework/slsa-github-gener
 PASSED: Verified SLSA provenance
 ```
 
-The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+The verified in-toto statement may be written to stdout with the
+`--print-provenance` flag to pipe into policy engines.
 
-Only GitHub URIs are supported with the `--source-uri` flag. A tag should not be specified, even if the provenance was built at some tag. If you intend to do source versioning validation, use `--print-provenance` and inspect the commit SHA of the config source or materials.
+Only GitHub URIs are supported with the `--source-uri` flag. A tag should not
+be specified, even if the provenance was built at some tag. If you intend to do
+source versioning validation, you can use `--source-tag` to validate the
+release tag. For commit SHA validation, use `--print-provenance` and inspect
+the commit SHA of the config source or materials.
 
-Multiple artifacts built from the same GitHub builder can be verified in the same command, by passing them in the same command line as arguments:
+Multiple artifacts built from the same GitHub builder can be verified in the
+same command, by passing them in the same command line as arguments:
 
 ```bash
 $ slsa-verifier verify-artifact \
@@ -317,14 +323,44 @@ You should see that the verification passed in the output.
 PASSED: Verified SLSA provenance
 ```
 
-The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+The verified in-toto statement may be written to stdout with the
+`--print-provenance` flag to pipe into policy engines.
 
 Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You _may_ match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
 
 ## Verification for npm packages
 
-Verification of npm packages is currently an experimental feature. To verify a
-npm packages, first download the package tarball and attestations.
+Verification of npm packages is currently an experimental feature.
+
+### The verify-npm-package command
+
+```bash
+$ slsa-verifier verify-npm-package --help
+Verifies SLSA provenance for an npm package tarball [experimental]
+
+Usage:
+  slsa-verifier verify-npm-package [flags] tarball
+
+Flags:
+      --attestations-path string      path to a file containing the attestations
+      --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions). (default map[])
+      --builder-id string             [optional] the unique builder ID who created the provenance
+  -h, --help                          help for verify-npm-package
+      --package-name string           [optional] the package name
+      --package-version string        [optional] the package version
+      --print-provenance              [optional] print the verified provenance to stdout
+      --source-branch string          [optional] expected branch the binary was compiled from
+      --source-tag string             [optional] expected tag the binary was compiled from
+      --source-uri string             expected source repository that should have produced the binary, e.g. github.com/some/repo
+      --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
+```
+
+### Verify npm packages built using the SLSA3 Node.js builder.
+
+This section describes how to verify packages built using the SLSA Build L3
+[Node.js builder](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/nodejs/README.md).
+
+To verify a npm packages, first download the package tarball and attestations.
 
 ```shell
 curl -Sso attestations.json $(npm view @ianlewis/actions-test --json | jq -r '.dist.attestations.url') && \
@@ -342,9 +378,15 @@ $ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test-0.1
   --source-uri github.com/ianlewis/actions-test
 ```
 
-The verified in-toto statement may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+The verified in-toto statement may be written to stdout with the
+`--print-provenance` flag to pipe into policy engines.
 
-Only GitHub URIs are supported with the `--source-uri` flag. A tag should not be specified, even if the provenance was built at some tag. If you intend to do source versioning validation, use `--print-provenance` and inspect the commit SHA of the config source or materials.
+Only GitHub URIs are supported with the `--source-uri` flag. A tag should not
+be specified, even if the provenance was built at some tag. If you intend to do
+source versioning validation, you can use `--source-tag` to validate the
+release tag and `--package-version` to validate the package version. For commit
+SHA validation, use `--print-provenance` and inspect the commit SHA of the
+config source or materials.
 
 ## Known Issues
 
