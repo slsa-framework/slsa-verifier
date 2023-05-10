@@ -365,16 +365,16 @@ This section describes how to verify packages built using the SLSA Build L3
 To verify a npm packages, first download the package tarball and attestations.
 
 ```shell
-curl -Sso attestations.json $(npm view @ianlewis/actions-test --json | jq -r '.dist.attestations.url') && \
-curl -SsO "$(npm view @ianlewis/actions-test --json | jq -r '.dist.tarball')"
+curl -Sso attestations.json $(npm view @ianlewis/actions-test@0.1.126 --json | jq -r '.dist.attestations.url') && \
+curl -Sso actions-test.tgz "$(npm view @ianlewis/actions-test@0.1.126 --json | jq -r '.dist.tarball')"
 ```
 
 You can then verify the package by running the following command:
 
 ```shell
-$ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test-0.1.126.tgz \
+$ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
   --attestations-path attestations.json \
-  --builder-id "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml@refs/tags/v1.6.0" \
+  --builder-id "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml" \
   --package-name "@ianlewis/actions-test" \
   --package-version 0.1.126 \
   --source-uri github.com/ianlewis/actions-test
