@@ -14,7 +14,7 @@ func Test_verifyBundle(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := GetTrustedRoot(ctx)
+	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
