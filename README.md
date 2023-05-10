@@ -32,6 +32,8 @@
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
 - [Verification for npm packages](#verification-for-npm-packages)
+  - [The verify-npm-package command](#the-verify-npm-package-command)
+  - [Verify npm packages built using the SLSA3 Node.js builder.](#verify-npm-packages-built-using-the-slsa3-nodejs-builder)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
