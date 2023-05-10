@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "markdown-toc": "markdown-toc --bullets='-' -i"
+  },
+  "devDependencies": {
+    "markdown-toc": "^1.2.0"
+  }
+}
