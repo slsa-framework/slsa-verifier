@@ -348,8 +348,8 @@ Flags:
       --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions). (default map[])
       --builder-id string             [optional] the unique builder ID who created the provenance
   -h, --help                          help for verify-npm-package
-      --package-name string           [optional] the package name
-      --package-version string        [optional] the package version
+      --package-name string           the package name
+      --package-version string        the package version
       --print-provenance              [optional] print the verified provenance to stdout
       --source-branch string          [optional] expected branch the binary was compiled from
       --source-tag string             [optional] expected tag the binary was compiled from
