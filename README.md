@@ -325,7 +325,7 @@ curl -Sso actions-test.tgz "$(npm view @ianlewis/actions-test@0.1.127 --json | j
 You can then verify the package by running the following command:
 
 ```shell
-$ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
+SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
   --attestations-path attestations.json \
   --builder-id "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml" \
   --package-name "@ianlewis/actions-test" \
@@ -357,7 +357,7 @@ curl -Sso actions-test.tgz "$(npm view @ianlewis/actions-test@0.1.131 --json | j
 You can then verify the package by running the following command:
 
 ```shell
-$ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
+SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
   --attestations-path attestations.json \
   --builder-id "https://github.com/actions/runner/github-hosted" \
   --package-name "@ianlewis/actions-test" \
