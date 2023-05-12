@@ -350,8 +350,8 @@ This section describes how to verify packages built using the npm CLI on GitHub.
 To verify an npm package, first download the package tarball and attestations.
 
 ```shell
-curl -Sso attestations.json $(npm view @ianlewis/actions-test@0.1.131 --json | jq -r '.dist.attestations.url') && \
-curl -Sso actions-test.tgz "$(npm view @ianlewis/actions-test@0.1.131 --json | jq -r '.dist.tarball')"
+curl -Sso attestations.json $(npm view @ianlewis/actions-test@0.1.132 --json | jq -r '.dist.attestations.url') && \
+curl -Sso actions-test.tgz "$(npm view @ianlewis/actions-test@0.1.132 --json | jq -r '.dist.tarball')"
 ```
 
 You can then verify the package by running the following command:
@@ -361,7 +361,7 @@ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
   --attestations-path attestations.json \
   --builder-id "https://github.com/actions/runner/github-hosted" \
   --package-name "@ianlewis/actions-test" \
-  --package-version 0.1.131 \
+  --package-version 0.1.132 \
   --source-uri github.com/ianlewis/actions-test
 ```
 
