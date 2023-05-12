@@ -343,7 +343,7 @@ release tag and `--package-version` to validate the package version. For commit
 SHA validation, use `--print-provenance` and inspect the commit SHA of the
 config source or materials.
 
-### npm packages built using the npm CLI
+#### npm packages built using the npm CLI
 
 This section describes how to verify packages built using the npm CLI on GitHub.
 
