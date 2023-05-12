@@ -33,8 +33,8 @@
   - [Containers](#containers-1)
 - [Verification for npm packages](#verification-for-npm-packages)
   - [The verify-npm-package command](#the-verify-npm-package-command)
-  - [Verify npm packages built using the SLSA3 Node.js builder on GitHub](#verify-npm-packages-built-using-the-slsa3-nodejs-builder-on-github)
-  - [Verify npm packages built using the npm CLI on GitHub](#verify-npm-packages-built-using-the-npm-cli-on-github)
+  - [npm packages built using the SLSA3 Node.js builder on GitHub](#npm-packages-built-using-the-slsa3-nodejs-builder-on-github)
+  - [npm packages built using the npm CLI on GitHub](#npm-packages-built-using-the-npm-cli-on-github)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
@@ -358,7 +358,7 @@ Flags:
       --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
-### Verify npm packages built using the SLSA3 Node.js builder on GitHub
+### npm packages built using the SLSA3 Node.js builder on GitHub
 
 This section describes how to verify packages built using the SLSA Build L3
 [Node.js builder](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/nodejs/README.md).
@@ -391,7 +391,7 @@ release tag and `--package-version` to validate the package version. For commit
 SHA validation, use `--print-provenance` and inspect the commit SHA of the
 config source or materials.
 
-### Verify npm packages built using the npm CLI on GitHub
+### npm packages built using the npm CLI on GitHub
 
 This section describes how to verify packages built using the npm CLI on GitHub.
 
