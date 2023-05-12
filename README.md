@@ -33,7 +33,8 @@
   - [Containers](#containers-1)
 - [Verification for npm packages](#verification-for-npm-packages)
   - [The verify-npm-package command](#the-verify-npm-package-command)
-  - [Verify npm packages built using the SLSA3 Node.js builder](#verify-npm-packages-built-using-the-slsa3-nodejs-builder)
+  - [Verify npm packages built using the SLSA3 Node.js builder on GitHub](#verify-npm-packages-built-using-the-slsa3-nodejs-builder-on-github)
+  - [Verify npm packages built using the npm CLI on GitHub](#verify-npm-packages-built-using-the-npm-cli-on-github)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
@@ -357,12 +358,12 @@ Flags:
       --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
 ```
 
-### Verify npm packages built using the SLSA3 Node.js builder
+### Verify npm packages built using the SLSA3 Node.js builder on GitHub
 
 This section describes how to verify packages built using the SLSA Build L3
 [Node.js builder](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/nodejs/README.md).
 
-To verify a npm packages, first download the package tarball and attestations.
+To verify an npm package, first download the package tarball and attestations.
 
 ```shell
 curl -Sso attestations.json $(npm view @ianlewis/actions-test@0.1.126 --json | jq -r '.dist.attestations.url') && \
@@ -379,6 +380,40 @@ $ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz
   --package-version 0.1.126 \
   --source-uri github.com/ianlewis/actions-test
 ```
+
+The verified in-toto statement may be written to stdout with the
+`--print-provenance` flag to pipe into policy engines.
+
+Only GitHub URIs are supported with the `--source-uri` flag. A tag should not
+be specified, even if the provenance was built at some tag. If you intend to do
+source versioning validation, you can use `--source-tag` to validate the
+release tag and `--package-version` to validate the package version. For commit
+SHA validation, use `--print-provenance` and inspect the commit SHA of the
+config source or materials.
+
+### Verify npm packages built using the npm CLI on GitHub
+
+This section describes how to verify packages built using the npm CLI on GitHub.
+
+To verify an npm package, first download the package tarball and attestations.
+
+```shell
+curl -Sso attestations.json $(npm view @ianlewis/actions-test@0.1.126 --json | jq -r '.dist.attestations.url') && \
+curl -Sso actions-test.tgz "$(npm view @ianlewis/actions-test@0.1.126 --json | jq -r '.dist.tarball')"
+```
+
+You can then verify the package by running the following command:
+
+```shell
+$ SLSA_VERIFIER_EXPERIMENTAL=1 slsa-verifier verify-npm-package actions-test.tgz \
+  --attestations-path attestations.json \
+  --builder-id "https://github.com/actions/runner/github-hosted" \
+  --package-name "@ianlewis/actions-test" \
+  --package-version 0.1.126 \
+  --source-uri github.com/ianlewis/actions-test
+```
+
+If the package was built with self-hosted runners, replace "https://github.com/actions/runner/github-hosted" with "https://github.com/actions/runner/self-hosted".
 
 The verified in-toto statement may be written to stdout with the
 `--print-provenance` flag to pipe into policy engines.
