@@ -147,7 +147,7 @@ func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuild
 	for byobBuilder := range defaultBYOBReusableWorkflows {
 		// Check that the certificate builder is a BYOB workflow.
 		if err := certBuilder.MatchesLoose(httpsGithubCom+byobBuilder, true); err == nil {
-			// We found a delegator workflow that matches the ceryificate identity.
+			// We found a delegator workflow that matches the certificate identity.
 			// Check that the BYOB builder is trusted by the caller.
 			if _, ok := trustedBuilders[byobBuilder]; !ok {
 				return false

@@ -72,6 +72,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// and we MUST match it against the content of the provenance.
 	if byob {
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+			// NOTE: we will need to update the logic here once our default trusted builders
+			// are migrated to using BYOB.
 			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID

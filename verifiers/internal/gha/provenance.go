@@ -52,8 +52,9 @@ func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, expectedBuilderID
 	if err != nil {
 		return err
 	}
+
 	if err := provBuilderID.MatchesFull(expectedBuilderID, true); err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 	return nil
 }
@@ -71,7 +72,7 @@ func verifyBuilderIDLooseMatch(prov slsaprovenance.Provenance, expectedBuilderID
 		return err
 	}
 	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 	return nil
 }
