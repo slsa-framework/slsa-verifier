@@ -67,39 +67,39 @@ func VerifyCertficateSourceRepository(id *WorkflowIdentity,
 func VerifyBuilderIdentity(id *WorkflowIdentity,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
-) (*utils.TrustedBuilderID, error) {
+) (*utils.TrustedBuilderID, bool, error) {
 	// Issuer verification.
 	// NOTE: this is necessary before we do any further verification.
 	if id.Issuer != certOidcIssuer {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
+		return nil, false, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
 	}
 
 	// cert URI path is /org/repo/path/to/workflow@ref
 	workflowPath := strings.SplitN(id.SubjectWorkflowRef, "@", 2)
 	if len(workflowPath) < 2 {
-		return nil, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.SubjectWorkflowRef)
+		return nil, false, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.SubjectWorkflowRef)
 	}
 
 	// Verify trusted workflow.
 	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
 	reusableWorkflowTag := strings.Trim(workflowPath[1], "/")
-	builderID, err := verifyTrustedBuilderID(reusableWorkflowPath, reusableWorkflowTag,
+	builderID, byob, err := verifyTrustedBuilderID(reusableWorkflowPath, reusableWorkflowTag,
 		builderOpts.ExpectedID, defaultBuilders)
 	if err != nil {
-		return nil, err
+		return nil, byob, err
 	}
 
 	// Verify the ref is a full semantic version tag.
 	if err := verifyTrustedBuilderRef(id, reusableWorkflowTag); err != nil {
-		return nil, err
+		return nil, byob, err
 	}
 
-	return builderID, nil
+	return builderID, byob, nil
 }
 
 // Verifies the builder ID at path against an expected builderID.
 // If an expected builderID is not provided, uses the defaultBuilders.
-func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultBuilders map[string]bool) (*utils.TrustedBuilderID, error) {
+func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultTrustedBuilders map[string]bool) (*utils.TrustedBuilderID, bool, error) {
 	var trustedBuilderID *utils.TrustedBuilderID
 	var err error
 	certBuilderName := httpsGithubCom + certPath
@@ -107,31 +107,55 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 	// refs/heads/main for e2e tests. See verifyTrustedBuilderRef().
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
-		if _, ok := defaultBuilders[certPath]; !ok {
-			return nil, fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID == nil)
+		if _, ok := defaultTrustedBuilders[certPath]; !ok {
+			return nil, false, fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID == nil)
 		}
 		// Construct the builderID using the certificate's builder's name and tag.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
-		// BuilderID provided by user should match the certificate.
+		// Check if:
+		// - the builder in the cert is a BYOB builder
+		// - the caller trusts the BYOB builder
+		// If both are true, we don't match the user-provided builder ID
+		// against the certificate. Instead that will be done by the caller.
+		if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
+			return trustedBuilderID, true, nil
+		}
+
+		// Not a BYOB builder. BuilderID provided by user should match the certificate.
 		// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
 		// so we pass `allowRef = true`.
 		if err := trustedBuilderID.MatchesLoose(*expectedBuilderID, true); err != nil {
-			return nil, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
+			return nil, false, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
 		}
 	}
 
-	return trustedBuilderID, nil
+	return trustedBuilderID, false, nil
+}
+
+func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuilders map[string]bool) bool {
+	for byobBuilder := range defaultBYOBReusableWorkflows {
+		// Check that the certificate builder is a BYOB workflow.
+		if err := certBuilder.MatchesLoose(httpsGithubCom+byobBuilder, true); err == nil {
+			// We found a delegator workflow that matches the ceryificate identity.
+			// Check that the BYOB builder is trusted by the caller.
+			if _, ok := trustedBuilders[byobBuilder]; !ok {
+				return false
+			}
+			return true
+		}
+	}
+	return false
 }
 
 // Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.

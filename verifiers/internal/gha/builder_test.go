@@ -13,6 +13,7 @@ import (
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 func Test_VerifyBuilderIdentity(t *testing.T) {
@@ -24,6 +25,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		builderID string
 		defaults  map[string]bool
 		err       error
+		byob      bool
 	}{
 		{
 			name: "invalid job workflow ref",
@@ -84,6 +86,32 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
 			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
+		},
+		{
+			name: "valid generic delegator builder without tag",
+			workflow: &WorkflowIdentity{
+				SourceRepository:   trustedBuilderRepository,
+				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml@refs/tags/v1.2.3",
+				BuildTrigger:       "workflow_dispatch",
+				Issuer:             "https://token.actions.githubusercontent.com",
+			},
+			defaults:  defaultBYOBReusableWorkflows,
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml",
+			byob:      true,
+		},
+		{
+			name: "valid low-perms delegator builder with short tag",
+			workflow: &WorkflowIdentity{
+				SourceRepository:   trustedBuilderRepository,
+				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.2.3",
+				BuildTrigger:       "workflow_dispatch",
+				Issuer:             "https://token.actions.githubusercontent.com",
+			},
+			defaults:  defaultBYOBReusableWorkflows,
+			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml@v1.2.3",
+			byob:      true,
 		},
 		{
 			name: "valid main ref for e2e test",
@@ -271,7 +299,14 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 			if opts == nil {
 				opts = &options.BuilderOpts{}
 			}
-			id, err := VerifyBuilderIdentity(tt.workflow, opts, tt.defaults)
+			if tt.builderID != "" {
+				opts.ExpectedID = &tt.builderID
+			}
+			id, byob, err := VerifyBuilderIdentity(tt.workflow, opts, tt.defaults)
+			if byob != tt.byob {
+				t.Errorf(cmp.Diff(byob, tt.byob))
+			}
+
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
@@ -281,6 +316,51 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 
 			if err := id.MatchesLoose(tt.builderID, true); err != nil {
 				t.Errorf("matches failed:%v", err)
+			}
+		})
+	}
+}
+
+func Test_isTrustedDelegatorBuilder(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name              string
+		certBuilderID     string
+		trustedBuilderIDs map[string]bool
+		result            bool
+	}{
+		{
+			name:          "match byob",
+			certBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.6.0",
+			trustedBuilderIDs: map[string]bool{
+				"slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml": true,
+				"slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml":                   true,
+			},
+			result: true,
+		},
+		{
+			name:          "match byob but not caller trusted",
+			certBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.6.0",
+			trustedBuilderIDs: map[string]bool{
+				"slsa-framework/slsa-github-generator/.github/workflows/some_other_delegator.yml": true,
+				"slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml":       true,
+			},
+			result: false,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			trustedBuilderID, err := utils.TrustedBuilderIDNew(tt.certBuilderID, true)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			res := isTrustedDelegatorBuilder(trustedBuilderID, tt.trustedBuilderIDs)
+			if res != tt.result {
+				t.Errorf(cmp.Diff(res, tt.result))
 			}
 		})
 	}
@@ -365,7 +445,8 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		path     string
 		tag      string
 		defaults map[string]bool
-		expected error
+		err      error
+		byob     bool
 	}{
 		{
 			name:     "default trusted short tag",
@@ -380,11 +461,33 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			defaults: defaultArtifactTrustedReusableWorkflows,
 		},
 		{
+			name:     "generic delegator workflow long tag",
+			path:     trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml",
+			id:       asStringPointer(trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml@refs/tags/v1.2.3"),
+			tag:      "refs/tags/v1.2.3",
+			defaults: defaultBYOBReusableWorkflows,
+			byob:     true,
+		},
+		{
+			name:     "low perms delegator workflow short tag",
+			path:     trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml",
+			id:       asStringPointer(trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.2.3"),
+			tag:      "v1.2.3",
+			defaults: defaultBYOBReusableWorkflows,
+			byob:     true,
+		},
+		{
+			name:     "low perms delegator workflow no ID provided",
+			path:     trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml",
+			tag:      "v1.2.3",
+			defaults: defaultBYOBReusableWorkflows,
+		},
+		{
 			name:     "default mismatch against container defaults long tag",
 			path:     trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml",
 			tag:      "refs/tags/v1.2.3",
 			defaults: defaultContainerTrustedReusableWorkflows,
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			err:      serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name: "valid ID for GitHub builder short tag",
@@ -405,11 +508,11 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
 		},
 		{
-			name:     "valid long ID for GitHub builder short tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "v1.2.3",
-			id:       asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "valid long ID for GitHub builder short tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name: "valid ID for GitHub builder long tag",
@@ -430,56 +533,58 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			id:   asStringPointer("https://github.com/some/repo/someBuilderID@v1.2.3"),
 		},
 		{
-			name:     "valid long ID for GitHub builder short tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "v1.2.3",
-			id:       asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "valid long ID for GitHub builder short tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/someBuilderID@refs/tags/v1.2.3"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "non GitHub builder ID long builder tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "refs/tags/v1.2.3",
-			id:       asStringPointer("https://not-github.com/some/repo/someBuilderID"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "non GitHub builder ID long builder tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://not-github.com/some/repo/someBuilderID"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch org GitHub short builder tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "v1.2.3",
-			id:       asStringPointer("https://github.com/other/repo/someBuilderID"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "mismatch org GitHub short builder tag",
+			path: "some/repo/someBuilderID",
+			tag:  "v1.2.3",
+			id:   asStringPointer("https://github.com/other/repo/someBuilderID"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch org GitHub long builder tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "refs/tags/v1.2.3",
-			id:       asStringPointer("https://github.com/other/repo/someBuilderID"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "mismatch org GitHub long builder tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/other/repo/someBuilderID"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch name GitHub long builder tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "refs/tags/v1.2.3",
-			id:       asStringPointer("https://github.com/some/other/someBuilderID"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "mismatch name GitHub long builder tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/other/someBuilderID"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
-			name:     "mismatch id GitHub long builder tag",
-			path:     "some/repo/someBuilderID",
-			tag:      "refs/tags/v1.2.3",
-			id:       asStringPointer("https://github.com/some/repo/ID"),
-			expected: serrors.ErrorUntrustedReusableWorkflow,
+			name: "mismatch id GitHub long builder tag",
+			path: "some/repo/someBuilderID",
+			tag:  "refs/tags/v1.2.3",
+			id:   asStringPointer("https://github.com/some/repo/ID"),
+			err:  serrors.ErrorUntrustedReusableWorkflow,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			id, err := verifyTrustedBuilderID(tt.path, tt.tag, tt.id, tt.defaults)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+			id, byob, err := verifyTrustedBuilderID(tt.path, tt.tag, tt.id, tt.defaults)
+			if byob != tt.byob {
+				t.Errorf(cmp.Diff(byob, tt.byob))
+			}
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 			if err != nil {
 				return
