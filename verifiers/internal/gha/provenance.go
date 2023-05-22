@@ -100,11 +100,12 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 			source)
 	}
 
-	// Verify source from ConfigSource field.
-	fullConfigURI, err := prov.ConfigURI()
+	// Verify source in the trigger
+	fullConfigURI, err := prov.TriggerURI()
 	if err != nil {
 		return err
 	}
+
 	configURI, err := sourceFromURI(fullConfigURI, false)
 	if err != nil {
 		return err

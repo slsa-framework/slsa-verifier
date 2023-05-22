@@ -38,7 +38,7 @@ func (prov *ProvenanceV02) SourceURI() (string, error) {
 	return prov.Predicate.Materials[0].URI, nil
 }
 
-func (prov *ProvenanceV02) ConfigURI() (string, error) {
+func (prov *ProvenanceV02) TriggerURI() (string, error) {
 	return prov.Predicate.Invocation.ConfigSource.URI, nil
 }
 

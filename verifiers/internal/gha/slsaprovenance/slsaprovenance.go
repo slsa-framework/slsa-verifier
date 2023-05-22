@@ -24,8 +24,8 @@ type Provenance interface {
 	// SourceURI is the full URI (including tag) of the source material.
 	SourceURI() (string, error)
 
-	// ConfigURI is the full URI (including tag) of the configuration material.
-	ConfigURI() (string, error)
+	// TriggerURI is the full URI (including tag) of the configuration / trigger.
+	TriggerURI() (string, error)
 
 	// Subject is the list of intoto subjects in the provenance.
 	Subjects() ([]intoto.Subject, error)
