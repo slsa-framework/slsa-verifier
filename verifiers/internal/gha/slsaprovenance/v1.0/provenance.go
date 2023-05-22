@@ -41,20 +41,24 @@ func (prov *ProvenanceV1) SourceURI() (string, error) {
 	if len(prov.Predicate.BuildDefinition.ResolvedDependencies) == 0 {
 		return "", fmt.Errorf("%w: empty resovedDependencies", serrors.ErrorInvalidDssePayload)
 	}
-	return prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI, nil
+	uri := prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI
+	if uri == "" {
+		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
+	}
+	return uri, nil
 }
 
 func getValidateKey(m map[string]interface{}, key string) (string, error) {
 	v, ok := m[key]
 	if !ok {
-		return "", fmt.Errorf("%w: no %v found", serrors.ErrorInvalidDssePayload, key)
+		return "", fmt.Errorf("%w: no %v found", serrors.ErrorInvalidFormat, key)
 	}
 	vv, ok := v.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: not a string %v", serrors.ErrorInvalidDssePayload, v)
+		return "", fmt.Errorf("%w: not a string %v", serrors.ErrorInvalidFormat, v)
 	}
 	if vv == "" {
-		return "", fmt.Errorf("%w: empty %v", serrors.ErrorInvalidDssePayload, key)
+		return "", fmt.Errorf("%w: empty %v", serrors.ErrorInvalidFormat, key)
 	}
 	return vv, nil
 }
@@ -71,15 +75,15 @@ func (prov *ProvenanceV1) triggerInfo() (string, string, string, error) {
 	}
 	workflowMap, ok := workflow.(map[string]interface{})
 	if !ok {
-		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "not a map of string")
+		return "", "", "", fmt.Errorf("%w: %s, type %T", serrors.ErrorInvalidDssePayload, "not a map of interface{}", workflow)
 	}
 	ref, err := getValidateKey(workflowMap, "ref")
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("%w: %v", serrors.ErrorMalformedURI, err)
 	}
 	repository, err := getValidateKey(workflowMap, "repository")
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("%w: %v", serrors.ErrorMalformedURI, err)
 	}
 	path, err := getValidateKey(workflowMap, "path")
 	if err != nil {
@@ -93,7 +97,10 @@ func (prov *ProvenanceV1) TriggerURI() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("git+https://github.com/%s@%s", repository, ref), nil
+	if repository == "" || ref == "" {
+		return "", fmt.Errorf("%w: repository or ref is empty", serrors.ErrorMalformedURI)
+	}
+	return fmt.Sprintf("%s@%s", repository, ref), nil
 }
 
 func (prov *ProvenanceV1) Subjects() ([]intoto.Subject, error) {

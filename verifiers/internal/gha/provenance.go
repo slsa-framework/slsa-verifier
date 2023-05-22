@@ -120,6 +120,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 	if err != nil {
 		return err
 	}
+
 	materialURI, err := sourceFromURI(materialSourceURI, allowNoMaterialRef)
 	if err != nil {
 		return err
@@ -166,6 +167,7 @@ func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
+
 	return r[0], nil
 }
 
