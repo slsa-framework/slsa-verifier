@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -38,28 +37,70 @@ func (prov *ProvenanceV1) BuilderID() (string, error) {
 }
 
 func (prov *ProvenanceV1) SourceURI() (string, error) {
-	extParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	// Use resolvedDependencies.
+	if len(prov.Predicate.BuildDefinition.ResolvedDependencies) == 0 {
+		return "", fmt.Errorf("%w: empty resovedDependencies", serrors.ErrorInvalidDssePayload)
 	}
-	source, ok := extParams["source"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source")
+	uri := prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI
+	if uri == "" {
+		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
-	sourceBytes, err := json.Marshal(source)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-	}
-	var sourceRef slsa1.ResourceDescriptor
-	if err := json.Unmarshal(sourceBytes, &sourceRef); err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source type")
-	}
-	return sourceRef.URI, nil
+	return uri, nil
 }
 
-func (prov *ProvenanceV1) ConfigURI() (string, error) {
-	// The source and config are the same for GHA provenance.
-	return prov.SourceURI()
+func getValidateKey(m map[string]interface{}, key string) (string, error) {
+	v, ok := m[key]
+	if !ok {
+		return "", fmt.Errorf("%w: no %v found", serrors.ErrorInvalidFormat, key)
+	}
+	vv, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: not a string %v", serrors.ErrorInvalidFormat, v)
+	}
+	if vv == "" {
+		return "", fmt.Errorf("%w: empty %v", serrors.ErrorInvalidFormat, key)
+	}
+	return vv, nil
+}
+
+func (prov *ProvenanceV1) triggerInfo() (string, string, string, error) {
+	// See https://github.com/slsa-framework/github-actions-buildtypes/blob/main/workflow/v1/example.json#L16-L19.
+	extParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	}
+	workflow, ok := extParams["workflow"]
+	if !ok {
+		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters workflow")
+	}
+	workflowMap, ok := workflow.(map[string]interface{})
+	if !ok {
+		return "", "", "", fmt.Errorf("%w: %s, type %T", serrors.ErrorInvalidDssePayload, "not a map of interface{}", workflow)
+	}
+	ref, err := getValidateKey(workflowMap, "ref")
+	if err != nil {
+		return "", "", "", fmt.Errorf("%w: %v", serrors.ErrorMalformedURI, err)
+	}
+	repository, err := getValidateKey(workflowMap, "repository")
+	if err != nil {
+		return "", "", "", fmt.Errorf("%w: %v", serrors.ErrorMalformedURI, err)
+	}
+	path, err := getValidateKey(workflowMap, "path")
+	if err != nil {
+		return "", "", "", err
+	}
+	return repository, ref, path, nil
+}
+
+func (prov *ProvenanceV1) TriggerURI() (string, error) {
+	repository, ref, _, err := prov.triggerInfo()
+	if err != nil {
+		return "", err
+	}
+	if repository == "" || ref == "" {
+		return "", fmt.Errorf("%w: repository or ref is empty", serrors.ErrorMalformedURI)
+	}
+	return fmt.Sprintf("%s@%s", repository, ref), nil
 }
 
 func (prov *ProvenanceV1) Subjects() ([]intoto.Subject, error) {

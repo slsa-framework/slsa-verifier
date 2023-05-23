@@ -100,11 +100,12 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 			source)
 	}
 
-	// Verify source from ConfigSource field.
-	fullConfigURI, err := prov.ConfigURI()
+	// Verify source in the trigger
+	fullConfigURI, err := prov.TriggerURI()
 	if err != nil {
 		return err
 	}
+
 	configURI, err := sourceFromURI(fullConfigURI, false)
 	if err != nil {
 		return err
@@ -119,6 +120,7 @@ func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, a
 	if err != nil {
 		return err
 	}
+
 	materialURI, err := sourceFromURI(materialSourceURI, allowNoMaterialRef)
 	if err != nil {
 		return err
@@ -165,6 +167,7 @@ func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
+
 	return r[0], nil
 }
 

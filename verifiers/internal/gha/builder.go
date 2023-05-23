@@ -108,7 +108,7 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
 		if _, ok := defaultTrustedBuilders[certPath]; !ok {
-			return nil, false, fmt.Errorf("%w: %s got %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID == nil)
+			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID != nil)
 		}
 		// Construct the builderID using the certificate's builder's name and tag.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)

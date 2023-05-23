@@ -182,286 +182,131 @@ func Test_verifySourceURI(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name               string
-		prov               *intoto.ProvenanceStatement
-		sourceURI          string
+		provMaterialsURI   string
+		provTriggerURI     string
+		expectedSourceURI  string
 		allowNoMaterialRef bool
-		expected           error
+		err                error
 		// v1 provenance does not include materials
 		skipv1 bool
 	}{
 		{
-			name: "source has no @",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "source has no @",
+			provMaterialsURI:  "git+https://github.com/some/repo",
+			provTriggerURI:    "git+https://github.com/some/repo",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "empty materials",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorInvalidDssePayload,
-			skipv1:    true,
+			name:              "empty materials",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "empty configSource",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "empty configSource",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "empty uri materials",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "empty uri materials",
+			provMaterialsURI:  " ",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "no tag uri materials",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "no tag uri materials",
+			provTriggerURI:    "git+https://github.com/some/repo",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "no tag uri configSource",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "no tag uri configSource",
+			provMaterialsURI:  "git+https://github.com/some/repo",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "match source",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
+			name:              "match source",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
 		},
 		{
-			name: "match source no git",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "https://github.com/some/repo",
+			name:              "match source no git",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "https://github.com/some/repo",
 		},
 		{
-			name: "match source no git no material ref",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo",
-						},
-					},
-				},
-			},
+			name:               "match source no git no material ref",
+			provTriggerURI:     "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:   "git+https://github.com/some/repo",
 			allowNoMaterialRef: true,
-			sourceURI:          "https://github.com/some/repo",
+			expectedSourceURI:  "https://github.com/some/repo",
 		},
 		{
-			name: "match source no git no material ref ref not allowed",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo",
-						},
-					},
-				},
-			},
-			sourceURI: "https://github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
-			skipv1:    true,
+			name:              "match source no git no material ref ref not allowed",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo",
+			expectedSourceURI: "https://github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "match source no git+https",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "github.com/some/repo",
+			name:              "match source no git+https",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "github.com/some/repo",
 		},
 		{
-			name: "match source no repo",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "match source no repo",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
-			name: "mismatch materials configSource tag",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/repo@v1.2.4",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			skipv1:    true,
-			expected:  serrors.ErrorInvalidDssePayload,
+			name:              "mismatch materials configSource tag",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.4",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "mismatch materials configSource org",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/other/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMismatchSource,
+			name:              "mismatch materials configSource org",
+			provTriggerURI:    "git+https://github.com/other/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMismatchSource,
 		},
 		{
-			name: "mismatch materials configSource name",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://github.com/some/other@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://github.com/some/repo",
-			expected:  serrors.ErrorMismatchSource,
+			name:              "mismatch configSource materials org",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/other/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMismatchSource,
 		},
 		{
-			name: "not github.com repo",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Invocation: slsa02.ProvenanceInvocation{
-						ConfigSource: slsa02.ConfigSource{
-							URI: "git+https://not-github.com/some/repo@v1.2.3",
-						},
-					},
-					Materials: []slsacommon.ProvenanceMaterial{
-						{
-							URI: "git+https://not-github.com/some/repo@v1.2.3",
-						},
-					},
-				},
-			},
-			sourceURI: "git+https://not-github.com/some/repo",
-			expected:  serrors.ErrorMalformedURI,
+			name:              "mismatch materials configSource name",
+			provTriggerURI:    "git+https://github.com/some/other@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMismatchSource,
+		},
+		{
+			name:              "mismatch configSource materials name",
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/other@v1.2.3",
+			expectedSourceURI: "git+https://github.com/some/repo",
+			err:               serrors.ErrorMismatchSource,
+		},
+		{
+			name:              "not github.com repo",
+			provTriggerURI:    "git+https://not-github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://not-github.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://not-github.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
 		},
 	}
 	for _, tt := range tests {
@@ -470,12 +315,28 @@ func Test_verifySourceURI(t *testing.T) {
 			t.Parallel()
 
 			prov02 := &v02.ProvenanceV02{
-				ProvenanceStatement: tt.prov,
+				ProvenanceStatement: &intoto.ProvenanceStatement{
+					Predicate: slsa02.ProvenancePredicate{
+						Invocation: slsa02.ProvenanceInvocation{
+							ConfigSource: slsa02.ConfigSource{
+								URI: tt.provTriggerURI,
+							},
+						},
+						Materials: []slsacommon.ProvenanceMaterial{
+							{
+								URI: tt.provMaterialsURI,
+							},
+						},
+					},
+				},
+			}
+			if tt.provMaterialsURI == "" {
+				prov02.ProvenanceStatement.Predicate.Materials = nil
 			}
 
-			err := verifySourceURI(prov02, tt.sourceURI, tt.allowNoMaterialRef)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+			err := verifySourceURI(prov02, tt.expectedSourceURI, tt.allowNoMaterialRef)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
 			if tt.skipv1 {
@@ -483,20 +344,40 @@ func Test_verifySourceURI(t *testing.T) {
 			}
 
 			// Update to v1 SLSA provenance.
+			var ref, repository string
+			a := strings.Split(tt.provTriggerURI, "@")
+			if len(a) > 0 {
+				repository = a[0]
+			}
+			if len(a) > 1 {
+				ref = a[1]
+			}
+
 			prov1 := &v1.ProvenanceV1{
 				Predicate: slsa1.ProvenancePredicate{
 					BuildDefinition: slsa1.ProvenanceBuildDefinition{
 						ExternalParameters: map[string]interface{}{
-							"source": slsa1.ResourceDescriptor{
-								URI: tt.prov.Predicate.Invocation.ConfigSource.URI,
+							"workflow": map[string]interface{}{
+								"ref":        ref,
+								"repository": repository,
+								"path":       "some/path",
+							},
+						},
+						ResolvedDependencies: []slsa1.ResourceDescriptor{
+							{
+								URI: tt.provMaterialsURI,
 							},
 						},
 					},
 				},
 			}
-			err = verifySourceURI(prov1, tt.sourceURI, tt.allowNoMaterialRef)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+
+			if tt.provMaterialsURI == "" {
+				prov1.Predicate.BuildDefinition.ResolvedDependencies = nil
+			}
+			err = verifySourceURI(prov1, tt.expectedSourceURI, tt.allowNoMaterialRef)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
 			}
 		})
 	}

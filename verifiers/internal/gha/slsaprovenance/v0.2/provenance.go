@@ -35,11 +35,20 @@ func (prov *ProvenanceV02) SourceURI() (string, error) {
 	if len(prov.Predicate.Materials) == 0 {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
 	}
-	return prov.Predicate.Materials[0].URI, nil
+	uri := prov.Predicate.Materials[0].URI
+	if uri == "" {
+		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
+	}
+
+	return uri, nil
 }
 
-func (prov *ProvenanceV02) ConfigURI() (string, error) {
-	return prov.Predicate.Invocation.ConfigSource.URI, nil
+func (prov *ProvenanceV02) TriggerURI() (string, error) {
+	uri := prov.Predicate.Invocation.ConfigSource.URI
+	if uri == "" {
+		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
+	}
+	return uri, nil
 }
 
 func (prov *ProvenanceV02) Subjects() ([]intoto.Subject, error) {

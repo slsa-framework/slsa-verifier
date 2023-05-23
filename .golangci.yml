@@ -2,6 +2,8 @@
 run:
   concurrency: 2
   deadline: 5m
+  # For generics.
+  go: 1.18
 issues:
   include:
     - EXC0012
