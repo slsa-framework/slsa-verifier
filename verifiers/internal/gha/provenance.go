@@ -52,8 +52,9 @@ func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, expectedBuilderID
 	if err != nil {
 		return err
 	}
+
 	if err := provBuilderID.MatchesFull(expectedBuilderID, true); err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 	return nil
 }
@@ -71,7 +72,7 @@ func verifyBuilderIDLooseMatch(prov slsaprovenance.Provenance, expectedBuilderID
 		return err
 	}
 	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 	return nil
 }
@@ -273,7 +274,7 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	return nil
 }
 
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts,
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
 ) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
@@ -281,10 +282,17 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	}
 
 	// Verify Builder ID.
-	// Note: `provenanceOpts.ExpectedBuilderID` is not provided by the user,
-	// but taken from the certificate. It always is of the form `name@refs/tags/<name>`.
-	if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
-		return err
+	if byob {
+		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
+		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+			return err
+		}
+	} else {
+		// Note: `provenanceOpts.ExpectedBuilderID` is not provided by the user,
+		// but taken from the certificate. It always is of the form `name@refs/tags/<name>`.
+		if err := verifyBuilderIDExactMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
+			return err
+		}
 	}
 
 	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)

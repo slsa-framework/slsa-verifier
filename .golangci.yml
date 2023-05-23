@@ -8,6 +8,9 @@ issues:
     - EXC0013
     - EXC0014
     - EXC0015
+  exclude:
+    # TODO(#589): Remove after updating to Go 1.20
+    - "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
   # Maximum issues count per one linter.
   # Set to 0 to disable.
   # Default: 50

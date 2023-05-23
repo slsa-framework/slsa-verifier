@@ -54,7 +54,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Verify the builder identity.
-	builderID, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
+	builderID, byob, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,7 +67,18 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the subject Digest.
 	provenanceOpts.ExpectedBuilderID = builderID.String()
-	if err := VerifyProvenance(env, provenanceOpts); err != nil {
+	// There is a corner-case to handle: if the verified builder ID from the cert
+	// is a delegator builder, the user MUST provide an expected builder ID
+	// and we MUST match it against the content of the provenance.
+	if byob {
+		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+			// NOTE: we will need to update the logic here once our default trusted builders
+			// are migrated to using BYOB.
+			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
+		}
+		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
+	}
+	if err := VerifyProvenance(env, provenanceOpts, byob); err != nil {
 		return nil, nil, err
 	}
 
@@ -104,16 +115,13 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	delegatorBuilderOpts := options.BuilderOpts{
 		ExpectedID: &expectedDelegatorWorkflow,
 	}
-	trustedBuilderID, err := VerifyBuilderIdentity(workflowInfo, &delegatorBuilderOpts, defaultBuilders)
+	trustedBuilderID, byob, err := VerifyBuilderIdentity(workflowInfo, &delegatorBuilderOpts, defaultBuilders)
 	// We accept a non-trusted builder for the default npm builder
 	// that uses npm CLI.
 	if err != nil && !errors.Is(err, serrors.ErrorUntrustedReusableWorkflow) {
 		return nil, err
 	}
 
-	// TODO(#493): retrieve certificate information to match
-	// with the provenance.
-	// Today it's not possible due to lack of information in the cert.
 	// Verify the source repository from the certificate.
 	if err := VerifyCertficateSourceRepository(workflowInfo, provenanceOpts.ExpectedSourceURI); err != nil {
 		return nil, err
@@ -132,6 +140,9 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// we compare against in the call to VerifyBuilderIdentity() above.
 		// The delegator workflow will set the builder ID to the caller's path,
 		// which is what users match against.
+		if !byob {
+			return nil, fmt.Errorf("%w: byob is false", serrors.ErrorInternal)
+		}
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 
 		if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
@@ -228,7 +239,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 
 	return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
 		provenanceOpts, builderOpts,
-		defaultArtifactTrustedReusableWorkflows)
+		utils.MergeMaps(defaultArtifactTrustedReusableWorkflows, defaultBYOBReusableWorkflows))
 }
 
 // VerifyImage verifies provenance for an OCI image.

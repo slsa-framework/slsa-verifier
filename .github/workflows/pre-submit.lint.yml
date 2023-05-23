@@ -15,8 +15,8 @@ jobs:
         with:
           go-version: "1.18"
       - env:
-          GOLANGCI_LINT_VERSION: "1.46.2"
-          GOLANGCI_LINT_CHECKSUM: "242cd4f2d6ac0556e315192e8555784d13da5d1874e51304711570769c4f2b9b"
+          GOLANGCI_LINT_VERSION: "1.52.2"
+          GOLANGCI_LINT_CHECKSUM: "c9cf72d12058a131746edd409ed94ccd578fbd178899d1ed41ceae3ce5f54501"
         run: |
           set -euo pipefail
 
