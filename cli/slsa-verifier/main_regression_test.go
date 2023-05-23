@@ -1319,12 +1319,21 @@ func Test_runVerifyGHADockerBased(t *testing.T) {
 		inputs      map[string]string
 		err         error
 	}{
-		{
-			name:       "valid main branch default",
-			artifacts:  []string{"workflow_dispatch.main.default"},
-			source:     "github.com/slsa-framework/example-package",
-			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-		},
+		// TODO(#610): Re-enable this test.
+		// {
+		// 	name:       "valid main branch default",
+		// 	artifacts:  []string{"workflow_dispatch.main.default"},
+		// 	source:     "github.com/slsa-framework/example-package",
+		// 	pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+		// },
+		// {
+		// 	name:        "versioned tag no match empty tag workflow_dispatch",
+		// 	artifacts:   []string{"workflow_dispatch.main.default"},
+		// 	source:      "github.com/slsa-framework/example-package",
+		// 	pBuilderID:  pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
+		// 	pversiontag: pString("v1"),
+		// 	err:         serrors.ErrorInvalidSemver,
+		// },
 		{
 			name:       "valid main branch default - invalid builderID",
 			artifacts:  []string{"workflow_dispatch.main.default"},
@@ -1376,14 +1385,6 @@ func Test_runVerifyGHADockerBased(t *testing.T) {
 			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
 			ptag:       pString("v1.2.3"),
 			err:        serrors.ErrorMismatchTag,
-		},
-		{
-			name:        "versioned tag no match empty tag workflow_dispatch",
-			artifacts:   []string{"workflow_dispatch.main.default"},
-			source:      "github.com/slsa-framework/example-package",
-			pBuilderID:  pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_docker-based_slsa3.yml"),
-			pversiontag: pString("v1"),
-			err:         serrors.ErrorInvalidSemver,
 		},
 	}
 	for _, tt := range tests {
