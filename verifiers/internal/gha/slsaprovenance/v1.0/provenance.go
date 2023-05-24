@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -63,7 +64,7 @@ func getValidateKey(m map[string]interface{}, key string) (string, error) {
 	return vv, nil
 }
 
-func (prov *ProvenanceV1) triggerInfo() (string, string, string, error) {
+func (prov *ProvenanceV1) generatorTriggerInfo() (string, string, string, error) {
 	// See https://github.com/slsa-framework/github-actions-buildtypes/blob/main/workflow/v1/example.json#L16-L19.
 	extParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
 	if !ok {
@@ -92,6 +93,38 @@ func (prov *ProvenanceV1) triggerInfo() (string, string, string, error) {
 	return repository, ref, path, nil
 }
 
+func (prov *ProvenanceV1) builderTriggerInfo() (string, string, string, error) {
+	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	if !ok {
+		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+	}
+
+	workflowRef, err := slsaprovenance.GetAsString(sysParams, "GITHUB_WORKFLOW_REF")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	parts := strings.Split(workflowRef, "@")
+	if len(parts) != 2 {
+		return "", "", "", fmt.Errorf("%w: ref: %s", serrors.ErrorInvalidFormat, workflowRef)
+	}
+	repoAndPath := parts[0]
+	ref := parts[1]
+
+	parts = strings.Split(repoAndPath, "/")
+	if len(parts) < 2 {
+		return "", "", "", fmt.Errorf("%w: rep and path: %s", serrors.ErrorInvalidFormat, repoAndPath)
+	}
+	repo := strings.Join(parts[:2], "/")
+	path := strings.Join(parts[3:], "/")
+	return fmt.Sprintf("git+https://github.com/%s", repo), ref, path, nil
+}
+
+func (prov *ProvenanceV1) triggerInfo() (string, string, string, error) {
+	// TODO(#613): Support for generators.
+	return prov.builderTriggerInfo()
+}
+
 func (prov *ProvenanceV1) TriggerURI() (string, error) {
 	repository, ref, _, err := prov.triggerInfo()
 	if err != nil {
@@ -115,7 +148,7 @@ func (prov *ProvenanceV1) GetBranch() (string, error) {
 	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
 	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
 	}
 
 	return slsaprovenance.GetBranch(sysParams, prov.predicateType)
@@ -140,26 +173,11 @@ func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 // TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):
 // verify the ref and repo as well.
 func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
-	sysParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	_, _, path, err := prov.triggerInfo()
+	if err != nil {
+		return "", err
 	}
-
-	w, ok := sysParams["workflow"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow parameters type")
-	}
-
-	wMap, ok := w.(map[string]string)
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
-	}
-
-	v, ok := wMap["path"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no path entry on workflow")
-	}
-	return v, nil
+	return path, nil
 }
 
 func (prov *ProvenanceV1) GetBuildInvocationID() (string, error) {
