@@ -49,6 +49,9 @@ func (prov *ProvenanceV1) SourceURI() (string, error) {
 	return uri, nil
 }
 
+// TODO(#613): Support for generators.
+//
+//nolint:unused
 func getValidateKey(m map[string]interface{}, key string) (string, error) {
 	v, ok := m[key]
 	if !ok {
@@ -64,6 +67,9 @@ func getValidateKey(m map[string]interface{}, key string) (string, error) {
 	return vv, nil
 }
 
+// TODO(#613): Support for generators.
+//
+//nolint:unused
 func (prov *ProvenanceV1) generatorTriggerInfo() (string, string, string, error) {
 	// See https://github.com/slsa-framework/github-actions-buildtypes/blob/main/workflow/v1/example.json#L16-L19.
 	extParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
