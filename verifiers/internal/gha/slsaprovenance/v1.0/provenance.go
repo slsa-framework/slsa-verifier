@@ -170,8 +170,6 @@ func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 	return slsaprovenance.GetWorkflowInputs(sysParams, prov.predicateType)
 }
 
-// TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):
-// verify the ref and repo as well.
 func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
 	_, _, path, err := prov.triggerInfo()
 	if err != nil {
