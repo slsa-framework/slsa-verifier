@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -86,8 +87,14 @@ func verifySubjectDigestName(prov slsaprovenance.Provenance, digestName string) 
 func verifyBuildConfig(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
 	triggerPath, err := prov.GetBuildTriggerPath()
 	if err != nil {
+		// If the field is not available in the provenance,
+		// we can safely skip the verification against the certificate.
+		if errors.Is(err, serrors.ErrorNotPresent) {
+			return nil
+		}
 		return err
 	}
+
 	return equalCertificateValue(workflow.BuildConfigPath, triggerPath, "trigger workflow")
 }
 
@@ -268,6 +275,7 @@ func verifySystemParameters(prov slsaprovenance.Provenance, workflow *WorkflowId
 		"GITHUB_WORKFLOW_REF":        true,
 		"GITHUB_WORKFLOW_SHA":        true,
 	}
+
 	for k := range sysParams {
 		if !supportedNames[k] {
 			return fmt.Errorf("%w: unknown '%s' parameter", serrors.ErrorMismatchCertificate, k)
@@ -374,6 +382,7 @@ func equalCertificateValue(expected *string, actual, logName string) error {
 		return fmt.Errorf("%w: empty certificate value to verify '%s'",
 			serrors.ErrorMismatchCertificate, logName)
 	}
+
 	if actual != *expected {
 		return fmt.Errorf("%w: %s: '%s' != '%s'", serrors.ErrorMismatchCertificate,
 			logName, actual, *expected)

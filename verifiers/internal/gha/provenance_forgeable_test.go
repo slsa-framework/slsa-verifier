@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -143,10 +144,8 @@ func Test_verifyBuildConfig(t *testing.T) {
 			prov1 := &slsav10.ProvenanceV1{
 				Predicate: intotov1.ProvenancePredicate{
 					BuildDefinition: intotov1.ProvenanceBuildDefinition{
-						ExternalParameters: map[string]interface{}{
-							"workflow": map[string]string{
-								"path": tt.path,
-							},
+						InternalParameters: map[string]interface{}{
+							"GITHUB_WORKFLOW_REF": fmt.Sprintf("some/repo/%s@some-ref", tt.path),
 						},
 					},
 				},
@@ -1074,7 +1073,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 	expectedWorkflow := WorkflowIdentity{
 		BuildTrigger:       "workflow_dispatch",
 		BuildConfigPath:    asStringPointer("release/workflow/path"),
-		SubjectWorkflowRef: "path/to/trusted-builder@subject-ref",
+		SubjectWorkflowRef: "repo/name/release/workflow/path@subject-ref",
 		SubjectSha1:        asStringPointer("subject-sha"),
 		SourceRepository:   "repo/name",
 		SourceRef:          asStringPointer("source-ref"),
@@ -1089,7 +1088,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 		numberResolvedDependencies int
 		workflowTriggerPath        string
 		environment                map[string]interface{}
-		workflow                   WorkflowIdentity
+		certificateIdentity        WorkflowIdentity
 		err                        error
 	}{
 		{
@@ -1110,18 +1109,29 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				"GITHUB_RUN_ATTEMPT":         "run-attempt",
 				"GITHUB_RUN_ID":              "run-id",
 				"GITHUB_SHA":                 "source-sha",
-				"GITHUB_WORKFLOW_REF":        "path/to/trusted-builder@subject-ref",
+				"GITHUB_WORKFLOW_REF":        "repo/name/release/workflow/path@subject-ref",
 				"GITHUB_WORKFLOW_SHA":        "subject-sha",
 			},
-			workflow: expectedWorkflow,
+			certificateIdentity: expectedWorkflow,
+		},
+		{
+			name: "correct provenance no env",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha512": "abcd"},
+				},
+			},
+			numberResolvedDependencies: 1,
+			workflowTriggerPath:        "release/workflow/path",
+			certificateIdentity:        expectedWorkflow,
 		},
 		{
 			name: "unknown field",
 			environment: map[string]interface{}{
 				"SOMETHING": "workflow_dispatch",
 			},
-			workflow: expectedWorkflow,
-			err:      serrors.ErrorMismatchCertificate,
+			certificateIdentity: expectedWorkflow,
+			err:                 serrors.ErrorMismatchCertificate,
 		},
 		{
 			name: "too many resolved dependencies",
@@ -1132,7 +1142,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			},
 			numberResolvedDependencies: 2,
 			workflowTriggerPath:        "release/workflow/path",
-			workflow:                   expectedWorkflow,
+			certificateIdentity:        expectedWorkflow,
 			err:                        serrors.ErrorNonVerifiableClaim,
 		},
 		{
@@ -1144,7 +1154,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			},
 			numberResolvedDependencies: 1,
 			workflowTriggerPath:        "release/workflow/path",
-			workflow:                   expectedWorkflow,
+			certificateIdentity:        expectedWorkflow,
 			err:                        serrors.ErrorNonVerifiableClaim,
 		},
 		{
@@ -1156,8 +1166,20 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			},
 			numberResolvedDependencies: 1,
 			workflowTriggerPath:        "release/workflow/path2",
-			workflow:                   expectedWorkflow,
-			err:                        serrors.ErrorMismatchCertificate,
+			environment: map[string]interface{}{
+				"GITHUB_EVENT_NAME":          "workflow_dispatch",
+				"GITHUB_REF":                 "source-ref",
+				"GITHUB_REPOSITORY":          "repo/name",
+				"GITHUB_REPOSITORY_ID":       "source-id",
+				"GITHUB_REPOSITORY_OWNER_ID": "source-owner-id",
+				"GITHUB_RUN_ATTEMPT":         "run-attempt",
+				"GITHUB_RUN_ID":              "run-id",
+				"GITHUB_SHA":                 "source-sha",
+				"GITHUB_WORKFLOW_REF":        "repo/name/release/workflow/path2@subject-ref",
+				"GITHUB_WORKFLOW_SHA":        "subject-sha",
+			},
+			certificateIdentity: expectedWorkflow,
+			err:                 serrors.ErrorMismatchCertificate,
 		},
 		{
 			name: "invalid trigger name",
@@ -1171,8 +1193,8 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			environment: map[string]interface{}{
 				"GITHUB_EVENT_NAME": "workflow_dispatch2",
 			},
-			workflow: expectedWorkflow,
-			err:      serrors.ErrorMismatchCertificate,
+			certificateIdentity: expectedWorkflow,
+			err:                 serrors.ErrorMismatchCertificate,
 		},
 	}
 	for _, tt := range tests {
@@ -1199,7 +1221,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				prov02.Predicate.Materials = make([]intotocommon.ProvenanceMaterial, tt.numberResolvedDependencies)
 			}
 
-			err := verifyProvenanceMatchesCertificate(prov02, &tt.workflow)
+			err := verifyProvenanceMatchesCertificate(prov02, &tt.certificateIdentity)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -1211,19 +1233,15 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				Predicate: intotov1.ProvenancePredicate{
 					BuildDefinition: intotov1.ProvenanceBuildDefinition{
 						InternalParameters: tt.environment,
-						ExternalParameters: map[string]interface{}{
-							// TODO(#566): verify fields for v1.0 provenance.
-							"workflow": map[string]string{
-								"path": tt.workflowTriggerPath,
-							},
-						},
+						// TODO(#566): verify fields for v1.0 provenance.
 					},
 				},
 			}
+
 			if tt.numberResolvedDependencies > 0 {
 				prov1.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov1.ResourceDescriptor, tt.numberResolvedDependencies)
 			}
-			err = verifyProvenanceMatchesCertificate(prov1, &tt.workflow)
+			err = verifyProvenanceMatchesCertificate(prov1, &tt.certificateIdentity)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
