@@ -4,20 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 // GetWorkflowInputs gets the workflow inputs from the GitHub environment map
 // and converts the keys to the necessary casing depending on predicate type.
-func GetWorkflowInputs(environment map[string]any, predicateType string) (map[string]any, error) {
+func GetWorkflowInputs(environment map[string]any) (map[string]any, error) {
 	// Verify it's a workflow_dispatch trigger.
-	eventKey, err := convertKey("github_event_name", predicateType)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s",
-			serrors.ErrorMismatchWorkflowInputs, err)
-	}
-	triggerName, err := GetAsString(environment, eventKey)
+	triggerName, err := gitHubEnvAsString(environment, "event_name")
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +20,7 @@ func GetWorkflowInputs(environment map[string]any, predicateType string) (map[st
 			serrors.ErrorMismatchWorkflowInputs, triggerName)
 	}
 
-	payload, err := GetEventPayload(environment, predicateType)
+	payload, err := GetEventPayload(environment)
 	if err != nil {
 		return nil, err
 	}
@@ -38,58 +32,29 @@ func GetWorkflowInputs(environment map[string]any, predicateType string) (map[st
 
 	pyldInputs, ok := payloadInputs.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type inputs")
+		return nil, fmt.Errorf("%w: parameters type inputs", serrors.ErrorInvalidDssePayload)
 	}
 	return pyldInputs, nil
 }
 
 // GetEventPayload retrieves the GitHub event payload from the environment map
 // that contains the GitHub context payload.
-func GetEventPayload(environment map[string]any, predicateType string) (map[string]any, error) {
-	eventPayloadKey, err := convertKey("github_event_payload", predicateType)
+func GetEventPayload(environment map[string]any) (map[string]any, error) {
+	eventPayload, err := gitHubEnvAsAny(environment, "event_payload")
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-	}
-	eventPayload, ok := environment[eventPayloadKey]
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type event payload")
+		return nil, err
 	}
 
 	payload, ok := eventPayload.(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type payload")
+		return nil, fmt.Errorf("%w: parameters type payload", serrors.ErrorInvalidDssePayload)
 	}
 
 	return payload, nil
 }
 
-func convertKey(key, predicateType string) (string, error) {
-	switch predicateType {
-	case slsa1.PredicateSLSAProvenance:
-		return strings.ToUpper(key), nil
-	case ProvenanceV02Type:
-		return key, nil
-	default:
-		return "", fmt.Errorf("unrecognized predicate type %s", predicateType)
-	}
-}
-
-func getAsAny(environment map[string]any, field string) (any, error) {
-	value, ok := environment[field]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
-			fmt.Sprintf("environment type for %s", field))
-	}
-	return value, nil
-}
-
-func getBranchForTag(environment map[string]any, predicateType string) (string, error) {
-	baseRefKey, err := convertKey("github_base_ref", predicateType)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-	}
-
-	baseRef, err := GetAsString(environment, baseRefKey)
+func getBranchForTag(environment map[string]any) (string, error) {
+	baseRef, err := gitHubEnvAsString(environment, "base_ref")
 	if err != nil {
 		return "", err
 	}
@@ -100,16 +65,12 @@ func getBranchForTag(environment map[string]any, predicateType string) (string, 
 	}
 
 	// Look at the event payload instead.
-	environmentKey, err := convertKey("github_event_name", predicateType)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-	}
-	eventName, err := GetAsString(environment, environmentKey)
+	eventName, err := gitHubEnvAsString(environment, "event_name")
 	if err != nil {
 		return "", err
 	}
 
-	payload, err := GetEventPayload(environment, predicateType)
+	payload, err := GetEventPayload(environment)
 	if err != nil {
 		return "", err
 	}
@@ -154,13 +115,9 @@ func getBranchForTag(environment map[string]any, predicateType string) (string, 
 	}
 }
 
-func GetTag(environment map[string]any, predicateType string) (string, error) {
-	refTypeKey, err := convertKey("github_ref_type", predicateType)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-	}
-
-	refType, err := GetAsString(environment, refTypeKey)
+// GetTag returns the event tag if the ref_type is 'tag'. Returns "" if ref_type is 'branch'.
+func GetTag(environment map[string]any) (string, error) {
+	refType, err := gitHubEnvAsString(environment, "ref_type")
 	if err != nil {
 		return "", err
 	}
@@ -169,58 +126,85 @@ func GetTag(environment map[string]any, predicateType string) (string, error) {
 	case "branch":
 		return "", nil
 	case "tag":
-		refKey, err := convertKey("github_ref", predicateType)
-		if err != nil {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-		}
-		return GetAsString(environment, refKey)
+		return gitHubEnvAsString(environment, "ref")
 	default:
 		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }
 
-func GetBranch(environment map[string]any, predicateType string) (string, error) {
-	refTypeKey, err := convertKey("github_ref_type", predicateType)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-	}
-
-	refType, err := GetAsString(environment, refTypeKey)
+// GetBranch returns the triggering event's branch.
+func GetBranch(environment map[string]any) (string, error) {
+	refType, err := gitHubEnvAsString(environment, "ref_type")
 	if err != nil {
 		return "", err
 	}
 
 	switch refType {
 	case "branch":
-		refKey, err := convertKey("github_ref", predicateType)
-		if err != nil {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
-		}
-		return GetAsString(environment, refKey)
+		return gitHubEnvAsString(environment, "ref")
 	case "tag":
-		return getBranchForTag(environment, predicateType)
+		return getBranchForTag(environment)
 	default:
-		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
-			"unknown ref type", refType)
+		return "", fmt.Errorf("%w: unknown ref type: %s", serrors.ErrorInvalidDssePayload, refType)
 	}
 }
 
+// Exists returns true if the given field exists in the environment.
 func Exists(environment map[string]any, field string) bool {
 	_, ok := environment[field]
 	return ok
 }
 
-func GetAsString(environment map[string]any, field string) (string, error) {
+func getAsAny(environment map[string]any, field string) (any, error) {
 	value, ok := environment[field]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
 			fmt.Sprintf("environment type for %s", field))
 	}
+	return value, nil
+}
+
+// gitHubEnvAsString returns a GITHUB_ environment variable from the given map with the
+// key being either uppercase or lowercase.
+func gitHubEnvAsString(environment map[string]any, field string) (string, error) {
+	value, err := gitHubEnvAsAny(environment, field)
+	if err != nil {
+		return "", err
+	}
 
 	i, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s '%s'", serrors.ErrorInvalidDssePayload, "environment type string", field)
+		return "", fmt.Errorf("%w: %q is not a string", serrors.ErrorInvalidDssePayload, field)
+	}
+	return i, nil
+}
+
+// gitHubEnvAsAny returns a GITHUB_ environment variable from the given map with the
+// key being either uppercase or lowercase.
+func gitHubEnvAsAny(environment map[string]any, field string) (any, error) {
+	key := `github_` + field
+	value, ok := environment[strings.ToLower(key)]
+	if !ok {
+		value, ok = environment[strings.ToUpper(key)]
+		if !ok {
+			return "", fmt.Errorf("%w: missing value for %q", serrors.ErrorInvalidDssePayload, strings.ToLower(key))
+		}
+	}
+	return value, nil
+}
+
+// GetAsString returns the given environment value as a string.
+func GetAsString(environment map[string]any, field string) (string, error) {
+	value, ok := environment[field]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload,
+			fmt.Sprintf("missing value for %q", field))
+	}
+
+	i, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: %q is not a string", serrors.ErrorInvalidDssePayload, field)
 	}
 	return i, nil
 }

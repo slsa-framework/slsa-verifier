@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -112,21 +113,33 @@ func (prov *ProvenanceV1) Subjects() ([]intoto.Subject, error) {
 }
 
 func (prov *ProvenanceV1) GetBranch() (string, error) {
-	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
-	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	// Returns the branch from the source URI.
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return "", err
 	}
 
-	return slsaprovenance.GetBranch(sysParams, prov.predicateType)
+	parts := strings.Split(sourceURI, "@")
+	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/heads") {
+		return parts[1], nil
+	}
+
+	return "", nil
 }
 
 func (prov *ProvenanceV1) GetTag() (string, error) {
-	sysParams, ok := prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	// Returns the tag from the source materials.
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return "", err
 	}
-	return slsaprovenance.GetTag(sysParams, prov.predicateType)
+
+	parts := strings.Split(sourceURI, "@")
+	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/tags") {
+		return parts[1], nil
+	}
+
+	return "", nil
 }
 
 func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
@@ -134,7 +147,7 @@ func (prov *ProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
-	return slsaprovenance.GetWorkflowInputs(sysParams, prov.predicateType)
+	return slsaprovenance.GetWorkflowInputs(sysParams)
 }
 
 // TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):

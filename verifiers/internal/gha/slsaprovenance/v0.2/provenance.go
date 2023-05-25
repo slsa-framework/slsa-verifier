@@ -2,6 +2,7 @@ package v02
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -60,22 +61,33 @@ func (prov *ProvenanceV02) Subjects() ([]intoto.Subject, error) {
 }
 
 func (prov *ProvenanceV02) GetBranch() (string, error) {
-	// GetBranch gets the branch from the invocation parameters.
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	// Returns the branch from the source materials.
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return "", err
 	}
 
-	return slsaprovenance.GetBranch(environment, prov.PredicateType)
+	parts := strings.Split(sourceURI, "@")
+	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/heads") {
+		return parts[1], nil
+	}
+
+	return "", nil
 }
 
 func (prov *ProvenanceV02) GetTag() (string, error) {
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	// Returns the tag from the source materials.
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return "", err
 	}
 
-	return slsaprovenance.GetTag(environment, prov.PredicateType)
+	parts := strings.Split(sourceURI, "@")
+	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/tags") {
+		return parts[1], nil
+	}
+
+	return "", nil
 }
 
 func (prov *ProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
@@ -85,7 +97,7 @@ func (prov *ProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
 
-	return slsaprovenance.GetWorkflowInputs(environment, prov.PredicateType)
+	return slsaprovenance.GetWorkflowInputs(environment)
 }
 
 func (prov *ProvenanceV02) GetBuildTriggerPath() (string, error) {
