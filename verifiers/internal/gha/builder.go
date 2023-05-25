@@ -454,7 +454,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
 	}
 	// Remove the starting '/'.
-	// NOTE: The Path has the following structure: repo/name/path/to/workflow.yml@ref
+	// NOTE: The Path has the following structure: repo/name/path/to/workflow.yml@ref.
 	subjectWorkflowRef := cert.URIs[0].Path[1:]
 
 	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string

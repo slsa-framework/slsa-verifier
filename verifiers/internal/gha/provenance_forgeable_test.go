@@ -1234,12 +1234,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				Predicate: intotov1.ProvenancePredicate{
 					BuildDefinition: intotov1.ProvenanceBuildDefinition{
 						InternalParameters: tt.environment,
-						// ExternalParameters: map[string]interface{}{
-						// 	// TODO(#566): verify fields for v1.0 provenance.
-						// 	"workflow": map[string]string{
-						// 		"path": tt.workflowTriggerPath,
-						// 	},
-						// },
+						// TODO(#566): verify fields for v1.0 provenance.
 					},
 				},
 			}
