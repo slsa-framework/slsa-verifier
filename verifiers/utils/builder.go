@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/mod/semver"
+
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
@@ -130,4 +132,32 @@ func TagFromGitHubRef(ref string) (string, error) {
 		return "", err
 	}
 	return strings.TrimPrefix(ref, "refs/tags/"), nil
+}
+
+func IsValidBuilderTag(ref string, testing bool) error {
+	// Extract the pin.
+	pin, err := TagFromGitHubRef(ref)
+	if err != nil {
+		return err
+	}
+
+	if testing {
+		// Tags on trusted repositories should be a valid semver with version
+		// core including all three parts and no build identifier.
+		versionCore := strings.Split(pin, "-")[0]
+		if !semver.IsValid(pin) ||
+			len(strings.Split(versionCore, ".")) != 3 ||
+			semver.Build(pin) != "" {
+			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
+		}
+	}
+
+	// Valid semver of the form vX.Y.Z with no metadata.
+	if !(semver.IsValid(pin) &&
+		len(strings.Split(pin, ".")) == 3 &&
+		semver.Prerelease(pin) == "" &&
+		semver.Build(pin) == "") {
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
+	}
+	return nil
 }

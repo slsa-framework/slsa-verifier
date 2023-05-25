@@ -286,6 +286,19 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 
 	// Verify Builder ID.
 	if byob {
+		// Verify the TRW was referenced at a proper tag by the user.
+		id, err := prov.BuilderID()
+		if err != nil {
+			return err
+		}
+		parts := strings.Split(id, "@")
+		if len(parts) != 2 {
+			return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
+		}
+		if err := utils.IsValidBuilderTag(parts[1], false); err != nil {
+			return err
+		}
+
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
