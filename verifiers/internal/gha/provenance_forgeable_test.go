@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -143,10 +144,8 @@ func Test_verifyBuildConfig(t *testing.T) {
 			prov1 := &slsav10.ProvenanceV1{
 				Predicate: intotov1.ProvenancePredicate{
 					BuildDefinition: intotov1.ProvenanceBuildDefinition{
-						ExternalParameters: map[string]interface{}{
-							"workflow": map[string]string{
-								"path": tt.path,
-							},
+						InternalParameters: map[string]interface{}{
+							"GITHUB_WORKFLOW_REF": fmt.Sprintf("some/repo/%s@some-ref", tt.path),
 						},
 					},
 				},
