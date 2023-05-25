@@ -187,8 +187,6 @@ func Test_verifySourceURI(t *testing.T) {
 		expectedSourceURI  string
 		allowNoMaterialRef bool
 		err                error
-		// v1 provenance does not include materials
-		skipv1 bool
 	}{
 		{
 			name:              "source has no @",
@@ -339,10 +337,6 @@ func Test_verifySourceURI(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			if tt.skipv1 {
-				return
-			}
-
 			// Update to v1 SLSA provenance.
 			var ref, repository string
 			a := strings.Split(tt.provTriggerURI, "@")
@@ -356,13 +350,18 @@ func Test_verifySourceURI(t *testing.T) {
 			prov1 := &v1.ProvenanceV1{
 				Predicate: slsa1.ProvenancePredicate{
 					BuildDefinition: slsa1.ProvenanceBuildDefinition{
-						ExternalParameters: map[string]interface{}{
-							"workflow": map[string]interface{}{
-								"ref":        ref,
-								"repository": repository,
-								"path":       "some/path",
-							},
+						InternalParameters: map[string]interface{}{
+							"GITHUB_WORKFLOW_REF": fmt.Sprintf("%s/some/path@%s",
+								strings.TrimPrefix(strings.TrimPrefix(repository, "git+"), "https://github.com/"), ref),
 						},
+						/// TODO(#613): Support generators.
+						// ExternalParameters: map[string]interface{}{
+						// 	"workflow": map[string]interface{}{
+						// 		"ref":        ref,
+						// 		"repository": repository,
+						// 		"path":       "some/path",
+						// 	},
+						// },
 						ResolvedDependencies: []slsa1.ResourceDescriptor{
 							{
 								URI: tt.provMaterialsURI,
