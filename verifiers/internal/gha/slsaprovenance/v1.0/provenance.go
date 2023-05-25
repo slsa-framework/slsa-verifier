@@ -105,6 +105,10 @@ func (prov *ProvenanceV1) builderTriggerInfo() (string, string, string, error) {
 		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
 	}
 
+	if _, exists := sysParams["GITHUB_WORKFLOW_REF"]; !exists {
+		return "", "", "", fmt.Errorf("%w: GITHUB_WORKFLOW_REF", serrors.ErrorNotPresent)
+	}
+
 	workflowRef, err := slsaprovenance.GetAsString(sysParams, "GITHUB_WORKFLOW_REF")
 	if err != nil {
 		return "", "", "", err
@@ -121,8 +125,9 @@ func (prov *ProvenanceV1) builderTriggerInfo() (string, string, string, error) {
 	if len(parts) < 2 {
 		return "", "", "", fmt.Errorf("%w: rep and path: %s", serrors.ErrorInvalidFormat, repoAndPath)
 	}
+
 	repo := strings.Join(parts[:2], "/")
-	path := strings.Join(parts[3:], "/")
+	path := strings.Join(parts[2:], "/")
 	return fmt.Sprintf("git+https://github.com/%s", repo), ref, path, nil
 }
 
@@ -181,6 +186,7 @@ func (prov *ProvenanceV1) GetBuildTriggerPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return path, nil
 }
 
