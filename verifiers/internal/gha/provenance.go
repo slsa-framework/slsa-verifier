@@ -160,12 +160,12 @@ func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 
 	r := strings.Split(uri, "@")
 	if len(r) < 2 && !allowNoRef {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
+		return "", fmt.Errorf("%w: ref required: %s", serrors.ErrorMalformedURI,
 			uri)
 	}
 	if len(r) < 1 {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
-			uri)
+		// Split should always return a slice with length > 0
+		panic(fmt.Errorf("%w: %s", serrors.ErrorMalformedURI, uri))
 	}
 
 	return r[0], nil
@@ -277,8 +277,7 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	return nil
 }
 
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
-) error {
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
 		return err
@@ -298,7 +297,9 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		}
 	}
 
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
+	// NOTE: BYOB workflows may have materials without a ref if a different sha
+	// is specified.
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts, byob)
 }
 
 func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpts *options.ProvenanceOpts,
