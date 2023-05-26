@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -38,39 +39,24 @@ func (prov *ProvenanceV1) BuilderID() (string, error) {
 }
 
 func (prov *ProvenanceV1) SourceURI() (string, error) {
-	// Use resolvedDependencies.
-	if len(prov.Predicate.BuildDefinition.ResolvedDependencies) == 0 {
-		return "", fmt.Errorf("%w: empty resovedDependencies", serrors.ErrorInvalidDssePayload)
+	// Use externalParameters.
+	extParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
 	}
-	uri := prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI
-	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
+	source, ok := extParams["source"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source not found")
 	}
-	// If there is more than one resolved dependency, search through to find one
-	// with a "source" annotation.
-	if len(prov.Predicate.BuildDefinition.ResolvedDependencies) > 1 {
-		for i, dep := range prov.Predicate.BuildDefinition.ResolvedDependencies {
-			sourceAnnotation, ok := dep.Annotations["source"]
-			if !ok {
-				// If there is no source annotation, continue to next resolved dependency.
-				continue
-			}
-			vv, ok := sourceAnnotation.(string)
-			if !ok {
-				// This is an error, we expect a source annotation to be a string.
-				return "", fmt.Errorf(
-					"%w: expected resolvedDependency with source annotation to have a string type",
-					serrors.ErrorInvalidDssePayload)
-			}
-			if vv == "true" {
-				// This is a source annotation.
-				return prov.Predicate.BuildDefinition.ResolvedDependencies[i].URI, nil
-			}
-		}
-		// We should have found a source dependency by now.
-		return "", fmt.Errorf("%w: multiple resovedDependencies, and no source annotation", serrors.ErrorInvalidDssePayload)
+	sourceBytes, err := json.Marshal(source)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", err, "marshalling external parameters source")
 	}
-	return uri, nil
+	var sourceResource slsa1.ResourceDescriptor
+	if err := json.Unmarshal(sourceBytes, &sourceResource); err != nil {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source type")
+	}
+	return sourceResource.URI, nil
 }
 
 // TODO(#613): Support for generators.

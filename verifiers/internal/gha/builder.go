@@ -24,9 +24,9 @@ var (
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":    true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":           true,
-	trustedBuilderRepository + "/.github/workflows/builder_docker-based_slsa3.yml": true,
+	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":       true,
+	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":              true,
+	trustedBuilderRepository + "/.github/workflows/builder_container-based_slsa3.yml": true,
 }
 
 var defaultContainerTrustedReusableWorkflows = map[string]bool{

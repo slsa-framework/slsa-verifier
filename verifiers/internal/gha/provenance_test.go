@@ -362,8 +362,8 @@ func Test_verifySourceURI(t *testing.T) {
 						// 		"path":       "some/path",
 						// 	},
 						// },
-						ResolvedDependencies: []slsa1.ResourceDescriptor{
-							{
+						ExternalParameters: map[string]interface{}{
+							"source": slsa1.ResourceDescriptor{
 								URI: tt.provMaterialsURI,
 							},
 						},
@@ -372,7 +372,7 @@ func Test_verifySourceURI(t *testing.T) {
 			}
 
 			if tt.provMaterialsURI == "" {
-				prov1.Predicate.BuildDefinition.ResolvedDependencies = nil
+				prov1.Predicate.BuildDefinition.ExternalParameters = nil
 			}
 			err = verifySourceURI(prov1, tt.expectedSourceURI, tt.allowNoMaterialRef)
 			if !errCmp(err, tt.err) {
