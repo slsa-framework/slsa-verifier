@@ -277,6 +277,19 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	return nil
 }
 
+func isValidDelegatorBuilderID(prov slsaprovenance.Provenance) error {
+	// Verify the TRW was referenced at a proper tag by the user.
+	id, err := prov.BuilderID()
+	if err != nil {
+		return err
+	}
+	parts := strings.Split(id, "@")
+	if len(parts) != 2 {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
+	}
+	return utils.IsValidBuilderTag(parts[1], false)
+}
+
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
 ) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
@@ -286,6 +299,9 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 
 	// Verify Builder ID.
 	if byob {
+		if err := isValidDelegatorBuilderID(prov); err != nil {
+			return err
+		}
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
