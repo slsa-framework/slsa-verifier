@@ -5,20 +5,67 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
-	v02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
-func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
+type testProvenance struct {
+	builderID         string
+	sourceURI         string
+	triggerURI        string
+	subjects          []intoto.Subject
+	branch            string
+	tag               string
+	buildTriggerPath  string
+	systemParameters  map[string]any
+	buildInvocationID string
+	buildStartTime    *time.Time
+	buildFinishTime   *time.Time
+	noResolvedDeps    int
+	workflowInputs    map[string]any
+}
+
+func (p *testProvenance) BuilderID() (string, error)           { return p.builderID, nil }
+func (p *testProvenance) SourceURI() (string, error)           { return p.sourceURI, nil }
+func (p *testProvenance) TriggerURI() (string, error)          { return p.triggerURI, nil }
+func (p *testProvenance) Subjects() ([]intoto.Subject, error)  { return p.subjects, nil }
+func (p *testProvenance) GetBranch() (string, error)           { return p.branch, nil }
+func (p *testProvenance) GetTag() (string, error)              { return p.tag, nil }
+func (p *testProvenance) GetBuildTriggerPath() (string, error) { return p.buildTriggerPath, nil }
+func (p *testProvenance) GetSystemParameters() (map[string]any, error) {
+	return p.systemParameters, nil
+}
+func (p *testProvenance) GetBuildInvocationID() (string, error)       { return p.buildInvocationID, nil }
+func (p *testProvenance) GetBuildStartTime() (*time.Time, error)      { return p.buildStartTime, nil }
+func (p *testProvenance) GetBuildFinishTime() (*time.Time, error)     { return p.buildFinishTime, nil }
+func (p *testProvenance) GetNumberResolvedDependencies() (int, error) { return p.noResolvedDeps, nil }
+func (p *testProvenance) GetWorkflowInputs() (map[string]interface{}, error) {
+	return p.workflowInputs, nil
+}
+
+type testProvenanceV02 struct {
+	testProvenance
+	predicate slsa02.ProvenancePredicate
+}
+
+func (p *testProvenanceV02) Predicate() slsa02.ProvenancePredicate { return p.predicate }
+
+type testProvenanceV1 struct {
+	testProvenance
+	predicate slsa1.ProvenancePredicate
+}
+
+func (p *testProvenanceV1) Predicate() slsa1.ProvenancePredicate { return p.predicate }
+
+func provenanceFromBytes(payload []byte) (iface.Provenance, error) {
 	env, err := EnvelopeFromBytes(payload)
 	if err != nil {
 		return nil, err
@@ -187,8 +234,6 @@ func Test_verifySourceURI(t *testing.T) {
 		expectedSourceURI  string
 		allowNoMaterialRef bool
 		err                error
-		// v1 provenance does not include materials
-		skipv1 bool
 	}{
 		{
 			name:              "source has no @",
@@ -314,68 +359,12 @@ func Test_verifySourceURI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &v02.ProvenanceV02{
-				ProvenanceStatement: &intoto.ProvenanceStatement{
-					Predicate: slsa02.ProvenancePredicate{
-						Invocation: slsa02.ProvenanceInvocation{
-							ConfigSource: slsa02.ConfigSource{
-								URI: tt.provTriggerURI,
-							},
-						},
-						Materials: []slsacommon.ProvenanceMaterial{
-							{
-								URI: tt.provMaterialsURI,
-							},
-						},
-					},
-				},
-			}
-			if tt.provMaterialsURI == "" {
-				prov02.ProvenanceStatement.Predicate.Materials = nil
+			prov02 := &testProvenance{
+				sourceURI:  tt.provMaterialsURI,
+				triggerURI: tt.provTriggerURI,
 			}
 
 			err := verifySourceURI(prov02, tt.expectedSourceURI, tt.allowNoMaterialRef)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			if tt.skipv1 {
-				return
-			}
-
-			// Update to v1 SLSA provenance.
-			var ref, repository string
-			a := strings.Split(tt.provTriggerURI, "@")
-			if len(a) > 0 {
-				repository = a[0]
-			}
-			if len(a) > 1 {
-				ref = a[1]
-			}
-
-			prov1 := &v1.ProvenanceV1{
-				Predicate: slsa1.ProvenancePredicate{
-					BuildDefinition: slsa1.ProvenanceBuildDefinition{
-						ExternalParameters: map[string]interface{}{
-							"workflow": map[string]interface{}{
-								"ref":        ref,
-								"repository": repository,
-								"path":       "some/path",
-							},
-						},
-						ResolvedDependencies: []slsa1.ResourceDescriptor{
-							{
-								URI: tt.provMaterialsURI,
-							},
-						},
-					},
-				},
-			}
-
-			if tt.provMaterialsURI == "" {
-				prov1.Predicate.BuildDefinition.ResolvedDependencies = nil
-			}
-			err = verifySourceURI(prov1, tt.expectedSourceURI, tt.allowNoMaterialRef)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -386,75 +375,45 @@ func Test_verifySourceURI(t *testing.T) {
 func Test_verifyBuilderIDExactMatch(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		prov     *intoto.ProvenanceStatement
-		id       string
-		expected error
+		name       string
+		builderID  string
+		expectedID string
+		err        error
 	}{
 		{
-			name: "match no version",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID",
-					},
-				},
-			},
-			id: "some/builderID",
+			name:       "match no version",
+			builderID:  "some/builderID",
+			expectedID: "some/builderID",
 		},
 		{
-			name: "match with tag",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@v1.2.3",
-					},
-				},
-			},
-			id: "some/builderID@v1.2.3",
+			name:       "match with tag",
+			builderID:  "some/builderID@v1.2.3",
+			expectedID: "some/builderID@v1.2.3",
 		},
 		{
-			name: "same builderID mismatch version",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@v1.2.3",
-					},
-				},
-			},
-			id:       "some/builderID@v1.2.4",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "same builderID mismatch version",
+			builderID:  "some/builderID@v1.2.3",
+			expectedID: "some/builderID@v1.2.4",
+			err:        serrors.ErrorMismatchBuilderID,
 			// TODO(#189): this should fail.
 		},
 		{
-			name: "mismatch builderID same version",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "tome/builderID@v1.2.3",
-					},
-				},
-			},
-			id:       "some/builderID@v1.2.3",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "mismatch builderID same version",
+			builderID:  "tome/builderID@v1.2.3",
+			expectedID: "some/builderID@v1.2.3",
+			err:        serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:     "empty prov builderID",
-			prov:     &intoto.ProvenanceStatement{},
-			id:       "some/builderID",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "empty prov builderID",
+			builderID:  "",
+			expectedID: "some/builderID",
+			err:        serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name: "empty expected builderID",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "tome/builderID@v1.2.3",
-					},
-				},
-			},
-			id:       "",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "empty expected builderID",
+			builderID:  "tome/builderID@v1.2.3",
+			expectedID: "",
+			err:        serrors.ErrorMismatchBuilderID,
 		},
 	}
 	for _, tt := range tests {
@@ -462,29 +421,13 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov := &v02.ProvenanceV02{
-				ProvenanceStatement: tt.prov,
+			prov := &testProvenance{
+				builderID: tt.builderID,
 			}
 
-			err := verifyBuilderIDExactMatch(prov, tt.id)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-
-			// Update to v1 SLSA provenance.
-			prov1 := &v1.ProvenanceV1{
-				Predicate: slsa1.ProvenancePredicate{
-					RunDetails: slsa1.ProvenanceRunDetails{
-						Builder: slsa1.Builder{
-							ID: tt.prov.Predicate.Builder.ID,
-						},
-					},
-				},
-			}
-
-			err = verifyBuilderIDExactMatch(prov1, tt.id)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+			err := verifyBuilderIDExactMatch(prov, tt.expectedID)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
 			}
 		})
 	}

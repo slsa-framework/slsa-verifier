@@ -16,6 +16,8 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	// Load provenance types.
@@ -43,7 +45,7 @@ func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 // Verify Builder ID in provenance statement.
 // This function does an exact comparison, and expects expectedBuilderID to be the full
 // `name@refs/tags/<name>`.
-func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, expectedBuilderID string) error {
+func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) error {
 	id, err := prov.BuilderID()
 	if err != nil {
 		return err
@@ -62,7 +64,7 @@ func verifyBuilderIDExactMatch(prov slsaprovenance.Provenance, expectedBuilderID
 // Verify Builder ID in provenance statement.
 // This function verifies the names match. If the expected builder ID contains a version,
 // it also verifies the versions match.
-func verifyBuilderIDLooseMatch(prov slsaprovenance.Provenance, expectedBuilderID string) error {
+func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) error {
 	id, err := prov.BuilderID()
 	if err != nil {
 		return err
@@ -91,7 +93,7 @@ func asURI(s string) string {
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov slsaprovenance.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
+func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
 	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -172,7 +174,7 @@ func sourceFromURI(uri string, allowNoRef bool) (string, error) {
 }
 
 // Verify Subject Digest from the provenance statement.
-func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
+func verifyDigest(prov iface.Provenance, expectedHash string) error {
 	subjects, err := prov.Subjects()
 	if err != nil {
 		return err
@@ -302,7 +304,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	return VerifyProvenanceCommonOptions(prov, provenanceOpts, byob)
 }
 
-func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpts *options.ProvenanceOpts,
+func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *options.ProvenanceOpts,
 	allowNoMaterialRef bool,
 ) error {
 	// Verify source.
@@ -346,7 +348,7 @@ func VerifyProvenanceCommonOptions(prov slsaprovenance.Provenance, provenanceOpt
 	return nil
 }
 
-func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]string) error {
+func VerifyWorkflowInputs(prov iface.Provenance, inputs map[string]string) error {
 	pyldInputs, err := prov.GetWorkflowInputs()
 	if err != nil {
 		return err
@@ -354,7 +356,7 @@ func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]stri
 
 	// Verify all inputs.
 	for k, v := range inputs {
-		value, err := slsaprovenance.GetAsString(pyldInputs, k)
+		value, err := common.GetAsString(pyldInputs, k)
 		if err != nil {
 			return fmt.Errorf("%w: cannot retrieve value of '%s'", serrors.ErrorMismatchWorkflowInputs, k)
 		}
@@ -368,7 +370,7 @@ func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]stri
 	return nil
 }
 
-func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
+func VerifyBranch(prov iface.Provenance, expectedBranch string) error {
 	branch, err := prov.GetBranch()
 	if err != nil {
 		return err
@@ -382,7 +384,7 @@ func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
 	return nil
 }
 
-func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
+func VerifyTag(prov iface.Provenance, expectedTag string) error {
 	tag, err := prov.GetTag()
 	if err != nil {
 		return err
@@ -396,7 +398,7 @@ func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	return nil
 }
 
-func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) error {
+func VerifyVersionedTag(prov iface.Provenance, expectedTag string) error {
 	// Retrieve, validate and canonicalize the provenance tag.
 	// Note: prerelease is validated as part of patch validation
 	// and must be equal. Build is discarded as per https://semver.org/:

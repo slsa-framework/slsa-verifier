@@ -10,8 +10,6 @@ import (
 	intotov02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	intotov1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-	slsav02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
-	slsav10 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
 func Test_verifySubjectDigestName(t *testing.T) {
@@ -65,24 +63,10 @@ func Test_verifySubjectDigestName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{
-					StatementHeader: intoto.StatementHeader{
-						Subject: tt.subject,
-					},
-				},
+			prov := &testProvenance{
+				subjects: tt.subject,
 			}
-			err := verifySubjectDigestName(prov02, tt.digestName)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			prov1 := &slsav10.ProvenanceV1{
-				StatementHeader: intoto.StatementHeader{
-					Subject: tt.subject,
-				},
-			}
-			err = verifySubjectDigestName(prov1, tt.digestName)
+			err := verifySubjectDigestName(prov, tt.digestName)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -124,34 +108,10 @@ func Test_verifyBuildConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{
-					Predicate: intotov02.ProvenancePredicate{
-						Invocation: intotov02.ProvenanceInvocation{
-							ConfigSource: intotov02.ConfigSource{
-								EntryPoint: tt.path,
-							},
-						},
-					},
-				},
+			prov := &testProvenance{
+				buildTriggerPath: tt.path,
 			}
-			err := verifyBuildConfig(prov02, &tt.workflow)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			prov1 := &slsav10.ProvenanceV1{
-				Predicate: intotov1.ProvenancePredicate{
-					BuildDefinition: intotov1.ProvenanceBuildDefinition{
-						ExternalParameters: map[string]interface{}{
-							"workflow": map[string]string{
-								"path": tt.path,
-							},
-						},
-					},
-				},
-			}
-			err = verifyBuildConfig(prov1, &tt.workflow)
+			err := verifyBuildConfig(prov, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -187,28 +147,10 @@ func Test_verifyResolvedDependencies(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{
-					Predicate: intotov02.ProvenancePredicate{},
-				},
+			prov := &testProvenance{
+				noResolvedDeps: tt.n,
 			}
-			if tt.n > 0 {
-				prov02.Predicate.Materials = make([]intotocommon.ProvenanceMaterial, tt.n)
-			}
-			err := verifyResolvedDependencies(prov02)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			prov1 := &slsav10.ProvenanceV1{
-				Predicate: intotov1.ProvenancePredicate{
-					BuildDefinition: intotov1.ProvenanceBuildDefinition{},
-				},
-			}
-			if tt.n > 0 {
-				prov1.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov1.ResourceDescriptor, tt.n)
-			}
-			err = verifyResolvedDependencies(prov1)
+			err := verifyResolvedDependencies(prov)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -297,44 +239,19 @@ func Test_verifyCommonMetadata(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			metadata := tt.metadata || tt.invocationID != nil || tt.startTime != nil ||
-				tt.endTime != nil
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{
-					Predicate: intotov02.ProvenancePredicate{},
-				},
-			}
-			if metadata {
-				prov02.Predicate.Metadata = &intotov02.ProvenanceMetadata{}
-			}
+
+			prov := &testProvenance{}
 			if tt.invocationID != nil {
-				prov02.Predicate.Metadata.BuildInvocationID = *tt.invocationID
+				prov.buildInvocationID = *tt.invocationID
 			}
 			if tt.startTime != nil {
-				prov02.Predicate.Metadata.BuildStartedOn = tt.startTime
+				prov.buildStartTime = tt.startTime
 			}
 			if tt.endTime != nil {
-				prov02.Predicate.Metadata.BuildFinishedOn = tt.endTime
+				prov.buildFinishTime = tt.endTime
 			}
 
-			err := verifyCommonMetadata(prov02, &tt.workflow)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			prov1 := &slsav10.ProvenanceV1{}
-
-			if tt.invocationID != nil {
-				prov1.Predicate.RunDetails.BuildMetadata.InvocationID = *tt.invocationID
-			}
-			if tt.startTime != nil {
-				prov1.Predicate.RunDetails.BuildMetadata.StartedOn = tt.startTime
-			}
-			if tt.endTime != nil {
-				prov1.Predicate.RunDetails.BuildMetadata.FinishedOn = tt.endTime
-			}
-
-			err = verifyCommonMetadata(prov1, &tt.workflow)
+			err := verifyCommonMetadata(prov, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -387,11 +304,9 @@ func Test_verifyV02Metadata(t *testing.T) {
 			metadata := tt.metadata || tt.reproducible || tt.parameters ||
 				tt.environment || tt.materials
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{},
-			}
+			prov02 := &testProvenanceV02{}
 			if metadata {
-				prov02.Predicate.Metadata = &intotov02.ProvenanceMetadata{
+				prov02.predicate.Metadata = &intotov02.ProvenanceMetadata{
 					Completeness: intotov02.ProvenanceComplete{
 						Parameters:  tt.parameters,
 						Materials:   tt.materials,
@@ -442,11 +357,9 @@ func Test_verifyV02Parameters(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{},
-			}
+			prov02 := &testProvenanceV02{}
 			if tt.present || len(tt.value) > 0 {
-				prov02.Predicate.Invocation.Parameters = tt.value
+				prov02.predicate.Invocation.Parameters = tt.value
 			}
 			err := verifyV02Parameters(prov02)
 			if !errCmp(err, tt.err) {
@@ -490,11 +403,9 @@ func Test_verifyV02BuildConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{},
-			}
+			prov02 := &testProvenanceV02{}
 			if tt.present || len(tt.value) > 0 {
-				prov02.Predicate.BuildConfig = tt.value
+				prov02.predicate.BuildConfig = tt.value
 			}
 			err := verifyV02BuildConfig(prov02)
 			if !errCmp(err, tt.err) {
@@ -617,47 +528,40 @@ func Test_verifyMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			metadata := tt.metadata || tt.invocationID != nil || tt.startTime != nil ||
-				tt.endTime != nil || tt.reproducible || tt.parameters ||
-				tt.environment || tt.materials
+			prov02 := &testProvenanceV02{}
+			if tt.invocationID != nil {
+				prov02.buildInvocationID = *tt.invocationID
+			}
+			if tt.startTime != nil {
+				prov02.buildStartTime = tt.startTime
+			}
+			if tt.endTime != nil {
+				prov02.buildFinishTime = tt.endTime
+			}
 
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{},
+			prov02.predicate.Metadata = &intotov02.ProvenanceMetadata{
+				Completeness: intotov02.ProvenanceComplete{
+					Parameters:  tt.parameters,
+					Materials:   tt.materials,
+					Environment: tt.environment,
+				},
+				Reproducible: tt.reproducible,
 			}
-			if metadata {
-				prov02.Predicate.Metadata = &intotov02.ProvenanceMetadata{
-					Completeness: intotov02.ProvenanceComplete{
-						Parameters:  tt.parameters,
-						Materials:   tt.materials,
-						Environment: tt.environment,
-					},
-					Reproducible: tt.reproducible,
-				}
-				if tt.invocationID != nil {
-					prov02.Predicate.Metadata.BuildInvocationID = *tt.invocationID
-				}
-				if tt.startTime != nil {
-					prov02.Predicate.Metadata.BuildStartedOn = tt.startTime
-				}
-				if tt.endTime != nil {
-					prov02.Predicate.Metadata.BuildFinishedOn = tt.endTime
-				}
-			}
+
 			errV02 := verifyMetadata(prov02, &tt.workflow)
 			if !errCmp(errV02, tt.errV02) {
 				t.Errorf(cmp.Diff(errV02, tt.errV02))
 			}
 
-			prov1 := &slsav10.ProvenanceV1{}
-
+			prov1 := &testProvenanceV1{}
 			if tt.invocationID != nil {
-				prov1.Predicate.RunDetails.BuildMetadata.InvocationID = *tt.invocationID
+				prov1.buildInvocationID = *tt.invocationID
 			}
 			if tt.startTime != nil {
-				prov1.Predicate.RunDetails.BuildMetadata.StartedOn = tt.startTime
+				prov1.buildStartTime = tt.startTime
 			}
 			if tt.endTime != nil {
-				prov1.Predicate.RunDetails.BuildMetadata.FinishedOn = tt.endTime
+				prov1.buildFinishTime = tt.endTime
 			}
 
 			errV01 := verifyMetadata(prov1, &tt.workflow)
@@ -1039,29 +943,10 @@ func Test_verifySystemParameters(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{
-					Predicate: intotov02.ProvenancePredicate{
-						Invocation: intotov02.ProvenanceInvocation{
-							Environment: tt.environment,
-						},
-					},
-				},
+			prov := &testProvenance{
+				systemParameters: tt.environment,
 			}
-
-			err := verifySystemParameters(prov02, &tt.workflow)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			prov1 := &slsav10.ProvenanceV1{
-				Predicate: intotov1.ProvenancePredicate{
-					BuildDefinition: intotov1.ProvenanceBuildDefinition{
-						InternalParameters: tt.environment,
-					},
-				},
-			}
-			err = verifySystemParameters(prov1, &tt.workflow)
+			err := verifySystemParameters(prov, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -1179,24 +1064,19 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			prov02 := &slsav02.ProvenanceV02{
-				&intoto.ProvenanceStatement{
-					StatementHeader: intoto.StatementHeader{
-						Subject: tt.subject,
-					},
-					Predicate: intotov02.ProvenancePredicate{
-						Invocation: intotov02.ProvenanceInvocation{
-							Environment: tt.environment,
-							ConfigSource: intotov02.ConfigSource{
-								EntryPoint: tt.workflowTriggerPath,
-							},
+			prov02 := &testProvenanceV02{
+				testProvenance: testProvenance{
+					subjects:       tt.subject,
+					noResolvedDeps: tt.numberResolvedDependencies,
+				},
+				predicate: intotov02.ProvenancePredicate{
+					Invocation: intotov02.ProvenanceInvocation{
+						Environment: tt.environment,
+						ConfigSource: intotov02.ConfigSource{
+							EntryPoint: tt.workflowTriggerPath,
 						},
 					},
 				},
-			}
-
-			if tt.numberResolvedDependencies > 0 {
-				prov02.Predicate.Materials = make([]intotocommon.ProvenanceMaterial, tt.numberResolvedDependencies)
 			}
 
 			err := verifyProvenanceMatchesCertificate(prov02, &tt.workflow)
@@ -1204,11 +1084,12 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 
-			prov1 := &slsav10.ProvenanceV1{
-				StatementHeader: intoto.StatementHeader{
-					Subject: tt.subject,
+			prov1 := &testProvenanceV1{
+				testProvenance: testProvenance{
+					subjects:       tt.subject,
+					noResolvedDeps: tt.numberResolvedDependencies,
 				},
-				Predicate: intotov1.ProvenancePredicate{
+				predicate: intotov1.ProvenancePredicate{
 					BuildDefinition: intotov1.ProvenanceBuildDefinition{
 						InternalParameters: tt.environment,
 						ExternalParameters: map[string]interface{}{
@@ -1219,9 +1100,6 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 						},
 					},
 				},
-			}
-			if tt.numberResolvedDependencies > 0 {
-				prov1.Predicate.BuildDefinition.ResolvedDependencies = make([]intotov1.ResourceDescriptor, tt.numberResolvedDependencies)
 			}
 			err = verifyProvenanceMatchesCertificate(prov1, &tt.workflow)
 			if !errCmp(err, tt.err) {

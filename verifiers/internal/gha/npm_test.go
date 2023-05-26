@@ -12,7 +12,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 )
 
 func Test_verifyName(t *testing.T) {
@@ -671,7 +671,7 @@ func Test_verifyIntotoTypes(t *testing.T) {
 	}{
 		{
 			name:          "prov correct",
-			predicateType: slsaprovenance.ProvenanceV02Type,
+			predicateType: common.ProvenanceV02Type,
 			payloadType:   intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
@@ -682,7 +682,7 @@ func Test_verifyIntotoTypes(t *testing.T) {
 		},
 		{
 			name:          "prov mismatch payload type",
-			predicateType: slsaprovenance.ProvenanceV02Type,
+			predicateType: common.ProvenanceV02Type,
 			payloadType:   intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
@@ -694,7 +694,7 @@ func Test_verifyIntotoTypes(t *testing.T) {
 		},
 		{
 			name:          "prov mismatch predicate type",
-			predicateType: slsaprovenance.ProvenanceV02Type + "a",
+			predicateType: common.ProvenanceV02Type + "a",
 			payloadType:   intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
