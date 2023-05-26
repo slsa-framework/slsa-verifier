@@ -22,6 +22,7 @@ var (
 	legacyGoBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
 	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
 
+	// genericGHABuildType is used by some tests.
 	// TODO: Update tests to use a real buildType
 	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
 )

@@ -26,15 +26,25 @@ node_modules/.installed: package.json package-lock.json
 
 .PHONY: unit-test
 unit-test: ## Runs all unit tests.
-	go mod vendor
-	# NOTE: go test builds packages even if there are no tests.
-	go test -mod=vendor -v ./...
+	@ # NOTE: go test builds packages even if there are no tests.
+	@set -e;\
+		go mod vendor; \
+		extraargs=""; \
+		if [ "$(OUTPUT_FORMAT)" == "github" ]; then \
+			extraargs="-v"; \
+		fi; \
+		go test -mod=vendor $$extraeargs ./...
 
 .PHONY: regression-test
 regression-test: ## Runs all regression and unit tests.
-	go mod vendor
-	# NOTE: go test builds packages even if there are no tests.
-	go test -mod=vendor -tags=regression -v -timeout=25m ./...
+	@ # NOTE: go test builds packages even if there are no tests.
+	@set -e;\
+		go mod vendor; \
+		extraargs=""; \
+		if [ "$(OUTPUT_FORMAT)" == "github" ]; then \
+			extraargs="-v"; \
+		fi; \
+		go test -mod=vendor -tags=regression $$extraeargs -timeout=25m ./...
 
 ## Tools
 #####################################################################

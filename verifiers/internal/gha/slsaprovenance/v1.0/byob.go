@@ -67,7 +67,10 @@ func getValidateKey(m map[string]interface{}, key string) (string, error) {
 	return vv, nil
 }
 
-func (p *BYOBProvenanceV1) triggerInfo() (string, string, string, error) {
+// TODO(#613): Support for generators.
+//
+//nolint:unused
+func (p *BYOBProvenanceV1) generatorTriggerInfo() (string, string, string, error) {
 	// See https://github.com/slsa-framework/github-actions-buildtypes/blob/main/workflow/v1/example.json#L16-L19.
 	extParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
 	if !ok {
@@ -94,6 +97,43 @@ func (p *BYOBProvenanceV1) triggerInfo() (string, string, string, error) {
 		return "", "", "", err
 	}
 	return repository, ref, path, nil
+}
+
+func (p *BYOBProvenanceV1) builderTriggerInfo() (string, string, string, error) {
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	if !ok {
+		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+	}
+
+	if _, exists := sysParams["GITHUB_WORKFLOW_REF"]; !exists {
+		return "", "", "", fmt.Errorf("%w: GITHUB_WORKFLOW_REF", serrors.ErrorNotPresent)
+	}
+
+	workflowRef, err := common.GetAsString(sysParams, "GITHUB_WORKFLOW_REF")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	parts := strings.Split(workflowRef, "@")
+	if len(parts) != 2 {
+		return "", "", "", fmt.Errorf("%w: ref: %s", serrors.ErrorInvalidFormat, workflowRef)
+	}
+	repoAndPath := parts[0]
+	ref := parts[1]
+
+	parts = strings.Split(repoAndPath, "/")
+	if len(parts) < 2 {
+		return "", "", "", fmt.Errorf("%w: rep and path: %s", serrors.ErrorInvalidFormat, repoAndPath)
+	}
+
+	repo := strings.Join(parts[:2], "/")
+	path := strings.Join(parts[2:], "/")
+	return fmt.Sprintf("git+https://github.com/%s", repo), ref, path, nil
+}
+
+func (p *BYOBProvenanceV1) triggerInfo() (string, string, string, error) {
+	// TODO(#613): Support for generators.
+	return p.builderTriggerInfo()
 }
 
 // TriggerURI implements Provenance.TriggerURI.

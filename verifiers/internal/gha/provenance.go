@@ -19,10 +19,6 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
-
-	// Load provenance types.
-
-	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
 // SignedAttestation contains a signed DSSE envelope
@@ -279,6 +275,19 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	return nil
 }
 
+func isValidDelegatorBuilderID(prov iface.Provenance) error {
+	// Verify the TRW was referenced at a proper tag by the user.
+	id, err := prov.BuilderID()
+	if err != nil {
+		return err
+	}
+	parts := strings.Split(id, "@")
+	if len(parts) != 2 {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
+	}
+	return utils.IsValidBuilderTag(parts[1], false)
+}
+
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
@@ -287,6 +296,9 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 
 	// Verify Builder ID.
 	if byob {
+		if err := isValidDelegatorBuilderID(prov); err != nil {
+			return err
+		}
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err

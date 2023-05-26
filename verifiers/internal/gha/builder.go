@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/mod/semver"
-
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -170,38 +168,10 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 			return nil
 		}
 
-		// Extract the tag.
-		pin, err := utils.TagFromGitHubRef(ref)
-		if err != nil {
-			return err
-		}
-
-		// Tags on trusted repositories should be a valid semver with version
-		// core including all three parts and no build identifier.
-		versionCore := strings.Split(pin, "-")[0]
-		if !semver.IsValid(pin) ||
-			len(strings.Split(versionCore, ".")) != 3 ||
-			semver.Build(pin) != "" {
-			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
-		}
-
-		return nil
+		return utils.IsValidBuilderTag(ref, true)
 	}
 
-	// Extract the pin.
-	pin, err := utils.TagFromGitHubRef(ref)
-	if err != nil {
-		return err
-	}
-
-	// Valid semver of the form vX.Y.Z with no metadata.
-	if !(semver.IsValid(pin) &&
-		len(strings.Split(pin, ".")) == 3 &&
-		semver.Prerelease(pin) == "" &&
-		semver.Build(pin) == "") {
-		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
-	}
-	return nil
+	return utils.IsValidBuilderTag(ref, false)
 }
 
 func getExtension(cert *x509.Certificate, oid asn1.ObjectIdentifier, encoded bool) (string, error) {
@@ -454,6 +424,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
 	}
 	// Remove the starting '/'.
+	// NOTE: The Path has the following structure: repo/name/path/to/workflow.yml@ref.
 	subjectWorkflowRef := cert.URIs[0].Path[1:]
 
 	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string
