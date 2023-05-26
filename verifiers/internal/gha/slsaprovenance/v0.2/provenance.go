@@ -47,6 +47,7 @@ func New(payload []byte) (iface.Provenance, error) {
 		a.Predicate.BuildType == npmCLIBuildType ||
 		a.Predicate.BuildType == legacyBuilderBuildType ||
 		a.Predicate.BuildType == legacyGoBuilderBuildType ||
+		a.Predicate.BuildType == containerBasedBuildType ||
 		a.Predicate.BuildType == genericGHABuildType:
 		return &GenericProvenanceV02{
 			prov: a,

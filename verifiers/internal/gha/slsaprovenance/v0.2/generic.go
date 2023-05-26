@@ -21,9 +21,10 @@ var (
 	// Legacy build types.
 	legacyGoBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
 	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
-	// FIXME: fix tests to not include this build type
+
+	containerBasedBuildType = "https://slsa.dev/container-based-build/v0.1?draft"
+	// genericGHABuildType is used by some old container-based builder provenance.
 	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
-	// TODO: docker-based
 )
 
 // GenericProvenanceV02 represents SLSA v0.2 provenance for the
