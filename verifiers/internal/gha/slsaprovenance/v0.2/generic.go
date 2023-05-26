@@ -22,8 +22,7 @@ var (
 	legacyGoBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
 	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
 
-	containerBasedBuildType = "https://slsa.dev/container-based-build/v0.1?draft"
-	// genericGHABuildType is used by some old container-based builder provenance.
+	// TODO: Update tests to use a real buildType
 	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
 )
 

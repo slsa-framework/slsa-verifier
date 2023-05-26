@@ -12,11 +12,15 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 )
 
-// byobBuildType is the base build type for BYOB delegated builders.
 var (
+	// byobBuildType is the base build type for BYOB delegated builders.
 	byobBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
 
-	// FIXME: fix tests to not include this build type
+	// containerBasedBuildType is the build type for the container-based builder and is based on BYOB.
+	containerBasedBuildType = "https://slsa.dev/container-based-build/v0.1?draft"
+
+	// genericGHABuildType is used by some tests.
+	// TODO: Update tests to use a real buildType
 	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
 )
 
