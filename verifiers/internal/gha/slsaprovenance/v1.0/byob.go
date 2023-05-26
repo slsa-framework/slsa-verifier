@@ -52,6 +52,9 @@ func (p *BYOBProvenanceV1) SourceURI() (string, error) {
 	return uri, nil
 }
 
+// TODO(#613): Support for generators.
+//
+//nolint:unused
 func getValidateKey(m map[string]interface{}, key string) (string, error) {
 	v, ok := m[key]
 	if !ok {
