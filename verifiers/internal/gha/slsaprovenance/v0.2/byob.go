@@ -20,7 +20,7 @@ type BYOBProvenanceV02 struct {
 	prov *intotoAttestation
 }
 
-// Predicate implements ProvenanceV02.Predicate
+// Predicate implements ProvenanceV02.Predicate.
 func (p *BYOBProvenanceV02) Predicate() slsa02.ProvenancePredicate {
 	return p.prov.Predicate
 }

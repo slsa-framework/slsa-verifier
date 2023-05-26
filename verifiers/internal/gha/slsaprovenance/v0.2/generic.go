@@ -23,7 +23,7 @@ var (
 	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
 
 	// genericGHABuildType is used by some tests.
-	// TODO: Update tests to use a real buildType
+	// TODO: Update tests to use a real buildType.
 	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
 )
 
@@ -33,7 +33,7 @@ type GenericProvenanceV02 struct {
 	prov *intotoAttestation
 }
 
-// Predicate implements ProvenanceV02.Predicate
+// Predicate implements ProvenanceV02.Predicate.
 func (p *GenericProvenanceV02) Predicate() slsa02.ProvenancePredicate {
 	return p.prov.Predicate
 }

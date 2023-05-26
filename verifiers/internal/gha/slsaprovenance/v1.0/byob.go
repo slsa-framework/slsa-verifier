@@ -20,7 +20,7 @@ var (
 	containerBasedBuildType = "https://slsa.dev/container-based-build/v0.1?draft"
 
 	// genericGHABuildType is used by some tests.
-	// TODO: Update tests to use a real buildType
+	// TODO: Update tests to use a real buildType.
 	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
 )
 
@@ -29,7 +29,7 @@ type BYOBProvenanceV1 struct {
 	prov *intotoAttestation
 }
 
-// Predicate implements ProvenanceV02.Predicate
+// Predicate implements ProvenanceV02.Predicate.
 func (p *BYOBProvenanceV1) Predicate() slsa1.ProvenancePredicate {
 	return p.prov.Predicate
 }
