@@ -8,7 +8,6 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	intotocommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	intotov02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
-	intotov1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
@@ -45,7 +44,7 @@ func Test_verifySubjectDigestName(t *testing.T) {
 		{
 			name:       "invalid no subjects",
 			digestName: "sha256",
-			err:        serrors.ErrorInvalidDssePayload,
+			err:        serrors.ErrorNonVerifiableClaim,
 		},
 		{
 			name:       "wrong digest",
@@ -1002,6 +1001,11 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 		},
 		{
 			name: "unknown field",
+			subject: []intoto.Subject{
+				{
+					Digest: intotocommon.DigestSet{"sha512": "abcd"},
+				},
+			},
 			environment: map[string]interface{}{
 				"SOMETHING": "workflow_dispatch",
 			},
@@ -1064,44 +1068,14 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			prov02 := &testProvenanceV02{
-				testProvenance: testProvenance{
-					subjects:       tt.subject,
-					noResolvedDeps: tt.numberResolvedDependencies,
-				},
-				predicate: intotov02.ProvenancePredicate{
-					Invocation: intotov02.ProvenanceInvocation{
-						Environment: tt.environment,
-						ConfigSource: intotov02.ConfigSource{
-							EntryPoint: tt.workflowTriggerPath,
-						},
-					},
-				},
+			prov := &testProvenance{
+				subjects:         tt.subject,
+				noResolvedDeps:   tt.numberResolvedDependencies,
+				buildTriggerPath: tt.workflowTriggerPath,
+				systemParameters: tt.environment,
 			}
 
-			err := verifyProvenanceMatchesCertificate(prov02, &tt.workflow)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			prov1 := &testProvenanceV1{
-				testProvenance: testProvenance{
-					subjects:       tt.subject,
-					noResolvedDeps: tt.numberResolvedDependencies,
-				},
-				predicate: intotov1.ProvenancePredicate{
-					BuildDefinition: intotov1.ProvenanceBuildDefinition{
-						InternalParameters: tt.environment,
-						ExternalParameters: map[string]interface{}{
-							// TODO(#566): verify fields for v1.0 provenance.
-							"workflow": map[string]string{
-								"path": tt.workflowTriggerPath,
-							},
-						},
-					},
-				},
-			}
-			err = verifyProvenanceMatchesCertificate(prov1, &tt.workflow)
+			err := verifyProvenanceMatchesCertificate(prov, &tt.workflow)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}

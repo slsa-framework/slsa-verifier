@@ -246,7 +246,7 @@ func Test_verifySourceURI(t *testing.T) {
 			name:              "empty materials",
 			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
 			expectedSourceURI: "git+https://github.com/some/repo",
-			err:               serrors.ErrorInvalidDssePayload,
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
 			name:              "empty configSource",
@@ -472,7 +472,6 @@ func Test_VerifyBranch(t *testing.T) {
 			branch:   "main",
 			expected: serrors.ErrorMismatchBranch,
 		},
-
 		{
 			name:   "ref main",
 			path:   "./testdata/dsse-main-ref-v1.intoto.jsonl",

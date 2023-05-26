@@ -39,7 +39,7 @@ func (p *BYOBProvenanceV1) BuilderID() (string, error) {
 func (p *BYOBProvenanceV1) SourceURI() (string, error) {
 	// Use resolvedDependencies.
 	if len(p.prov.Predicate.BuildDefinition.ResolvedDependencies) == 0 {
-		return "", fmt.Errorf("%w: empty resovedDependencies", serrors.ErrorInvalidDssePayload)
+		return "", fmt.Errorf("%w: empty resolvedDependencies", serrors.ErrorInvalidDssePayload)
 	}
 	uri := p.prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI
 	if uri == "" {
@@ -118,7 +118,12 @@ func (p *BYOBProvenanceV1) GetBranch() (string, error) {
 	// Returns the branch from the source URI.
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-		return "", err
+		// Get the value from the internalParameters if there is no source URI.
+		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+		}
+		return common.GetBranch(sysParams, slsa1.PredicateSLSAProvenance)
 	}
 
 	parts := strings.Split(sourceURI, "@")
@@ -134,7 +139,12 @@ func (p *BYOBProvenanceV1) GetTag() (string, error) {
 	// Returns the tag from the source materials.
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-		return "", err
+		// Get the value from the internalParameters if there is no source URI.
+		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+		}
+		return common.GetTag(sysParams, slsa1.PredicateSLSAProvenance)
 	}
 
 	parts := strings.Split(sourceURI, "@")
