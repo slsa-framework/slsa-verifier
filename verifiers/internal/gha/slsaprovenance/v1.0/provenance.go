@@ -46,6 +46,30 @@ func (prov *ProvenanceV1) SourceURI() (string, error) {
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
+	// If there is more than one resolved dependency, search through to find one
+	// with a "source" annotation.
+	if len(prov.Predicate.BuildDefinition.ResolvedDependencies) > 1 {
+		for i, dep := range prov.Predicate.BuildDefinition.ResolvedDependencies {
+			sourceAnnotation, ok := dep.Annotations["source"]
+			if !ok {
+				// If there is no source annotation, continue to next resolved dependency.
+				continue
+			}
+			vv, ok := sourceAnnotation.(string)
+			if !ok {
+				// This is an error, we expect a source annotation to be a string.
+				return "", fmt.Errorf(
+					"%w: expected resolvedDependency with source annotation to have a string type",
+					serrors.ErrorInvalidDssePayload)
+			}
+			if vv == "true" {
+				// This is a source annotation.
+				return prov.Predicate.BuildDefinition.ResolvedDependencies[i].URI, nil
+			}
+		}
+		// We should have found a source dependency by now.
+		return "", fmt.Errorf("%w: multiple resovedDependencies, and no source annotation", serrors.ErrorInvalidDssePayload)
+	}
 	return uri, nil
 }
 
