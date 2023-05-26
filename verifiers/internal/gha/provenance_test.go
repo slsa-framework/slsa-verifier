@@ -382,6 +382,101 @@ func Test_verifySourceURI(t *testing.T) {
 	}
 }
 
+func Test_isValidDelegatorBuilderID(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		prov *intoto.ProvenanceStatement
+		err  error
+	}{
+		{
+			name: "no @",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
+						ID: "some/builderID",
+					},
+				},
+			},
+			err: serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name: "invalid ref",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
+						ID: "some/builderID@v1.2.3",
+					},
+				},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "invalid ref not tag",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
+						ID: "some/builderID@refs/head/v1.2.3",
+					},
+				},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "invalid ref not full semver",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
+						ID: "some/builderID@refs/heads/v1.2",
+					},
+				},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid builder",
+			prov: &intoto.ProvenanceStatement{
+				Predicate: slsa02.ProvenancePredicate{
+					Builder: slsacommon.ProvenanceBuilder{
+						ID: "some/builderID@refs/tags/v1.2.3",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			prov := &v02.ProvenanceV02{
+				ProvenanceStatement: tt.prov,
+			}
+
+			err := isValidDelegatorBuilderID(prov)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+
+			// Update to v1 SLSA provenance.
+			prov1 := &v1.ProvenanceV1{
+				Predicate: slsa1.ProvenancePredicate{
+					RunDetails: slsa1.ProvenanceRunDetails{
+						Builder: slsa1.Builder{
+							ID: tt.prov.Predicate.Builder.ID,
+						},
+					},
+				},
+			}
+
+			err = isValidDelegatorBuilderID(prov1)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
 func Test_verifyBuilderIDExactMatch(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
