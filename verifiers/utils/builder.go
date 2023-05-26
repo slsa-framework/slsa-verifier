@@ -153,10 +153,10 @@ func IsValidBuilderTag(ref string, testing bool) error {
 	}
 
 	// Valid semver of the form vX.Y.Z with no metadata.
-	if !(semver.IsValid(pin) &&
-		len(strings.Split(pin, ".")) == 3 &&
-		semver.Prerelease(pin) == "" &&
-		semver.Build(pin) == "") {
+	if !semver.IsValid(pin) ||
+		len(strings.Split(pin, ".")) != 3 ||
+		semver.Prerelease(pin) != "" ||
+		semver.Build(pin) != "" {
 		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
 	}
 	return nil
