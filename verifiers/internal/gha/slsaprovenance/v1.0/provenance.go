@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -38,15 +39,24 @@ func (prov *ProvenanceV1) BuilderID() (string, error) {
 }
 
 func (prov *ProvenanceV1) SourceURI() (string, error) {
-	// Use resolvedDependencies.
-	if len(prov.Predicate.BuildDefinition.ResolvedDependencies) == 0 {
-		return "", fmt.Errorf("%w: empty resovedDependencies", serrors.ErrorInvalidDssePayload)
+	// Use externalParameters.
+	extParams, ok := prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
 	}
-	uri := prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI
-	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
+	source, ok := extParams["source"]
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source not found")
 	}
-	return uri, nil
+	sourceBytes, err := json.Marshal(source)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", err, "marshalling external parameters source")
+	}
+	var sourceResource slsa1.ResourceDescriptor
+	if err := json.Unmarshal(sourceBytes, &sourceResource); err != nil {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source type")
+	}
+	return sourceResource.URI, nil
 }
 
 // TODO(#613): Support for generators.
