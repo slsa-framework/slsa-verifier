@@ -162,23 +162,13 @@ func (p *BYOBProvenanceV1) Subjects() ([]intoto.Subject, error) {
 
 // GetBranch implements Provenance.GetBranch.
 func (p *BYOBProvenanceV1) GetBranch() (string, error) {
-	// Returns the branch from the source URI.
-	sourceURI, err := p.SourceURI()
-	if err != nil {
-		// Get the value from the internalParameters if there is no source URI.
-		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
-		}
-		return common.GetBranch(sysParams, slsa1.PredicateSLSAProvenance)
+	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
 	}
 
-	parts := strings.Split(sourceURI, "@")
-	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/heads") {
-		return parts[1], nil
-	}
-
-	return "", nil
+	return common.GetBranch(sysParams, slsa1.PredicateSLSAProvenance)
 }
 
 // GetTag implements Provenance.GetTag.
