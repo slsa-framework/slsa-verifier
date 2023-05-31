@@ -12,6 +12,25 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
+var (
+	goBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator/go@v1"
+
+	genericGeneratorBuildType   = "https://github.com/slsa-framework/slsa-github-generator/generic@v1"
+	containerGeneratorBuildType = "https://github.com/slsa-framework/slsa-github-generator/container@v1"
+	npmCLIBuildType             = "https://github.com/npm/cli/gha@v1"
+
+	// Legacy build types.
+	legacyGoBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
+	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
+
+	// genericGHABuildType is used by some tests.
+	// TODO: Update tests to use a real buildType.
+	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
+
+	// byobBuildType is the base build type for BYOB delegated builders.
+	byobDelegatorBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
+)
+
 // intotoAttestation is a SLSA v0.2 in-toto attestation statement.
 type intotoAttestation struct {
 	intoto.StatementHeader
@@ -37,9 +56,10 @@ func New(payload []byte) (iface.Provenance, error) {
 	}
 
 	switch {
-	case a.Predicate.BuildType == byobBuildType:
-		return &BYOBProvenanceV02{
-			prov: a,
+	case a.Predicate.BuildType == byobDelegatorBuildType:
+		return &provenanceV02{
+			upperEnv: true,
+			prov:     a,
 		}, nil
 	case a.Predicate.BuildType == goBuilderBuildType ||
 		a.Predicate.BuildType == genericGeneratorBuildType ||
@@ -48,8 +68,9 @@ func New(payload []byte) (iface.Provenance, error) {
 		a.Predicate.BuildType == legacyBuilderBuildType ||
 		a.Predicate.BuildType == legacyGoBuilderBuildType ||
 		a.Predicate.BuildType == genericGHABuildType:
-		return &GenericProvenanceV02{
-			prov: a,
+		return &provenanceV02{
+			upperEnv: false,
+			prov:     a,
 		}, nil
 	default:
 		return nil, fmt.Errorf("%w: unknown buildType: %q", serrors.ErrorInvalidDssePayload, a.Predicate.BuildType)

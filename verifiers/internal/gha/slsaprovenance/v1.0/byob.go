@@ -168,7 +168,7 @@ func (p *BYOBProvenanceV1) GetBranch() (string, error) {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
 	}
 
-	return common.GetBranch(sysParams, slsa1.PredicateSLSAProvenance)
+	return common.GetBranch(sysParams, true)
 }
 
 // GetTag implements Provenance.GetTag.
@@ -181,7 +181,7 @@ func (p *BYOBProvenanceV1) GetTag() (string, error) {
 		if !ok {
 			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 		}
-		return common.GetTag(sysParams, slsa1.PredicateSLSAProvenance)
+		return common.GetTag(sysParams, true)
 	}
 
 	parts := strings.Split(sourceURI, "@")
@@ -198,7 +198,7 @@ func (p *BYOBProvenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
-	return common.GetWorkflowInputs(sysParams, slsa1.PredicateSLSAProvenance)
+	return common.GetWorkflowInputs(sysParams, true)
 }
 
 // GetBuildTriggerPath implements Provenance.GetBuildTriggerPath.

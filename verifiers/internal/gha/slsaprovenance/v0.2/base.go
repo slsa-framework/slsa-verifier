@@ -11,40 +11,25 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 )
 
-var (
-	goBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator/go@v1"
-
-	genericGeneratorBuildType   = "https://github.com/slsa-framework/slsa-github-generator/generic@v1"
-	containerGeneratorBuildType = "https://github.com/slsa-framework/slsa-github-generator/container@v1"
-	npmCLIBuildType             = "https://github.com/npm/cli/gha@v1"
-
-	// Legacy build types.
-	legacyGoBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
-	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
-
-	// genericGHABuildType is used by some tests.
-	// TODO: Update tests to use a real buildType.
-	genericGHABuildType = "https://github.com/Attestations/GitHubActionsWorkflow@v1"
-)
-
-// GenericProvenanceV02 represents SLSA v0.2 provenance for the
-// slsa-github-generator Go builder, generic generator, container generator, and npm CLI.
-type GenericProvenanceV02 struct {
-	prov *intotoAttestation
+// provenanceV02 implements basic logic for SLSA v0.2 provenance.
+type provenanceV02 struct {
+	// upperEnv specifies if environment fields are in uppercase.
+	upperEnv bool
+	prov     *intotoAttestation
 }
 
-// Predicate implements ProvenanceV02.Predicate.
-func (p *GenericProvenanceV02) Predicate() slsa02.ProvenancePredicate {
+// Predicate implements provenanceV02.Predicate.
+func (p *provenanceV02) Predicate() slsa02.ProvenancePredicate {
 	return p.prov.Predicate
 }
 
 // BuilderID implements Provenance.BuilderID.
-func (p *GenericProvenanceV02) BuilderID() (string, error) {
+func (p *provenanceV02) BuilderID() (string, error) {
 	return p.prov.Predicate.Builder.ID, nil
 }
 
 // SourceURI implements Provenance.SourceURI.
-func (p *GenericProvenanceV02) SourceURI() (string, error) {
+func (p *provenanceV02) SourceURI() (string, error) {
 	if len(p.prov.Predicate.Materials) == 0 {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
 	}
@@ -57,7 +42,7 @@ func (p *GenericProvenanceV02) SourceURI() (string, error) {
 }
 
 // TriggerURI implements Provenance.TriggerURI.
-func (p *GenericProvenanceV02) TriggerURI() (string, error) {
+func (p *provenanceV02) TriggerURI() (string, error) {
 	uri := p.prov.Predicate.Invocation.ConfigSource.URI
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
@@ -66,7 +51,7 @@ func (p *GenericProvenanceV02) TriggerURI() (string, error) {
 }
 
 // Subjects implements Provenance.Subjects.
-func (p *GenericProvenanceV02) Subjects() ([]intoto.Subject, error) {
+func (p *provenanceV02) Subjects() ([]intoto.Subject, error) {
 	subj := p.prov.Subject
 	if len(subj) == 0 {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
@@ -75,43 +60,44 @@ func (p *GenericProvenanceV02) Subjects() ([]intoto.Subject, error) {
 }
 
 // GetBranch implements Provenance.GetBranch.
-func (p *GenericProvenanceV02) GetBranch() (string, error) {
+func (p *provenanceV02) GetBranch() (string, error) {
+	// GetBranch gets the branch from the invocation parameters.
 	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
 
-	return common.GetBranch(environment, common.ProvenanceV02Type)
+	return common.GetBranch(environment, p.upperEnv)
 }
 
 // GetTag implements Provenance.GetTag.
-func (p *GenericProvenanceV02) GetTag() (string, error) {
+func (p *provenanceV02) GetTag() (string, error) {
 	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
 
-	return common.GetTag(environment, common.ProvenanceV02Type)
+	return common.GetTag(environment, p.upperEnv)
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.
-func (p *GenericProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
+func (p *provenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
 	// Verify it's a workflow_dispatch trigger.
 	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
 
-	return common.GetWorkflowInputs(environment, common.ProvenanceV02Type)
+	return common.GetWorkflowInputs(environment, p.upperEnv)
 }
 
 // GetBuildTriggerPath implements Provenance.GetBuildTriggerPath.
-func (p *GenericProvenanceV02) GetBuildTriggerPath() (string, error) {
+func (p *provenanceV02) GetBuildTriggerPath() (string, error) {
 	return p.prov.Predicate.Invocation.ConfigSource.EntryPoint, nil
 }
 
 // GetBuildInvocationID implements Provenance.GetBuildInvocationID.
-func (p *GenericProvenanceV02) GetBuildInvocationID() (string, error) {
+func (p *provenanceV02) GetBuildInvocationID() (string, error) {
 	if p.prov.Predicate.Metadata == nil {
 		return "", nil
 	}
@@ -119,7 +105,7 @@ func (p *GenericProvenanceV02) GetBuildInvocationID() (string, error) {
 }
 
 // GetBuildStartTime implements Provenance.GetBuildStartTime.
-func (p *GenericProvenanceV02) GetBuildStartTime() (*time.Time, error) {
+func (p *provenanceV02) GetBuildStartTime() (*time.Time, error) {
 	if p.prov.Predicate.Metadata == nil {
 		return nil, nil
 	}
@@ -127,7 +113,7 @@ func (p *GenericProvenanceV02) GetBuildStartTime() (*time.Time, error) {
 }
 
 // GetBuildFinishTime implements Provenance.GetBuildFinishTime.
-func (p *GenericProvenanceV02) GetBuildFinishTime() (*time.Time, error) {
+func (p *provenanceV02) GetBuildFinishTime() (*time.Time, error) {
 	if p.prov.Predicate.Metadata == nil {
 		return nil, nil
 	}
@@ -135,12 +121,12 @@ func (p *GenericProvenanceV02) GetBuildFinishTime() (*time.Time, error) {
 }
 
 // GetNumberResolvedDependencies implements Provenance.GetNumberResolvedDependencies.
-func (p *GenericProvenanceV02) GetNumberResolvedDependencies() (int, error) {
+func (p *provenanceV02) GetNumberResolvedDependencies() (int, error) {
 	return len(p.prov.Predicate.Materials), nil
 }
 
 // GetSystemParameters implements Provenance.GetSystemParameters.
-func (p *GenericProvenanceV02) GetSystemParameters() (map[string]any, error) {
+func (p *provenanceV02) GetSystemParameters() (map[string]any, error) {
 	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
