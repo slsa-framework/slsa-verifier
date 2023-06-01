@@ -1,22 +1,67 @@
 package gha
 
 import (
-	"fmt"
 	"os"
-	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
+	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
-	v02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
+
+type testProvenance struct {
+	builderID         string
+	sourceURI         string
+	triggerURI        string
+	subjects          []intoto.Subject
+	branch            string
+	tag               string
+	buildTriggerPath  string
+	systemParameters  map[string]any
+	buildInvocationID string
+	buildStartTime    *time.Time
+	buildFinishTime   *time.Time
+	noResolvedDeps    int
+	workflowInputs    map[string]any
+}
+
+func (p *testProvenance) BuilderID() (string, error)           { return p.builderID, nil }
+func (p *testProvenance) SourceURI() (string, error)           { return p.sourceURI, nil }
+func (p *testProvenance) TriggerURI() (string, error)          { return p.triggerURI, nil }
+func (p *testProvenance) Subjects() ([]intoto.Subject, error)  { return p.subjects, nil }
+func (p *testProvenance) GetBranch() (string, error)           { return p.branch, nil }
+func (p *testProvenance) GetTag() (string, error)              { return p.tag, nil }
+func (p *testProvenance) GetBuildTriggerPath() (string, error) { return p.buildTriggerPath, nil }
+func (p *testProvenance) GetSystemParameters() (map[string]any, error) {
+	return p.systemParameters, nil
+}
+func (p *testProvenance) GetBuildInvocationID() (string, error)       { return p.buildInvocationID, nil }
+func (p *testProvenance) GetBuildStartTime() (*time.Time, error)      { return p.buildStartTime, nil }
+func (p *testProvenance) GetBuildFinishTime() (*time.Time, error)     { return p.buildFinishTime, nil }
+func (p *testProvenance) GetNumberResolvedDependencies() (int, error) { return p.noResolvedDeps, nil }
+func (p *testProvenance) GetWorkflowInputs() (map[string]interface{}, error) {
+	return p.workflowInputs, nil
+}
+
+type testProvenanceV02 struct {
+	testProvenance
+	predicate slsa02.ProvenancePredicate
+}
+
+func (p *testProvenanceV02) Predicate() slsa02.ProvenancePredicate { return p.predicate }
+
+type testProvenanceV1 struct {
+	testProvenance
+	predicate slsa1.ProvenancePredicate
+}
+
+func (p *testProvenanceV1) Predicate() slsa1.ProvenancePredicate { return p.predicate }
 
 func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
 	env, err := EnvelopeFromBytes(payload)
@@ -43,7 +88,7 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 			path:     "./testdata/dsse-not-slsa-v1.intoto.jsonl",
 			expected: serrors.ErrorInvalidDssePayload,
 		},
-		// TODO(#573): add more copliance tests.
+		// TODO(#573): add more compliance tests.
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
@@ -52,7 +97,7 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 
 			content, err := os.ReadFile(tt.path)
 			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
+				t.Fatalf("os.ReadFile: %v", err)
 			}
 			_, err = provenanceFromBytes(content)
 			if !errCmp(err, tt.expected) {
@@ -66,92 +111,125 @@ func Test_VerifyDigest(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		path         string
+		prov         slsaprovenance.Provenance
 		artifactHash string
 		expected     error
 	}{
 		{
-			name:         "invalid dsse: no sha256 subject digest",
-			path:         "./testdata/dsse-no-subject-hash.intoto.jsonl",
+			name: "invalid dsse: no sha256 subject digest",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
+						},
+					},
+				},
+			},
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:     "invalid dsse: nil subject",
-			path:     "./testdata/dsse-no-subject.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:         "mismatched artifact hash with env",
-			path:         "./testdata/dsse-valid.intoto.jsonl",
-			artifactHash: "1ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorMismatchHash,
 		},
-		{
-			name:         "valid entry",
-			path:         "./testdata/dsse-valid.intoto.jsonl",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     nil,
-		},
-		{
-			name:         "valid entry multiple subjects last entry",
-			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
-			artifactHash: "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     nil,
-		},
-		{
-			name:         "valid multiple subjects second entry",
-			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
-			artifactHash: "02e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     nil,
-		},
-		{
-			name:         "multiple subjects invalid hash",
-			path:         "./testdata/dsse-valid-multi-subjects.intoto.jsonl",
-			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorMismatchHash,
-		},
+
 		{
 			name:         "invalid dsse: nil subject",
-			path:         "./testdata/dsse-no-subject-v1.intoto.jsonl",
+			prov:         &testProvenance{},
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorInvalidDssePayload,
+			expected:     serrors.ErrorMismatchHash,
 		},
 		{
-			name:         "invalid dsse: no sha256 subject digest",
-			path:         "./testdata/dsse-no-subject-hash-v1.intoto.jsonl",
-			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:         "mismatched artifact hash with env",
-			path:         "./testdata/dsse-valid-v1.intoto.jsonl",
+			name: "mismatched artifact hash",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+				},
+			},
 			artifactHash: "1ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorMismatchHash,
 		},
-
 		{
-			name:         "valid entry",
-			path:         "./testdata/dsse-valid-v1.intoto.jsonl",
+			name: "valid hash",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+				},
+			},
 			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     nil,
-		},
-
-		{
-			name:         "valid entry multiple subjects last entry",
-			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
-			artifactHash: "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     nil,
 		},
 		{
-			name:         "valid multiple subjects second entry",
-			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
-			artifactHash: "02e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
-			expected:     nil,
+			name: "valid entry multiple subjects last entry",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha256": "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+					{
+						Digest: common.DigestSet{
+							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
+						},
+					},
+					{
+						Digest: common.DigestSet{
+							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+				},
+			},
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 		},
 		{
-			name:         "multiple subjects invalid hash",
-			path:         "./testdata/dsse-valid-multi-subjects-v1.intoto.jsonl",
+			name: "valid multiple subjects second entry",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha256": "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+					{
+						Digest: common.DigestSet{
+							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+					{
+						Digest: common.DigestSet{
+							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
+						},
+					},
+				},
+			},
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+		},
+		{
+			name: "multiple subjects invalid hash",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha256": "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+					{
+						Digest: common.DigestSet{
+							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
+						},
+					},
+					{
+						Digest: common.DigestSet{
+							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
+						},
+					},
+				},
+			},
 			artifactHash: "04e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 			expected:     serrors.ErrorMismatchHash,
 		},
@@ -161,17 +239,7 @@ func Test_VerifyDigest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-			prov, err := provenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("provenanceFromBytes: %w", err))
-			}
-
-			err = verifyDigest(prov, tt.artifactHash)
-			if !errCmp(err, tt.expected) {
+			if err := verifyDigest(tt.prov, tt.artifactHash); !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})
@@ -199,7 +267,7 @@ func Test_verifySourceURI(t *testing.T) {
 			name:              "empty materials",
 			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
 			expectedSourceURI: "git+https://github.com/some/repo",
-			err:               serrors.ErrorInvalidDssePayload,
+			err:               serrors.ErrorMalformedURI,
 		},
 		{
 			name:              "empty configSource",
@@ -312,69 +380,12 @@ func Test_verifySourceURI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov02 := &v02.ProvenanceV02{
-				ProvenanceStatement: &intoto.ProvenanceStatement{
-					Predicate: slsa02.ProvenancePredicate{
-						Invocation: slsa02.ProvenanceInvocation{
-							ConfigSource: slsa02.ConfigSource{
-								URI: tt.provTriggerURI,
-							},
-						},
-						Materials: []slsacommon.ProvenanceMaterial{
-							{
-								URI: tt.provMaterialsURI,
-							},
-						},
-					},
-				},
-			}
-			if tt.provMaterialsURI == "" {
-				prov02.ProvenanceStatement.Predicate.Materials = nil
+			prov02 := &testProvenance{
+				sourceURI:  tt.provMaterialsURI,
+				triggerURI: tt.provTriggerURI,
 			}
 
 			err := verifySourceURI(prov02, tt.expectedSourceURI, tt.allowNoMaterialRef)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			// Update to v1 SLSA provenance.
-			var ref, repository string
-			a := strings.Split(tt.provTriggerURI, "@")
-			if len(a) > 0 {
-				repository = a[0]
-			}
-			if len(a) > 1 {
-				ref = a[1]
-			}
-
-			prov1 := &v1.ProvenanceV1{
-				Predicate: slsa1.ProvenancePredicate{
-					BuildDefinition: slsa1.ProvenanceBuildDefinition{
-						InternalParameters: map[string]interface{}{
-							"GITHUB_WORKFLOW_REF": fmt.Sprintf("%s/some/path@%s",
-								strings.TrimPrefix(strings.TrimPrefix(repository, "git+"), "https://github.com/"), ref),
-						},
-						/// TODO(#613): Support generators.
-						// ExternalParameters: map[string]interface{}{
-						// 	"workflow": map[string]interface{}{
-						// 		"ref":        ref,
-						// 		"repository": repository,
-						// 		"path":       "some/path",
-						// 	},
-						// },
-						ExternalParameters: map[string]interface{}{
-							"source": slsa1.ResourceDescriptor{
-								URI: tt.provMaterialsURI,
-							},
-						},
-					},
-				},
-			}
-
-			if tt.provMaterialsURI == "" {
-				prov1.Predicate.BuildDefinition.ExternalParameters = nil
-			}
-			err = verifySourceURI(prov1, tt.expectedSourceURI, tt.allowNoMaterialRef)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -385,91 +396,46 @@ func Test_verifySourceURI(t *testing.T) {
 func Test_isValidDelegatorBuilderID(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name string
-		prov *intoto.ProvenanceStatement
-		err  error
+		name      string
+		builderID string
+		err       error
 	}{
 		{
-			name: "no @",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID",
-					},
-				},
-			},
-			err: serrors.ErrorInvalidBuilderID,
+			name:      "no @",
+			builderID: "some/builderID",
+			err:       serrors.ErrorInvalidBuilderID,
 		},
 		{
-			name: "invalid ref",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@v1.2.3",
-					},
-				},
-			},
-			err: serrors.ErrorInvalidRef,
+			name:      "invalid ref",
+			builderID: "some/builderID@v1.2.3",
+			err:       serrors.ErrorInvalidRef,
 		},
 		{
-			name: "invalid ref not tag",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@refs/head/v1.2.3",
-					},
-				},
-			},
-			err: serrors.ErrorInvalidRef,
+			name:      "invalid ref not tag",
+			builderID: "some/builderID@refs/head/v1.2.3",
+			err:       serrors.ErrorInvalidRef,
 		},
 		{
-			name: "invalid ref not full semver",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@refs/heads/v1.2",
-					},
-				},
-			},
-			err: serrors.ErrorInvalidRef,
+			name:      "invalid ref not full semver",
+			builderID: "some/builderID@refs/heads/v1.2",
+			err:       serrors.ErrorInvalidRef,
 		},
 		{
-			name: "valid builder",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@refs/tags/v1.2.3",
-					},
-				},
-			},
+			name:      "valid builder",
+			builderID: "some/builderID@refs/tags/v1.2.3",
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov := &v02.ProvenanceV02{
-				ProvenanceStatement: tt.prov,
+			prov := &testProvenance{
+				builderID: tt.builderID,
 			}
 
 			err := isValidDelegatorBuilderID(prov)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
-			}
-
-			// Update to v1 SLSA provenance.
-			prov1 := &v1.ProvenanceV1{
-				Predicate: slsa1.ProvenancePredicate{
-					RunDetails: slsa1.ProvenanceRunDetails{
-						Builder: slsa1.Builder{
-							ID: tt.prov.Predicate.Builder.ID,
-						},
-					},
-				},
-			}
-
-			err = isValidDelegatorBuilderID(prov1)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -480,75 +446,45 @@ func Test_isValidDelegatorBuilderID(t *testing.T) {
 func Test_verifyBuilderIDExactMatch(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		prov     *intoto.ProvenanceStatement
-		id       string
-		expected error
+		name       string
+		builderID  string
+		expectedID string
+		err        error
 	}{
 		{
-			name: "match no version",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID",
-					},
-				},
-			},
-			id: "some/builderID",
+			name:       "match no version",
+			builderID:  "some/builderID",
+			expectedID: "some/builderID",
 		},
 		{
-			name: "match with tag",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@v1.2.3",
-					},
-				},
-			},
-			id: "some/builderID@v1.2.3",
+			name:       "match with tag",
+			builderID:  "some/builderID@v1.2.3",
+			expectedID: "some/builderID@v1.2.3",
 		},
 		{
-			name: "same builderID mismatch version",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "some/builderID@v1.2.3",
-					},
-				},
-			},
-			id:       "some/builderID@v1.2.4",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "same builderID mismatch version",
+			builderID:  "some/builderID@v1.2.3",
+			expectedID: "some/builderID@v1.2.4",
+			err:        serrors.ErrorMismatchBuilderID,
 			// TODO(#189): this should fail.
 		},
 		{
-			name: "mismatch builderID same version",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "tome/builderID@v1.2.3",
-					},
-				},
-			},
-			id:       "some/builderID@v1.2.3",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "mismatch builderID same version",
+			builderID:  "tome/builderID@v1.2.3",
+			expectedID: "some/builderID@v1.2.3",
+			err:        serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name:     "empty prov builderID",
-			prov:     &intoto.ProvenanceStatement{},
-			id:       "some/builderID",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "empty prov builderID",
+			builderID:  "",
+			expectedID: "some/builderID",
+			err:        serrors.ErrorMismatchBuilderID,
 		},
 		{
-			name: "empty expected builderID",
-			prov: &intoto.ProvenanceStatement{
-				Predicate: slsa02.ProvenancePredicate{
-					Builder: slsacommon.ProvenanceBuilder{
-						ID: "tome/builderID@v1.2.3",
-					},
-				},
-			},
-			id:       "",
-			expected: serrors.ErrorMismatchBuilderID,
+			name:       "empty expected builderID",
+			builderID:  "tome/builderID@v1.2.3",
+			expectedID: "",
+			err:        serrors.ErrorMismatchBuilderID,
 		},
 	}
 	for _, tt := range tests {
@@ -556,29 +492,13 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			prov := &v02.ProvenanceV02{
-				ProvenanceStatement: tt.prov,
+			prov := &testProvenance{
+				builderID: tt.builderID,
 			}
 
-			err := verifyBuilderIDExactMatch(prov, tt.id)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-
-			// Update to v1 SLSA provenance.
-			prov1 := &v1.ProvenanceV1{
-				Predicate: slsa1.ProvenancePredicate{
-					RunDetails: slsa1.ProvenanceRunDetails{
-						Builder: slsa1.Builder{
-							ID: tt.prov.Predicate.Builder.ID,
-						},
-					},
-				},
-			}
-
-			err = verifyBuilderIDExactMatch(prov1, tt.id)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+			err := verifyBuilderIDExactMatch(prov, tt.expectedID)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -588,95 +508,63 @@ func Test_VerifyBranch(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
-		path     string
+		prov     slsaprovenance.Provenance
 		branch   string
 		expected error
 	}{
 		{
-			name:   "ref main",
-			path:   "./testdata/dsse-main-ref.intoto.jsonl",
-			branch: "main",
+			name: "branch slsa1",
+			prov: &testProvenance{
+				branch: "refs/heads/slsa1",
+			},
+			branch: "slsa1",
 		},
 		{
-			name:   "ref branch3",
-			path:   "./testdata/dsse-branch3-ref.intoto.jsonl",
-			branch: "branch3",
-		},
-		{
-			name:     "invalid ref type",
-			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:   "tag branch2 push trigger",
-			path:   "./testdata/dsse-branch2-tag.intoto.jsonl",
-			branch: "branch2",
-		},
-		{
-			name:   "v10.0.1 release trigger",
-			path:   "./testdata/dsse-v10.0.1-release.intoto.jsonl",
-			branch: "main",
-		},
-		{
-			name:     "from commit push - no branch",
-			path:     "./testdata/dsse-annotated-tag.intoto.jsonl",
-			branch:   "main",
+			name: "branch mismatch",
+			prov: &testProvenance{
+				branch: "refs/heads/slsa1",
+			},
+			branch:   "slsa2",
 			expected: serrors.ErrorMismatchBranch,
 		},
-
 		{
-			name:   "ref main",
-			path:   "./testdata/dsse-main-ref-v1.intoto.jsonl",
-			branch: "main",
-		},
-		{
-			name:     "ref main case-sensitive",
-			path:     "./testdata/dsse-main-ref-v1.intoto.jsonl",
-			branch:   "Main",
+			name: "case sensitive branch mismatch",
+			prov: &testProvenance{
+				branch: "refs/heads/slsa1",
+			},
+			branch:   "SLSA2",
 			expected: serrors.ErrorMismatchBranch,
 		},
-
 		{
-			name:     "invalid ref type",
-			path:     "./testdata/dsse-invalid-ref-type-v1.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
+			name: "invalid ref type",
+			prov: &testProvenance{
+				branch: "refs/tags/slsa1",
+			},
+			branch:   "slsa1",
+			expected: serrors.ErrorInvalidRef,
 		},
-
 		{
-			name:   "tag branch2 push trigger",
-			path:   "./testdata/dsse-branch2-tag-v1.intoto.jsonl",
-			branch: "branch2",
+			name: "ref empty",
+			prov: &testProvenance{
+				branch: "",
+			},
+			expected: serrors.ErrorInvalidRef,
 		},
-
 		{
-			name:   "v10.0.1 release trigger",
-			path:   "./testdata/dsse-v10.0.1-release-v1.intoto.jsonl",
-			branch: "main",
-		},
-
-		{
-			name:     "from commit push - no branch",
-			path:     "./testdata/dsse-annotated-tag-v1.intoto.jsonl",
-			branch:   "main",
-			expected: serrors.ErrorMismatchBranch,
+			name: "branch empty",
+			prov: &testProvenance{
+				branch: "refs/heads/",
+			},
+			expected: serrors.ErrorInvalidRef,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-			prov, err := provenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("provenanceFromBytes: %w", err))
-			}
-
-			err = VerifyBranch(prov, tt.branch)
-			if !errCmp(err, tt.expected) {
+			if err := VerifyBranch(tt.prov, tt.branch); !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})
@@ -687,13 +575,19 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
-		path     string
+		prov     slsaprovenance.Provenance
 		inputs   map[string]string
 		expected error
 	}{
 		{
 			name: "match all",
-			path: "./testdata/dsse-workflow-inputs.intoto.jsonl",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{
+					"release_version": "v1.2.3",
+					"some_bool":       "true",
+					"some_integer":    "123",
+				},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.3",
 				"some_bool":       "true",
@@ -702,7 +596,13 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 		},
 		{
 			name: "match subset",
-			path: "./testdata/dsse-workflow-inputs.intoto.jsonl",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{
+					"release_version": "v1.2.3",
+					"some_bool":       "true",
+					"some_integer":    "123",
+				},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.3",
 				"some_integer":    "123",
@@ -710,7 +610,13 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 		},
 		{
 			name: "missing field",
-			path: "./testdata/dsse-workflow-inputs.intoto.jsonl",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{
+					"release_version": "v1.2.3",
+					"some_bool":       "true",
+					"some_integer":    "123",
+				},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.3",
 				"missing_field":   "123",
@@ -719,7 +625,13 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 		},
 		{
 			name: "mismatch field release_version",
-			path: "./testdata/dsse-workflow-inputs.intoto.jsonl",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{
+					"release_version": "v1.2.3",
+					"some_bool":       "true",
+					"some_integer":    "123",
+				},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.4",
 				"some_integer":    "123",
@@ -728,61 +640,28 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 		},
 		{
 			name: "mismatch field some_integer",
-			path: "./testdata/dsse-workflow-inputs.intoto.jsonl",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{
+					"release_version": "v1.2.3",
+					"some_bool":       "true",
+					"some_integer":    "123",
+				},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.3",
 				"some_integer":    "124",
-			},
-			expected: serrors.ErrorMismatchWorkflowInputs,
-		},
-		{
-			name: "not workflow_dispatch trigger",
-			path: "./testdata/dsse-workflow-inputs-wrong-trigger.intoto.jsonl",
-			inputs: map[string]string{
-				"release_version": "v1.2.3",
-				"some_bool":       "true",
-				"some_integer":    "123",
-			},
-			expected: serrors.ErrorMismatchWorkflowInputs,
-		},
-		{
-			name: "match all",
-			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
-			inputs: map[string]string{
-				"release_version": "v1.2.3",
-				"some_bool":       "true",
-				"some_integer":    "123",
-			},
-		},
-		{
-			name: "match subset",
-			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
-			inputs: map[string]string{
-				"release_version": "v1.2.3",
-				"some_integer":    "123",
-			},
-		},
-		{
-			name: "missing field",
-			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
-			inputs: map[string]string{
-				"release_version": "v1.2.3",
-				"missing_field":   "123",
-			},
-			expected: serrors.ErrorMismatchWorkflowInputs,
-		},
-		{
-			name: "mismatch field release_version",
-			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
-			inputs: map[string]string{
-				"release_version": "v1.2.4",
-				"some_integer":    "123",
 			},
 			expected: serrors.ErrorMismatchWorkflowInputs,
 		},
 		{
 			name: "mismatch field some_integer",
-			path: "./testdata/dsse-workflow-inputs-v1.intoto.jsonl",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{
+					"release_version": "v1.2.3",
+					"some_bool":       "true",
+					"some_integer":    "123",
+				},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.3",
 				"some_integer":    "124",
@@ -790,8 +669,10 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 			expected: serrors.ErrorMismatchWorkflowInputs,
 		},
 		{
-			name: "not workflow_dispatch trigger",
-			path: "./testdata/dsse-workflow-inputs-wrong-trigger-v1.intoto.jsonl",
+			name: "no inputs",
+			prov: &testProvenance{
+				workflowInputs: map[string]any{},
+			},
 			inputs: map[string]string{
 				"release_version": "v1.2.3",
 				"some_bool":       "true",
@@ -805,17 +686,7 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-			prov, err := provenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("provenanceFromBytes: %w", err))
-			}
-
-			err = VerifyWorkflowInputs(prov, tt.inputs)
-			if !errCmp(err, tt.expected) {
+			if err := VerifyWorkflowInputs(tt.prov, tt.inputs); !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})
@@ -826,83 +697,63 @@ func Test_VerifyTag(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
-		path     string
+		prov     slsaprovenance.Provenance
 		tag      string
 		expected error
 	}{
 		{
-			name:     "ref main",
-			path:     "./testdata/dsse-main-ref.intoto.jsonl",
-			expected: serrors.ErrorMismatchTag,
-		},
-		{
-			name:     "ref branch3",
-			path:     "./testdata/dsse-branch3-ref.intoto.jsonl",
-			expected: serrors.ErrorMismatchTag,
-		},
-		{
-			name:     "invalid ref type",
-			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		{
 			name: "tag vslsa1",
-			path: "./testdata/dsse-vslsa1-tag.intoto.jsonl",
-			tag:  "vslsa1",
+			prov: &testProvenance{
+				tag: "refs/tags/vslsa1",
+			},
+			tag: "vslsa1",
 		},
 		{
-			name:     "ref branch3",
-			path:     "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
+			name: "tag mismatch",
+			prov: &testProvenance{
+				tag: "refs/tags/vslsa1",
+			},
+			tag:      "vslsa2",
 			expected: serrors.ErrorMismatchTag,
 		},
 		{
-			name:     "ref main",
-			path:     "./testdata/dsse-main-ref-v1.intoto.jsonl",
+			name: "case sensitive tag mismatch",
+			prov: &testProvenance{
+				tag: "refs/tags/vslsa1",
+			},
+			tag:      "vSLSA2",
 			expected: serrors.ErrorMismatchTag,
 		},
 		{
-			name:     "ref branch3",
-			path:     "./testdata/dsse-branch3-ref-v1.intoto.jsonl",
-			expected: serrors.ErrorMismatchTag,
+			name: "invalid ref type",
+			prov: &testProvenance{
+				tag: "refs/heads/vslsa1",
+			},
+			tag:      "vslsa1",
+			expected: serrors.ErrorInvalidRef,
 		},
 		{
-			name:     "invalid ref type",
-			path:     "./testdata/dsse-invalid-ref-type-v1.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
+			name: "ref empty",
+			prov: &testProvenance{
+				tag: "",
+			},
+			expected: serrors.ErrorInvalidRef,
 		},
 		{
-			name:     "tag vSLSA1 case-sensitive",
-			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
-			tag:      "vSLSA1",
-			expected: serrors.ErrorMismatchTag,
-		},
-		{
-			name: "tag vslsa1",
-			path: "./testdata/dsse-vslsa1-tag-v1.intoto.jsonl",
-			tag:  "vslsa1",
-		},
-		{
-			name: "case sensitive",
-			path: "./testdata/dsse-vslsa1-tag-v1.intoto.jsonl",
-			tag:  "vslsa1",
+			name: "tag empty",
+			prov: &testProvenance{
+				tag: "refs/tags/",
+			},
+			expected: serrors.ErrorInvalidRef,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-			prov, err := provenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("provenanceFromBytes: %w", err))
-			}
-
-			err = VerifyTag(prov, tt.tag)
-			if !errCmp(err, tt.expected) {
+			if err := VerifyTag(tt.prov, tt.tag); !errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})
@@ -913,306 +764,404 @@ func Test_VerifyVersionedTag(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
-		path     string
+		prov     slsaprovenance.Provenance
 		tag      string
 		expected error
 	}{
 		{
-			name:     "ref main",
-			path:     "./testdata/dsse-main-ref.intoto.jsonl",
-			expected: serrors.ErrorInvalidSemver,
+			name:     "no tag",
+			prov:     &testProvenance{},
 			tag:      "v1.2.3",
+			expected: serrors.ErrorInvalidRef,
 		},
 		{
-			name:     "ref branch3",
-			path:     "./testdata/dsse-branch3-ref.intoto.jsonl",
-			expected: serrors.ErrorInvalidSemver,
-			tag:      "v1.2.3",
-		},
-		{
-			name:     "tag v1.2 invalid versioning",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v1.2 invalid expected version",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "1.2",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "invalid ref",
-			path:     "./testdata/dsse-invalid-ref-type.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
+			name: "tag v1.2.3 invalid tag ref",
+			prov: &testProvenance{
+				tag: "refs/heads/v1.2.3",
+			},
 			tag:      "v1.2.3",
+			expected: serrors.ErrorInvalidRef,
 		},
 		{
-			name:     "tag vslsa1 invalid",
-			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			name: "tag vslsa1 invalid",
+			prov: &testProvenance{
+				tag: "refs/tags/vslsa1",
+			},
 			tag:      "vslsa1",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "tag vslsa1 invalid semver",
-			path:     "./testdata/dsse-vslsa1-tag.intoto.jsonl",
+			name: "tag vslsa1 invalid semver",
+			prov: &testProvenance{
+				tag: "refs/tags/vslsa1",
+			},
 			tag:      "v1.2.3",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
 			name: "tag v1.2.3 exact match",
-			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
-			tag:  "v1.2.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
+			tag: "v1.2.3",
 		},
 		{
 			name: "tag v1.2.3 match v1.2",
-			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
-			tag:  "v1.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
+			tag: "v1.2",
 		},
 		{
 			name: "tag v1.2.3 match v1",
-			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
-			tag:  "v1",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
+			tag: "v1",
 		},
 		{
-			name:     "tag v1.2.3 no match v2",
-			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			name: "tag v1.2.3 no match v2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
 			tag:      "v2",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2.3 no match v1.3",
-			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			name: "tag v1.2.3 no match v1.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
 			tag:      "v1.3",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2.3 no match v1.2.4",
-			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			name: "tag v1.2.3 no match v1.2.4",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
 			tag:      "v1.2.4",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2.3 no match v1.2.2",
-			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			name: "tag v1.2.3 no match v1.2.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
 			tag:      "v1.2.2",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1.2 exact v1.2",
-			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
-			tag:  "v1.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
+			tag: "v1.2",
 		},
 		{
 			name: "tag v1.2 match v1",
-			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
-			tag:  "v1",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
+			tag: "v1",
 		},
 		{
-			name:     "tag v1.1 no match v1.3",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v1.1 no match v1.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.3",
+			},
 			tag:      "v1.1",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v0 no match v1.3",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v0 no match v1.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.3",
+			},
 			tag:      "v0",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2 no match v1.3",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v1.3 no match v1.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1.3",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2 no match v1.2.3",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v1.2.3 no match v1.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1.2.3",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name: "tag v1.2 match v1.2.0",
-			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
-			tag:  "v1.2.0",
+			name: "tag v1.2.0 match v1.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
+			tag: "v1.2.0",
 		},
 		{
 			name: "tag v1.2 match v1.2.0+123",
-			path: "./testdata/dsse-v1.2-tag.intoto.jsonl",
-			tag:  "v1.2.0+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
+			tag: "v1.2.0+123",
 		},
 		{
-			name:     "invalid v1.2+123",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "invalid v1.2+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1.2+123",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "invalid v1.2-alpha",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "invalid v1.2-alpha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1.2-alpha",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "invalid v1-alpha",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "invalid v1-alpha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1-alpha",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "invalid v1+123",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "invalid v1+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1+123",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "invalid v1-alpha+123",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "invalid v1-alpha+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1-alpha+123",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
-			name:     "invalid v1.2-alpha+123",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "invalid v1.2-alpha+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
+
 			tag:      "v1.2-alpha+123",
 			expected: serrors.ErrorInvalidSemver,
 		},
 		{
 			name: "tag v1.2.3-alpha match v1.2.3-alpha",
-			path: "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
-			tag:  "v1.2.3-alpha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha",
+			},
+			tag: "v1.2.3-alpha",
 		},
 		{
-			name:     "tag v1.2.3-alpha no match v1.2.3",
-			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			name: "tag v1.2.3-alpha no match v1.2.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha",
+			},
 			tag:      "v1.2.3",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1.2.3-alpha+123 match v1.2.3-alpha",
-			path: "./testdata/dsse-v1.2.3-alpha+123-tag.intoto.jsonl",
-			tag:  "v1.2.3-alpha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha+123",
+			},
+
+			tag: "v1.2.3-alpha",
 		},
 		{
 			name: "tag v1.2.3-alpha+123 match v1.2.3-alpha+123",
-			path: "./testdata/dsse-v1.2.3-alpha+123-tag.intoto.jsonl",
-			tag:  "v1.2.3-alpha+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha+123",
+			},
+			tag: "v1.2.3-alpha+123",
 		},
 		{
 			name: "tag v1.2.3-alpha+123 match v1.2.3-alpha+456",
-			path: "./testdata/dsse-v1.2.3-alpha+123-tag.intoto.jsonl",
-			tag:  "v1.2.3-alpha+456",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha+123",
+			},
+			tag: "v1.2.3-alpha+456",
 		},
 		{
 			name: "tag v1.2.3-alpha match v1.2.3-alpha+123",
-			path: "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
-			tag:  "v1.2.3-alpha+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha",
+			},
+			tag: "v1.2.3-alpha+123",
 		},
 		{
-			name:     "tag v1.2.3-alpha no match v1.2.3-beta+123",
-			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			name: "tag v1.2.3-alpha no match v1.2.3-beta+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha",
+			},
 			tag:      "v1.2.3-beta+123",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2.3+123 no match v1.2.3-alpha+123",
-			path:     "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			name: "tag v1.2.3+123 no match v1.2.3-alpha+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3+123",
+			},
 			tag:      "v1.2.3-alpha+123",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2.3+123 no match v1.2.3-alpha",
-			path:     "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
+			name: "tag v1.2.3+123 no match v1.2.3-alpha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3+123",
+			},
 			tag:      "v1.2.3-alpha",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1.2.3+123 match v1.2.3+123",
-			path: "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
-			tag:  "v1.2.3+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3+123",
+			},
+			tag: "v1.2.3+123",
 		},
 		{
 			name: "tag v1.2.3+123 match v1.2.3",
-			path: "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
-			tag:  "v1.2.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3+123",
+			},
+			tag: "v1.2.3",
 		},
 		{
 			name: "tag v1.2.3+123 match v1.2.3+456",
-			path: "./testdata/dsse-v1.2.3+123-tag.intoto.jsonl",
-			tag:  "v1.2.3+456",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3+123",
+			},
+			tag: "v1.2.3+456",
 		},
 		{
-			name:     "tag v1.2.3 no match v1.2.3-aplha",
-			path:     "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
+			name: "tag v1.2.3 no match v1.2.3-aplha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
 			tag:      "v1.2.3-alpha",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2.3-alpha no match v1.2.3-beta",
-			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			name: "tag v1.2.3-alpha no match v1.2.3-beta",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3-alpha",
+			},
 			tag:      "v1.2.3-beta",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2 no match v1.2.3-beta",
-			path:     "./testdata/dsse-v1.2.3-alpha-tag.intoto.jsonl",
+			name: "tag v1.2 no match v1.2.3-beta",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1.2.3-beta",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1.2.3 match v1.2.3+123",
-			path: "./testdata/dsse-v1.2.3-tag.intoto.jsonl",
-			tag:  "v1.2.3+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2.3",
+			},
+			tag: "v1.2.3+123",
 		},
 		{
-			name:     "tag v1.2 no match v1.2.0-aplha+123",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v1.2 no match v1.2.0-aplha+123",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v1.2.0-alpha+123",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1.2 no match v2",
-			path:     "./testdata/dsse-v1.2-tag.intoto.jsonl",
+			name: "tag v1.2 no match v2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1.2",
+			},
 			tag:      "v2",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1 exact match",
-			path: "./testdata/dsse-v1-tag.intoto.jsonl",
-			tag:  "v1",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
+			tag: "v1",
 		},
 		{
-			name:     "tag v1 no match v2",
-			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			name: "tag v1 no match v2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
 			tag:      "v2",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1 no match v1.2",
-			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			name: "tag v1 no match v1.2",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
 			tag:      "v1.2",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1 no match v0",
-			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			name: "tag v1 no match v0",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
 			tag:      "v0",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
-			name:     "tag v1 no match v1.2.3",
-			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			name: "tag v1 no match v1.2.3",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
 			tag:      "v1.2.3",
 			expected: serrors.ErrorMismatchVersionedTag,
 		},
 		{
 			name: "tag v1 match v1.0",
-			path: "./testdata/dsse-v1-tag.intoto.jsonl",
-			tag:  "v1.0",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
+			tag: "v1.0",
 		},
 		{
 			name: "tag v1 match v1.0.0",
-			path: "./testdata/dsse-v1-tag.intoto.jsonl",
-			tag:  "v1.0.0",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
+			tag: "v1.0.0",
 		},
 		{
-			name:     "invalid v1-alpha",
-			path:     "./testdata/dsse-v1-tag.intoto.jsonl",
+			name: "invalid v1-alpha",
+			prov: &testProvenance{
+				tag: "refs/tags/v1",
+			},
 			tag:      "v1-alpha",
 			expected: serrors.ErrorInvalidSemver,
 		},
@@ -1222,23 +1171,8 @@ func Test_VerifyVersionedTag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			for _, version := range []string{"", "-v1"} {
-				pathParts := strings.Split(tt.path, ".intoto")
-				pathName := []string{pathParts[0] + version}
-				pathName = append(pathName, pathParts[1:]...)
-				content, err := os.ReadFile(strings.Join(pathName, ".intoto"))
-				if err != nil {
-					panic(fmt.Errorf("os.ReadFile: %w", err))
-				}
-				prov, err := provenanceFromBytes(content)
-				if err != nil {
-					panic(fmt.Errorf("provenanceFromBytes: %w", err))
-				}
-
-				err = VerifyVersionedTag(prov, tt.tag)
-				if !errCmp(err, tt.expected) {
-					t.Errorf(cmp.Diff(err, tt.expected))
-				}
+			if err := VerifyVersionedTag(tt.prov, tt.tag); !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})
 	}

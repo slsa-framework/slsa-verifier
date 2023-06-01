@@ -102,6 +102,7 @@ func (b *TrustedBuilderID) String() string {
 	return fmt.Sprintf("%s@%s", b.name, b.version)
 }
 
+// ParseBuilderID parses the builder ID into the URI and ref parts.
 func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 	parts := strings.Split(id, "@")
 	if len(parts) == 2 {
@@ -120,23 +121,10 @@ func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 		serrors.ErrorInvalidFormat, id)
 }
 
-func ValidateGitHubTagRef(tag string) error {
-	if !strings.HasPrefix(tag, "refs/tags/") {
-		return fmt.Errorf("%w: %s: not of the form 'refs/tags/name'", serrors.ErrorInvalidRef, tag)
-	}
-	return nil
-}
-
-func TagFromGitHubRef(ref string) (string, error) {
-	if err := ValidateGitHubTagRef(ref); err != nil {
-		return "", err
-	}
-	return strings.TrimPrefix(ref, "refs/tags/"), nil
-}
-
+// IsValidBuilderTag validates if the given ref is a valid builder tag.
 func IsValidBuilderTag(ref string, testing bool) error {
 	// Extract the pin.
-	pin, err := TagFromGitHubRef(ref)
+	pin, err := TagFromGitRef(ref)
 	if err != nil {
 		return err
 	}

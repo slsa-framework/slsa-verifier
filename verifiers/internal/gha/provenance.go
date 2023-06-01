@@ -179,12 +179,18 @@ func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 	}
 
 	// 8 bit represented in hex, so 8/2=4.
-	l := len(expectedHash) * 4
+	bitLength := len(expectedHash) * 4
+	expectedAlgo := fmt.Sprintf("sha%v", bitLength)
+	// sha1 is 160 bit (FWIW).
+	if bitLength == 160 {
+		expectedAlgo = "sha1"
+	}
+
 	for _, subject := range subjects {
 		digestSet := subject.Digest
-		hash, exists := digestSet[fmt.Sprintf("sha%v", l)]
+		hash, exists := digestSet[expectedAlgo]
 		if !exists {
-			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, fmt.Sprintf("no sha%v subject digest", l))
+			continue
 		}
 		if hash == expectedHash {
 			return nil
@@ -383,13 +389,19 @@ func VerifyWorkflowInputs(prov slsaprovenance.Provenance, inputs map[string]stri
 	return nil
 }
 
+// VerifyBranch verifies that the source branch in the provenance matches the
+// expected value.
 func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
-	branch, err := prov.GetBranch()
+	ref, err := prov.GetBranch()
 	if err != nil {
 		return err
 	}
 
-	expectedBranch = "refs/heads/" + expectedBranch
+	branch, err := utils.BranchFromGitRef(ref)
+	if err != nil {
+		return fmt.Errorf("verifying branch: %w", err)
+	}
+
 	if branch != expectedBranch {
 		return fmt.Errorf("expected branch '%s', got '%s': %w", expectedBranch, branch, serrors.ErrorMismatchBranch)
 	}
@@ -397,13 +409,19 @@ func VerifyBranch(prov slsaprovenance.Provenance, expectedBranch string) error {
 	return nil
 }
 
+// VerifyTag verifies that the source tag in the provenance matches the
+// expected value.
 func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
-	tag, err := prov.GetTag()
+	ref, err := prov.GetTag()
 	if err != nil {
 		return err
 	}
 
-	expectedTag = "refs/tags/" + expectedTag
+	tag, err := utils.TagFromGitRef(ref)
+	if err != nil {
+		return fmt.Errorf("verifying tag: %w", err)
+	}
+
 	if tag != expectedTag {
 		return fmt.Errorf("expected tag '%s', got '%s': %w", expectedTag, tag, serrors.ErrorMismatchTag)
 	}
@@ -411,16 +429,24 @@ func VerifyTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	return nil
 }
 
+// VerifyVersionedTag verifies that the source tag in the provenance matches the
+// expected semver value.
 func VerifyVersionedTag(prov slsaprovenance.Provenance, expectedTag string) error {
 	// Retrieve, validate and canonicalize the provenance tag.
 	// Note: prerelease is validated as part of patch validation
 	// and must be equal. Build is discarded as per https://semver.org/:
 	// "Build metadata MUST be ignored when determining version precedence",
-	tag, err := prov.GetTag()
+	ref, err := prov.GetTag()
 	if err != nil {
 		return err
 	}
-	return utils.VerifyVersionedTag(strings.TrimPrefix(tag, "refs/tags/"), expectedTag)
+
+	tag, err := utils.TagFromGitRef(ref)
+	if err != nil {
+		return fmt.Errorf("verifying tag: %w", err)
+	}
+
+	return utils.VerifyVersionedTag(tag, expectedTag)
 }
 
 // hasCertInEnvelope checks if a valid x509 certificate is present in the
