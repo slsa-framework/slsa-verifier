@@ -32,6 +32,7 @@ type SignedAttestation struct {
 	RekorEntry *models.LogEntryAnon
 }
 
+// EnvelopeFromBytes reads a DSSE envelope from the given payload.
 func EnvelopeFromBytes(payload []byte) (env *dsselib.Envelope, err error) {
 	env = &dsselib.Envelope{}
 	err = json.Unmarshal(payload, env)
@@ -214,6 +215,7 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 		provenance, rClient, trustedRoot)
 }
 
+// VerifyNpmPackageProvenance verifies provenance for an npm package.
 func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentity,
 	provenanceOpts *options.ProvenanceOpts, isTrustedBuilder bool,
 ) error {
@@ -288,6 +290,7 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	return utils.IsValidBuilderTag(parts[1], false)
 }
 
+// VerifyProvenance verifies the provenance for the given DSSE envelope.
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
@@ -316,6 +319,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	return VerifyProvenanceCommonOptions(prov, provenanceOpts, byob)
 }
 
+// VerifyProvenanceCommonOptions verifies the given provenance.
 func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *options.ProvenanceOpts,
 	allowNoMaterialRef bool,
 ) error {
@@ -360,6 +364,8 @@ func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *option
 	return nil
 }
 
+// VerifyWorkflowInputs verifies that the workflow inputs in the provenance
+// match the expected values.
 func VerifyWorkflowInputs(prov iface.Provenance, inputs map[string]string) error {
 	pyldInputs, err := prov.GetWorkflowInputs()
 	if err != nil {
@@ -382,6 +388,8 @@ func VerifyWorkflowInputs(prov iface.Provenance, inputs map[string]string) error
 	return nil
 }
 
+// VerifyBranch verifies that the source branch in the provenance matches the
+// expected value.
 func VerifyBranch(prov iface.Provenance, expectedBranch string) error {
 	branch, err := prov.GetBranch()
 	if err != nil {
@@ -396,6 +404,8 @@ func VerifyBranch(prov iface.Provenance, expectedBranch string) error {
 	return nil
 }
 
+// VerifyTag verifies that the source tag in the provenance matches the
+// expected value.
 func VerifyTag(prov iface.Provenance, expectedTag string) error {
 	tag, err := prov.GetTag()
 	if err != nil {
@@ -410,6 +420,8 @@ func VerifyTag(prov iface.Provenance, expectedTag string) error {
 	return nil
 }
 
+// VerifyVersionedTag verifies that the source tag in the provenance matches the
+// expected semver value.
 func VerifyVersionedTag(prov iface.Provenance, expectedTag string) error {
 	// Retrieve, validate and canonicalize the provenance tag.
 	// Note: prerelease is validated as part of patch validation
