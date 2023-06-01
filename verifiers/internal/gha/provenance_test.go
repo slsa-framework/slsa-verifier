@@ -8,8 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
-	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
-	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
@@ -48,20 +46,6 @@ func (p *testProvenance) GetNumberResolvedDependencies() (int, error) { return p
 func (p *testProvenance) GetWorkflowInputs() (map[string]interface{}, error) {
 	return p.workflowInputs, nil
 }
-
-type testProvenanceV02 struct {
-	testProvenance
-	predicate slsa02.ProvenancePredicate
-}
-
-func (p *testProvenanceV02) Predicate() slsa02.ProvenancePredicate { return p.predicate }
-
-type testProvenanceV1 struct {
-	testProvenance
-	predicate slsa1.ProvenancePredicate
-}
-
-func (p *testProvenanceV1) Predicate() slsa1.ProvenancePredicate { return p.predicate }
 
 func provenanceFromBytes(payload []byte) (slsaprovenance.Provenance, error) {
 	env, err := EnvelopeFromBytes(payload)

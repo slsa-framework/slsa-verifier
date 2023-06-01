@@ -8,7 +8,7 @@ import (
 )
 
 // ParseGitRef validates that the given git ref is a valid ref of the given type and returns its name.
-func ParseGitRef(refType string, ref string) (string, error) {
+func ParseGitRef(refType, ref string) (string, error) {
 	refPrefix := fmt.Sprintf("refs/%s/", refType)
 	if !strings.HasPrefix(ref, refPrefix) {
 		return "", fmt.Errorf("%w: %s: not of the form '%s<name>'", serrors.ErrorInvalidRef, ref, refPrefix)
