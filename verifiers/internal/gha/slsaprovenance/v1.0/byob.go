@@ -183,23 +183,13 @@ func (p *BYOBProvenanceV1) GetBranch() (string, error) {
 
 // GetTag implements Provenance.GetTag.
 func (p *BYOBProvenanceV1) GetTag() (string, error) {
-	// Returns the tag from the source materials.
-	sourceURI, err := p.SourceURI()
-	if err != nil {
-		// Get the value from the internalParameters if there is no source URI.
-		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
-		}
-		return common.GetTag(sysParams, true)
+	// Get the value from the internalParameters if there is no source URI.
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
 
-	parts := strings.Split(sourceURI, "@")
-	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/tags") {
-		return parts[1], nil
-	}
-
-	return "", nil
+	return common.GetTag(sysParams, true)
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.
