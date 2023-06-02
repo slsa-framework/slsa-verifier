@@ -6,14 +6,12 @@ import (
 	"strings"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
-
-	// Load provenance types.
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	slsav02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
-	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
-func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
+func verifyProvenanceMatchesCertificate(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	// See the generation at https://github.com/npm/cli/blob/latest/workspaces/libnpmpublish/lib/provenance.js.
 	// Verify systemParameters.
 	if err := verifySystemParameters(prov, workflow); err != nil {
@@ -65,7 +63,7 @@ func verifyProvenanceMatchesCertificate(prov slsaprovenance.Provenance, workflow
 	return nil
 }
 
-func verifySubjectDigestName(prov slsaprovenance.Provenance, digestName string) error {
+func verifySubjectDigestName(prov iface.Provenance, digestName string) error {
 	subjects, err := prov.Subjects()
 	if err != nil {
 		return err
@@ -84,7 +82,7 @@ func verifySubjectDigestName(prov slsaprovenance.Provenance, digestName string) 
 	return nil
 }
 
-func verifyBuildConfig(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
+func verifyBuildConfig(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	triggerPath, err := prov.GetBuildTriggerPath()
 	if err != nil {
 		// If the field is not available in the provenance,
@@ -98,7 +96,7 @@ func verifyBuildConfig(prov slsaprovenance.Provenance, workflow *WorkflowIdentit
 	return equalCertificateValue(workflow.BuildConfigPath, triggerPath, "trigger workflow")
 }
 
-func verifyResolvedDependencies(prov slsaprovenance.Provenance) error {
+func verifyResolvedDependencies(prov iface.Provenance) error {
 	n, err := prov.GetNumberResolvedDependencies()
 	if err != nil {
 		return err
@@ -110,7 +108,7 @@ func verifyResolvedDependencies(prov slsaprovenance.Provenance) error {
 	return nil
 }
 
-func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
+func verifyMetadata(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	if err := verifyCommonMetadata(prov, workflow); err != nil {
 		return err
 	}
@@ -125,7 +123,7 @@ func verifyMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) 
 	return nil
 }
 
-func verifyCommonMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
+func verifyCommonMetadata(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	// Verify build invocation ID.
 	invocationID, err := prov.GetBuildInvocationID()
 	if err != nil {
@@ -169,7 +167,7 @@ func verifyCommonMetadata(prov slsaprovenance.Provenance, workflow *WorkflowIden
 	return nil
 }
 
-func verifyV02Metadata(prov slsaprovenance.Provenance) error {
+func verifyV02Metadata(prov iface.Provenance) error {
 	// https://github.com/in-toto/in-toto-golang/blob/master/in_toto/slsa_provenance/v0.2/provenance.go
 	/*
 		v0.2:
@@ -181,21 +179,23 @@ func verifyV02Metadata(prov slsaprovenance.Provenance) error {
 			},
 			"reproducible": false
 	*/
-	prov02, ok := prov.(*slsav02.ProvenanceV02)
+	prov02, ok := prov.(slsav02.ProvenanceV02)
 	if !ok {
 		return nil
 	}
-	if prov02.Predicate.Metadata == nil {
+	predicate := prov02.Predicate()
+
+	if predicate.Metadata == nil {
 		return nil
 	}
 
-	if prov02.Predicate.Metadata.Reproducible {
+	if predicate.Metadata.Reproducible {
 		return fmt.Errorf("%w: reproducible: %v",
 			serrors.ErrorNonVerifiableClaim,
-			prov02.Predicate.Metadata.Reproducible)
+			predicate.Metadata.Reproducible)
 	}
 
-	completeness := prov02.Predicate.Metadata.Completeness
+	completeness := predicate.Metadata.Completeness
 	if completeness.Parameters || completeness.Materials ||
 		completeness.Environment {
 		return fmt.Errorf("%w: completeness: %v",
@@ -205,44 +205,47 @@ func verifyV02Metadata(prov slsaprovenance.Provenance) error {
 	return nil
 }
 
-func verifyV02Parameters(prov slsaprovenance.Provenance) error {
+func verifyV02Parameters(prov iface.Provenance) error {
 	// https://github.com/in-toto/in-toto-golang/blob/master/in_toto/slsa_provenance/v0.2/provenance.go
-	prov02, ok := prov.(*slsav02.ProvenanceV02)
+	prov02, ok := prov.(slsav02.ProvenanceV02)
 	if !ok {
 		return nil
 	}
-	if prov02.Predicate.Invocation.Parameters == nil {
+	predicate := prov02.Predicate()
+
+	if predicate.Invocation.Parameters == nil {
 		return nil
 	}
-	m, ok := prov02.Predicate.Invocation.Parameters.(map[string]any)
+	m, ok := predicate.Invocation.Parameters.(map[string]any)
 	if !ok || len(m) > 0 {
 		return fmt.Errorf("%w: parameters: %v",
-			serrors.ErrorNonVerifiableClaim, prov02.Predicate.Invocation.Parameters)
+			serrors.ErrorNonVerifiableClaim, predicate.Invocation.Parameters)
 	}
 
 	return nil
 }
 
-func verifyV02BuildConfig(prov slsaprovenance.Provenance) error {
+func verifyV02BuildConfig(prov iface.Provenance) error {
 	// https://github.com/in-toto/in-toto-golang/blob/master/in_toto/slsa_provenance/v0.2/provenance.go
-	prov02, ok := prov.(*slsav02.ProvenanceV02)
+	prov02, ok := prov.(slsav02.ProvenanceV02)
 	if !ok {
 		return nil
 	}
+	predicate := prov02.Predicate()
 
-	if prov02.Predicate.BuildConfig == nil {
+	if predicate.BuildConfig == nil {
 		return nil
 	}
-	m, ok := prov02.Predicate.BuildConfig.(map[string]any)
+	m, ok := predicate.BuildConfig.(map[string]any)
 	if !ok || len(m) > 0 {
 		return fmt.Errorf("%w: buildConfig: %v",
-			serrors.ErrorNonVerifiableClaim, prov02.Predicate.BuildConfig)
+			serrors.ErrorNonVerifiableClaim, predicate.BuildConfig)
 	}
 
 	return nil
 }
 
-func verifySystemParameters(prov slsaprovenance.Provenance, workflow *WorkflowIdentity) error {
+func verifySystemParameters(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	/*
 		"environment": {
 			"GITHUB_EVENT_NAME": "workflow_dispatch",
@@ -338,7 +341,7 @@ func getRunIDs(workflow *WorkflowIdentity) (string, string, error) {
 
 func verifySystemRun(params map[string]any, workflow *WorkflowIdentity) error {
 	// Verify only if the values are provided in the provenance.
-	if !slsaprovenance.Exists(params, "GITHUB_RUN_ID") && !slsaprovenance.Exists(params, "GITHUB_RUN_ATTEMPT") {
+	if !common.Exists(params, "GITHUB_RUN_ID") && !common.Exists(params, "GITHUB_RUN_ATTEMPT") {
 		return nil
 	}
 	// The certificate contains runID as '4757060009/attempts/1'.
@@ -364,11 +367,11 @@ func verifySystemRun(params map[string]any, workflow *WorkflowIdentity) error {
 
 func verifySystemParameter(params map[string]any, name string, certValue *string) error {
 	// If the provenance does not contain an env variable.
-	if !slsaprovenance.Exists(params, name) {
+	if !common.Exists(params, name) {
 		return nil
 	}
 	// Provenance contains the field, we must verify it.
-	provValue, err := slsaprovenance.GetAsString(params, name)
+	provValue, err := common.GetAsString(params, name)
 	if err != nil {
 		return err
 	}
