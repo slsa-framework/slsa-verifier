@@ -156,14 +156,14 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/slsa-framework/example-package",
 			ptag:      pString("v1.2.3"),
-			err:       serrors.ErrorMismatchTag,
+			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:        "versioned tag no match empty tag workflow_dispatch",
 			artifacts:   []string{"binary-linux-amd64-workflow_dispatch"},
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
-			err:         serrors.ErrorInvalidSemver,
+			err:         serrors.ErrorInvalidRef,
 		},
 		// Provenance contains tag = v13.0.30.
 		{
@@ -477,7 +477,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			source:      "github.com/asraa/slsa-on-github-test",
 			pversiontag: pString("v1.5.0"),
 			pbranch:     pString("main"),
-			err:         serrors.ErrorMismatchBranch,
+			err:         serrors.ErrorInvalidRef,
 			noversion:   true,
 		},
 		// Workflow inputs.
@@ -746,14 +746,14 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			artifact: "container_workflow_dispatch",
 			source:   "github.com/slsa-framework/example-package",
 			ptag:     pString("v1.2.3"),
-			err:      serrors.ErrorMismatchTag,
+			err:      serrors.ErrorInvalidRef,
 		},
 		{
 			name:        "versioned tag no match empty tag workflow_dispatch",
 			artifact:    "container_workflow_dispatch",
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
-			err:         serrors.ErrorInvalidSemver,
+			err:         serrors.ErrorInvalidRef,
 		},
 	}
 	for _, tt := range tests {
@@ -1327,14 +1327,14 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 			artifacts:   []string{"workflow_dispatch.main.default"},
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
-			err:         serrors.ErrorInvalidSemver,
+			err:         serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "tag no match empty tag workflow_dispatch",
 			artifacts: []string{"workflow_dispatch.main.default"},
 			source:    "github.com/slsa-framework/example-package",
 			ptag:      pString("v1.2.3"),
-			err:       serrors.ErrorMismatchTag,
+			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "wrong branch master",
