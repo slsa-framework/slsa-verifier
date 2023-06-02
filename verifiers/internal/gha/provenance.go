@@ -182,7 +182,7 @@ func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 	bitLength := len(expectedHash) * 4
 	expectedAlgo := fmt.Sprintf("sha%v", bitLength)
 	if bitLength < 256 {
-		return fmt.Errorf("%w: hash must be at least 256-bit long. Got %d", serrors.ErrorInvalidHash, bitLength)
+		return fmt.Errorf("%w: expected minimum 256-bit. Got %d", serrors.ErrorInvalidHash, bitLength)
 	}
 
 	for _, subject := range subjects {
