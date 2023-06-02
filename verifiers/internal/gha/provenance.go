@@ -181,6 +181,7 @@ func verifyDigest(prov slsaprovenance.Provenance, expectedHash string) error {
 	// 8 bit represented in hex, so 8/2=4.
 	bitLength := len(expectedHash) * 4
 	expectedAlgo := fmt.Sprintf("sha%v", bitLength)
+	// TODO(#630): Add subject digest minimum bit length check.
 	// sha1 is 160 bit (FWIW).
 	if bitLength == 160 {
 		expectedAlgo = "sha1"
