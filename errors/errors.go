@@ -40,5 +40,6 @@ var (
 	ErrorRekorPubKey               = errors.New("error retrieving Rekor public keys")
 	ErrorInvalidPackageName        = errors.New("invalid package name")
 	ErrorInvalidSubject            = errors.New("invalid subject")
+	ErrorInvalidHash               = errors.New("invalid hash")
 	ErrorNotPresent                = errors.New("not present")
 )

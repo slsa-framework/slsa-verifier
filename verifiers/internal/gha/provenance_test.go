@@ -100,6 +100,21 @@ func Test_VerifyDigest(t *testing.T) {
 		expected     error
 	}{
 		{
+			name: "invalid short hash",
+			prov: &testProvenance{
+				subjects: []intoto.Subject{
+					{
+						Digest: common.DigestSet{
+							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
+						},
+					},
+				},
+			},
+			// NOTE: the hash is one character short of sha256 hash.
+			artifactHash: "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4",
+			expected:     serrors.ErrorInvalidHash,
+		},
+		{
 			name: "invalid dsse: no sha256 subject digest",
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
