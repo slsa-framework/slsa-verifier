@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -38,24 +37,16 @@ func (p *BYOBProvenanceV1) BuilderID() (string, error) {
 
 // SourceURI implements Provenance.SourceURI.
 func (p *BYOBProvenanceV1) SourceURI() (string, error) {
-	// Use externalParameters.
-	extParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	// Use resolvedDependencies.
+	if len(p.prov.Predicate.BuildDefinition.ResolvedDependencies) == 0 {
+		return "", fmt.Errorf("%w: empty resovedDependencies", serrors.ErrorInvalidDssePayload)
 	}
-	source, ok := extParams["source"]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source not found")
+	// For now, we use the first resolvedDependency relying on a GHA builder-verifier contract.
+	uri := p.prov.Predicate.BuildDefinition.ResolvedDependencies[0].URI
+	if uri == "" {
+		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
-	sourceBytes, err := json.Marshal(source)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", err, "marshalling external parameters source")
-	}
-	var sourceResource slsa1.ResourceDescriptor
-	if err := json.Unmarshal(sourceBytes, &sourceResource); err != nil {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters source type")
-	}
-	return sourceResource.URI, nil
+	return uri, nil
 }
 
 // TODO(#613): Support for generators.
