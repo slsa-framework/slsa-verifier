@@ -1301,7 +1301,6 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 // TODO(#485): Version the test-cases when a version for the builder is released.
 func Test_runVerifyGHAContainerBased(t *testing.T) {
 	// We cannot use t.Setenv due to parallelized tests.
-	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
 	os.Setenv("SLSA_VERIFIER_TESTING", "1")
 
 	t.Parallel()
