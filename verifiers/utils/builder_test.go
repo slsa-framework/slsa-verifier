@@ -648,3 +648,125 @@ func Test_MatchesFull(t *testing.T) {
 		})
 	}
 }
+
+func Test_IsValidBuilderTag(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		ref     string
+		testing bool
+		err     error
+	}{
+		// not testing
+		{
+			name: "valid full semver",
+			ref:  "refs/tags/v1.2.3",
+		},
+		{
+			name: "valid semver: no patch",
+			ref:  "refs/tags/v1.2",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: no minor",
+			ref:  "refs/tags/v1",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: no minor",
+			ref:  "refs/tags/v1",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: pre-release",
+			ref:  "refs/tags/v1.2.3-rc.0",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: pre-release w/ build",
+			ref:  "refs/tags/v1.2.3-rc.0+build1",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: build",
+			ref:  "refs/tags/v1.2.3+build1",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "invalid semver",
+			ref:  "refs/tags/1.2.3",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "invalid ref",
+			ref:  "refs/v1.2.3",
+			err:  serrors.ErrorInvalidRef,
+		},
+
+		// testing
+		{
+			name:    "valid full semver (testing)",
+			ref:     "refs/tags/v1.2.3",
+			testing: true,
+		},
+		{
+			name:    "valid semver: no patch (testing)",
+			ref:     "refs/tags/v1.2",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "valid semver: no minor (testing)",
+			ref:     "refs/tags/v1",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "valid semver: no minor (testing)",
+			ref:     "refs/tags/v1",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+		{
+			// NOTE: pre-releases are ok when testing.
+			name:    "valid semver: pre-release (testing)",
+			ref:     "refs/tags/v1.2.3-rc.0",
+			testing: true,
+		},
+		{
+			name:    "valid semver: pre-release w/ build (testing)",
+			ref:     "refs/tags/v1.2.3-rc.0+build1",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "valid semver: build (testing)",
+			ref:     "refs/tags/v1.2.3+build1",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "invalid semver (testing)",
+			ref:     "refs/tags/1.2.3",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "invalid ref (testing)",
+			ref:     "refs/v1.2.3",
+			testing: true,
+			err:     serrors.ErrorInvalidRef,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := IsValidBuilderTag(tt.ref, tt.testing)
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
