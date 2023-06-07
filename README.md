@@ -32,6 +32,7 @@
     - [The verify-npm-package command](#the-verify-npm-package-command)
     - [npm packages built using the SLSA3 Node.js builder](#npm-packages-built-using-the-slsa3-nodejs-builder)
     - [npm packages built using the npm CLI](#npm-packages-built-using-the-npm-cli)
+  - [Container-based builds](#container-based-builds)
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
