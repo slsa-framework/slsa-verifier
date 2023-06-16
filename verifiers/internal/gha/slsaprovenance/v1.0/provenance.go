@@ -35,12 +35,19 @@ func New(payload []byte) (iface.Provenance, error) {
 		return nil, err
 	}
 
-	if a.Predicate.BuildDefinition.BuildType != byobBuildType &&
-		a.Predicate.BuildDefinition.BuildType != containerBasedBuildType {
+	switch a.Predicate.BuildDefinition.BuildType {
+
+	case byobBuildType:
+		return &BYOBProvenance{
+			prov: a,
+		}, nil
+	case containerBasedBuildType:
+		return &ContainerBasedProvenance{
+			BYOBProvenance: &BYOBProvenance{
+				prov: a,
+			},
+		}, nil
+	default:
 		return nil, fmt.Errorf("%w: unknown buildType: %q", serrors.ErrorInvalidDssePayload, a.Predicate.BuildDefinition.BuildType)
 	}
-
-	return &BYOBProvenanceV1{
-		prov: a,
-	}, nil
 }
