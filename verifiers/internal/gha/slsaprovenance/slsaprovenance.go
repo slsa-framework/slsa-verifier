@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
@@ -27,31 +28,29 @@ var predicateTypeMap = map[string]provenanceConstructor{
 
 // ProvenanceFromEnvelope returns a Provenance instance for the given DSSE Envelope.
 func ProvenanceFromEnvelope(env *dsselib.Envelope) (iface.Provenance, error) {
-	if env.PayloadType != "application/vnd.in-toto+json" {
-		return nil, fmt.Errorf("%w: expected payload type 'application/vnd.in-toto+json', got '%s'",
-			serrors.ErrorInvalidDssePayload, env.PayloadType)
+	if env.PayloadType != intoto.PayloadType {
+		return nil, fmt.Errorf("%w: expected payload type %q, got '%s'",
+			serrors.ErrorInvalidDssePayload, intoto.PayloadType, env.PayloadType)
 	}
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 
-	// Get the predicateType, a required field.
-	pred := struct {
-		PredicateType string `json:"predicateType"`
-	}{}
+	// Load the in-toto attestation statement header.
+	pred := intoto.StatementHeader{}
 	if err := json.Unmarshal(pyld, &pred); err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: decoding json: %v", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	// Load the appropriate structure and unmarshal.
+	// Verify the predicate type is one we can handle.
 	newProv, ok := predicateTypeMap[pred.PredicateType]
 	if !ok {
 		return nil, fmt.Errorf("%w: unexpected predicate type '%s'", serrors.ErrorInvalidDssePayload, pred.PredicateType)
 	}
 	prov, err := newProv(pyld)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	return prov, nil

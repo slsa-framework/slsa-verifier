@@ -27,8 +27,8 @@ var (
 	byobDelegatorBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
 )
 
-// intotoAttestation is a SLSA v0.2 in-toto attestation statement.
-type intotoAttestation struct {
+// Attestation is a SLSA v0.2 in-toto attestation statement.
+type Attestation struct {
 	intoto.StatementHeader
 	Predicate slsa02.ProvenancePredicate `json:"predicate"`
 }
@@ -46,7 +46,7 @@ func New(payload []byte) (iface.Provenance, error) {
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 
-	a := &intotoAttestation{}
+	a := &Attestation{}
 	if err := dec.Decode(a); err != nil {
 		return nil, err
 	}
