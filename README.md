@@ -32,6 +32,7 @@
     - [The verify-npm-package command](#the-verify-npm-package-command)
     - [npm packages built using the SLSA3 Node.js builder](#npm-packages-built-using-the-slsa3-nodejs-builder)
     - [npm packages built using the npm CLI](#npm-packages-built-using-the-npm-cli)
+  - [Container-based builds](#container-based-builds)
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
@@ -378,6 +379,32 @@ source versioning validation, you can use `--source-tag` to validate the
 release tag and `--package-version` to validate the package version. For commit
 SHA validation, use `--print-provenance` and inspect the commit SHA of the
 config source or materials.
+
+### Container-based builds
+
+To verify an artifact produced by the [Container-based builder](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/docker/README.md), you will first need to run the following command to verify the provenance like the section above for general [Artifacts](#artifacts):
+
+```bash
+$ slsa-verifier verify-artifact slsa-test-linux-amd64 \
+  --provenance-path slsa-test-linux-amd64.sigstore \
+  --source-uri github.com/slsa-framework/slsa-test \
+  --source-tag v1.0.3
+Verified signature against tlog entry index 3189970 at URL: https://rekor.sigstore.dev/api/v1/log/entries/206071d5ca7a2346e4db4dcb19a648c7f13b4957e655f4382b735894059bd199
+Verified build using builder https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_container-based_slsa3.yml@refs/tags/v1.7.0 at commit 5bb13ef508b2b8ded49f9264d7712f1316830d10
+PASSED: Verified SLSA provenance
+```
+
+The input provenance is a `.sigstore` file, which is a [Sigstore bundle](https://github.com/sigstore/protobuf-specs/blob/main/protos/sigstore_bundle.proto#L63) that contains the in-toto statement containing the SLSA provenance along with verification material. The verified in-toto statement contained in the bundle may be written to stdout with the `--print-provenance` flag to pipe into policy engines.
+
+To verify the user-specified builder image that was used to produce the artifact, extract the builder image with the following command and validate in a policy engine:
+
+```bash
+$ cat verifier-statement.intoto | jq -r '.predicate.buildDefinition.externalParameters.builderImage'
+```
+
+The builder image is described using an [in-toto Resource Descriptor](https://github.com/in-toto/attestation/blob/main/spec/v1/resource_descriptor.md).
+
+In case the builds are reproducible, you may also use the internal [docker CLI tool](https://github.com/slsa-framework/slsa-github-generator/tree/main/internal/builders/docker#the-verify-command) to verify the artifact by rebuilding the artifact with the provided provenance.
 
 ## Verification for Google Cloud Build
 

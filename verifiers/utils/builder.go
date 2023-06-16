@@ -138,6 +138,7 @@ func IsValidBuilderTag(ref string, testing bool) error {
 			semver.Build(pin) != "" {
 			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
 		}
+		return nil
 	}
 
 	// Valid semver of the form vX.Y.Z with no metadata.

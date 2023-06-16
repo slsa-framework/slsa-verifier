@@ -74,6 +74,10 @@ func getBuildersAndVersions(t *testing.T,
 }
 
 func Test_runVerifyGHAArtifactPath(t *testing.T) {
+	// We cannot use t.Setenv due to parallelized tests.
+	// TODO(639): Remove this by regenerating multiple subjects test.
+	os.Setenv("SLSA_VERIFIER_TESTING", "1")
+
 	t.Parallel()
 	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
 	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
@@ -1298,12 +1302,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 	}
 }
 
-// TODO(#485): Version the test-cases when a version for the builder is released.
 func Test_runVerifyGHAContainerBased(t *testing.T) {
-	// We cannot use t.Setenv due to parallelized tests.
-	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
-	os.Setenv("SLSA_VERIFIER_TESTING", "1")
-
 	t.Parallel()
 
 	tests := []struct {
@@ -1319,58 +1318,58 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 	}{
 		{
 			name:      "valid main branch default",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/slsa-framework/example-package",
 		},
 		{
 			name:        "versioned tag no match empty tag workflow_dispatch",
-			artifacts:   []string{"workflow_dispatch.main.default"},
+			artifacts:   []string{"binary-linux-amd64-workflow_dispatch"},
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
 			err:         serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "tag no match empty tag workflow_dispatch",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/slsa-framework/example-package",
 			ptag:      pString("v1.2.3"),
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "wrong branch master",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/slsa-framework/example-package",
 			pbranch:   pString("master"),
 			err:       serrors.ErrorMismatchBranch,
 		},
 		{
 			name:      "valid main branch set",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/slsa-framework/example-package",
 			pbranch:   pString("main"),
 		},
 		{
 			name:       "valid main branch default - invalid builderID",
-			artifacts:  []string{"workflow_dispatch.main.default"},
+			artifacts:  []string{"binary-linux-amd64-workflow_dispatch"},
 			source:     "github.com/slsa-framework/example-package",
 			pBuilderID: pString("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/not-trusted.yml"),
 			err:        serrors.ErrorUntrustedReusableWorkflow,
 		},
 		{
 			name:      "wrong source append A",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/slsa-framework/example-packageA",
 			err:       serrors.ErrorMismatchSource,
 		},
 		{
 			name:      "wrong source prepend A",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "Agithub.com/slsa-framework/example-package",
 			err:       serrors.ErrorMismatchSource,
 		},
 		{
 			name:      "wrong source middle A",
-			artifacts: []string{"workflow_dispatch.main.default"},
+			artifacts: []string{"binary-linux-amd64-workflow_dispatch"},
 			source:    "github.com/Aslsa-framework/example-package",
 			err:       serrors.ErrorMismatchSource,
 		},
@@ -1400,14 +1399,10 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 				builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_container-based_slsa3.yml"
 
 				refName := "@refs/tags/"
-				if sv == "main" {
-					refName = "@refs/heads/"
-				}
-				// TODO(#485): Add pString(builder + "@" + sv) when migrating to tagged builders
-				// and remove main builder test.
 				builderIDs := []*string{
 					pString(builder + refName + sv),
 					pString(builder),
+					pString(builder + "@" + sv),
 					nil,
 				}
 

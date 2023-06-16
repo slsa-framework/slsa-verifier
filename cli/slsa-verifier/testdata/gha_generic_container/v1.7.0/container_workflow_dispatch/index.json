@@ -1,0 +1,21 @@
+{
+   "schemaVersion": 2,
+   "manifests": [
+      {
+         "mediaType": "application/vnd.oci.image.index.v1+json",
+         "size": 856,
+         "digest": "sha256:ca6221e2d0def24e302530f727689a2ab8539a690c740527db33a520284cf141",
+         "annotations": {
+            "kind": "dev.cosignproject.cosign/imageIndex"
+         }
+      },
+      {
+         "mediaType": "application/vnd.oci.image.manifest.v1+json",
+         "size": 10368,
+         "digest": "sha256:dbc658f204833d5ffcad9bf9c47a5af6cd39eea875f0a69879ae4850237ab777",
+         "annotations": {
+            "kind": "dev.cosignproject.cosign/atts"
+         }
+      }
+   ]
+}

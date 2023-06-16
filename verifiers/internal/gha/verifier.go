@@ -210,9 +210,6 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	isSigstoreBundle := IsSigstoreBundle(provenance)
-	if isSigstoreBundle && !options.ExperimentalEnabled() {
-		return nil, nil, errors.New("sigstore bundle support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
-	}
 
 	// This includes a default retry count of 3.
 	rClient, err := client.GetRekorClient(defaultRekorAddr)
