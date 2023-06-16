@@ -76,103 +76,82 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-func asURI(s string) string {
-	source := s
-	if !strings.HasPrefix(source, "https://") &&
-		!strings.HasPrefix(source, "git+") {
-		source = "git+https://" + source
-	}
-	if !strings.HasPrefix(source, "git+") {
-		source = "git+" + source
-	}
-
-	return source
-}
-
 // Verify source URI in provenance statement.
 func verifySourceURI(prov iface.Provenance, expectedSourceURI string) error {
-	source := asURI(expectedSourceURI)
+	source := utils.NormalizeGitURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
 	if !strings.HasPrefix(source, "git+https://github.com/") {
-		return fmt.Errorf("%w: expected source github.com repository '%s'", serrors.ErrorMalformedURI,
+		return fmt.Errorf("%w: expected source github.com repository %q", serrors.ErrorMalformedURI,
 			source)
 	}
 
 	// Verify source in the trigger
-	fullConfigURI, err := prov.TriggerURI()
+	fullTriggerURI, err := prov.TriggerURI()
 	if err != nil {
 		return err
 	}
 
-	configURI, configRef, err := parseURIAndRef(fullConfigURI)
+	triggerURI, triggerRef, err := utils.ParseGitURIAndRef(fullTriggerURI)
 	if err != nil {
 		return err
 	}
-	if configURI != source {
-		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got %q", serrors.ErrorMismatchSource,
-			source, fullConfigURI)
+	if triggerURI != source {
+		return fmt.Errorf("%w: expected trigger %q to match source-uri %q", serrors.ErrorMismatchSource,
+			source, fullTriggerURI)
 	}
 	// We expect the trigger URI to always have a ref.
-	if configRef == "" {
-		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullConfigURI)
+	if triggerRef == "" {
+		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullTriggerURI)
 	}
 
 	// Verify source from material section.
-	materialSourceURI, err := prov.SourceURI()
+	fullSourceURI, err := prov.SourceURI()
 	if err != nil {
 		return err
 	}
 
-	materialURI, materialRef, err := parseURIAndRef(materialSourceURI)
+	sourceURI, sourceRef, err := utils.ParseGitURIAndRef(fullSourceURI)
 	if err != nil {
 		return err
 	}
-	if materialURI != source {
-		return fmt.Errorf("%w: expected source '%s' in material section, got %q", serrors.ErrorMismatchSource,
-			source, materialSourceURI)
+	if sourceURI != source {
+		return fmt.Errorf("%w: expected source %q to match source-uri %q", serrors.ErrorMismatchSource,
+			fullSourceURI, source)
 	}
 
 	buildType, err := prov.BuildType()
 	if err != nil {
 		return fmt.Errorf("checking buildType: %v", err)
 	}
-	if materialRef == "" {
+	if sourceRef == "" {
 		// NOTE: this is an exception for npm packages built before GA,
 		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
 		// We don't need to compare the ref since materialSourceURI does not contain it.
 		if buildType == common.NpmCLIBuildTypeV1 {
 			return nil
 		}
-		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, materialSourceURI)
+		// NOTE: BYOB builders can build from a different ref than the triggering ref.
+		// This most often happens when a TRW makes a commit as part of the release process.
+		// NOTE: Currently only building from a different git sha is supported
+		// which means the sourceRef is empty. Building from an arbitrary ref
+		// is currently not supported.
+		if buildType == common.BYOBBuildTypeV0 {
+			return nil
+		}
+		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullSourceURI)
 	}
 
-	// Last, verify that both fields match (including ref).
-	// We use the full URI to match on the tag as well.
-	if fullConfigURI != materialSourceURI {
-		return fmt.Errorf("%w: material and config URIs do not match: %q != %q",
+	// Last, verify that both fields match. We expect that the trigger URI and
+	// the source URI match but the ref used to trigger the build and source ref
+	// could be different.
+	if fullTriggerURI != fullSourceURI {
+		return fmt.Errorf("%w: source and trigger URIs do not match: %q != %q",
 			serrors.ErrorInvalidDssePayload,
-			fullConfigURI, materialSourceURI)
+			fullTriggerURI, fullSourceURI)
 	}
 
 	return nil
-}
-
-// parseURIAndRef retrieves the URI and ref from the given URI.
-func parseURIAndRef(uri string) (string, string, error) {
-	if uri == "" {
-		return "", "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
-	}
-
-	r := strings.Split(uri, "@")
-	if len(r) < 1 {
-		return "", "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI, uri)
-	}
-	if len(r) < 2 {
-		return r[0], "", nil
-	}
-
-	return r[0], r[1], nil
 }
 
 // Verify Subject Digest from the provenance statement.
