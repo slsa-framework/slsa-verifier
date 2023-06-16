@@ -1,18 +1,22 @@
-package slsaprovenance
+package common
 
 import (
 	"fmt"
 	"strings"
 
-	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+)
+
+const (
+	// ProvenanceV02Type is the SLSA v0.2 predicate type.
+	ProvenanceV02Type = "https://slsa.dev/provenance/v0.2"
 )
 
 // GetWorkflowInputs gets the workflow inputs from the GitHub environment map
 // and converts the keys to the necessary casing depending on predicate type.
-func GetWorkflowInputs(environment map[string]any, predicateType string) (map[string]any, error) {
+func GetWorkflowInputs(environment map[string]any, upperEnv bool) (map[string]any, error) {
 	// Verify it's a workflow_dispatch trigger.
-	eventKey, err := convertKey("github_event_name", predicateType)
+	eventKey, err := convertKey("github_event_name", upperEnv)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s",
 			serrors.ErrorMismatchWorkflowInputs, err)
@@ -26,7 +30,7 @@ func GetWorkflowInputs(environment map[string]any, predicateType string) (map[st
 			serrors.ErrorMismatchWorkflowInputs, triggerName)
 	}
 
-	payload, err := GetEventPayload(environment, predicateType)
+	payload, err := GetEventPayload(environment, upperEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +49,8 @@ func GetWorkflowInputs(environment map[string]any, predicateType string) (map[st
 
 // GetEventPayload retrieves the GitHub event payload from the environment map
 // that contains the GitHub context payload.
-func GetEventPayload(environment map[string]any, predicateType string) (map[string]any, error) {
-	eventPayloadKey, err := convertKey("github_event_payload", predicateType)
+func GetEventPayload(environment map[string]any, upperEnv bool) (map[string]any, error) {
+	eventPayloadKey, err := convertKey("github_event_payload", upperEnv)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 	}
@@ -63,15 +67,11 @@ func GetEventPayload(environment map[string]any, predicateType string) (map[stri
 	return payload, nil
 }
 
-func convertKey(key, predicateType string) (string, error) {
-	switch predicateType {
-	case slsa1.PredicateSLSAProvenance:
+func convertKey(key string, upperEnv bool) (string, error) {
+	if upperEnv {
 		return strings.ToUpper(key), nil
-	case ProvenanceV02Type:
-		return key, nil
-	default:
-		return "", fmt.Errorf("unrecognized predicate type %s", predicateType)
 	}
+	return key, nil
 }
 
 func getAsAny(environment map[string]any, field string) (any, error) {
@@ -83,8 +83,8 @@ func getAsAny(environment map[string]any, field string) (any, error) {
 	return value, nil
 }
 
-func getBranchForTag(environment map[string]any, predicateType string) (string, error) {
-	baseRefKey, err := convertKey("github_base_ref", predicateType)
+func getBranchForTag(environment map[string]any, upperEnv bool) (string, error) {
+	baseRefKey, err := convertKey("github_base_ref", upperEnv)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 	}
@@ -100,7 +100,7 @@ func getBranchForTag(environment map[string]any, predicateType string) (string, 
 	}
 
 	// Look at the event payload instead.
-	environmentKey, err := convertKey("github_event_name", predicateType)
+	environmentKey, err := convertKey("github_event_name", upperEnv)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 	}
@@ -109,7 +109,7 @@ func getBranchForTag(environment map[string]any, predicateType string) (string, 
 		return "", err
 	}
 
-	payload, err := GetEventPayload(environment, predicateType)
+	payload, err := GetEventPayload(environment, upperEnv)
 	if err != nil {
 		return "", err
 	}
@@ -154,8 +154,9 @@ func getBranchForTag(environment map[string]any, predicateType string) (string, 
 	}
 }
 
-func GetTag(environment map[string]any, predicateType string) (string, error) {
-	refTypeKey, err := convertKey("github_ref_type", predicateType)
+// GetTag returns the triggering event's tag based on the given environment.
+func GetTag(environment map[string]any, upperEnv bool) (string, error) {
+	refTypeKey, err := convertKey("github_ref_type", upperEnv)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 	}
@@ -169,7 +170,7 @@ func GetTag(environment map[string]any, predicateType string) (string, error) {
 	case "branch":
 		return "", nil
 	case "tag":
-		refKey, err := convertKey("github_ref", predicateType)
+		refKey, err := convertKey("github_ref", upperEnv)
 		if err != nil {
 			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 		}
@@ -180,8 +181,9 @@ func GetTag(environment map[string]any, predicateType string) (string, error) {
 	}
 }
 
-func GetBranch(environment map[string]any, predicateType string) (string, error) {
-	refTypeKey, err := convertKey("github_ref_type", predicateType)
+// GetBranch returns the triggering event's branch based on the given environment.
+func GetBranch(environment map[string]any, upperEnv bool) (string, error) {
+	refTypeKey, err := convertKey("github_ref_type", upperEnv)
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 	}
@@ -193,24 +195,26 @@ func GetBranch(environment map[string]any, predicateType string) (string, error)
 
 	switch refType {
 	case "branch":
-		refKey, err := convertKey("github_ref", predicateType)
+		refKey, err := convertKey("github_ref", upperEnv)
 		if err != nil {
 			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err)
 		}
 		return GetAsString(environment, refKey)
 	case "tag":
-		return getBranchForTag(environment, predicateType)
+		return getBranchForTag(environment, upperEnv)
 	default:
 		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }
 
+// Exists returns true if the given key exists in the environment.
 func Exists(environment map[string]any, field string) bool {
 	_, ok := environment[field]
 	return ok
 }
 
+// GetAsString returns the value in the given environment as a string.
 func GetAsString(environment map[string]any, field string) (string, error) {
 	value, ok := environment[field]
 	if !ok {

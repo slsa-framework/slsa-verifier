@@ -1,126 +1,73 @@
 package v02
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
+
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
-// TODO(https://github.com/slsa-framework/slsa-verifier/issues/473): Use a static mapping.
-//
-//nolint:gochecknoinits
-func init() {
-	slsaprovenance.ProvenanceMap.Store(
-		slsaprovenance.ProvenanceV02Type,
-		New)
+var (
+	goBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator/go@v1"
+
+	genericGeneratorBuildType   = "https://github.com/slsa-framework/slsa-github-generator/generic@v1"
+	containerGeneratorBuildType = "https://github.com/slsa-framework/slsa-github-generator/container@v1"
+	npmCLIBuildType             = "https://github.com/npm/cli/gha@v1"
+
+	// Legacy build types.
+	legacyGoBuilderBuildType = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
+	legacyBuilderBuildType   = "https://github.com/slsa-framework/slsa-github-generator@v1"
+
+	// byobBuildType is the base build type for BYOB delegated builders.
+	byobDelegatorBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
+)
+
+// intotoAttestation is a SLSA v0.2 in-toto attestation statement.
+type intotoAttestation struct {
+	intoto.StatementHeader
+	Predicate slsa02.ProvenancePredicate `json:"predicate"`
 }
 
-type ProvenanceV02 struct {
-	*intoto.ProvenanceStatement
+// ProvenanceV02 represents v0.2 provenance.
+type ProvenanceV02 interface {
+	Predicate() slsa02.ProvenancePredicate
 }
 
-// This returns a new, empty instance of the v0.2 provenance.
-func New() slsaprovenance.Provenance {
-	return &ProvenanceV02{}
-}
+// New returns a new Provenance for the given json payload.
+func New(payload []byte) (iface.Provenance, error) {
+	// Strict unmarshal.
+	// NOTE: this supports extensions because they are
+	// only used as part of interface{}-defined fields.
+	dec := json.NewDecoder(bytes.NewReader(payload))
+	dec.DisallowUnknownFields()
 
-func (prov *ProvenanceV02) BuilderID() (string, error) {
-	return prov.Predicate.Builder.ID, nil
-}
-
-func (prov *ProvenanceV02) SourceURI() (string, error) {
-	if len(prov.Predicate.Materials) == 0 {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
-	}
-	uri := prov.Predicate.Materials[0].URI
-	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
-	}
-
-	return uri, nil
-}
-
-func (prov *ProvenanceV02) TriggerURI() (string, error) {
-	uri := prov.Predicate.Invocation.ConfigSource.URI
-	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
-	}
-	return uri, nil
-}
-
-func (prov *ProvenanceV02) Subjects() ([]intoto.Subject, error) {
-	subj := prov.Subject
-	if len(subj) == 0 {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
-	}
-	return subj, nil
-}
-
-func (prov *ProvenanceV02) GetBranch() (string, error) {
-	// GetBranch gets the branch from the invocation parameters.
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	a := &intotoAttestation{}
+	if err := dec.Decode(a); err != nil {
+		return nil, err
 	}
 
-	return slsaprovenance.GetBranch(environment, prov.PredicateType)
-}
-
-func (prov *ProvenanceV02) GetTag() (string, error) {
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
+	switch {
+	case a.Predicate.BuildType == byobDelegatorBuildType:
+		return &provenanceV02{
+			upperEnv: true,
+			prov:     a,
+		}, nil
+	case a.Predicate.BuildType == goBuilderBuildType ||
+		a.Predicate.BuildType == genericGeneratorBuildType ||
+		a.Predicate.BuildType == containerGeneratorBuildType ||
+		a.Predicate.BuildType == npmCLIBuildType ||
+		a.Predicate.BuildType == legacyBuilderBuildType ||
+		a.Predicate.BuildType == legacyGoBuilderBuildType:
+		return &provenanceV02{
+			upperEnv: false,
+			prov:     a,
+		}, nil
+	default:
+		return nil, fmt.Errorf("%w: unknown buildType: %q", serrors.ErrorInvalidDssePayload, a.Predicate.BuildType)
 	}
-
-	return slsaprovenance.GetTag(environment, prov.PredicateType)
-}
-
-func (prov *ProvenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
-	// Verify it's a workflow_dispatch trigger.
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-	}
-
-	return slsaprovenance.GetWorkflowInputs(environment, prov.PredicateType)
-}
-
-func (prov *ProvenanceV02) GetBuildTriggerPath() (string, error) {
-	return prov.Predicate.Invocation.ConfigSource.EntryPoint, nil
-}
-
-func (prov *ProvenanceV02) GetBuildInvocationID() (string, error) {
-	if prov.Predicate.Metadata == nil {
-		return "", nil
-	}
-	return prov.Predicate.Metadata.BuildInvocationID, nil
-}
-
-func (prov *ProvenanceV02) GetBuildStartTime() (*time.Time, error) {
-	if prov.Predicate.Metadata == nil {
-		return nil, nil
-	}
-	return prov.Predicate.Metadata.BuildStartedOn, nil
-}
-
-func (prov *ProvenanceV02) GetBuildFinishTime() (*time.Time, error) {
-	if prov.Predicate.Metadata == nil {
-		return nil, nil
-	}
-	return prov.Predicate.Metadata.BuildFinishedOn, nil
-}
-
-func (prov *ProvenanceV02) GetNumberResolvedDependencies() (int, error) {
-	return len(prov.Predicate.Materials), nil
-}
-
-func (prov *ProvenanceV02) GetSystemParameters() (map[string]any, error) {
-	environment, ok := prov.Predicate.Invocation.Environment.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-	}
-	return environment, nil
 }
