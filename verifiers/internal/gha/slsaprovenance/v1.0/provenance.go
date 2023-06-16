@@ -36,7 +36,6 @@ func New(payload []byte) (iface.Provenance, error) {
 	}
 
 	switch a.Predicate.BuildDefinition.BuildType {
-
 	case byobBuildType:
 		return &BYOBProvenance{
 			prov: a,
