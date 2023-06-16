@@ -90,7 +90,7 @@ func asURI(s string) string {
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
+func verifySourceURI(prov iface.Provenance, expectedSourceURI string) error {
 	source := asURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -105,13 +105,17 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMat
 		return err
 	}
 
-	configURI, err := sourceFromURI(fullConfigURI, false)
+	configURI, configRef, err := parseURIAndRef(fullConfigURI)
 	if err != nil {
 		return err
 	}
 	if configURI != source {
-		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", serrors.ErrorMismatchSource,
+		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got %q", serrors.ErrorMismatchSource,
 			source, fullConfigURI)
+	}
+	// We expect the trigger URI to always have a ref.
+	if configRef == "" {
+		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullConfigURI)
 	}
 
 	// Verify source from material section.
@@ -120,25 +124,33 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMat
 		return err
 	}
 
-	materialURI, err := sourceFromURI(materialSourceURI, allowNoMaterialRef)
+	materialURI, materialRef, err := parseURIAndRef(materialSourceURI)
 	if err != nil {
 		return err
 	}
 	if materialURI != source {
-		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", serrors.ErrorMismatchSource,
+		return fmt.Errorf("%w: expected source '%s' in material section, got %q", serrors.ErrorMismatchSource,
 			source, materialSourceURI)
 	}
 
-	// Last, verify that both fields match.
-	// We use the full URI to match on the tag as well.
-	if allowNoMaterialRef && len(strings.Split(materialSourceURI, "@")) == 1 {
+	buildType, err := prov.BuildType()
+	if err != nil {
+		return fmt.Errorf("checking buildType: %v", err)
+	}
+	if materialRef == "" {
 		// NOTE: this is an exception for npm packages built before GA,
 		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
 		// We don't need to compare the ref since materialSourceURI does not contain it.
-		return nil
+		if buildType == common.NpmCLIBuildTypeV1 {
+			return nil
+		}
+		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, materialSourceURI)
 	}
+
+	// Last, verify that both fields match (including ref).
+	// We use the full URI to match on the tag as well.
 	if fullConfigURI != materialSourceURI {
-		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
+		return fmt.Errorf("%w: material and config URIs do not match: %q != %q",
 			serrors.ErrorInvalidDssePayload,
 			fullConfigURI, materialSourceURI)
 	}
@@ -146,28 +158,21 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMat
 	return nil
 }
 
-// sourceFromURI retrieves the source repository given a repository URI with ref.
-//
-// NOTE: `allowNoRef` is to allow for verification of npm packages
-// generated before GA. Their provenance did not have a ref,
-// see https://github.com/slsa-framework/slsa-verifier/issues/492.
-// `allowNoRef` should be set to `false` for all other cases.
-func sourceFromURI(uri string, allowNoRef bool) (string, error) {
+// parseURIAndRef retrieves the URI and ref from the given URI.
+func parseURIAndRef(uri string) (string, string, error) {
 	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
+		return "", "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}
 
 	r := strings.Split(uri, "@")
-	if len(r) < 2 && !allowNoRef {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
-			uri)
-	}
 	if len(r) < 1 {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
-			uri)
+		return "", "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI, uri)
+	}
+	if len(r) < 2 {
+		return r[0], "", nil
 	}
 
-	return r[0], nil
+	return r[0], r[1], nil
 }
 
 // Verify Subject Digest from the provenance statement.
@@ -270,7 +275,7 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	}
 
 	// Also, the GitHub context is not recorded for the default builder.
-	if err := VerifyProvenanceCommonOptions(prov, provenanceOpts, true); err != nil {
+	if err := VerifyProvenanceCommonOptions(prov, provenanceOpts); err != nil {
 		return err
 	}
 
@@ -320,15 +325,13 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		}
 	}
 
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts)
 }
 
 // VerifyProvenanceCommonOptions verifies the given provenance.
-func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *options.ProvenanceOpts,
-	allowNoMaterialRef bool,
-) error {
+func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *options.ProvenanceOpts) error {
 	// Verify source.
-	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI, allowNoMaterialRef); err != nil {
+	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI); err != nil {
 		return err
 	}
 

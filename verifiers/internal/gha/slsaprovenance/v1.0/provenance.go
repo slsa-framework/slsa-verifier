@@ -9,6 +9,7 @@ import (
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
@@ -36,17 +37,17 @@ func New(payload []byte) (iface.Provenance, error) {
 	}
 
 	switch a.Predicate.BuildDefinition.BuildType {
-	case byobBuildType:
+	case common.BYOBBuildTypeV0:
 		return &BYOBProvenance{
 			prov: a,
 		}, nil
-	case containerBasedBuildType:
+	case common.ContainerBasedBuildTypeV01Draft:
 		return &ContainerBasedProvenance{
 			BYOBProvenance: &BYOBProvenance{
 				prov: a,
 			},
 		}, nil
 	default:
-		return nil, fmt.Errorf("%w: unknown buildType: %q", serrors.ErrorInvalidDssePayload, a.Predicate.BuildDefinition.BuildType)
+		return nil, fmt.Errorf("%w: %q", serrors.ErrorInvalidBuildType, a.Predicate.BuildDefinition.BuildType)
 	}
 }

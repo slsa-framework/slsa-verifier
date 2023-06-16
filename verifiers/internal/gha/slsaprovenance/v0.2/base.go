@@ -28,6 +28,11 @@ func (p *provenanceV02) BuilderID() (string, error) {
 	return p.prov.Predicate.Builder.ID, nil
 }
 
+// BuildType implements Provenance.BuildType.
+func (p *provenanceV02) BuildType() (string, error) {
+	return p.prov.Predicate.BuildType, nil
+}
+
 // SourceURI implements Provenance.SourceURI.
 func (p *provenanceV02) SourceURI() (string, error) {
 	if len(p.prov.Predicate.Materials) == 0 {
