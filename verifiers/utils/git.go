@@ -9,12 +9,11 @@ import (
 
 // NormalizeGitURI normalizes a git URI to include a git+https:// prefix.
 func NormalizeGitURI(s string) string {
-	if !strings.HasPrefix(s, "https://") &&
-		!strings.HasPrefix(s, "git+") {
-		s = "git+https://" + s
-	}
 	if !strings.HasPrefix(s, "git+") {
-		s = "git+" + s
+		if !strings.Contains(s, "://") {
+			return "git+https://" + s
+		}
+		return "git+" + s
 	}
 	return s
 }
@@ -29,9 +28,6 @@ func ParseGitURIAndRef(uri string) (string, string, error) {
 	}
 
 	r := strings.SplitN(uri, "@", 2)
-	if len(r) < 1 {
-		return "", "", fmt.Errorf("%w: %q", serrors.ErrorMalformedURI, uri)
-	}
 	if len(r) < 2 {
 		return r[0], "", nil
 	}
