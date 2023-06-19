@@ -10,6 +10,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // BYOBProvenance is SLSA v1.0 provenance for the slsa-github-generator BYOB build type.
@@ -156,24 +157,51 @@ func (p *BYOBProvenance) Subjects() ([]intoto.Subject, error) {
 
 // GetBranch implements Provenance.GetBranch.
 func (p *BYOBProvenance) GetBranch() (string, error) {
-	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/472): Add GetBranch() support.
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+	sourceURI, err := p.SourceURI()
+	if err != nil {
+		// Get the value from the internalParameters if there is no source URI.
+		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+		}
+		return common.GetBranch(sysParams, true)
 	}
 
-	return common.GetBranch(sysParams, true)
+	// Returns the branch from the source URI if available.
+	_, ref, err := utils.ParseGitURIAndRef(sourceURI)
+	if err != nil {
+		return "", fmt.Errorf("parsing source uri: %w", err)
+	}
+	branch, err := utils.BranchFromGitRef(ref)
+	if err != nil {
+		return "", fmt.Errorf("parsing ref: %w", err)
+	}
+	return branch, nil
 }
 
 // GetTag implements Provenance.GetTag.
 func (p *BYOBProvenance) GetTag() (string, error) {
-	// Get the value from the internalParameters if there is no source URI.
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	sourceURI, err := p.SourceURI()
+	if err != nil {
+		// Get the value from the internalParameters if there is no source URI.
+		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+		}
+
+		return common.GetTag(sysParams, true)
 	}
 
-	return common.GetTag(sysParams, true)
+	// Returns the branch from the source URI if available.
+	_, ref, err := utils.ParseGitURIAndRef(sourceURI)
+	if err != nil {
+		return "", fmt.Errorf("parsing source uri: %w", err)
+	}
+	tag, err := utils.TagFromGitRef(ref)
+	if err != nil {
+		return "", fmt.Errorf("parsing ref: %w", err)
+	}
+	return tag, nil
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.
