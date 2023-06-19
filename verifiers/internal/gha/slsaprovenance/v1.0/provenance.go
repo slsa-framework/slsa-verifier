@@ -39,11 +39,15 @@ func New(payload []byte) (iface.Provenance, error) {
 	switch a.Predicate.BuildDefinition.BuildType {
 	case common.BYOBBuildTypeV0:
 		return &BYOBProvenance{
-			prov: a,
+			provenanceV1: &provenanceV1{
+				prov: a,
+			},
 		}, nil
 	case common.ContainerBasedBuildTypeV01Draft:
 		return &ContainerBasedProvenance{
-			prov: a,
+			provenanceV1: &provenanceV1{
+				prov: a,
+			},
 		}, nil
 	default:
 		return nil, fmt.Errorf("%w: %q", serrors.ErrorInvalidBuildType, a.Predicate.BuildDefinition.BuildType)

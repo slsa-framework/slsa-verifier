@@ -22,9 +22,11 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 		{
 			name: "empty provenance",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate:       slsa1.ProvenancePredicate{},
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate:       slsa1.ProvenancePredicate{},
+					},
 				},
 			},
 			err: serrors.ErrorInvalidDssePayload,
@@ -32,13 +34,15 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 		{
 			name: "resolved dependency uri @ refs/heads/main",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							ResolvedDependencies: []slsa1.ResourceDescriptor{
-								{
-									URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								ResolvedDependencies: []slsa1.ResourceDescriptor{
+									{
+										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
+									},
 								},
 							},
 						},
@@ -50,13 +54,15 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 		{
 			name: "internalParameters uri @ refs/heads/main",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							InternalParameters: map[string]interface{}{
-								"GITHUB_REF_TYPE": "branch",
-								"GITHUB_REF":      "refs/heads/main",
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								InternalParameters: map[string]interface{}{
+									"GITHUB_REF_TYPE": "branch",
+									"GITHUB_REF":      "refs/heads/main",
+								},
 							},
 						},
 					},
@@ -67,22 +73,24 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 		{
 			name: "resolved dependency uri @ refs/tags/v1.0.0",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							InternalParameters: map[string]interface{}{
-								"GITHUB_BASE_REF":   "",
-								"GITHUB_REF_TYPE":   "tag",
-								"GITHUB_REF":        "refs/tags/v1.0.0",
-								"GITHUB_EVENT_NAME": "push",
-								"GITHUB_EVENT_PAYLOAD": map[string]any{
-									"base_ref": nil,
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								InternalParameters: map[string]interface{}{
+									"GITHUB_BASE_REF":   "",
+									"GITHUB_REF_TYPE":   "tag",
+									"GITHUB_REF":        "refs/tags/v1.0.0",
+									"GITHUB_EVENT_NAME": "push",
+									"GITHUB_EVENT_PAYLOAD": map[string]any{
+										"base_ref": nil,
+									},
 								},
-							},
-							ResolvedDependencies: []slsa1.ResourceDescriptor{
-								{
-									URI: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+								ResolvedDependencies: []slsa1.ResourceDescriptor{
+									{
+										URI: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+									},
 								},
 							},
 						},
@@ -94,17 +102,19 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 		{
 			name: "internalParameters uri @ ref/tags/v1.0.0",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							InternalParameters: map[string]interface{}{
-								"GITHUB_BASE_REF":   "",
-								"GITHUB_REF_TYPE":   "tag",
-								"GITHUB_REF":        "refs/tags/v1.0.0",
-								"GITHUB_EVENT_NAME": "push",
-								"GITHUB_EVENT_PAYLOAD": map[string]any{
-									"base_ref": nil,
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								InternalParameters: map[string]interface{}{
+									"GITHUB_BASE_REF":   "",
+									"GITHUB_REF_TYPE":   "tag",
+									"GITHUB_REF":        "refs/tags/v1.0.0",
+									"GITHUB_EVENT_NAME": "push",
+									"GITHUB_EVENT_PAYLOAD": map[string]any{
+										"base_ref": nil,
+									},
 								},
 							},
 						},
@@ -143,9 +153,11 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 		{
 			name: "empty provenance",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate:       slsa1.ProvenancePredicate{},
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate:       slsa1.ProvenancePredicate{},
+					},
 				},
 			},
 			err: serrors.ErrorInvalidDssePayload,
@@ -153,13 +165,15 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 		{
 			name: "resolved dependency uri @ refs/heads/main",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							ResolvedDependencies: []slsa1.ResourceDescriptor{
-								{
-									URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								ResolvedDependencies: []slsa1.ResourceDescriptor{
+									{
+										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
+									},
 								},
 							},
 						},
@@ -171,13 +185,15 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 		{
 			name: "internalParameters uri @ refs/heads/main",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							InternalParameters: map[string]interface{}{
-								"GITHUB_REF_TYPE": "branch",
-								"GITHUB_REF":      "refs/heads/main",
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								InternalParameters: map[string]interface{}{
+									"GITHUB_REF_TYPE": "branch",
+									"GITHUB_REF":      "refs/heads/main",
+								},
 							},
 						},
 					},
@@ -188,13 +204,15 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 		{
 			name: "resolved dependency uri @ refs/tags/v1.0.0",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							ResolvedDependencies: []slsa1.ResourceDescriptor{
-								{
-									URI: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								ResolvedDependencies: []slsa1.ResourceDescriptor{
+									{
+										URI: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+									},
 								},
 							},
 						},
@@ -206,13 +224,15 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 		{
 			name: "internalParameters uri @ ref/tags/v1.0.0",
 			prov: BYOBProvenance{
-				prov: &intotoAttestation{
-					StatementHeader: intoto.StatementHeader{},
-					Predicate: slsa1.ProvenancePredicate{
-						BuildDefinition: slsa1.ProvenanceBuildDefinition{
-							InternalParameters: map[string]interface{}{
-								"GITHUB_REF_TYPE": "tag",
-								"GITHUB_REF":      "refs/tags/v1.0.0",
+				provenanceV1: &provenanceV1{
+					prov: &intotoAttestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								InternalParameters: map[string]interface{}{
+									"GITHUB_REF_TYPE": "tag",
+									"GITHUB_REF":      "refs/tags/v1.0.0",
+								},
 							},
 						},
 					},
