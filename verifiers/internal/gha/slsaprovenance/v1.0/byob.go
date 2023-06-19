@@ -209,11 +209,18 @@ func (p *BYOBProvenance) GetTag() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parsing source uri: %w", err)
 	}
-	if _, err := utils.TagFromGitRef(ref); err != nil {
-		return "", fmt.Errorf("parsing ref: %w", err)
+
+	refType, _ := utils.ParseGitRef(ref)
+	switch refType {
+	case "heads": // branch.
+		return "", nil
+	case "tags":
+		// NOTE: We return the full git ref.
+		return ref, nil
+	default:
+		return "", fmt.Errorf("%w: %s %q", serrors.ErrorInvalidDssePayload,
+			"unknown ref type", refType)
 	}
-	// NOTE: We return the full git ref.
-	return ref, nil
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.

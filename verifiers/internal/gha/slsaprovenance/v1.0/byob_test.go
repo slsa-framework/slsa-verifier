@@ -130,3 +130,110 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 		})
 	}
 }
+
+func Test_BYOBProvenance_GetTag(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name string
+		prov BYOBProvenance
+		tag  string
+		err  error
+	}{
+		{
+			name: "empty provenance",
+			prov: BYOBProvenance{
+				prov: &intotoAttestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate:       slsa1.ProvenancePredicate{},
+				},
+			},
+			err: serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name: "resolved dependency uri @ refs/heads/main",
+			prov: BYOBProvenance{
+				prov: &intotoAttestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate: slsa1.ProvenancePredicate{
+						BuildDefinition: slsa1.ProvenanceBuildDefinition{
+							ResolvedDependencies: []slsa1.ResourceDescriptor{
+								{
+									URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
+								},
+							},
+						},
+					},
+				},
+			},
+			tag: "",
+		},
+		{
+			name: "internalParameters uri @ refs/heads/main",
+			prov: BYOBProvenance{
+				prov: &intotoAttestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate: slsa1.ProvenancePredicate{
+						BuildDefinition: slsa1.ProvenanceBuildDefinition{
+							InternalParameters: map[string]interface{}{
+								"GITHUB_REF_TYPE": "branch",
+								"GITHUB_REF":      "refs/heads/main",
+							},
+						},
+					},
+				},
+			},
+			tag: "",
+		},
+		{
+			name: "resolved dependency uri @ refs/tags/v1.0.0",
+			prov: BYOBProvenance{
+				prov: &intotoAttestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate: slsa1.ProvenancePredicate{
+						BuildDefinition: slsa1.ProvenanceBuildDefinition{
+							ResolvedDependencies: []slsa1.ResourceDescriptor{
+								{
+									URI: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+								},
+							},
+						},
+					},
+				},
+			},
+			tag: "refs/tags/v1.0.0",
+		},
+		{
+			name: "internalParameters uri @ ref/tags/v1.0.0",
+			prov: BYOBProvenance{
+				prov: &intotoAttestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate: slsa1.ProvenancePredicate{
+						BuildDefinition: slsa1.ProvenanceBuildDefinition{
+							InternalParameters: map[string]interface{}{
+								"GITHUB_REF_TYPE": "tag",
+								"GITHUB_REF":      "refs/tags/v1.0.0",
+							},
+						},
+					},
+				},
+			},
+			tag: "refs/tags/v1.0.0",
+		},
+	}
+
+	for i := range testCases {
+		tt := testCases[i]
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			tag, err := tt.prov.GetTag()
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got, want := tag, tt.tag; got != want {
+				t.Fatalf("unexpected tag, got: %q, want: %q", got, want)
+			}
+		})
+	}
+}
