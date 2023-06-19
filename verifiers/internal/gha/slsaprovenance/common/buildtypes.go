@@ -20,7 +20,7 @@ var (
 	NpmCLIBuildTypeV1 = "https://github.com/npm/cli/gha@v1"
 )
 
-// Legacy buildTypes
+// Legacy buildTypes.
 var (
 	// LegacyGoBuilderBuildTypeV1 is a legacy Go builder buildType.
 	LegacyGoBuilderBuildTypeV1 = "https://github.com/slsa-framework/slsa-github-generator-go@v1"
