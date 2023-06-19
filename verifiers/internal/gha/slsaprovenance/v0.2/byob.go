@@ -26,7 +26,6 @@ func newBYOBProvenance(att *intotoAttestation) *byobProvenance {
 func (p *byobProvenance) GetBranch() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-
 		// GetBranch gets the branch from the invocation parameters.
 		environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
 		if !ok {
