@@ -43,9 +43,7 @@ func New(payload []byte) (iface.Provenance, error) {
 		}, nil
 	case common.ContainerBasedBuildTypeV01Draft:
 		return &ContainerBasedProvenance{
-			BYOBProvenance: &BYOBProvenance{
-				prov: a,
-			},
+			prov: a,
 		}, nil
 	default:
 		return nil, fmt.Errorf("%w: %q", serrors.ErrorInvalidBuildType, a.Predicate.BuildDefinition.BuildType)

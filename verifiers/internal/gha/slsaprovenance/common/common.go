@@ -176,7 +176,7 @@ func GetTag(environment map[string]any, upperEnv bool) (string, error) {
 		}
 		return GetAsString(environment, refKey)
 	default:
-		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s %q", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }
@@ -203,7 +203,7 @@ func GetBranch(environment map[string]any, upperEnv bool) (string, error) {
 	case "tag":
 		return getBranchForTag(environment, upperEnv)
 	default:
-		return "", fmt.Errorf("%w: %s %s", serrors.ErrorInvalidDssePayload,
+		return "", fmt.Errorf("%w: %s %q", serrors.ErrorInvalidDssePayload,
 			"unknown ref type", refType)
 	}
 }

@@ -172,11 +172,23 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parsing source uri: %w", err)
 	}
-	branch, err := utils.BranchFromGitRef(ref)
-	if err != nil {
-		return "", fmt.Errorf("parsing ref: %w", err)
+
+	refType, _ := utils.ParseGitRef(ref)
+	switch refType {
+	case "heads": // branch.
+		// NOTE: We return the full git ref.
+		return ref, nil
+	case "tags":
+		// NOTE: If the ref type is a tag we want to try to parse out the branch from the tag.
+		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+		}
+		return common.GetBranch(sysParams, true)
+	default:
+		return "", fmt.Errorf("%w: %s %q", serrors.ErrorInvalidDssePayload,
+			"unknown ref type", refType)
 	}
-	return branch, nil
 }
 
 // GetTag implements Provenance.GetTag.
@@ -197,11 +209,11 @@ func (p *BYOBProvenance) GetTag() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parsing source uri: %w", err)
 	}
-	tag, err := utils.TagFromGitRef(ref)
-	if err != nil {
+	if _, err := utils.TagFromGitRef(ref); err != nil {
 		return "", fmt.Errorf("parsing ref: %w", err)
 	}
-	return tag, nil
+	// NOTE: We return the full git ref.
+	return ref, nil
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.
@@ -215,8 +227,7 @@ func (p *BYOBProvenance) GetWorkflowInputs() (map[string]interface{}, error) {
 
 // GetBuildTriggerPath implements Provenance.GetBuildTriggerPath.
 func (p *BYOBProvenance) GetBuildTriggerPath() (string, error) {
-	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/566):
-	// verify the ref and repo as well.
+	// TODO(#566): verify the ref and repo as well.
 	sysParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
