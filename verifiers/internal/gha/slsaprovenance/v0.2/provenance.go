@@ -39,10 +39,7 @@ func New(payload []byte) (iface.Provenance, error) {
 
 	switch {
 	case a.Predicate.BuildType == common.BYOBBuildTypeV0:
-		return &provenanceV02{
-			upperEnv: true,
-			prov:     a,
-		}, nil
+		return newBYOBProvenance(a), nil
 	case a.Predicate.BuildType == common.GoBuilderBuildTypeV1 ||
 		a.Predicate.BuildType == common.GenericGeneratorBuildTypeV1 ||
 		a.Predicate.BuildType == common.ContainerGeneratorBuildTypeV1 ||

@@ -173,6 +173,11 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 		return "", fmt.Errorf("parsing source uri: %w", err)
 	}
 
+	if ref == "" {
+		return "", fmt.Errorf("%w: unable to get ref for source %q",
+			serrors.ErrorInvalidDssePayload, sourceURI)
+	}
+
 	refType, _ := utils.ParseGitRef(ref)
 	switch refType {
 	case "heads": // branch.
@@ -186,8 +191,8 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 		}
 		return common.GetBranch(sysParams, true)
 	default:
-		return "", fmt.Errorf("%w: %s %q", serrors.ErrorInvalidDssePayload,
-			"unknown ref type", refType)
+		return "", fmt.Errorf("%w: unknown ref type %q for ref %q",
+			serrors.ErrorInvalidDssePayload, refType, ref)
 	}
 }
 
@@ -210,6 +215,11 @@ func (p *BYOBProvenance) GetTag() (string, error) {
 		return "", fmt.Errorf("parsing source uri: %w", err)
 	}
 
+	if ref == "" {
+		return "", fmt.Errorf("%w: unable to get ref for source %q",
+			serrors.ErrorInvalidDssePayload, sourceURI)
+	}
+
 	refType, _ := utils.ParseGitRef(ref)
 	switch refType {
 	case "heads": // branch.
@@ -218,8 +228,8 @@ func (p *BYOBProvenance) GetTag() (string, error) {
 		// NOTE: We return the full git ref.
 		return ref, nil
 	default:
-		return "", fmt.Errorf("%w: %s %q", serrors.ErrorInvalidDssePayload,
-			"unknown ref type", refType)
+		return "", fmt.Errorf("%w: unknown ref type %q for ref %q",
+			serrors.ErrorInvalidDssePayload, refType, ref)
 	}
 }
 
