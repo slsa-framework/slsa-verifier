@@ -121,6 +121,18 @@ func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 		serrors.ErrorInvalidFormat, id)
 }
 
+func isValidTestingBuilderRef(pin string) error {
+	// Tags on trusted repositories should be a valid semver with version
+	// core including all three parts and no build identifier.
+	versionCore := strings.Split(pin, "-")[0]
+	if !semver.IsValid(pin) ||
+		len(strings.Split(versionCore, ".")) != 3 ||
+		semver.Build(pin) != "" {
+		return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
+	}
+	return nil
+}
+
 // IsValidBuilderTag validates if the given ref is a valid builder tag.
 func IsValidBuilderTag(ref string, testing bool) error {
 	// Extract the pin.
@@ -130,15 +142,9 @@ func IsValidBuilderTag(ref string, testing bool) error {
 	}
 
 	if testing {
-		// Tags on trusted repositories should be a valid semver with version
-		// core including all three parts and no build identifier.
-		versionCore := strings.Split(pin, "-")[0]
-		if !semver.IsValid(pin) ||
-			len(strings.Split(versionCore, ".")) != 3 ||
-			semver.Build(pin) != "" {
-			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
+		if err := isValidTestingBuilderRef(pin); err != nil {
+			return err
 		}
-		return nil
 	}
 
 	// Valid semver of the form vX.Y.Z with no metadata.
@@ -147,6 +153,29 @@ func IsValidBuilderTag(ref string, testing bool) error {
 		semver.Prerelease(pin) != "" ||
 		semver.Build(pin) != "" {
 		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
+	}
+	return nil
+}
+
+func IsValidJreleaserBuilderTag(ref string) error {
+	// Extract the pin.
+	pin, err := TagFromGitRef(ref)
+	if err != nil {
+		return err
+	}
+
+	// Valid semver of the form vX.Y.Z-<language> with no metadata.
+	// NOTE: When adding a language, update the corresponding
+	// unit test.
+	languages := map[string]bool{
+		"-java": true,
+	}
+	_, correctLanguage := languages[semver.Prerelease(pin)]
+	if !semver.IsValid(pin) ||
+		len(strings.Split(pin, ".")) != 3 ||
+		!correctLanguage ||
+		semver.Build(pin) != "" {
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z-<language>", serrors.ErrorInvalidRef, pin)
 	}
 	return nil
 }

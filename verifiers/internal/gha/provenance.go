@@ -261,6 +261,12 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	if len(parts) != 2 {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
 	}
+
+	// Exception for JReleaser builders.
+	// See https://github.com/slsa-framework/slsa-github-generator/issues/2035#issuecomment-1579963802.
+	if strings.HasPrefix(parts[0], JReleaserRepository) {
+		return utils.IsValidJreleaserBuilderTag(parts[1])
+	}
 	return utils.IsValidBuilderTag(parts[1], false)
 }
 
