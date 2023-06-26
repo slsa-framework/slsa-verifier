@@ -12,12 +12,12 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 )
 
-// byobBuildType is the base build type for BYOB delegated builders.
-var byobBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
+// BYOBBuildType is the base build type for BYOB delegated builders.
+var BYOBBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
 
 // BYOBProvenance is SLSA v1.0 provenance for the slsa-github-generator BYOB build type.
 type BYOBProvenance struct {
-	prov *intotoAttestation
+	prov *Attestation
 }
 
 // Predicate implements ProvenanceV02.Predicate.

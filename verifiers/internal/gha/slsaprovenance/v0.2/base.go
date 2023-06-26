@@ -15,7 +15,7 @@ import (
 type provenanceV02 struct {
 	// upperEnv specifies if environment fields are in uppercase.
 	upperEnv bool
-	prov     *intotoAttestation
+	prov     *Attestation
 }
 
 // Predicate implements provenanceV02.Predicate.

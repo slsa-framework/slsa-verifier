@@ -1,7 +1,6 @@
 package gha
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
@@ -63,50 +61,6 @@ type testProvenanceV1 struct {
 }
 
 func (p *testProvenanceV1) Predicate() slsa1.ProvenancePredicate { return p.predicate }
-
-func provenanceFromBytes(payload []byte) (iface.Provenance, error) {
-	env, err := EnvelopeFromBytes(payload)
-	if err != nil {
-		return nil, err
-	}
-	return slsaprovenance.ProvenanceFromEnvelope(env)
-}
-
-func Test_ProvenanceFromEnvelope(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name     string
-		path     string
-		expected error
-	}{
-		{
-			name:     "invalid dsse: not SLSA predicate",
-			path:     "./testdata/dsse-not-slsa.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:     "slsa 1.0 invalid dsse: not SLSA predicate",
-			path:     "./testdata/dsse-not-slsa-v1.intoto.jsonl",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		// TODO(#573): add more compliance tests.
-	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				t.Fatalf("os.ReadFile: %v", err)
-			}
-			_, err = provenanceFromBytes(content)
-			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
-			}
-		})
-	}
-}
 
 func Test_VerifyDigest(t *testing.T) {
 	t.Parallel()
