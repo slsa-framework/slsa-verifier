@@ -7,8 +7,8 @@ import (
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
-	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
@@ -34,7 +34,7 @@ func New(payload []byte) (iface.Provenance, error) {
 
 	a := &Attestation{}
 	if err := dec.Decode(a); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	switch a.Predicate.BuildDefinition.BuildType {
