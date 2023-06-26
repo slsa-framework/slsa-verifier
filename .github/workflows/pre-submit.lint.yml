@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version: "1.18"
+          go-version-file: "go.mod"
       - env:
-          GOLANGCI_LINT_VERSION: "1.52.2"
-          GOLANGCI_LINT_CHECKSUM: "c9cf72d12058a131746edd409ed94ccd578fbd178899d1ed41ceae3ce5f54501"
+          GOLANGCI_LINT_VERSION: "1.53.2"
+          GOLANGCI_LINT_CHECKSUM: "2298f73b9bc03b88b91fee06c5d519fc7f9d7f328e2c388615bbd7e85a9d6cae"
         run: |
           set -euo pipefail
 

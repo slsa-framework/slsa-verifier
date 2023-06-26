@@ -14,7 +14,7 @@ import (
 
 // provenanceV1 is a base implementation for SLSA v1.0 provenance.
 type provenanceV1 struct {
-	prov *intotoAttestation
+	prov *Attestation
 }
 
 // Predicate implements ProvenanceV02.Predicate.

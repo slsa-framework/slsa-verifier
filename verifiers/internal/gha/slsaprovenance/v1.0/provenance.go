@@ -13,7 +13,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
-type intotoAttestation struct {
+// Attestation is an in-toto SLSA v1.0 attestation statement.
+type Attestation struct {
 	intoto.StatementHeader
 	Predicate slsa1.ProvenancePredicate `json:"predicate"`
 }
@@ -31,7 +32,7 @@ func New(payload []byte) (iface.Provenance, error) {
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	dec.DisallowUnknownFields()
 
-	a := &intotoAttestation{}
+	a := &Attestation{}
 	if err := dec.Decode(a); err != nil {
 		return nil, err
 	}

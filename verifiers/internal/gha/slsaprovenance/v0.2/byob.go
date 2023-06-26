@@ -13,7 +13,7 @@ type byobProvenance struct {
 	*provenanceV02
 }
 
-func newBYOBProvenance(att *intotoAttestation) *byobProvenance {
+func newBYOBProvenance(att *Attestation) *byobProvenance {
 	return &byobProvenance{
 		provenanceV02: &provenanceV02{
 			prov:     att,

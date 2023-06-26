@@ -23,7 +23,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			name: "empty provenance",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate:       slsa1.ProvenancePredicate{},
 					},
@@ -35,7 +35,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			name: "resolved dependency uri @ refs/heads/main",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -55,7 +55,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			name: "internalParameters uri @ refs/heads/main",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -74,7 +74,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			name: "resolved dependency uri @ refs/tags/v1.0.0",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -103,7 +103,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			name: "internalParameters uri @ ref/tags/v1.0.0",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -154,7 +154,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			name: "empty provenance",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate:       slsa1.ProvenancePredicate{},
 					},
@@ -166,7 +166,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			name: "resolved dependency uri @ refs/heads/main",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -186,7 +186,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			name: "internalParameters uri @ refs/heads/main",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -205,7 +205,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			name: "resolved dependency uri @ refs/tags/v1.0.0",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
@@ -225,7 +225,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			name: "internalParameters uri @ ref/tags/v1.0.0",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
-					prov: &intotoAttestation{
+					prov: &Attestation{
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{

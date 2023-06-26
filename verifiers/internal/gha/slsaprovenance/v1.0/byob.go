@@ -9,6 +9,9 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
+// BYOBBuildType is the base build type for BYOB delegated builders.
+var BYOBBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
+
 // BYOBProvenance is SLSA v1.0 provenance for the slsa-github-generator BYOB build type.
 type BYOBProvenance struct {
 	*provenanceV1
