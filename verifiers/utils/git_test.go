@@ -23,26 +23,51 @@ func Test_NormalizeGitURI(t *testing.T) {
 		},
 		{
 			name:     "https scheme",
+			uri:      "https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+			expected: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+		},
+		{
+			name:     "http scheme",
+			uri:      "http://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+			expected: "git+http://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+		},
+		{
+			name:     "git+https scheme",
+			uri:      "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+			expected: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+		},
+		{
+			name:     "no scheme",
+			uri:      "github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+			expected: "git+https://github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+		},
+		{
+			name:     "git+ scheme",
+			uri:      "git+github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+			expected: "git+github.com/kubernetes/kubernetes@refs/tags/v1.0.0",
+		},
+		{
+			name:     "https scheme no ref",
 			uri:      "https://github.com/kubernetes/kubernetes",
 			expected: "git+https://github.com/kubernetes/kubernetes",
 		},
 		{
-			name:     "http scheme",
+			name:     "http scheme no ref",
 			uri:      "http://github.com/kubernetes/kubernetes",
 			expected: "git+http://github.com/kubernetes/kubernetes",
 		},
 		{
-			name:     "git+https scheme",
+			name:     "git+https scheme no ref",
 			uri:      "git+https://github.com/kubernetes/kubernetes",
 			expected: "git+https://github.com/kubernetes/kubernetes",
 		},
 		{
-			name:     "no scheme",
+			name:     "no scheme no ref",
 			uri:      "github.com/kubernetes/kubernetes",
 			expected: "git+https://github.com/kubernetes/kubernetes",
 		},
 		{
-			name:     "git+ scheme",
+			name:     "git+ scheme no ref",
 			uri:      "git+github.com/kubernetes/kubernetes",
 			expected: "git+github.com/kubernetes/kubernetes",
 		},
