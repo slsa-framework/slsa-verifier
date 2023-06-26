@@ -100,7 +100,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			branch: "",
 		},
 		{
-			name: "internalParameters uri @ ref/tags/v1.0.0",
+			name: "resolved dependency uri @ refs/heads/main no ref",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
@@ -108,12 +108,12 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
 								InternalParameters: map[string]interface{}{
-									"GITHUB_BASE_REF":   "",
-									"GITHUB_REF_TYPE":   "tag",
-									"GITHUB_REF":        "refs/tags/v1.0.0",
-									"GITHUB_EVENT_NAME": "push",
-									"GITHUB_EVENT_PAYLOAD": map[string]any{
-										"base_ref": nil,
+									"GITHUB_REF_TYPE": "branch",
+									"GITHUB_REF":      "refs/heads/main",
+								},
+								ResolvedDependencies: []slsa1.ResourceDescriptor{
+									{
+										URI: "git+https://github.com/kubernetes/kubernetes",
 									},
 								},
 							},
@@ -121,7 +121,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 					},
 				},
 			},
-			branch: "",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 	}
 
@@ -132,7 +132,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 
 			branch, err := tt.prov.GetBranch()
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
-				t.Fatalf("unexpected error: %v", err)
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}
 			if got, want := branch, tt.branch; got != want {
 				t.Fatalf("unexpected branch, got: %q, want: %q", got, want)
@@ -239,6 +239,26 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 				},
 			},
 			tag: "refs/tags/v1.0.0",
+		},
+		{
+			name: "resolved dependency uri @ refs/tags/v1.0.0 no ref",
+			prov: BYOBProvenance{
+				provenanceV1: &provenanceV1{
+					prov: &Attestation{
+						StatementHeader: intoto.StatementHeader{},
+						Predicate: slsa1.ProvenancePredicate{
+							BuildDefinition: slsa1.ProvenanceBuildDefinition{
+								ResolvedDependencies: []slsa1.ResourceDescriptor{
+									{
+										URI: "git+https://github.com/kubernetes/kubernetes",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			err: serrors.ErrorInvalidDssePayload,
 		},
 	}
 
