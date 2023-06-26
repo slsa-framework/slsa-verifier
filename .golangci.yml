@@ -81,6 +81,88 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - wrapcheck
 linters-settings:
+  depguard:
+    rules:
+      global:
+        files:
+          - $all
+          - "!$test"
+          - "!**/experimental/**"
+
+          # This is an exception for the existing code.
+          # TODO(#642): Don't allow go-cmp in non-test code.
+          - "!**/verifiers/internal/gcb/provenance.go"
+        allow:
+          - $gostd
+
+          # Approved orgs.
+          - "github.com/slsa-framework"
+          - "github.com/in-toto"
+          - "github.com/sigstore"
+          - "github.com/secure-systems-lab"
+          - "github.com/go-openapi"
+
+          # Approved packages.
+          - "sigs.k8s.io/release-utils/version"
+          - "github.com/spf13/cobra" # For CLI
+          - "github.com/docker/go/canonical/json" # For canonical json.
+          - "github.com/google/go-containerregistry" # For interacting with container registries.
+        deny:
+          - pkg: "reflect"
+            desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
+      test:
+        files:
+          - "$test"
+          # - "!**/experimental/**"
+          # This is an exception for the existing code.
+          # TODO(#642): Don't allow go-cmp in non-test code.
+          - "!**/verifiers/internal/gcb/provenance.go"
+          # NOTE: test code is allowed to use github.com/google/go-cmp (there is no
+          #       deny for it) but non-test code is not.
+        allow:
+          - $gostd
+
+          # Approved orgs.
+          - "github.com/slsa-framework"
+          - "github.com/in-toto"
+          - "github.com/sigstore"
+          - "github.com/secure-systems-lab"
+          - "github.com/go-openapi"
+
+          # Approved packages.
+          - "sigs.k8s.io/release-utils/version"
+          - "github.com/spf13/cobra" # For CLI
+          - "github.com/docker/go/canonical/json" # For canonical json.
+          - "github.com/google/go-containerregistry" # For interacting with container registries.
+
+          # Allowed in test code.
+          - "github.com/google/go-cmp"
+        deny:
+          - pkg: "reflect"
+            desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
+      experimental:
+        files:
+          - "**/experimental/**/*.go"
+        allow:
+          - $gostd
+
+          # Approved orgs.
+          - "github.com/slsa-framework"
+
+          # Allowed in experimental.
+          - "github.com/gorilla/mux"
+        deny:
+          - pkg: "reflect"
+            desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
   errcheck:
     check-type-assertions: true
     check-blank: true
