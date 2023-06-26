@@ -121,18 +121,6 @@ func ParseBuilderID(id string, needVersion bool) (string, string, error) {
 		serrors.ErrorInvalidFormat, id)
 }
 
-func isValidTestingBuilderRef(pin string) error {
-	// Tags on trusted repositories should be a valid semver with version
-	// core including all three parts and no build identifier.
-	versionCore := strings.Split(pin, "-")[0]
-	if !semver.IsValid(pin) ||
-		len(strings.Split(versionCore, ".")) != 3 ||
-		semver.Build(pin) != "" {
-		return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
-	}
-	return nil
-}
-
 // IsValidBuilderTag validates if the given ref is a valid builder tag.
 func IsValidBuilderTag(ref string, testing bool) error {
 	// Extract the pin.
@@ -142,9 +130,15 @@ func IsValidBuilderTag(ref string, testing bool) error {
 	}
 
 	if testing {
-		if err := isValidTestingBuilderRef(pin); err != nil {
-			return err
+		// Tags on trusted repositories should be a valid semver with version
+		// core including all three parts and no build identifier.
+		versionCore := strings.Split(pin, "-")[0]
+		if !semver.IsValid(pin) ||
+			len(strings.Split(versionCore, ".")) != 3 ||
+			semver.Build(pin) != "" {
+			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
 		}
+		return nil
 	}
 
 	// Valid semver of the form vX.Y.Z with no metadata.
