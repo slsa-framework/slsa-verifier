@@ -15,6 +15,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -25,13 +26,8 @@ type hosted string
 const (
 	hostedSelf   hosted = "self-hosted"
 	hostedGitHub hosted = "github-hosted"
-)
 
-const (
-	publishAttestationV01       = "https://github.com/npm/attestation/tree/main/specs/publish/"
-	builderLegacyGitHubRunnerID = "https://github.com/actions/runner"
-	builderGitHubHostedRunnerID = builderLegacyGitHubRunnerID + "/" + string(hostedGitHub)
-	builderSelfHostedRunnerID   = builderLegacyGitHubRunnerID + "/" + string(hostedSelf)
+	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
@@ -73,6 +69,7 @@ func (b *BundleBytes) UnmarshalJSON(data []byte) error {
 type Npm struct {
 	ctx                   context.Context
 	root                  *TrustedRoot
+	verifiedBuilderID     *utils.TrustedBuilderID
 	verifiedProvenanceAtt *SignedAttestation
 	verifiedPublishAtt    *SignedAttestation
 	provenanceAttestation *attestation
@@ -98,8 +95,9 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 		return nil, err
 	}
 	return &Npm{
-		ctx:                   ctx,
-		root:                  root,
+		ctx:  ctx,
+		root: root,
+
 		provenanceAttestation: prov,
 		publishAttestation:    pub,
 	}, nil
@@ -256,7 +254,7 @@ func (n *Npm) verifyPackageName(name *string) error {
 	}
 
 	// Verify subject name in provenance.
-	if err := verifyProvenanceSubjectName(n.verifiedProvenanceAtt, *name); err != nil {
+	if err := verifyProvenanceSubjectName(n.verifiedBuilderID, n.verifiedProvenanceAtt, *name); err != nil {
 		return err
 	}
 
@@ -279,7 +277,7 @@ func (n *Npm) verifyPackageVersion(version *string) error {
 	}
 
 	// Verify subject version in provenance.
-	if err := verifyProvenanceSubjectVersion(n.verifiedProvenanceAtt, *version); err != nil {
+	if err := verifyProvenanceSubjectVersion(n.verifiedBuilderID, n.verifiedProvenanceAtt, *version); err != nil {
 		return err
 	}
 
@@ -294,6 +292,25 @@ func (n *Npm) verifyPackageVersion(version *string) error {
 	}
 
 	return nil
+}
+
+func (n *Npm) verifyBuilderID(
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+	defaultBuilders map[string]bool,
+) (*utils.TrustedBuilderID, error) {
+	// Verify certificate information.
+	builder, err := verifyNpmEnvAndCert(
+		n.ProvenanceEnvelope(),
+		n.ProvenanceLeafCertificate(),
+		provenanceOpts, builderOpts,
+		defaultBuilders,
+	)
+	if err != nil {
+		return nil, err
+	}
+	n.verifiedBuilderID = builder
+	return builder, err
 }
 
 func verifyPublishPredicateVersion(att *SignedAttestation, expectedVersion string) error {
@@ -341,8 +358,8 @@ func getPublishPredicateData(att *SignedAttestation) (string, string, error) {
 	return statement.Predicate.Name, statement.Predicate.Version, nil
 }
 
-func verifyProvenanceSubjectVersion(att *SignedAttestation, expectedVersion string) error {
-	subject, err := getSubject(att)
+func verifyProvenanceSubjectVersion(b *utils.TrustedBuilderID, att *SignedAttestation, expectedVersion string) error {
+	subject, err := getSubject(b, att)
 	if err != nil {
 		return err
 	}
@@ -383,15 +400,15 @@ func verifyPublishSubjectName(att *SignedAttestation, expectedName string) error
 	return verifyName(name, expectedName)
 }
 
-func verifyProvenanceSubjectName(att *SignedAttestation, expectedName string) error {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(att.Envelope)
+func verifyProvenanceSubjectName(b *utils.TrustedBuilderID, att *SignedAttestation, expectedName string) error {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(b.Name(), att.Envelope)
 	if err != nil {
-		return nil
+		return fmt.Errorf("reading provenance: %w", err)
 	}
 
 	subjects, err := prov.Subjects()
 	if err != nil {
-		return fmt.Errorf("%w", serrors.ErrorInvalidDssePayload)
+		return fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 	if len(subjects) != 1 {
 		return fmt.Errorf("%w: expected 1 subject, got %v", serrors.ErrorInvalidDssePayload, len(subjects))
@@ -448,8 +465,8 @@ func getPackageNameAndVersion(name string) (string, string, error) {
 	return pkgname, pkgtag, nil
 }
 
-func getSubject(att *SignedAttestation) (string, error) {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(att.Envelope)
+func getSubject(b *utils.TrustedBuilderID, att *SignedAttestation) (string, error) {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(b.Name(), att.Envelope)
 	if err != nil {
 		return "", err
 	}

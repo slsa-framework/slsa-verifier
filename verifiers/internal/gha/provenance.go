@@ -206,9 +206,9 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 
 // VerifyNpmPackageProvenance verifies provenance for an npm package.
 func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentity,
-	provenanceOpts *options.ProvenanceOpts, isTrustedBuilder bool,
+	provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, isTrustedBuilder bool,
 ) error {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
 	if err != nil {
 		return err
 	}
@@ -280,9 +280,8 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 }
 
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
-) error {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, byob bool) error {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
 	if err != nil {
 		return err
 	}

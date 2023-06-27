@@ -10,6 +10,7 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	ghacommon "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
@@ -24,8 +25,34 @@ type ProvenanceV1 interface {
 	Predicate() slsa1.ProvenancePredicate
 }
 
+type provFunc func(*Attestation) iface.Provenance
+
+func newBYOB(a *Attestation) iface.Provenance {
+	return &BYOBProvenance{
+		provenanceV1: &provenanceV1{
+			prov: a,
+		},
+	}
+}
+
+func newContainerBased(a *Attestation) iface.Provenance {
+	return &ContainerBasedProvenance{
+		provenanceV1: &provenanceV1{
+			prov: a,
+		},
+	}
+}
+
+// buildTypeMap is a map of builder IDs to supported buildTypes.
+var buildTypeMap = map[string]map[string]provFunc{
+	ghacommon.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOB},
+	ghacommon.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOB},
+
+	common.ContainerBasedBuilderID: {common.ContainerBasedBuildTypeV01Draft: newContainerBased},
+}
+
 // New returns a new Provenance object based on the payload.
-func New(payload []byte) (iface.Provenance, error) {
+func New(builderID string, payload []byte) (iface.Provenance, error) {
 	// Strict unmarshal.
 	// NOTE: this supports extensions because they are
 	// only used as part of interface{}-defined fields.
@@ -37,20 +64,15 @@ func New(payload []byte) (iface.Provenance, error) {
 		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	switch a.Predicate.BuildDefinition.BuildType {
-	case common.BYOBBuildTypeV0:
-		return &BYOBProvenance{
-			provenanceV1: &provenanceV1{
-				prov: a,
-			},
-		}, nil
-	case common.ContainerBasedBuildTypeV01Draft:
-		return &ContainerBasedProvenance{
-			provenanceV1: &provenanceV1{
-				prov: a,
-			},
-		}, nil
-	default:
-		return nil, fmt.Errorf("%w: %q", serrors.ErrorInvalidBuildType, a.Predicate.BuildDefinition.BuildType)
+	btMap, ok := buildTypeMap[builderID]
+	if !ok {
+		return nil, fmt.Errorf("%w: %q", serrors.ErrorInvalidBuilderID, builderID)
 	}
+
+	provFunc, ok := btMap[a.Predicate.BuildDefinition.BuildType]
+	if !ok {
+		return nil, fmt.Errorf("%w: %q for builder ID %q", serrors.ErrorInvalidBuildType, a.Predicate.BuildDefinition.BuildType, builderID)
+	}
+
+	return provFunc(a), nil
 }

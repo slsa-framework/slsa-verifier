@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"strings"
 
+	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 const (
 	// ProvenanceV02Type is the SLSA v0.2 predicate type.
 	ProvenanceV02Type = "https://slsa.dev/provenance/v0.2"
+
+	// ProvenanceV1Type is the SLSA v1.0 predicate type.
+	ProvenanceV1Type = slsa1.PredicateSLSAProvenance
 )
 
 // GetWorkflowInputs gets the workflow inputs from the GitHub environment map

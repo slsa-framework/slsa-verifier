@@ -5,6 +5,7 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -13,7 +14,7 @@ type byobProvenance struct {
 	*provenanceV02
 }
 
-func newBYOBProvenance(att *Attestation) *byobProvenance {
+func newBYOBProvenance(att *Attestation) iface.Provenance {
 	return &byobProvenance{
 		provenanceV02: &provenanceV02{
 			prov:     att,

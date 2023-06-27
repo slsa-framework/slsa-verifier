@@ -10,6 +10,7 @@ import (
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
 func Test_byobProvenance_GetBranch(t *testing.T) {
@@ -17,7 +18,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		prov   *byobProvenance
+		prov   iface.Provenance
 		branch string
 		err    error
 	}{
@@ -136,7 +137,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		prov *byobProvenance
+		prov iface.Provenance
 		tag  string
 		err  error
 	}{

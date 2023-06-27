@@ -16,6 +16,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/register"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
@@ -54,7 +55,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Verify the builder identity.
-	builderID, byob, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
+	verifiedBuilderID, byob, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -66,7 +67,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the subject Digest.
-	provenanceOpts.ExpectedBuilderID = builderID.String()
+	provenanceOpts.ExpectedBuilderID = verifiedBuilderID.String()
 	// There is a corner-case to handle: if the verified builder ID from the cert
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
@@ -78,7 +79,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		}
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 	}
-	if err := VerifyProvenance(env, provenanceOpts, byob); err != nil {
+	if err := VerifyProvenance(env, provenanceOpts, verifiedBuilderID, byob); err != nil {
 		return nil, nil, err
 	}
 
@@ -91,7 +92,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	return r, builderID, nil
+	return r, verifiedBuilderID, nil
 }
 
 func verifyNpmEnvAndCert(env *dsse.Envelope,
@@ -165,20 +166,20 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// Verify that the value provided is consistent with certificate information.
 
 		if workflowInfo.SubjectHosted == nil {
-			return nil, fmt.Errorf("%w: hosted status unknonwn", serrors.ErrorNotSupported)
+			return nil, fmt.Errorf("%w: hosted status unknown", serrors.ErrorNotSupported)
 		}
 		switch *builderOpts.ExpectedID {
-		case builderLegacyGitHubRunnerID, builderGitHubHostedRunnerID:
+		case common.NpmCLILegacyBuilderID, common.NpmCLIHostedBuilderID:
 			if *workflowInfo.SubjectHosted != HostedGitHub {
 				return nil, fmt.Errorf("%w: re-usable workflow is self-hosted", serrors.ErrorMismatchBuilderID)
 			}
-		case builderSelfHostedRunnerID:
+		case common.NpmCLISelfHostedBuilderID:
 			if *workflowInfo.SubjectHosted != HostedSelf {
 				return nil, fmt.Errorf("%w: re-usable workflow is GitHub-hosted", serrors.ErrorMismatchBuilderID)
 			}
 		default:
 			return nil, fmt.Errorf("%w: builder %v. Expected one of %v, %v", serrors.ErrorNotSupported, *builderOpts.ExpectedID,
-				builderSelfHostedRunnerID, builderGitHubHostedRunnerID)
+				common.NpmCLISelfHostedBuilderID, common.NpmCLIHostedBuilderID)
 		}
 
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(*builderOpts.ExpectedID, false)
@@ -192,7 +193,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 
 	// Verify properties of the SLSA provenance.
 	// Unpack and verify info in the provenance, including the Subject Digest.
-	if err := VerifyNpmPackageProvenance(env, workflowInfo, provenanceOpts, isTrustedBuilder); err != nil {
+	if err := VerifyNpmPackageProvenance(env, workflowInfo, provenanceOpts, trustedBuilderID, isTrustedBuilder); err != nil {
 		return nil, err
 	}
 
@@ -329,6 +330,14 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		return nil, nil, err
 	}
 
+	// Verify builder information.
+	builder, err := npm.verifyBuilderID(
+		provenanceOpts, builderOpts,
+		defaultBYOBReusableWorkflows)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Verify attestation headers.
 	if err := npm.verifyIntotoHeaders(); err != nil {
 		return nil, nil, err
@@ -343,15 +352,6 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		if err := npm.verifyPackageVersion(provenanceOpts.ExpectedPackageVersion); err != nil {
 			return nil, nil, err
 		}
-	}
-
-	// Verify certificate information.
-	builder, err := verifyNpmEnvAndCert(npm.ProvenanceEnvelope(),
-		npm.ProvenanceLeafCertificate(),
-		provenanceOpts, builderOpts,
-		defaultBYOBReusableWorkflows)
-	if err != nil {
-		return nil, nil, err
 	}
 
 	prov, err := npm.verifiedProvenanceBytes()

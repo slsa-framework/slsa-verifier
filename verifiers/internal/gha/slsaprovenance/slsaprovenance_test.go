@@ -12,6 +12,7 @@ import (
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	slsav1 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
@@ -26,13 +27,15 @@ func mustJSON(o any) string {
 func Test_ProvenanceFromEnvelope(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name     string
-		envelope *dsse.Envelope
-		path     string
-		err      error
+		name      string
+		builderID string
+		envelope  *dsse.Envelope
+		path      string
+		err       error
 	}{
 		{
-			name: "valid dsse",
+			name:      "valid dsse",
+			builderID: common.GenericDelegatorBuilderID,
 			envelope: &dsse.Envelope{
 				PayloadType: intoto.PayloadType,
 				Payload: mustJSON(&slsav1.Attestation{
@@ -48,7 +51,8 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid dsse: not SLSA predicate",
+			name:      "invalid dsse: not SLSA predicate",
+			builderID: common.GenericDelegatorBuilderID,
 			envelope: &dsse.Envelope{
 				PayloadType: intoto.PayloadType,
 				Payload: mustJSON(&intoto.StatementHeader{
@@ -59,7 +63,8 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "invalid dsse: not base64",
+			name:      "invalid dsse: not base64",
+			builderID: common.GenericDelegatorBuilderID,
 			envelope: &dsse.Envelope{
 				PayloadType: intoto.PayloadType,
 				// NOTE: Not valid base64.
@@ -68,7 +73,8 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "invalid dsse: not json",
+			name:      "invalid dsse: not json",
+			builderID: common.GenericDelegatorBuilderID,
 			envelope: &dsse.Envelope{
 				PayloadType: intoto.PayloadType,
 				// NOTE: Not valid JSON.
@@ -77,7 +83,8 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "invalid dsse: not in-toto",
+			name:      "invalid dsse: not in-toto",
+			builderID: common.GenericDelegatorBuilderID,
 			envelope: &dsse.Envelope{
 				// NOTE: Not an in-toto attestation payload type,
 				PayloadType: "http://github.com/other/payload/type",
@@ -101,7 +108,7 @@ func Test_ProvenanceFromEnvelope(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ProvenanceFromEnvelope(tt.envelope)
+			_, err := ProvenanceFromEnvelope(tt.builderID, tt.envelope)
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Errorf("unexpected error (-want +got):\n%s", diff)
 			}

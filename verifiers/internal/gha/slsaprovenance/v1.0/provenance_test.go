@@ -15,13 +15,15 @@ import (
 
 func Test_New(t *testing.T) {
 	testCases := []struct {
-		name    string
-		payload string
-		prov    iface.Provenance
-		err     error
+		name      string
+		builderID string
+		payload   string
+		prov      iface.Provenance
+		err       error
 	}{
 		{
-			name: "BYOB build type",
+			name:      "BYOB build type",
+			builderID: common.GenericDelegatorBuilderID,
 			payload: fmt.Sprintf(`{
 				"predicate": {
 					"buildDefinition": {
@@ -42,7 +44,8 @@ func Test_New(t *testing.T) {
 			},
 		},
 		{
-			name: "Container-based build type",
+			name:      "Container-based build type",
+			builderID: common.ContainerBasedBuilderID,
 			payload: fmt.Sprintf(`{
 				"predicate": {
 					"buildDefinition": {
@@ -75,7 +78,20 @@ func Test_New(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "Unknown buildType",
+			name:      "Unknown builder ID",
+			builderID: "unknown",
+			payload: `{
+				"predicate": {
+					"buildDefinition": {
+						"buildType": "foo"
+					}
+				}
+			}`,
+			err: serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:      "Unknown buildType",
+			builderID: common.GenericDelegatorBuilderID,
 			payload: `{
 				"predicate": {
 					"buildDefinition": {
@@ -90,7 +106,7 @@ func Test_New(t *testing.T) {
 	for i := range testCases {
 		tt := testCases[i]
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := New([]byte(tt.payload))
+			p, err := New(tt.builderID, []byte(tt.payload))
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}

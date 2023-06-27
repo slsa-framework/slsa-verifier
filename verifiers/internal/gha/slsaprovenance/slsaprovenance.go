@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -17,21 +16,24 @@ import (
 )
 
 // provenanceConstructor creates a new Provenance instance for the given payload as a json Decoder.
-type provenanceConstructor func(payload []byte) (iface.Provenance, error)
+type provenanceConstructor func(builderID string, payload []byte) (iface.Provenance, error)
 
 // predicateTypeMap stores the different provenance version types. It is a map of
 // predicate type -> ProvenanceConstructor.
 var predicateTypeMap = map[string]provenanceConstructor{
-	common.ProvenanceV02Type:      slsav02.New,
-	slsa1.PredicateSLSAProvenance: slsav1.New,
+	common.ProvenanceV02Type: slsav02.New,
+	common.ProvenanceV1Type:  slsav1.New,
 }
 
-// ProvenanceFromEnvelope returns a Provenance instance for the given DSSE Envelope.
-func ProvenanceFromEnvelope(env *dsselib.Envelope) (iface.Provenance, error) {
+// ProvenanceFromEnvelope returns a Provenance instance for the given builder
+// ID and DSSE Envelope. The builder ID is retrieved from the signing certificate
+// rather than from the payload itself in order to support delegated builders.
+func ProvenanceFromEnvelope(builderID string, env *dsselib.Envelope) (iface.Provenance, error) {
 	if env.PayloadType != intoto.PayloadType {
-		return nil, fmt.Errorf("%w: expected payload type %q, got '%s'",
+		return nil, fmt.Errorf("%w: expected payload type %q, got %q",
 			serrors.ErrorInvalidDssePayload, intoto.PayloadType, env.PayloadType)
 	}
+
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
@@ -48,7 +50,7 @@ func ProvenanceFromEnvelope(env *dsselib.Envelope) (iface.Provenance, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: unexpected predicate type '%s'", serrors.ErrorInvalidDssePayload, pred.PredicateType)
 	}
-	prov, err := newProv(pyld)
+	prov, err := newProv(builderID, pyld)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidDssePayload, err)
 	}

@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
+
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	ghacommon "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -24,13 +26,13 @@ var (
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":       true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":              true,
-	trustedBuilderRepository + "/.github/workflows/builder_container-based_slsa3.yml": true,
+	ghacommon.GenericGeneratorBuilderID: true,
+	ghacommon.GoBuilderID:               true,
+	ghacommon.ContainerBasedBuilderID:   true,
 }
 
 var defaultContainerTrustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
+	ghacommon.ContainerGeneratorBuilderID: true,
 }
 
 var (
@@ -39,8 +41,8 @@ var (
 )
 
 var defaultBYOBReusableWorkflows = map[string]bool{
-	delegatorGenericReusableWorkflow:         true,
-	delegatorLowPermsGenericReusableWorkflow: true,
+	ghacommon.GenericDelegatorBuilderID:         true,
+	ghacommon.GenericLowPermsDelegatorBuilderID: true,
 }
 
 // VerifyCertficateSourceRepository verifies the source repository.
