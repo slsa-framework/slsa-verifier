@@ -1,6 +1,6 @@
 package common
 
-var trustedBuilderRepository = "https://github.com/slsa-framework/slsa-github-generator"
+var trustedBuilderRepository = "slsa-framework/slsa-github-generator"
 
 var (
 	// GenericGeneratorBuilderID is the builder ID for the Generic Generator.
