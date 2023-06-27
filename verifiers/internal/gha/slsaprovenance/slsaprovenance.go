@@ -36,23 +36,23 @@ func ProvenanceFromEnvelope(builderID string, env *dsselib.Envelope) (iface.Prov
 
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	// Load the in-toto attestation statement header.
 	pred := intoto.StatementHeader{}
 	if err := json.Unmarshal(pyld, &pred); err != nil {
-		return nil, fmt.Errorf("%w: decoding json: %v", serrors.ErrorInvalidDssePayload, err)
+		return nil, fmt.Errorf("%w: decoding json: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	// Verify the predicate type is one we can handle.
 	newProv, ok := predicateTypeMap[pred.PredicateType]
 	if !ok {
-		return nil, fmt.Errorf("%w: unexpected predicate type '%s'", serrors.ErrorInvalidDssePayload, pred.PredicateType)
+		return nil, fmt.Errorf("%w: unexpected predicate type %q", serrors.ErrorInvalidDssePayload, pred.PredicateType)
 	}
 	prov, err := newProv(builderID, pyld)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidDssePayload, err)
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	return prov, nil
