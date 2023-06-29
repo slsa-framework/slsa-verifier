@@ -313,7 +313,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 			}
 			id, byob, err := VerifyBuilderIdentity(tt.workflow, opts, tt.defaults)
 			if byob != tt.byob {
-				t.Errorf(cmp.Diff(byob, tt.byob))
+				t.Errorf("unexpected byob value:\n%s", cmp.Diff(tt.byob, byob))
 			}
 
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
@@ -340,16 +340,16 @@ func Test_isTrustedDelegatorBuilder(t *testing.T) {
 	}{
 		{
 			name:          "match byob",
-			certBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.6.0",
+			certBuilderID: common.GenericLowPermsDelegatorBuilderID + "@refs/tags/v1.6.0",
 			trustedBuilderIDs: map[string]bool{
-				"slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml": true,
-				"slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml":                   true,
+				common.GenericLowPermsDelegatorBuilderID:                                                       true,
+				"https://github.com/slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml": true,
 			},
 			result: true,
 		},
 		{
 			name:          "match byob but not caller trusted",
-			certBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.6.0",
+			certBuilderID: common.GenericLowPermsDelegatorBuilderID + "@refs/tags/v1.6.0",
 			trustedBuilderIDs: map[string]bool{
 				"slsa-framework/slsa-github-generator/.github/workflows/some_other_delegator.yml": true,
 				"slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml":       true,
@@ -588,16 +588,18 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			id, byob, err := verifyTrustedBuilderID(tt.path, tt.tag, tt.id, tt.defaults)
+			id, byob, err := verifyTrustedBuilderID(httpsGithubCom+tt.path, tt.tag, tt.id, tt.defaults)
 			if byob != tt.byob {
 				t.Errorf(cmp.Diff(byob, tt.byob))
 			}
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got):\n%s", diff)
 			}
-			expectedID := "https://github.com/" + tt.path + "@" + tt.tag
-			if err := id.MatchesLoose(expectedID, true); err != nil {
-				t.Errorf("matches failed:%v", err)
+			if tt.err == nil {
+				expectedID := httpsGithubCom + tt.path + "@" + tt.tag
+				if err := id.MatchesLoose(expectedID, true); err != nil {
+					t.Errorf("matches failed:%v", err)
+				}
 			}
 		})
 	}
@@ -878,7 +880,9 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				URIs: []*url.URL{
 					{
-						Path: "/" + repo + "/" + buildConfigPath,
+						Scheme: "https",
+						Host:   "github.com",
+						Path:   "/" + repo + "/" + buildConfigPath,
 					},
 				},
 				Extensions: []pkix.Extension{
@@ -945,7 +949,9 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				URIs: []*url.URL{
 					{
-						Path: "/" + repo + "/" + buildConfigPath,
+						Scheme: "https",
+						Host:   "github.com",
+						Path:   "/" + repo + "/" + buildConfigPath,
 					},
 				},
 				Extensions: []pkix.Extension{
@@ -1115,7 +1121,9 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				URIs: []*url.URL{
 					{
-						Path: "/" + repo + "/" + buildConfigPath,
+						Scheme: "https",
+						Host:   "github.com",
+						Path:   "/" + repo + "/" + buildConfigPath,
 					},
 				},
 				Extensions: []pkix.Extension{
