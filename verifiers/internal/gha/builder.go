@@ -74,9 +74,6 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 	workflowID := id.SubjectWorkflowName()
 	workflowTag := id.SubjectWorkflowRef()
 
-	fmt.Println("workflowID", workflowID)
-	fmt.Println("workflowTag", workflowTag)
-
 	if workflowID == "" || workflowTag == "" {
 		return nil, false, fmt.Errorf("%w: workflow uri: %q", serrors.ErrorMalformedURI, id.SubjectWorkflow.String())
 	}
