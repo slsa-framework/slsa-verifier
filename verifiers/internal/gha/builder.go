@@ -4,11 +4,13 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
+	"net/url"
 	"strings"
 
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -24,23 +26,18 @@ var (
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_generic_slsa3.yml":       true,
-	trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml":              true,
-	trustedBuilderRepository + "/.github/workflows/builder_container-based_slsa3.yml": true,
+	common.GenericGeneratorBuilderID: true,
+	common.GoBuilderID:               true,
+	common.ContainerBasedBuilderID:   true,
 }
 
 var defaultContainerTrustedReusableWorkflows = map[string]bool{
-	trustedBuilderRepository + "/.github/workflows/generator_container_slsa3.yml": true,
+	common.ContainerGeneratorBuilderID: true,
 }
 
-var (
-	delegatorGenericReusableWorkflow         = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
-	delegatorLowPermsGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml"
-)
-
 var defaultBYOBReusableWorkflows = map[string]bool{
-	delegatorGenericReusableWorkflow:         true,
-	delegatorLowPermsGenericReusableWorkflow: true,
+	common.GenericDelegatorBuilderID:         true,
+	common.GenericLowPermsDelegatorBuilderID: true,
 }
 
 // VerifyCertficateSourceRepository verifies the source repository.
@@ -69,26 +66,30 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 	// Issuer verification.
 	// NOTE: this is necessary before we do any further verification.
 	if id.Issuer != certOidcIssuer {
-		return nil, false, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
+		return nil, false, fmt.Errorf("%w: %q", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
 	}
 
-	// cert URI path is /org/repo/path/to/workflow@ref
-	workflowPath := strings.SplitN(id.SubjectWorkflowRef, "@", 2)
-	if len(workflowPath) < 2 {
-		return nil, false, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.SubjectWorkflowRef)
+	// cert URI is https://github.com/org/repo/path/to/workflow@ref
+	// Remove '@' from Path
+	workflowID := id.SubjectWorkflowName()
+	workflowTag := id.SubjectWorkflowRef()
+
+	fmt.Println("workflowID", workflowID)
+	fmt.Println("workflowTag", workflowTag)
+
+	if workflowID == "" || workflowTag == "" {
+		return nil, false, fmt.Errorf("%w: workflow uri: %q", serrors.ErrorMalformedURI, id.SubjectWorkflow.String())
 	}
 
 	// Verify trusted workflow.
-	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
-	reusableWorkflowTag := strings.Trim(workflowPath[1], "/")
-	builderID, byob, err := verifyTrustedBuilderID(reusableWorkflowPath, reusableWorkflowTag,
+	builderID, byob, err := verifyTrustedBuilderID(workflowID, workflowTag,
 		builderOpts.ExpectedID, defaultBuilders)
 	if err != nil {
 		return nil, byob, err
 	}
 
 	// Verify the ref is a full semantic version tag.
-	if err := verifyTrustedBuilderRef(id, reusableWorkflowTag); err != nil {
+	if err := verifyTrustedBuilderRef(id, workflowTag); err != nil {
 		return nil, byob, err
 	}
 
@@ -97,26 +98,25 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 
 // Verifies the builder ID at path against an expected builderID.
 // If an expected builderID is not provided, uses the defaultBuilders.
-func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultTrustedBuilders map[string]bool) (*utils.TrustedBuilderID, bool, error) {
+func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *string, defaultTrustedBuilders map[string]bool) (*utils.TrustedBuilderID, bool, error) {
 	var trustedBuilderID *utils.TrustedBuilderID
 	var err error
-	certBuilderName := httpsGithubCom + certPath
 	// WARNING: we don't validate the tag here, because we need to allow
 	// refs/heads/main for e2e tests. See verifyTrustedBuilderRef().
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
-		if _, ok := defaultTrustedBuilders[certPath]; !ok {
-			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID != nil)
+		if _, ok := defaultTrustedBuilders[certBuilderID]; !ok {
+			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certBuilderID, expectedBuilderID != nil)
 		}
 		// Construct the builderID using the certificate's builder's name and tag.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
 			return nil, false, err
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
 			return nil, false, err
 		}
@@ -204,6 +204,7 @@ const (
 	HostedGitHub
 )
 
+// WorkflowIdentity is a identity captured from a Fulcio certificate.
 // See https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md.
 type WorkflowIdentity struct {
 	// The source repository
@@ -218,7 +219,7 @@ type WorkflowIdentity struct {
 	SourceOwnerID *string
 
 	// Workflow path OIDC subject - ref of reuseable workflow or trigger workflow.
-	SubjectWorkflowRef string
+	SubjectWorkflow *url.URL
 	// Subject commit sha1.
 	SubjectSha1 *string
 	// Hosted status of the subject.
@@ -233,6 +234,32 @@ type WorkflowIdentity struct {
 	RunID *string
 	// Issuer
 	Issuer string
+}
+
+// SubjectWorkflowName returns the subject workflow without the git ref.
+func (id *WorkflowIdentity) SubjectWorkflowName() string {
+	withoutRef, err := url.Parse(id.SubjectWorkflow.String())
+	if err != nil {
+		// This should never happen.
+		panic(err)
+	}
+	withoutRef.Path = id.SubjectWorkflowPath()
+	return withoutRef.String()
+}
+
+// SubjectWorkflowPath returns the subject workflow without the server url.
+func (id *WorkflowIdentity) SubjectWorkflowPath() string {
+	parts := strings.SplitN(id.SubjectWorkflow.Path, "@", 2)
+	return parts[0]
+}
+
+// SubjectWorkflowRef returns the ref for the subject workflow.
+func (id *WorkflowIdentity) SubjectWorkflowRef() string {
+	parts := strings.SplitN(id.SubjectWorkflow.Path, "@", 2)
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[1]
 }
 
 func getHosted(cert *x509.Certificate) (*Hosted, error) {
@@ -423,9 +450,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
 	}
-	// Remove the starting '/'.
-	// NOTE: The Path has the following structure: repo/name/path/to/workflow.yml@ref.
-	subjectWorkflowRef := cert.URIs[0].Path[1:]
+	subjectWorkflow := cert.URIs[0]
 
 	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string
 	if subjectSha1 != "" {
@@ -451,9 +476,9 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		// Issuer.
 		Issuer: issuer,
 		// Subject
-		SubjectWorkflowRef: subjectWorkflowRef,
-		SubjectSha1:        pSubjectSha1,
-		SubjectHosted:      subjectHosted,
+		SubjectWorkflow: subjectWorkflow,
+		SubjectSha1:     pSubjectSha1,
+		SubjectHosted:   subjectHosted,
 		// Source.
 		SourceRepository: sourceRepository,
 		SourceSha1:       sourceSha1,

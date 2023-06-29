@@ -83,8 +83,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.SubjectWorkflowRef,
+	fmt.Fprintf(os.Stderr, "Verified build using builder %q at commit %s\n",
+		workflowInfo.SubjectWorkflow.String(),
 		workflowInfo.SourceSha1)
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
@@ -112,7 +112,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	// We verify against the delegator re-usable workflow, not the user-provided
 	// builder. This is because the signing identity for delegator-based builders
 	// is *always* the delegator workflow.
-	expectedDelegatorWorkflow := httpsGithubCom + delegatorLowPermsGenericReusableWorkflow
+	expectedDelegatorWorkflow := httpsGithubCom + common.GenericLowPermsDelegatorBuilderID
 	delegatorBuilderOpts := options.BuilderOpts{
 		ExpectedID: &expectedDelegatorWorkflow,
 	}

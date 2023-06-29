@@ -310,7 +310,9 @@ func verifySystemParameters(prov iface.Provenance, workflow *WorkflowIdentity) e
 		return err
 	}
 	// 7. GITHUB_WORKFLOW_REF
-	if err := verifySystemParameter(sysParams, "GITHUB_WORKFLOW_REF", &workflow.SubjectWorkflowRef); err != nil {
+	// NOTE: GITHUB_WORKFLOW_REF does not include the server url or leading '/'
+	workflowPath := strings.TrimLeft(workflow.SubjectWorkflow.Path, "/")
+	if err := verifySystemParameter(sysParams, "GITHUB_WORKFLOW_REF", &workflowPath); err != nil {
 		return err
 	}
 	// 8. GITHUB_WORKFLOW_SHA
