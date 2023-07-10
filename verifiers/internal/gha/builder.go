@@ -235,11 +235,9 @@ type WorkflowIdentity struct {
 
 // SubjectWorkflowName returns the subject workflow without the git ref.
 func (id *WorkflowIdentity) SubjectWorkflowName() string {
-	withoutRef, err := url.Parse(id.SubjectWorkflow.String())
-	if err != nil {
-		// This should never happen.
-		panic(err)
-	}
+	// NOTE: You should be able to copy a net.URL struct safely.
+	// See: https://github.com/golang/go/issues/38351
+	withoutRef := *id.SubjectWorkflow
 	withoutRef.Path = id.SubjectWorkflowPath()
 	return withoutRef.String()
 }
