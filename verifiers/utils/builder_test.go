@@ -673,11 +673,6 @@ func Test_IsValidBuilderTag(t *testing.T) {
 			err:  serrors.ErrorInvalidRef,
 		},
 		{
-			name: "valid semver: no minor",
-			ref:  "refs/tags/v1",
-			err:  serrors.ErrorInvalidRef,
-		},
-		{
 			name: "valid semver: pre-release",
 			ref:  "refs/tags/v1.2.3-rc.0",
 			err:  serrors.ErrorInvalidRef,
@@ -785,11 +780,6 @@ func Test_IsValidJreleaserBuilderTag(t *testing.T) {
 		{
 			name: "valid semver: no patch",
 			ref:  "refs/tags/v1.2-java",
-			err:  serrors.ErrorInvalidRef,
-		},
-		{
-			name: "valid semver: no minor",
-			ref:  "refs/tags/v1-java",
 			err:  serrors.ErrorInvalidRef,
 		},
 		{

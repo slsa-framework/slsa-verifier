@@ -164,10 +164,10 @@ func IsValidJreleaserBuilderTag(ref string) error {
 	languages := map[string]bool{
 		"-java": true,
 	}
-	_, correctLanguage := languages[semver.Prerelease(pin)]
+	_, validLanguage := languages[semver.Prerelease(pin)]
 	if !semver.IsValid(pin) ||
 		len(strings.Split(pin, ".")) != 3 ||
-		!correctLanguage ||
+		!validLanguage ||
 		semver.Build(pin) != "" {
 		return fmt.Errorf("%w: %s: not of the form vX.Y.Z-<language>", serrors.ErrorInvalidRef, pin)
 	}
