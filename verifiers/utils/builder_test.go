@@ -673,11 +673,6 @@ func Test_IsValidBuilderTag(t *testing.T) {
 			err:  serrors.ErrorInvalidRef,
 		},
 		{
-			name: "valid semver: no minor",
-			ref:  "refs/tags/v1",
-			err:  serrors.ErrorInvalidRef,
-		},
-		{
 			name: "valid semver: pre-release",
 			ref:  "refs/tags/v1.2.3-rc.0",
 			err:  serrors.ErrorInvalidRef,
@@ -764,6 +759,66 @@ func Test_IsValidBuilderTag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := IsValidBuilderTag(tt.ref, tt.testing)
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
+func Test_IsValidJreleaserBuilderTag(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		ref  string
+		err  error
+	}{
+		{
+			name: "valid full semver and language",
+			ref:  "refs/tags/v1.2.3-java",
+		},
+		{
+			name: "valid semver: no patch",
+			ref:  "refs/tags/v1.2-java",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: no minor",
+			ref:  "refs/tags/v1-java",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: pre-release",
+			ref:  "refs/tags/v1.2.3-rc.0+java",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: pre-release w/ build",
+			ref:  "refs/tags/v1.2.3-rc.0+build1",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "valid semver: build",
+			ref:  "refs/tags/v1.2.3-java+build1",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "invalid semver",
+			ref:  "refs/tags/1.2.3-java",
+			err:  serrors.ErrorInvalidRef,
+		},
+		{
+			name: "invalid ref",
+			ref:  "refs/v1.2.3-java",
+			err:  serrors.ErrorInvalidRef,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := IsValidJreleaserBuilderTag(tt.ref)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}

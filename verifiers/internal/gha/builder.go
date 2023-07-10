@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
-	e2eTestRepository        = "slsa-framework/example-package"
-	certOidcIssuer           = "https://token.actions.githubusercontent.com"
-	githubCom                = "github.com/"
-	httpsGithubCom           = "https://" + githubCom
+	trustedBuilderRepository  = "slsa-framework/slsa-github-generator"
+	e2eTestRepository         = "slsa-framework/example-package"
+	jReleaserActionRepository = "jreleaser/release-action"
+	certOidcIssuer            = "https://token.actions.githubusercontent.com"
+	githubCom                 = "github.com/"
+	httpsGithubCom            = "https://" + githubCom
 	// This is used in cosign's CheckOpts for validating the certificate. We
 	// do specific builder verification after this.
 	certSubjectRegexp = httpsGithubCom + "*"
@@ -39,6 +40,8 @@ var defaultBYOBReusableWorkflows = map[string]bool{
 	common.GenericDelegatorBuilderID:         true,
 	common.GenericLowPermsDelegatorBuilderID: true,
 }
+
+var JReleaserRepository = httpsGithubCom + jReleaserActionRepository
 
 // VerifyCertficateSourceRepository verifies the source repository.
 func VerifyCertficateSourceRepository(id *WorkflowIdentity,

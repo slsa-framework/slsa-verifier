@@ -150,3 +150,26 @@ func IsValidBuilderTag(ref string, testing bool) error {
 	}
 	return nil
 }
+
+func IsValidJreleaserBuilderTag(ref string) error {
+	// Extract the pin.
+	pin, err := TagFromGitRef(ref)
+	if err != nil {
+		return err
+	}
+
+	// Valid semver of the form vX.Y.Z-<language> with no metadata.
+	// NOTE: When adding a language, update the corresponding
+	// unit test.
+	languages := map[string]bool{
+		"-java": true,
+	}
+	_, validLanguage := languages[semver.Prerelease(pin)]
+	if !semver.IsValid(pin) ||
+		len(strings.Split(pin, ".")) != 3 ||
+		!validLanguage ||
+		semver.Build(pin) != "" {
+		return fmt.Errorf("%w: %s: not of the form vX.Y.Z-<language>", serrors.ErrorInvalidRef, pin)
+	}
+	return nil
+}
