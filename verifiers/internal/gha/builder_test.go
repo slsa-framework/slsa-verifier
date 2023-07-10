@@ -1260,3 +1260,60 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkflowIdentity(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		workflow     WorkflowIdentity
+		workflowName string
+		workflowPath string
+		workflowRef  string
+	}{
+		{
+			name: "no ref",
+			workflow: WorkflowIdentity{
+				SubjectWorkflow: Must(url.Parse("https://github.com/random/workflow/ref")),
+			},
+			workflowName: "https://github.com/random/workflow/ref",
+			workflowPath: "/random/workflow/ref",
+			workflowRef:  "",
+		},
+		{
+			name: "with ref",
+			workflow: WorkflowIdentity{
+				SubjectWorkflow: Must(url.Parse("https://github.com/random/workflow/ref@refs/heads/foo")),
+			},
+			workflowName: "https://github.com/random/workflow/ref",
+			workflowPath: "/random/workflow/ref",
+			workflowRef:  "refs/heads/foo",
+		},
+		{
+			name: "multiple (at) symbols",
+			workflow: WorkflowIdentity{
+				SubjectWorkflow: Must(url.Parse("https://github.com/random/work@flow/ref@refs/heads/foo")),
+			},
+			workflowName: "https://github.com/random/work@flow/ref",
+			workflowPath: "/random/work@flow/ref",
+			workflowRef:  "refs/heads/foo",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			if got, want := tt.workflow.SubjectWorkflowName(), tt.workflowName; got != want {
+				t.Errorf("unexpected subject workflow name, got %q, want %q", got, want)
+			}
+
+			if got, want := tt.workflow.SubjectWorkflowPath(), tt.workflowPath; got != want {
+				t.Errorf("unexpected subject workflow path, got %q, want %q", got, want)
+			}
+
+			if got, want := tt.workflow.SubjectWorkflowRef(), tt.workflowRef; got != want {
+				t.Errorf("unexpected subject workflow ref, got %q, want %q", got, want)
+			}
+		})
+	}
+}

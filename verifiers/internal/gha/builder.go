@@ -244,17 +244,20 @@ func (id *WorkflowIdentity) SubjectWorkflowName() string {
 
 // SubjectWorkflowPath returns the subject workflow without the server url.
 func (id *WorkflowIdentity) SubjectWorkflowPath() string {
-	parts := strings.SplitN(id.SubjectWorkflow.Path, "@", 2)
-	return parts[0]
+	i := strings.LastIndex(id.SubjectWorkflow.Path, "@")
+	if i == -1 {
+		return id.SubjectWorkflow.Path
+	}
+	return id.SubjectWorkflow.Path[:i]
 }
 
 // SubjectWorkflowRef returns the ref for the subject workflow.
 func (id *WorkflowIdentity) SubjectWorkflowRef() string {
-	parts := strings.SplitN(id.SubjectWorkflow.Path, "@", 2)
-	if len(parts) < 2 {
+	i := strings.LastIndex(id.SubjectWorkflow.Path, "@")
+	if i == -1 {
 		return ""
 	}
-	return parts[1]
+	return id.SubjectWorkflow.Path[i+1:]
 }
 
 func getHosted(cert *x509.Certificate) (*Hosted, error) {
