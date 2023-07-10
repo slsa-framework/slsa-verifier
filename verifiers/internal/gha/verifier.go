@@ -16,6 +16,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/register"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
@@ -82,8 +83,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
-	fmt.Fprintf(os.Stderr, "Verified build using builder https://github.com%s at commit %s\n",
-		workflowInfo.SubjectWorkflowRef,
+	fmt.Fprintf(os.Stderr, "Verified build using builder %q at commit %s\n",
+		workflowInfo.SubjectWorkflow.String(),
 		workflowInfo.SourceSha1)
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
@@ -111,7 +112,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	// We verify against the delegator re-usable workflow, not the user-provided
 	// builder. This is because the signing identity for delegator-based builders
 	// is *always* the delegator workflow.
-	expectedDelegatorWorkflow := httpsGithubCom + delegatorLowPermsGenericReusableWorkflow
+	expectedDelegatorWorkflow := httpsGithubCom + common.GenericLowPermsDelegatorBuilderID
 	delegatorBuilderOpts := options.BuilderOpts{
 		ExpectedID: &expectedDelegatorWorkflow,
 	}
@@ -165,20 +166,20 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		// Verify that the value provided is consistent with certificate information.
 
 		if workflowInfo.SubjectHosted == nil {
-			return nil, fmt.Errorf("%w: hosted status unknonwn", serrors.ErrorNotSupported)
+			return nil, fmt.Errorf("%w: hosted status unknown", serrors.ErrorNotSupported)
 		}
 		switch *builderOpts.ExpectedID {
-		case builderLegacyGitHubRunnerID, builderGitHubHostedRunnerID:
+		case common.NpmCLILegacyBuilderID, common.NpmCLIHostedBuilderID:
 			if *workflowInfo.SubjectHosted != HostedGitHub {
 				return nil, fmt.Errorf("%w: re-usable workflow is self-hosted", serrors.ErrorMismatchBuilderID)
 			}
-		case builderSelfHostedRunnerID:
+		case common.NpmCLISelfHostedBuilderID:
 			if *workflowInfo.SubjectHosted != HostedSelf {
 				return nil, fmt.Errorf("%w: re-usable workflow is GitHub-hosted", serrors.ErrorMismatchBuilderID)
 			}
 		default:
-			return nil, fmt.Errorf("%w: builder %v. Expected one of %v, %v", serrors.ErrorNotSupported, *builderOpts.ExpectedID,
-				builderSelfHostedRunnerID, builderGitHubHostedRunnerID)
+			return nil, fmt.Errorf("%w: builder %q. Expected one of %q, %q", serrors.ErrorNotSupported, *builderOpts.ExpectedID,
+				common.NpmCLISelfHostedBuilderID, common.NpmCLIHostedBuilderID)
 		}
 
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(*builderOpts.ExpectedID, false)

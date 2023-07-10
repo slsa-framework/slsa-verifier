@@ -25,13 +25,8 @@ type hosted string
 const (
 	hostedSelf   hosted = "self-hosted"
 	hostedGitHub hosted = "github-hosted"
-)
 
-const (
-	publishAttestationV01       = "https://github.com/npm/attestation/tree/main/specs/publish/"
-	builderLegacyGitHubRunnerID = "https://github.com/actions/runner"
-	builderGitHubHostedRunnerID = builderLegacyGitHubRunnerID + "/" + string(hostedGitHub)
-	builderSelfHostedRunnerID   = builderLegacyGitHubRunnerID + "/" + string(hostedSelf)
+	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
