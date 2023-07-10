@@ -76,98 +76,67 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-func asURI(s string) string {
-	source := s
-	if !strings.HasPrefix(source, "https://") &&
-		!strings.HasPrefix(source, "git+") {
-		source = "git+https://" + source
-	}
-	if !strings.HasPrefix(source, "git+") {
-		source = "git+" + source
-	}
-
-	return source
-}
-
 // Verify source URI in provenance statement.
 func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
-	source := asURI(expectedSourceURI)
+	source := utils.NormalizeGitURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
 	if !strings.HasPrefix(source, "git+https://github.com/") {
-		return fmt.Errorf("%w: expected source github.com repository '%s'", serrors.ErrorMalformedURI,
+		return fmt.Errorf("%w: expected source github.com repository %q", serrors.ErrorMalformedURI,
 			source)
 	}
 
 	// Verify source in the trigger
-	fullConfigURI, err := prov.TriggerURI()
+	fullTriggerURI, err := prov.TriggerURI()
 	if err != nil {
 		return err
 	}
 
-	configURI, err := sourceFromURI(fullConfigURI, false)
+	triggerURI, triggerRef, err := utils.ParseGitURIAndRef(fullTriggerURI)
 	if err != nil {
 		return err
 	}
-	if configURI != source {
-		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got '%s'", serrors.ErrorMismatchSource,
-			source, fullConfigURI)
+	if triggerURI != source {
+		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got %q", serrors.ErrorMismatchSource,
+			source, fullTriggerURI)
+	}
+	// We expect the trigger URI to always have a ref.
+	if triggerRef == "" {
+		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullTriggerURI)
 	}
 
 	// Verify source from material section.
-	materialSourceURI, err := prov.SourceURI()
+	fullSourceURI, err := prov.SourceURI()
 	if err != nil {
 		return err
 	}
 
-	materialURI, err := sourceFromURI(materialSourceURI, allowNoMaterialRef)
+	sourceURI, sourceRef, err := utils.ParseGitURIAndRef(fullSourceURI)
 	if err != nil {
 		return err
 	}
-	if materialURI != source {
-		return fmt.Errorf("%w: expected source '%s' in material section, got '%s'", serrors.ErrorMismatchSource,
-			source, materialSourceURI)
+	if sourceURI != source {
+		return fmt.Errorf("%w: expected source '%s' in material section, got %q", serrors.ErrorMismatchSource,
+			source, fullSourceURI)
 	}
 
-	// Last, verify that both fields match.
-	// We use the full URI to match on the tag as well.
-	if allowNoMaterialRef && len(strings.Split(materialSourceURI, "@")) == 1 {
-		// NOTE: this is an exception for npm packages built before GA,
-		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
-		// We don't need to compare the ref since materialSourceURI does not contain it.
-		return nil
+	if sourceRef == "" {
+		if allowNoMaterialRef {
+			// NOTE: this is an exception for npm packages built before GA,
+			// see https://github.com/slsa-framework/slsa-verifier/issues/492.
+			// We don't need to compare the ref since materialSourceURI does not contain it.
+			return nil
+		}
+		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullSourceURI)
 	}
-	if fullConfigURI != materialSourceURI {
-		return fmt.Errorf("%w: material and config URIs do not match: '%s' != '%s'",
+
+	if fullTriggerURI != fullSourceURI {
+		return fmt.Errorf("%w: material and config URIs do not match: %q != %q",
 			serrors.ErrorInvalidDssePayload,
-			fullConfigURI, materialSourceURI)
+			fullTriggerURI, fullSourceURI)
 	}
 
 	return nil
-}
-
-// sourceFromURI retrieves the source repository given a repository URI with ref.
-//
-// NOTE: `allowNoRef` is to allow for verification of npm packages
-// generated before GA. Their provenance did not have a ref,
-// see https://github.com/slsa-framework/slsa-verifier/issues/492.
-// `allowNoRef` should be set to `false` for all other cases.
-func sourceFromURI(uri string, allowNoRef bool) (string, error) {
-	if uri == "" {
-		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
-	}
-
-	r := strings.Split(uri, "@")
-	if len(r) < 2 && !allowNoRef {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
-			uri)
-	}
-	if len(r) < 1 {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorMalformedURI,
-			uri)
-	}
-
-	return r[0], nil
 }
 
 // Verify Subject Digest from the provenance statement.
