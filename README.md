@@ -208,6 +208,12 @@ The following options are available:
 
 ## Verification for GitHub builders
 
+### BYOB BuilderID Caveat
+
+If the Github Builder used to generate the artifacts and provenance is a [BYOB Builder](https://github.com/slsa-framework/slsa-github-generator/blob/main/BYOB.md),
+then the `--builder-id` flag must be set to the BYOB Builder that was used. If not, the verification will fail as the --builder-id will automatically be set to
+BYOB's delegator.
+
 ### Artifacts
 
 To verify an artifact, run the following command:
