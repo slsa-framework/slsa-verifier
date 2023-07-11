@@ -691,8 +691,8 @@ github.com/sigstore/cosign/v2 v2.0.2 h1:Ttaj/OkJAy+ummhnHG2F+JSFeZQj8i0P6o8j2RY9
 github.com/sigstore/cosign/v2 v2.0.2/go.mod h1:yJXtRmWrumyQA/XPjTTjOufnNckI87mmmVxv9rtEqgE=
 github.com/sigstore/fulcio v1.2.0 h1:I4H764cDbryKXkPtasUvo8bcix/7xLvkxWYWNp+JtWI=
 github.com/sigstore/fulcio v1.2.0/go.mod h1:FS7qpBvOEqs0uEh1+hJxzxtJistWN29ybLtAzFNUi0c=
-github.com/sigstore/protobuf-specs v0.1.1-0.20230518173429-5ef54068bb53 h1:q2rO7GOmez7Im4t1JGKCe9BaepE97yMT6NE5zpB3LaA=
-github.com/sigstore/protobuf-specs v0.1.1-0.20230518173429-5ef54068bb53/go.mod h1:5shUCxf82hGnjUEFVWiktcxwzdtn6EfeeJssxZ5Q5HE=
+github.com/sigstore/protobuf-specs v0.1.1-0.20230711160945-d18146794000 h1:hNZpROv7KYduIggVeAVL1s/tIQYH6BkUC27a1WphWUk=
+github.com/sigstore/protobuf-specs v0.1.1-0.20230711160945-d18146794000/go.mod h1:5shUCxf82hGnjUEFVWiktcxwzdtn6EfeeJssxZ5Q5HE=
 github.com/sigstore/rekor v1.2.0 h1:ahlnoEY3zo8Vc+eZLPobamw6YfBTAbI0lthzUQd6qe4=
 github.com/sigstore/rekor v1.2.0/go.mod h1:zcFO54qIg2G1/i0sE/nvmELUOng/n0MPjTszRYByVPo=
 github.com/sigstore/sigstore v1.6.4 h1:jH4AzR7qlEH/EWzm+opSpxCfuUcjHL+LJPuQE7h40WE=
