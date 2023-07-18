@@ -132,7 +132,11 @@ func IsValidBuilderTag(ref string, testing bool) error {
 	if testing {
 		// Tags on trusted repositories should be a valid semver with version
 		// core including all three parts and no build identifier.
-		versionCore := strings.Split(pin, "-")[0]
+		parts := strings.Split(pin, "-")
+		if len(parts) == 0 {
+			return fmt.Errorf("%w: %s: version tag not valid", serrors.ErrorInvalidRef, pin)
+		}
+		versionCore := parts[0]
 		if !semver.IsValid(pin) ||
 			len(strings.Split(versionCore, ".")) != 3 ||
 			semver.Build(pin) != "" {

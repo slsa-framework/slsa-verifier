@@ -157,6 +157,7 @@ func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuild
 }
 
 // Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.
+// This includes the delegator workflows referenced by the TRWs.
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {

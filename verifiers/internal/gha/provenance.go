@@ -396,6 +396,10 @@ func VerifyTag(prov iface.Provenance, expectedTag string) error {
 	}
 
 	tag, err := utils.TagFromGitRef(ref)
+	if tag == "" {
+		return fmt.Errorf("verifying tag: %w: no tag found in provenance", serrors.ErrorMismatchTag)
+	}
+
 	if err != nil {
 		return fmt.Errorf("verifying tag: %w", err)
 	}
@@ -417,6 +421,10 @@ func VerifyVersionedTag(prov iface.Provenance, expectedTag string) error {
 	ref, err := prov.GetTag()
 	if err != nil {
 		return err
+	}
+
+	if ref == "" {
+		return fmt.Errorf("verifying tag: %w: no tag found in provenance", serrors.ErrorMismatchVersionedTag)
 	}
 
 	tag, err := utils.TagFromGitRef(ref)
