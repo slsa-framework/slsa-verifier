@@ -73,17 +73,18 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
 	if byob {
+		// Create structs for slsa-github-generator builders such that the builderID for
+		// the builders do not need to be inputted as the expectedBuilderID will default to
+		// the delegator builder ID for BYOB.
 		bazelBuilderID, err := utils.TrustedBuilderIDNew("https://github.com/enteraga6/slsa-github-generator/.github/workflows/builder_bazel_slsa3.yml", false)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		println(provenanceOpts.ExpectedBuilderID)
 		prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 		if err != nil {
 			return nil, nil, err
 		}
-		println(prov.BuilderID())
 
 		id, err := prov.BuilderID()
 		if err != nil {
@@ -94,13 +95,9 @@ func verifyEnvAndCert(env *dsse.Envelope,
 			return nil, nil, err
 		}
 
-		println(provBuilderID.Name())
-		println(bazelBuilderID.Name())
-		println("")
 		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && (provBuilderID.Name() != bazelBuilderID.Name()) {
 			// NOTE: we will need to update the logic here once our default trusted builders
 			// are migrated to using BYOB.
-			println("6")
 			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
 
@@ -183,7 +180,6 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 
 		if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
-			println("1")
 			return nil, fmt.Errorf("%w: self hosted re-usable workflow", serrors.ErrorMismatchBuilderID)
 		}
 		isTrustedBuilder = true

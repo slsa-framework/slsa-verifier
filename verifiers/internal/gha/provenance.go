@@ -71,22 +71,6 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 		return err
 	}
 
-	// Create structs for slsa-github-generator builders such that the builderID for
-	// the builders do not need to be inputted as the expectedBuilderID will default to
-	// the delegator builder ID for BYOB.
-
-	bazelBuilderID, err := utils.TrustedBuilderIDNew("https://github.com/enteraga6/slsa-github-generator/.github/workflows/builder_bazel_slsa3.yml", false)
-	if err != nil {
-		return err
-	}
-	println(" ")
-	println(provBuilderID.Name())
-	println(bazelBuilderID.Name())
-	// if provBuilderID.Name() == bazelBuilderID.Name() {
-	// 	expectedBuilderID = bazelBuilderID.Name()
-	// 	println("match")
-	// }
-
 	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
 		return err
 	}
@@ -294,15 +278,12 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 	if err != nil {
 		return err
 	}
-	println(byob)
 	// Verify Builder ID.
 	if byob {
 		if err := isValidDelegatorBuilderID(prov); err != nil {
 			return err
 		}
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
-		println("expected")
-		println(provenanceOpts.ExpectedBuilderID)
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
 		}

@@ -41,7 +41,6 @@ func (b *TrustedBuilderID) MatchesLoose(builderID string, allowRef bool) error {
 	}
 
 	if name != b.name {
-		println("2")
 		return fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			b.name, name)
 	}
@@ -52,7 +51,6 @@ func (b *TrustedBuilderID) MatchesLoose(builderID string, allowRef bool) error {
 			"refs/tags/"+version == b.version {
 			return nil
 		}
-		println("3")
 		return fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			version, b.version)
 	}
@@ -69,7 +67,6 @@ func (b *TrustedBuilderID) MatchesFull(builderID string, allowRef bool) error {
 	}
 
 	if name != b.name {
-		println("4")
 		return fmt.Errorf("%w: expected name '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			b.name, name)
 	}
@@ -80,7 +77,6 @@ func (b *TrustedBuilderID) MatchesFull(builderID string, allowRef bool) error {
 			"refs/tags/"+version == b.version {
 			return nil
 		}
-		println("5")
 		return fmt.Errorf("%w: expected version '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 			version, b.version)
 	}
