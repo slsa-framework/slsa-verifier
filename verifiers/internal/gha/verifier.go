@@ -72,12 +72,23 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
 	if byob {
-		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+		bazelBuilderID, err := utils.TrustedBuilderIDNew("https://github.com/enteraga6/slsa-github-generator/.github/workflows/builder_bazel_slsa3.yml", false)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		println(provenanceOpts.ExpectedBuilderID)
+		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && (provenanceOpts.ExpectedBuilderID != bazelBuilderID.Name()) {
 			// NOTE: we will need to update the logic here once our default trusted builders
 			// are migrated to using BYOB.
 			println("6")
 			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
+
+		if provenanceOpts.ExpectedBuilderID == bazelBuilderID.Name() {
+			*builderOpts.ExpectedID = bazelBuilderID.Name()
+		}
+
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 	}
 	if err := VerifyProvenance(env, provenanceOpts, byob); err != nil {

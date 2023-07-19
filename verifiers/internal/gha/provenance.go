@@ -79,9 +79,12 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 	if err != nil {
 		return err
 	}
-
-	if provBuilderID == bazelBuilderID {
-		return nil
+	println(" ")
+	println(provBuilderID.Name())
+	println(bazelBuilderID.Name())
+	if provBuilderID.Name() == bazelBuilderID.Name() {
+		expectedBuilderID = bazelBuilderID.Name()
+		println("match")
 	}
 
 	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
@@ -298,6 +301,8 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			return err
 		}
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
+		println("expected")
+		println(provenanceOpts.ExpectedBuilderID)
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
 		}
