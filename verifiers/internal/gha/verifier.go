@@ -16,6 +16,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/register"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
@@ -78,19 +79,42 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		}
 
 		println(provenanceOpts.ExpectedBuilderID)
-		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && (provenanceOpts.ExpectedBuilderID != bazelBuilderID.Name()) {
+		prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+		if err != nil {
+			return nil, nil, err
+		}
+		println(prov.BuilderID())
+
+		id, err := prov.BuilderID()
+		if err != nil {
+			return nil, nil, err
+		}
+		provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		println(provBuilderID.Name())
+		println(bazelBuilderID.Name())
+		println("")
+		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && (provBuilderID.Name() != bazelBuilderID.Name()) {
 			// NOTE: we will need to update the logic here once our default trusted builders
 			// are migrated to using BYOB.
 			println("6")
 			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
 
-		if provenanceOpts.ExpectedBuilderID == bazelBuilderID.Name() {
-			*builderOpts.ExpectedID = bazelBuilderID.Name()
+		if provBuilderID.Name() == bazelBuilderID.Name() {
+			var tempBuilderID *string
+			var str string
+			str = bazelBuilderID.Name()
+			tempBuilderID = &(str)
+			builderOpts.ExpectedID = tempBuilderID
 		}
 
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 	}
+
 	if err := VerifyProvenance(env, provenanceOpts, byob); err != nil {
 		return nil, nil, err
 	}
