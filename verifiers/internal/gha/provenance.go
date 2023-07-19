@@ -82,10 +82,10 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 	println(" ")
 	println(provBuilderID.Name())
 	println(bazelBuilderID.Name())
-	if provBuilderID.Name() == bazelBuilderID.Name() {
-		expectedBuilderID = bazelBuilderID.Name()
-		println("match")
-	}
+	// if provBuilderID.Name() == bazelBuilderID.Name() {
+	// 	expectedBuilderID = bazelBuilderID.Name()
+	// 	println("match")
+	// }
 
 	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
 		return err

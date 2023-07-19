@@ -104,7 +104,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
 
-		if provBuilderID.Name() == bazelBuilderID.Name() {
+		if provBuilderID.Name() == bazelBuilderID.Name() && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			var tempBuilderID *string
 			var str string
 			str = bazelBuilderID.Name()
