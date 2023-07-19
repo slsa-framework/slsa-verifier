@@ -75,6 +75,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			// NOTE: we will need to update the logic here once our default trusted builders
 			// are migrated to using BYOB.
+			println("6")
 			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
@@ -147,6 +148,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 
 		if workflowInfo.SubjectHosted != nil && *workflowInfo.SubjectHosted != HostedGitHub {
+			println("1")
 			return nil, fmt.Errorf("%w: self hosted re-usable workflow", serrors.ErrorMismatchBuilderID)
 		}
 		isTrustedBuilder = true

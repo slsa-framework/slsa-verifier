@@ -101,10 +101,12 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *string, defaultTrustedBuilders map[string]bool) (*utils.TrustedBuilderID, bool, error) {
 	var trustedBuilderID *utils.TrustedBuilderID
 	var err error
+	println("begin verifyTrustedBuilderID")
 	// WARNING: we don't validate the tag here, because we need to allow
 	// refs/heads/main for e2e tests. See verifyTrustedBuilderRef().
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
+		println(expectedBuilderID)
 		if _, ok := defaultTrustedBuilders[certBuilderID]; !ok {
 			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certBuilderID, expectedBuilderID != nil)
 		}
@@ -112,6 +114,15 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
 			return nil, false, err
+		}
+
+		// Check if:
+		// - the builder in the cert is a BYOB builder
+		// - the caller trusts the BYOB builder
+		// If both are true, we don't match the user-provided builder ID
+		// against the certificate. Instead that will be done by the caller.
+		if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
+			return trustedBuilderID, true, nil
 		}
 	} else {
 		// Verify the builderID.
@@ -142,8 +153,11 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 }
 
 func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuilders map[string]bool) bool {
+	println("???")
 	for byobBuilder := range defaultBYOBReusableWorkflows {
 		// Check that the certificate builder is a BYOB workflow.
+		println("test")
+		println(certBuilder)
 		if err := certBuilder.MatchesLoose(byobBuilder, true); err == nil {
 			// We found a delegator workflow that matches the certificate identity.
 			// Check that the BYOB builder is trusted by the caller.
