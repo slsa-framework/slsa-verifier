@@ -114,6 +114,28 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 			),
 			err: serrors.ErrorInvalidDssePayload,
 		},
+		{
+			name: "materials uri no ref",
+			prov: newBYOBProvenance(
+				&Attestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate: slsa02.ProvenancePredicate{
+						Invocation: slsa02.ProvenanceInvocation{
+							Environment: map[string]interface{}{
+								"GITHUB_REF_TYPE": "branch",
+								"GITHUB_REF":      "refs/heads/main",
+							},
+						},
+						Materials: []slsacommon.ProvenanceMaterial{
+							{
+								URI: "git+https://github.com/kubernetes/kubernetes",
+							},
+						},
+					},
+				},
+			),
+			err: serrors.ErrorInvalidDssePayload,
+		},
 	}
 
 	for i := range testCases {
@@ -210,6 +232,28 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 							Environment: map[string]interface{}{
 								"GITHUB_REF_TYPE": "tag",
 								"GITHUB_REF":      "refs/tags/v1.0.0",
+							},
+						},
+					},
+				},
+			),
+			err: serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name: "materials uri no ref",
+			prov: newBYOBProvenance(
+				&Attestation{
+					StatementHeader: intoto.StatementHeader{},
+					Predicate: slsa02.ProvenancePredicate{
+						Invocation: slsa02.ProvenanceInvocation{
+							Environment: map[string]interface{}{
+								"GITHUB_REF_TYPE": "tag",
+								"GITHUB_REF":      "refs/tags/v1.0.0",
+							},
+						},
+						Materials: []slsacommon.ProvenanceMaterial{
+							{
+								URI: "git+https://github.com/kubernetes/kubernetes",
 							},
 						},
 					},
