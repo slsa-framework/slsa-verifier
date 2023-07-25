@@ -268,6 +268,13 @@ func Test_verifySourceURI(t *testing.T) {
 			err:               serrors.ErrorMalformedURI,
 		},
 		{
+			name:              "not github repo",
+			provTriggerURI:    "git+https://notgithub.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://notgithub.com/some/repo@v1.2.3",
+			expectedSourceURI: "git+https://notgithub.com/some/repo",
+			err:               serrors.ErrorMalformedURI,
+		},
+		{
 			name:              "match source",
 			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
 			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.3",

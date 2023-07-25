@@ -13,8 +13,17 @@ import (
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
+
+// Must checks the error and panics if not nil.
+func Must[T any](val T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return val
+}
 
 func Test_VerifyBuilderIdentity(t *testing.T) {
 	t.Parallel()
@@ -30,11 +39,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "invalid job workflow ref",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: "random/workflow/ref",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://token.actions.githubusercontent.com",
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse("https://github.com/random/workflow/ref")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults: defaultArtifactTrustedReusableWorkflows,
 			err:      serrors.ErrorMalformedURI,
@@ -42,11 +51,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "untrusted job workflow ref",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: "/malicious/slsa-go/.github/workflows/builder.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://token.actions.githubusercontent.com",
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse("https://github.com/malicious/slsa-go/.github/workflows/builder.yml@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults: defaultArtifactTrustedReusableWorkflows,
 			err:      serrors.ErrorUntrustedReusableWorkflow,
@@ -54,11 +63,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "untrusted job workflow ref for general repos",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/heads/main",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://token.actions.githubusercontent.com",
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/heads/main")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults: defaultArtifactTrustedReusableWorkflows,
 			err:      serrors.ErrorInvalidRef,
@@ -66,11 +75,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "untrusted cert issuer for general repos",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://bad.issuer.com",
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://bad.issuer.com",
 			},
 			defaults: defaultArtifactTrustedReusableWorkflows,
 			err:      serrors.ErrorInvalidOIDCIssuer,
@@ -78,11 +87,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid trusted builder without tag",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   trustedBuilderRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://token.actions.githubusercontent.com",
+				SourceRepository: trustedBuilderRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
 			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
@@ -90,11 +99,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid generic delegator builder without tag",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   trustedBuilderRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://token.actions.githubusercontent.com",
+				SourceRepository: trustedBuilderRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GenericDelegatorBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults:  defaultBYOBReusableWorkflows,
 			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml",
@@ -103,11 +112,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid low-perms delegator builder with short tag",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   trustedBuilderRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             "https://token.actions.githubusercontent.com",
+				SourceRepository: trustedBuilderRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GenericLowPermsDelegatorBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults:  defaultBYOBReusableWorkflows,
 			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml@v1.2.3",
@@ -116,11 +125,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid main ref for e2e test",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   e2eTestRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: e2eTestRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
 			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
@@ -128,11 +137,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid main ref for e2e test - match builderID",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   e2eTestRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: e2eTestRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
@@ -143,11 +152,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid main ref for e2e test - mismatch builderID",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   e2eTestRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: e2eTestRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
@@ -158,11 +167,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity - match builderID",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
@@ -173,11 +182,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity - mismatch builderID",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
@@ -188,11 +197,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "invalid workflow identity with prerelease",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3-alpha",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3-alpha")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			err:       serrors.ErrorInvalidRef,
 			defaults:  defaultArtifactTrustedReusableWorkflows,
@@ -201,11 +210,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "invalid workflow identity with build",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3+123",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3+123")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			defaults: defaultArtifactTrustedReusableWorkflows,
 			err:      serrors.ErrorInvalidRef,
@@ -213,11 +222,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "invalid workflow identity with metadata",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3-alpha+123",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3-alpha+123")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			defaults: defaultArtifactTrustedReusableWorkflows,
 			err:      serrors.ErrorInvalidRef,
@@ -225,11 +234,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity with fully qualified source",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
 			builderID: "https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml",
@@ -237,11 +246,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity with fully qualified source - no default",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
@@ -251,11 +260,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity with fully qualified source - match builderID",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("https://github.com/" + trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml"),
@@ -266,11 +275,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity with fully qualified source - mismatch builderID",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
 				ExpectedID: asStringPointer("some-other-builderID"),
@@ -281,11 +290,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		{
 			name: "valid workflow identity with fully qualified source - mismatch defaults",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			defaults: defaultContainerTrustedReusableWorkflows,
 			err:      serrors.ErrorUntrustedReusableWorkflow,
@@ -304,11 +313,11 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 			}
 			id, byob, err := VerifyBuilderIdentity(tt.workflow, opts, tt.defaults)
 			if byob != tt.byob {
-				t.Errorf(cmp.Diff(byob, tt.byob))
+				t.Errorf("unexpected byob value:\n%s", cmp.Diff(tt.byob, byob))
 			}
 
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Errorf("unexpected error (-want +got):\n%s", diff)
 			}
 			if err != nil {
 				return
@@ -331,16 +340,16 @@ func Test_isTrustedDelegatorBuilder(t *testing.T) {
 	}{
 		{
 			name:          "match byob",
-			certBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.6.0",
+			certBuilderID: common.GenericLowPermsDelegatorBuilderID + "@refs/tags/v1.6.0",
 			trustedBuilderIDs: map[string]bool{
-				"slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml": true,
-				"slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml":                   true,
+				common.GenericLowPermsDelegatorBuilderID:                                                       true,
+				"https://github.com/slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml": true,
 			},
 			result: true,
 		},
 		{
 			name:          "match byob but not caller trusted",
-			certBuilderID: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.6.0",
+			certBuilderID: common.GenericLowPermsDelegatorBuilderID + "@refs/tags/v1.6.0",
 			trustedBuilderIDs: map[string]bool{
 				"slsa-framework/slsa-github-generator/.github/workflows/some_other_delegator.yml": true,
 				"slsa-framework/slsa-github-generator/.github/workflows/some_delegator.yml":       true,
@@ -377,22 +386,22 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 		{
 			name: "repo match",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "asraa/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "asraa/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			source: "github.com/asraa/slsa-on-github-test",
 		},
 		{
 			name: "unexpected source for e2e test",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   e2eTestRepository,
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: e2eTestRepository,
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			source: "malicious/source",
 			err:    serrors.ErrorMismatchSource,
@@ -400,10 +409,10 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 		{
 			name: "valid main ref for builder",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   trustedBuilderRepository,
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: trustedBuilderRepository,
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			source: "malicious/source",
 			err:    serrors.ErrorMismatchSource,
@@ -411,11 +420,11 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 		{
 			name: "unexpected source",
 			workflow: &WorkflowIdentity{
-				SourceRepository:   "malicious/slsa-on-github-test",
-				SourceSha1:         "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
-				SubjectWorkflowRef: trustedBuilderRepository + "/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.3",
-				BuildTrigger:       "workflow_dispatch",
-				Issuer:             certOidcIssuer,
+				SourceRepository: "malicious/slsa-on-github-test",
+				SourceSha1:       "0dfcd24824432c4ce587f79c918eef8fc2c44d7b",
+				SubjectWorkflow:  Must(url.Parse(common.GoBuilderID + "@refs/tags/v1.2.3")),
+				BuildTrigger:     "workflow_dispatch",
+				Issuer:           certOidcIssuer,
 			},
 			source: "asraa/slsa-on-github-test",
 			err:    serrors.ErrorMismatchSource,
@@ -579,19 +588,18 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			id, byob, err := verifyTrustedBuilderID(tt.path, tt.tag, tt.id, tt.defaults)
+			id, byob, err := verifyTrustedBuilderID(httpsGithubCom+tt.path, tt.tag, tt.id, tt.defaults)
 			if byob != tt.byob {
 				t.Errorf(cmp.Diff(byob, tt.byob))
 			}
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got):\n%s", diff)
 			}
-			if err != nil {
-				return
-			}
-			expectedID := "https://github.com/" + tt.path + "@" + tt.tag
-			if err := id.MatchesLoose(expectedID, true); err != nil {
-				t.Errorf("matches failed:%v", err)
+			if tt.err == nil {
+				expectedID := httpsGithubCom + tt.path + "@" + tt.tag
+				if err := id.MatchesLoose(expectedID, true); err != nil {
+					t.Errorf("matches failed:%v", err)
+				}
 			}
 		})
 	}
@@ -872,7 +880,9 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				URIs: []*url.URL{
 					{
-						Path: "/" + repo + "/" + buildConfigPath,
+						Scheme: "https",
+						Host:   "github.com",
+						Path:   "/" + repo + "/" + buildConfigPath,
 					},
 				},
 				Extensions: []pkix.Extension{
@@ -899,11 +909,11 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				},
 			},
 			workflow: WorkflowIdentity{
-				Issuer:             issuer,
-				SubjectWorkflowRef: repo + "/" + buildConfigPath,
-				SourceRepository:   repo,
-				SourceSha1:         digest,
-				BuildTrigger:       trigger,
+				Issuer:           issuer,
+				SubjectWorkflow:  Must(url.Parse(httpsGithubCom + repo + "/" + buildConfigPath)),
+				SourceRepository: repo,
+				SourceSha1:       digest,
+				BuildTrigger:     trigger,
 			},
 		},
 		{
@@ -939,7 +949,9 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				URIs: []*url.URL{
 					{
-						Path: "/" + repo + "/" + buildConfigPath,
+						Scheme: "https",
+						Host:   "github.com",
+						Path:   "/" + repo + "/" + buildConfigPath,
 					},
 				},
 				Extensions: []pkix.Extension{
@@ -1016,18 +1028,18 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				},
 			},
 			workflow: WorkflowIdentity{
-				Issuer:             issuer,
-				SubjectSha1:        &subjectSha1,
-				SubjectHosted:      &hosted,
-				SubjectWorkflowRef: repo + "/" + buildConfigPath,
-				SourceRepository:   repo,
-				SourceSha1:         digest,
-				SourceRef:          &ref,
-				SourceID:           &sourceID,
-				SourceOwnerID:      &sourceOwnerID,
-				BuildTrigger:       trigger,
-				BuildConfigPath:    &buildConfigPath,
-				RunID:              &invocationID,
+				Issuer:           issuer,
+				SubjectSha1:      &subjectSha1,
+				SubjectHosted:    &hosted,
+				SubjectWorkflow:  Must(url.Parse(httpsGithubCom + repo + "/" + buildConfigPath)),
+				SourceRepository: repo,
+				SourceSha1:       digest,
+				SourceRef:        &ref,
+				SourceID:         &sourceID,
+				SourceOwnerID:    &sourceOwnerID,
+				BuildTrigger:     trigger,
+				BuildConfigPath:  &buildConfigPath,
+				RunID:            &invocationID,
 			},
 		},
 		{
@@ -1109,7 +1121,9 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			cert: x509.Certificate{
 				URIs: []*url.URL{
 					{
-						Path: "/" + repo + "/" + buildConfigPath,
+						Scheme: "https",
+						Host:   "github.com",
+						Path:   "/" + repo + "/" + buildConfigPath,
 					},
 				},
 				Extensions: []pkix.Extension{
@@ -1161,17 +1175,17 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 				},
 			},
 			workflow: WorkflowIdentity{
-				Issuer:             issuer,
-				SubjectWorkflowRef: repo + "/" + buildConfigPath,
-				SourceRepository:   repo,
-				SourceSha1:         digest,
-				BuildTrigger:       trigger,
-				SubjectHosted:      &hosted,
-				SourceRef:          &ref,
-				SourceID:           &sourceID,
-				SourceOwnerID:      &sourceOwnerID,
-				BuildConfigPath:    &buildConfigPath,
-				RunID:              &invocationID,
+				Issuer:           issuer,
+				SubjectWorkflow:  Must(url.Parse(httpsGithubCom + repo + "/" + buildConfigPath)),
+				SourceRepository: repo,
+				SourceSha1:       digest,
+				BuildTrigger:     trigger,
+				SubjectHosted:    &hosted,
+				SourceRef:        &ref,
+				SourceID:         &sourceID,
+				SourceOwnerID:    &sourceOwnerID,
+				BuildConfigPath:  &buildConfigPath,
+				RunID:            &invocationID,
 			},
 		},
 		{
@@ -1242,6 +1256,63 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 
 			if !cmp.Equal(*workflow, tt.workflow) {
 				t.Errorf(cmp.Diff(*workflow, tt.workflow))
+			}
+		})
+	}
+}
+
+func TestWorkflowIdentity(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		workflow     WorkflowIdentity
+		workflowName string
+		workflowPath string
+		workflowRef  string
+	}{
+		{
+			name: "no ref",
+			workflow: WorkflowIdentity{
+				SubjectWorkflow: Must(url.Parse("https://github.com/random/workflow/ref")),
+			},
+			workflowName: "https://github.com/random/workflow/ref",
+			workflowPath: "/random/workflow/ref",
+			workflowRef:  "",
+		},
+		{
+			name: "with ref",
+			workflow: WorkflowIdentity{
+				SubjectWorkflow: Must(url.Parse("https://github.com/random/workflow/ref@refs/heads/foo")),
+			},
+			workflowName: "https://github.com/random/workflow/ref",
+			workflowPath: "/random/workflow/ref",
+			workflowRef:  "refs/heads/foo",
+		},
+		{
+			name: "multiple (at) symbols",
+			workflow: WorkflowIdentity{
+				SubjectWorkflow: Must(url.Parse("https://github.com/random/work@flow/ref@refs/heads/foo")),
+			},
+			workflowName: "https://github.com/random/work@flow/ref",
+			workflowPath: "/random/work@flow/ref",
+			workflowRef:  "refs/heads/foo",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			if got, want := tt.workflow.SubjectWorkflowName(), tt.workflowName; got != want {
+				t.Errorf("unexpected subject workflow name, got %q, want %q", got, want)
+			}
+
+			if got, want := tt.workflow.SubjectWorkflowPath(), tt.workflowPath; got != want {
+				t.Errorf("unexpected subject workflow path, got %q, want %q", got, want)
+			}
+
+			if got, want := tt.workflow.SubjectWorkflowRef(), tt.workflowRef; got != want {
+				t.Errorf("unexpected subject workflow ref, got %q, want %q", got, want)
 			}
 		})
 	}

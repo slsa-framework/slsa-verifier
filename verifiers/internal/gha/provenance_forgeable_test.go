@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"net/url"
 	"testing"
 	"time"
 
@@ -566,15 +567,15 @@ func Test_verifyMetadata(t *testing.T) {
 func Test_verifySystemParameters(t *testing.T) {
 	t.Parallel()
 	expectedWorkflow := WorkflowIdentity{
-		BuildTrigger:       "workflow_dispatch",
-		SubjectWorkflowRef: "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
-		SubjectSha1:        asStringPointer("b38894f2dda4355ea5606fccb166e61565e12a14"),
-		SourceRepository:   "laurentsimon/provenance-npm-test",
-		SourceRef:          asStringPointer("refs/heads/main"),
-		SourceID:           asStringPointer("602223945"),
-		SourceOwnerID:      asStringPointer("64505099"),
-		SourceSha1:         "b38894f2dda4355ea5606fccb166e61565e12a14",
-		RunID:              asStringPointer("4757060009/attempt/1"),
+		BuildTrigger:     "workflow_dispatch",
+		SubjectWorkflow:  Must(url.Parse(httpsGithubCom + "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main")),
+		SubjectSha1:      asStringPointer("b38894f2dda4355ea5606fccb166e61565e12a14"),
+		SourceRepository: "laurentsimon/provenance-npm-test",
+		SourceRef:        asStringPointer("refs/heads/main"),
+		SourceID:         asStringPointer("602223945"),
+		SourceOwnerID:    asStringPointer("64505099"),
+		SourceSha1:       "b38894f2dda4355ea5606fccb166e61565e12a14",
+		RunID:            asStringPointer("4757060009/attempt/1"),
 	}
 	tests := []struct {
 		name        string
@@ -949,16 +950,16 @@ func Test_verifySystemParameters(t *testing.T) {
 func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 	t.Parallel()
 	expectedWorkflow := WorkflowIdentity{
-		BuildTrigger:       "workflow_dispatch",
-		BuildConfigPath:    asStringPointer("release/workflow/path"),
-		SubjectWorkflowRef: "repo/name/release/workflow/path@subject-ref",
-		SubjectSha1:        asStringPointer("subject-sha"),
-		SourceRepository:   "repo/name",
-		SourceRef:          asStringPointer("source-ref"),
-		SourceID:           asStringPointer("source-id"),
-		SourceOwnerID:      asStringPointer("source-owner-id"),
-		SourceSha1:         "source-sha",
-		RunID:              asStringPointer("run-id/attempt/run-attempt"),
+		BuildTrigger:     "workflow_dispatch",
+		BuildConfigPath:  asStringPointer("release/workflow/path"),
+		SubjectWorkflow:  Must(url.Parse(httpsGithubCom + "repo/name/release/workflow/path@subject-ref")),
+		SubjectSha1:      asStringPointer("subject-sha"),
+		SourceRepository: "repo/name",
+		SourceRef:        asStringPointer("source-ref"),
+		SourceID:         asStringPointer("source-id"),
+		SourceOwnerID:    asStringPointer("source-owner-id"),
+		SourceSha1:       "source-sha",
+		RunID:            asStringPointer("run-id/attempt/run-attempt"),
 	}
 	tests := []struct {
 		name                       string

@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
+	"net/url"
 	"strings"
 
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
@@ -15,11 +16,12 @@ import (
 )
 
 var (
-	trustedBuilderRepository = "slsa-framework/slsa-github-generator"
-	e2eTestRepository        = "slsa-framework/example-package"
-	certOidcIssuer           = "https://token.actions.githubusercontent.com"
-	githubCom                = "github.com/"
-	httpsGithubCom           = "https://" + githubCom
+	trustedBuilderRepository  = "slsa-framework/slsa-github-generator"
+	e2eTestRepository         = "slsa-framework/example-package"
+	jReleaserActionRepository = "jreleaser/release-action"
+	certOidcIssuer            = "https://token.actions.githubusercontent.com"
+	githubCom                 = "github.com/"
+	httpsGithubCom            = "https://" + githubCom
 	// This is used in cosign's CheckOpts for validating the certificate. We
 	// do specific builder verification after this.
 	certSubjectRegexp = httpsGithubCom + "*"
@@ -35,15 +37,12 @@ var defaultContainerTrustedReusableWorkflows = map[string]bool{
 	ghacommon.ContainerGeneratorBuilderID: true,
 }
 
-var (
-	delegatorGenericReusableWorkflow         = trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml"
-	delegatorLowPermsGenericReusableWorkflow = trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml"
-)
-
 var defaultBYOBReusableWorkflows = map[string]bool{
 	ghacommon.GenericDelegatorBuilderID:         true,
 	ghacommon.GenericLowPermsDelegatorBuilderID: true,
 }
+
+var JReleaserRepository = httpsGithubCom + jReleaserActionRepository
 
 // VerifyCertficateSourceRepository verifies the source repository.
 func VerifyCertficateSourceRepository(id *WorkflowIdentity,
@@ -71,26 +70,27 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 	// Issuer verification.
 	// NOTE: this is necessary before we do any further verification.
 	if id.Issuer != certOidcIssuer {
-		return nil, false, fmt.Errorf("%w: %s", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
+		return nil, false, fmt.Errorf("%w: %q", serrors.ErrorInvalidOIDCIssuer, id.Issuer)
 	}
 
-	// cert URI path is /org/repo/path/to/workflow@ref
-	workflowPath := strings.SplitN(id.SubjectWorkflowRef, "@", 2)
-	if len(workflowPath) < 2 {
-		return nil, false, fmt.Errorf("%w: workflow uri: %s", serrors.ErrorMalformedURI, id.SubjectWorkflowRef)
+	// cert URI is https://github.com/org/repo/path/to/workflow@ref
+	// Remove '@' from Path
+	workflowID := id.SubjectWorkflowName()
+	workflowTag := id.SubjectWorkflowRef()
+
+	if workflowID == "" || workflowTag == "" {
+		return nil, false, fmt.Errorf("%w: workflow uri: %q", serrors.ErrorMalformedURI, id.SubjectWorkflow.String())
 	}
 
 	// Verify trusted workflow.
-	reusableWorkflowPath := strings.Trim(workflowPath[0], "/")
-	reusableWorkflowTag := strings.Trim(workflowPath[1], "/")
-	builderID, byob, err := verifyTrustedBuilderID(reusableWorkflowPath, reusableWorkflowTag,
+	builderID, byob, err := verifyTrustedBuilderID(workflowID, workflowTag,
 		builderOpts.ExpectedID, defaultBuilders)
 	if err != nil {
 		return nil, byob, err
 	}
 
 	// Verify the ref is a full semantic version tag.
-	if err := verifyTrustedBuilderRef(id, reusableWorkflowTag); err != nil {
+	if err := verifyTrustedBuilderRef(id, workflowTag); err != nil {
 		return nil, byob, err
 	}
 
@@ -99,26 +99,25 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 
 // Verifies the builder ID at path against an expected builderID.
 // If an expected builderID is not provided, uses the defaultBuilders.
-func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string, defaultTrustedBuilders map[string]bool) (*utils.TrustedBuilderID, bool, error) {
+func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *string, defaultTrustedBuilders map[string]bool) (*utils.TrustedBuilderID, bool, error) {
 	var trustedBuilderID *utils.TrustedBuilderID
 	var err error
-	certBuilderName := httpsGithubCom + certPath
 	// WARNING: we don't validate the tag here, because we need to allow
 	// refs/heads/main for e2e tests. See verifyTrustedBuilderRef().
 	// No builder ID provided by user: use the default trusted workflows.
 	if expectedBuilderID == nil || *expectedBuilderID == "" {
-		if _, ok := defaultTrustedBuilders[certPath]; !ok {
-			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certPath, expectedBuilderID != nil)
+		if _, ok := defaultTrustedBuilders[certBuilderID]; !ok {
+			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certBuilderID, expectedBuilderID != nil)
 		}
 		// Construct the builderID using the certificate's builder's name and tag.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
 			return nil, false, err
 		}
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderName+"@"+certTag, true)
+		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
 			return nil, false, err
 		}
@@ -146,7 +145,7 @@ func verifyTrustedBuilderID(certPath, certTag string, expectedBuilderID *string,
 func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuilders map[string]bool) bool {
 	for byobBuilder := range defaultBYOBReusableWorkflows {
 		// Check that the certificate builder is a BYOB workflow.
-		if err := certBuilder.MatchesLoose(httpsGithubCom+byobBuilder, true); err == nil {
+		if err := certBuilder.MatchesLoose(byobBuilder, true); err == nil {
 			// We found a delegator workflow that matches the certificate identity.
 			// Check that the BYOB builder is trusted by the caller.
 			if _, ok := trustedBuilders[byobBuilder]; !ok {
@@ -206,6 +205,7 @@ const (
 	HostedGitHub
 )
 
+// WorkflowIdentity is a identity captured from a Fulcio certificate.
 // See https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md.
 type WorkflowIdentity struct {
 	// The source repository
@@ -220,7 +220,7 @@ type WorkflowIdentity struct {
 	SourceOwnerID *string
 
 	// Workflow path OIDC subject - ref of reuseable workflow or trigger workflow.
-	SubjectWorkflowRef string
+	SubjectWorkflow *url.URL
 	// Subject commit sha1.
 	SubjectSha1 *string
 	// Hosted status of the subject.
@@ -235,6 +235,33 @@ type WorkflowIdentity struct {
 	RunID *string
 	// Issuer
 	Issuer string
+}
+
+// SubjectWorkflowName returns the subject workflow without the git ref.
+func (id *WorkflowIdentity) SubjectWorkflowName() string {
+	// NOTE: You should be able to copy a net.URL struct safely.
+	// See: https://github.com/golang/go/issues/38351
+	withoutRef := *id.SubjectWorkflow
+	withoutRef.Path = id.SubjectWorkflowPath()
+	return withoutRef.String()
+}
+
+// SubjectWorkflowPath returns the subject workflow without the server url.
+func (id *WorkflowIdentity) SubjectWorkflowPath() string {
+	i := strings.LastIndex(id.SubjectWorkflow.Path, "@")
+	if i == -1 {
+		return id.SubjectWorkflow.Path
+	}
+	return id.SubjectWorkflow.Path[:i]
+}
+
+// SubjectWorkflowRef returns the ref for the subject workflow.
+func (id *WorkflowIdentity) SubjectWorkflowRef() string {
+	i := strings.LastIndex(id.SubjectWorkflow.Path, "@")
+	if i == -1 {
+		return ""
+	}
+	return id.SubjectWorkflow.Path[i+1:]
 }
 
 func getHosted(cert *x509.Certificate) (*Hosted, error) {
@@ -425,9 +452,7 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 	if !strings.HasPrefix(cert.URIs[0].Path, "/") {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, cert.URIs[0].Path)
 	}
-	// Remove the starting '/'.
-	// NOTE: The Path has the following structure: repo/name/path/to/workflow.yml@ref.
-	subjectWorkflowRef := cert.URIs[0].Path[1:]
+	subjectWorkflow := cert.URIs[0]
 
 	var pSubjectSha1, pSourceID, pSourceRef, pSourceOwnerID, pBuildConfigPath, pRunID *string
 	if subjectSha1 != "" {
@@ -453,9 +478,9 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		// Issuer.
 		Issuer: issuer,
 		// Subject
-		SubjectWorkflowRef: subjectWorkflowRef,
-		SubjectSha1:        pSubjectSha1,
-		SubjectHosted:      subjectHosted,
+		SubjectWorkflow: subjectWorkflow,
+		SubjectSha1:     pSubjectSha1,
+		SubjectHosted:   subjectHosted,
 		// Source.
 		SourceRepository: sourceRepository,
 		SourceSha1:       sourceSha1,
