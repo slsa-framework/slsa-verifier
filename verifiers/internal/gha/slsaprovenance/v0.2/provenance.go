@@ -10,7 +10,6 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
-	ghacommon "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
@@ -29,20 +28,20 @@ type provFunc func(*Attestation) iface.Provenance
 
 // buildTypeMap is a map of builder IDs to supported buildTypes.
 var buildTypeMap = map[string]map[string]provFunc{
-	ghacommon.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOBProvenance},
-	ghacommon.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOBProvenance},
+	common.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOBProvenance},
+	common.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOBProvenance},
 
-	ghacommon.GoBuilderID: {
+	common.GoBuilderID: {
 		common.GoBuilderBuildTypeV1:       newLegacyBuilderProvenance,
 		common.LegacyBuilderBuildTypeV1:   newLegacyBuilderProvenance,
 		common.LegacyGoBuilderBuildTypeV1: newLegacyBuilderProvenance,
 	},
 
-	ghacommon.GenericGeneratorBuilderID:   {common.GenericGeneratorBuildTypeV1: newLegacyBuilderProvenance},
-	ghacommon.ContainerGeneratorBuilderID: {common.ContainerGeneratorBuildTypeV1: newLegacyBuilderProvenance},
+	common.GenericGeneratorBuilderID:   {common.GenericGeneratorBuildTypeV1: newLegacyBuilderProvenance},
+	common.ContainerGeneratorBuilderID: {common.ContainerGeneratorBuildTypeV1: newLegacyBuilderProvenance},
 
-	ghacommon.NpmCLILegacyBuilderID: {common.NpmCLIBuildTypeV1: newLegacyBuilderProvenance},
-	ghacommon.NpmCLIHostedBuilderID: {common.NpmCLIBuildTypeV1: newLegacyBuilderProvenance},
+	common.NpmCLILegacyBuilderID: {common.NpmCLIBuildTypeV1: newLegacyBuilderProvenance},
+	common.NpmCLIHostedBuilderID: {common.NpmCLIBuildTypeV1: newLegacyBuilderProvenance},
 	// NOTE: we don't support Npm CLI on self-hosted.
 }
 
