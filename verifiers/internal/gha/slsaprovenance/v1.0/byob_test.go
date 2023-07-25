@@ -52,7 +52,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 			branch: "refs/heads/main",
 		},
 		{
-			name: "internalParameters uri @ refs/heads/main",
+			name: "internalParameters GITHUB_REF @ refs/heads/main",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
@@ -68,7 +68,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 					},
 				},
 			},
-			branch: "refs/heads/main",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name: "resolved dependency uri @ refs/tags/v1.0.0",
@@ -183,7 +183,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			tag: "",
 		},
 		{
-			name: "internalParameters uri @ refs/heads/main",
+			name: "internalParameters GITHUB_REF @ refs/heads/main",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
@@ -199,7 +199,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 					},
 				},
 			},
-			tag: "",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name: "resolved dependency uri @ refs/tags/v1.0.0",
@@ -222,7 +222,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 			tag: "refs/tags/v1.0.0",
 		},
 		{
-			name: "internalParameters uri @ ref/tags/v1.0.0",
+			name: "internalParameters GITHUB_REF @ ref/tags/v1.0.0",
 			prov: BYOBProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
@@ -238,7 +238,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 					},
 				},
 			},
-			tag: "refs/tags/v1.0.0",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
 			name: "resolved dependency uri @ refs/tags/v1.0.0 no ref",

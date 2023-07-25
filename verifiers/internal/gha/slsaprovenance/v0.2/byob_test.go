@@ -33,7 +33,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "resolved dependency uri @ refs/heads/main",
+			name: "materials uri @ refs/heads/main",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -49,7 +49,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 			branch: "refs/heads/main",
 		},
 		{
-			name: "internalParameters uri @ refs/heads/main",
+			name: "environment GITHUB_REF @ refs/heads/main",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -63,10 +63,10 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 					},
 				},
 			),
-			branch: "refs/heads/main",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "resolved dependency uri @ refs/tags/v1.0.0",
+			name: "materials uri @ refs/tags/v1.0.0",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -93,7 +93,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 			branch: "",
 		},
 		{
-			name: "internalParameters uri @ ref/tags/v1.0.0",
+			name: "environment GITHUB_REF @ ref/tags/v1.0.0",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -112,7 +112,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 					},
 				},
 			),
-			branch: "",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 	}
 
@@ -152,7 +152,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "resolved dependency uri @ refs/heads/main",
+			name: "materials uri @ refs/heads/main",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -168,7 +168,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 			tag: "",
 		},
 		{
-			name: "internalParameters uri @ refs/heads/main",
+			name: "environment GITHUB_REF @ refs/heads/main",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -182,10 +182,10 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 					},
 				},
 			),
-			tag: "",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name: "resolved dependency uri @ refs/tags/v1.0.0",
+			name: "materials uri @ refs/tags/v1.0.0",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -201,7 +201,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 			tag: "refs/tags/v1.0.0",
 		},
 		{
-			name: "internalParameters uri @ ref/tags/v1.0.0",
+			name: "environment GITHUB_REF @ ref/tags/v1.0.0",
 			prov: newBYOBProvenance(
 				&Attestation{
 					StatementHeader: intoto.StatementHeader{},
@@ -215,7 +215,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 					},
 				},
 			),
-			tag: "refs/tags/v1.0.0",
+			err: serrors.ErrorInvalidDssePayload,
 		},
 	}
 
