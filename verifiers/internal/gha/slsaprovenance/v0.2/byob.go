@@ -27,13 +27,7 @@ func newBYOBProvenance(att *Attestation) iface.Provenance {
 func (p *byobProvenance) GetBranch() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-		// GetBranch gets the branch from the invocation parameters.
-		environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-		}
-
-		return common.GetBranch(environment, true)
+		return "", fmt.Errorf("reading source uri: %w", err)
 	}
 
 	// Returns the branch from the source URI if available.
@@ -69,12 +63,7 @@ func (p *byobProvenance) GetBranch() (string, error) {
 func (p *byobProvenance) GetTag() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-		environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
-		}
-
-		return common.GetTag(environment, true)
+		return "", fmt.Errorf("reading source uri: %w", err)
 	}
 
 	// Returns the branch from the source URI if available.

@@ -21,12 +21,7 @@ type BYOBProvenance struct {
 func (p *BYOBProvenance) GetBranch() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-		// Get the value from the internalParameters if there is no source URI.
-		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
-		}
-		return common.GetBranch(sysParams, true)
+		return "", fmt.Errorf("reading source uri: %w", err)
 	}
 
 	// Returns the branch from the source URI if available.
@@ -62,13 +57,7 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 func (p *BYOBProvenance) GetTag() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
-		// Get the value from the internalParameters if there is no source URI.
-		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
-		}
-
-		return common.GetTag(sysParams, true)
+		return "", fmt.Errorf("reading source uri: %w", err)
 	}
 
 	// Returns the branch from the source URI if available.
