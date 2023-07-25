@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
+
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	ghacommon "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -27,18 +28,18 @@ var (
 )
 
 var defaultArtifactTrustedReusableWorkflows = map[string]bool{
-	common.GenericGeneratorBuilderID: true,
-	common.GoBuilderID:               true,
-	common.ContainerBasedBuilderID:   true,
+	ghacommon.GenericGeneratorBuilderID: true,
+	ghacommon.GoBuilderID:               true,
+	ghacommon.ContainerBasedBuilderID:   true,
 }
 
 var defaultContainerTrustedReusableWorkflows = map[string]bool{
-	common.ContainerGeneratorBuilderID: true,
+	ghacommon.ContainerGeneratorBuilderID: true,
 }
 
 var defaultBYOBReusableWorkflows = map[string]bool{
-	common.GenericDelegatorBuilderID:         true,
-	common.GenericLowPermsDelegatorBuilderID: true,
+	ghacommon.GenericDelegatorBuilderID:         true,
+	ghacommon.GenericLowPermsDelegatorBuilderID: true,
 }
 
 var JReleaserRepository = httpsGithubCom + jReleaserActionRepository

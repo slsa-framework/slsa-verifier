@@ -11,6 +11,9 @@ type Provenance interface {
 	// BuilderID returns the builder id in the predicate.
 	BuilderID() (string, error)
 
+	// BuildType returns the buildType.
+	BuildType() (string, error)
+
 	// SourceURI is the full URI (including tag) of the source material.
 	SourceURI() (string, error)
 

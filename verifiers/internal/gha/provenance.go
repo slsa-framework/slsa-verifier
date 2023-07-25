@@ -77,7 +77,7 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 }
 
 // Verify source URI in provenance statement.
-func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMaterialRef bool) error {
+func verifySourceURI(prov iface.Provenance, expectedSourceURI string) error {
 	source := utils.NormalizeGitURI(expectedSourceURI)
 
 	// We expect github.com URIs only.
@@ -97,7 +97,7 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMat
 		return err
 	}
 	if triggerURI != source {
-		return fmt.Errorf("%w: expected source '%s' in configSource.uri, got %q", serrors.ErrorMismatchSource,
+		return fmt.Errorf("%w: expected trigger %q to match source-uri %q", serrors.ErrorMismatchSource,
 			source, fullTriggerURI)
 	}
 	// We expect the trigger URI to always have a ref.
@@ -116,22 +116,37 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string, allowNoMat
 		return err
 	}
 	if sourceURI != source {
-		return fmt.Errorf("%w: expected source '%s' in material section, got %q", serrors.ErrorMismatchSource,
-			source, fullSourceURI)
+		return fmt.Errorf("%w: expected source %q to match source-uri %q", serrors.ErrorMismatchSource,
+			fullSourceURI, source)
 	}
 
+	buildType, err := prov.BuildType()
+	if err != nil {
+		return fmt.Errorf("checking buildType: %v", err)
+	}
 	if sourceRef == "" {
-		if allowNoMaterialRef {
-			// NOTE: this is an exception for npm packages built before GA,
-			// see https://github.com/slsa-framework/slsa-verifier/issues/492.
-			// We don't need to compare the ref since materialSourceURI does not contain it.
+		// NOTE: this is an exception for npm packages built before GA,
+		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
+		// We don't need to compare the ref since materialSourceURI does not contain it.
+		if buildType == common.NpmCLIBuildTypeV1 {
+			return nil
+		}
+		// NOTE: BYOB builders can build from a different ref than the triggering ref.
+		// This most often happens when a TRW makes a commit as part of the release process.
+		// NOTE: Currently only building from a different git sha is supported
+		// which means the sourceRef is empty. Building from an arbitrary ref
+		// is currently not supported.
+		if buildType == common.BYOBBuildTypeV0 {
 			return nil
 		}
 		return fmt.Errorf("%w: missing ref: %q", serrors.ErrorMalformedURI, fullSourceURI)
 	}
 
+	// Last, verify that both fields match. We expect that the trigger URI and
+	// the source URI match but the ref used to trigger the build and source ref
+	// could be different.
 	if fullTriggerURI != fullSourceURI {
-		return fmt.Errorf("%w: material and config URIs do not match: %q != %q",
+		return fmt.Errorf("%w: source and trigger URIs do not match: %q != %q",
 			serrors.ErrorInvalidDssePayload,
 			fullTriggerURI, fullSourceURI)
 	}
@@ -191,9 +206,9 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 
 // VerifyNpmPackageProvenance verifies provenance for an npm package.
 func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentity,
-	provenanceOpts *options.ProvenanceOpts, isTrustedBuilder bool,
+	provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, isTrustedBuilder bool,
 ) error {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
 	if err != nil {
 		return err
 	}
@@ -239,7 +254,7 @@ func VerifyNpmPackageProvenance(env *dsselib.Envelope, workflow *WorkflowIdentit
 	}
 
 	// Also, the GitHub context is not recorded for the default builder.
-	if err := VerifyProvenanceCommonOptions(prov, provenanceOpts, true); err != nil {
+	if err := VerifyProvenanceCommonOptions(prov, provenanceOpts); err != nil {
 		return err
 	}
 
@@ -271,9 +286,8 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 }
 
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
-) error {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, byob bool) error {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
 	if err != nil {
 		return err
 	}
@@ -295,15 +309,13 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		}
 	}
 
-	return VerifyProvenanceCommonOptions(prov, provenanceOpts, false)
+	return VerifyProvenanceCommonOptions(prov, provenanceOpts)
 }
 
 // VerifyProvenanceCommonOptions verifies the given provenance.
-func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *options.ProvenanceOpts,
-	allowNoMaterialRef bool,
-) error {
+func VerifyProvenanceCommonOptions(prov iface.Provenance, provenanceOpts *options.ProvenanceOpts) error {
 	// Verify source.
-	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI, allowNoMaterialRef); err != nil {
+	if err := verifySourceURI(prov, provenanceOpts.ExpectedSourceURI); err != nil {
 		return err
 	}
 
