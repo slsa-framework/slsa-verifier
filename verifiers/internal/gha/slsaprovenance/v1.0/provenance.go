@@ -10,7 +10,6 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
-	ghacommon "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
@@ -45,9 +44,8 @@ func newContainerBased(a *Attestation) iface.Provenance {
 
 // buildTypeMap is a map of builder IDs to supported buildTypes.
 var buildTypeMap = map[string]map[string]provFunc{
-	ghacommon.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOB},
-	ghacommon.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOB},
-
+	common.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOB},
+	common.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOB},
 	common.ContainerBasedBuilderID: {common.ContainerBasedBuildTypeV01Draft: newContainerBased},
 }
 
