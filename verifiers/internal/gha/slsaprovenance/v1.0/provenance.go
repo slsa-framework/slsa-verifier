@@ -46,7 +46,7 @@ func newContainerBased(a *Attestation) iface.Provenance {
 var buildTypeMap = map[string]map[string]provFunc{
 	common.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOB},
 	common.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOB},
-	common.ContainerBasedBuilderID: {common.ContainerBasedBuildTypeV01Draft: newContainerBased},
+	common.ContainerBasedBuilderID:           {common.ContainerBasedBuildTypeV01Draft: newContainerBased},
 }
 
 // New returns a new Provenance object based on the payload.
