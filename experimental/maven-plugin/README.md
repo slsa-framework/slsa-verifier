@@ -29,11 +29,11 @@ Things that are unfinished:
 
 1. What to do with the results from the verifier. Currently we have not taken a stand on what the Maven verification plugin should do with the output from the slsa-verifier. This is a UX decision more than it is a technical decision.
 
-## Using the Maven verification plugin
+## Using the Maven Verification Plugin
 
 ### Invoking it directly
 
-It can be run from the root of a given project file. A pseudo-workflow looks like this:
+The Maven Verification Plugin can be run from the root of a given project file. A pseudo-workflow looks like this:
 
 1. `git clone --depth=1 https://github.com/slsa-framework/slsa-verifier`
 2. `cd slsa-verifier/experimental/maven-plugin`
