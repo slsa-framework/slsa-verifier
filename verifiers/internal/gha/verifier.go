@@ -16,7 +16,6 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/register"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
@@ -72,47 +71,8 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// There is a corner-case to handle: if the verified builder ID from the cert
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
-	if byob {
-		// Create structs for slsa-github-generator builders such that the builderID for
-		// the builders do not need to be inputted as the expectedBuilderID will default to
-		// the delegator builder ID for BYOB.
-		bazelBuilderID, err := utils.TrustedBuilderIDNew("https://github.com/enteraga6/slsa-github-generator/.github/workflows/builder_bazel_slsa3.yml", false)
-		if err != nil {
-			return nil, nil, err
-		}
 
-		prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		id, err := prov.BuilderID()
-		if err != nil {
-			return nil, nil, err
-		}
-		provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && (provBuilderID.Name() != bazelBuilderID.Name()) {
-			// NOTE: we will need to update the logic here once our default trusted builders
-			// are migrated to using BYOB.
-			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
-		}
-
-		if provBuilderID.Name() == bazelBuilderID.Name() && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
-			var tempBuilderID *string
-			var str string
-			str = bazelBuilderID.Name()
-			tempBuilderID = &(str)
-			builderOpts.ExpectedID = tempBuilderID
-		}
-
-		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
-	}
-
-	if err := VerifyProvenance(env, provenanceOpts, byob); err != nil {
+	if err := VerifyProvenance(env, provenanceOpts, byob, builderOpts); err != nil {
 		return nil, nil, err
 	}
 

@@ -108,6 +108,7 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		if _, ok := defaultTrustedBuilders[certBuilderID]; !ok {
 			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certBuilderID, expectedBuilderID != nil)
 		}
+
 		// Construct the builderID using the certificate's builder's name and tag.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
@@ -119,9 +120,15 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		// - the caller trusts the BYOB builder
 		// If both are true, we don't match the user-provided builder ID
 		// against the certificate. Instead that will be done by the caller.
+		//
+		// If using a trusted delgator builder, then return the builderID and true
+		// for byob to enable non-compulsory flag for builder-id, which allows
+		// the user to use slsa-github-generator builders and not type the --builder-id
+		// flag on the command line.
 		if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
 			return trustedBuilderID, true, nil
 		}
+
 	} else {
 		// Verify the builderID.
 		// We only accept IDs on github.com.

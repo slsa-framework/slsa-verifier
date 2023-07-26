@@ -478,6 +478,14 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			byob:     true,
 		},
 		{
+			name: "generic delegator workflow no id",
+			path: trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml",
+			// id:       asStringPointer(trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml@refs/tags/v1.2.3"),
+			tag:      "refs/tags/v1.2.3",
+			defaults: defaultBYOBReusableWorkflows,
+			byob:     true,
+		},
+		{
 			name:     "low perms delegator workflow short tag",
 			path:     trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml",
 			id:       asStringPointer(trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.2.3"),
@@ -490,6 +498,7 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			path:     trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml",
 			tag:      "v1.2.3",
 			defaults: defaultBYOBReusableWorkflows,
+			byob:     true,
 		},
 		{
 			name:     "default mismatch against container defaults long tag",
@@ -587,9 +596,15 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
+			println(tt.byob)
 			t.Parallel()
+			println(tt.byob)
 			id, byob, err := verifyTrustedBuilderID(httpsGithubCom+tt.path, tt.tag, tt.id, tt.defaults)
+			println("byob then tt.byob:")
+			println(byob)
+			println(tt.byob)
 			if byob != tt.byob {
+				println(tt.byob)
 				t.Errorf(cmp.Diff(byob, tt.byob))
 			}
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {

@@ -273,16 +273,52 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
-) error {
+	builderOpts *options.BuilderOpts) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
 		return err
 	}
+
 	// Verify Builder ID.
 	if byob {
 		if err := isValidDelegatorBuilderID(prov); err != nil {
 			return err
 		}
+
+		id, err := prov.BuilderID()
+		if err != nil {
+			return err
+		}
+
+		provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
+		if err != nil {
+			return err
+		}
+
+		// Create structs for slsa-github-generator builders such that the builderID for
+		// the builders do not need to be inputted as the expectedBuilderID will default to
+		// the delegator builder ID for BYOB.
+
+		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && !(provenanceOpts.SlsaBuilderMap[provBuilderID.Name()]) {
+			// NOTE: we will need to update the logic here once our default trusted builders
+			// are migrated to using BYOB.
+			return fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
+		}
+
+		if provenanceOpts.SlsaBuilderMap[provBuilderID.Name()] && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+			var str string
+			for builderID := range provenanceOpts.SlsaBuilderMap {
+				if provBuilderID.Name() == builderID {
+					str = builderID
+				}
+			}
+
+			var tempBuilderID *string
+			tempBuilderID = &(str)
+			builderOpts.ExpectedID = tempBuilderID
+		}
+
+		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
