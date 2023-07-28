@@ -28,11 +28,6 @@ type ProvenanceOpts struct {
 	ExpectedPackageName *string
 
 	ExpectedPackageVersion *string
-
-	// This map will be composed of builders from slsa-framework/slsa-github-generator,
-	// and it will allow the process to verify artifacts, especially from BYOB builders,
-	// to be able to not include --builder-id flag at commandline.
-	SlsaBuilderMap map[string]bool
 }
 
 // BuildOpts are the options for checking the builder.

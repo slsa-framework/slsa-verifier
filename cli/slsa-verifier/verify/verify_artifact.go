@@ -54,9 +54,6 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			ExpectedVersionedTag:   c.SourceVersionTag,
 			ExpectedTag:            c.SourceTag,
 			ExpectedWorkflowInputs: c.BuildWorkflowInputs,
-			SlsaBuilderMap: map[string]bool{
-				"https://github.com/enteraga6/slsa-github-generator/.github/workflows/builder_bazel_slsa3.yml": true,
-			},
 		}
 
 		builderOpts := &options.BuilderOpts{
