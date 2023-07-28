@@ -274,6 +274,30 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, byob bool,
 	builderOpts *options.BuilderOpts) error {
+	fmt.Println(env.Payload)
+	fmt.Println(env.PayloadType)
+	fmt.Println(env.Signatures)
+	fmt.Println(byob)
+	fmt.Println(builderOpts.ExpectedID)
+	fmt.Println(
+		provenanceOpts.ExpectedBranch,
+		"\n",
+		provenanceOpts.ExpectedBuilderID,
+		"\n",
+		provenanceOpts.ExpectedDigest,
+		"\n",
+		provenanceOpts.ExpectedPackageVersion,
+		"\n",
+		provenanceOpts.ExpectedSourceURI,
+		"\n",
+		provenanceOpts.ExpectedTag,
+		"\n",
+		provenanceOpts.ExpectedVersionedTag,
+		"\n",
+		provenanceOpts.ExpectedWorkflowInputs,
+		"\n",
+		&provenanceOpts.SlsaBuilderMap,
+	)
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(env)
 	if err != nil {
 		return err
@@ -298,14 +322,18 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		// Create structs for slsa-github-generator builders such that the builderID for
 		// the builders do not need to be inputted as the expectedBuilderID will default to
 		// the delegator builder ID for BYOB.
-
-		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && !(provenanceOpts.SlsaBuilderMap[provBuilderID.Name()]) {
+		slsa_prefix := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/"
+		println("")
+		println("below is prefix")
+		println(slsa_prefix)
+		println(provBuilderID.Name())
+		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && !(strings.HasPrefix(provBuilderID.Name(), slsa_prefix)) {
 			// NOTE: we will need to update the logic here once our default trusted builders
 			// are migrated to using BYOB.
 			return fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
 		}
 
-		if provenanceOpts.SlsaBuilderMap[provBuilderID.Name()] && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+		if strings.HasPrefix(provBuilderID.Name(), slsa_prefix) && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			var str string
 			for builderID := range provenanceOpts.SlsaBuilderMap {
 				if provBuilderID.Name() == builderID {
