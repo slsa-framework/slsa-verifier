@@ -1,24 +1,30 @@
-package v1
+package v02
 
 import (
 	"fmt"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// BYOBBuildType is the base build type for BYOB delegated builders.
-var BYOBBuildType = "https://github.com/slsa-framework/slsa-github-generator/delegator-generic@v0"
+// byobProvenance is SLSA v0.2 provenance created by a BYOB builder.
+type byobProvenance struct {
+	*provenanceV02
+}
 
-// BYOBProvenance is SLSA v1.0 provenance for the slsa-github-generator BYOB build type.
-type BYOBProvenance struct {
-	*provenanceV1
+func newBYOBProvenance(att *Attestation) iface.Provenance {
+	return &byobProvenance{
+		provenanceV02: &provenanceV02{
+			prov:     att,
+			upperEnv: true,
+		},
+	}
 }
 
 // GetBranch implements Provenance.GetBranch.
-func (p *BYOBProvenance) GetBranch() (string, error) {
+func (p *byobProvenance) GetBranch() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
 		return "", fmt.Errorf("reading source uri: %w", err)
@@ -42,9 +48,9 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 		return ref, nil
 	case "tags":
 		// NOTE: If the ref type is a tag we want to try to parse out the branch from the tag.
-		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+		sysParams, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
 		if !ok {
-			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 		}
 		return common.GetBranch(sysParams, true)
 	default:
@@ -54,7 +60,7 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 }
 
 // GetTag implements Provenance.GetTag.
-func (p *BYOBProvenance) GetTag() (string, error) {
+func (p *byobProvenance) GetTag() (string, error) {
 	sourceURI, err := p.SourceURI()
 	if err != nil {
 		return "", fmt.Errorf("reading source uri: %w", err)

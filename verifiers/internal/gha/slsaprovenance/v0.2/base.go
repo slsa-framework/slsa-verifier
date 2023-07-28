@@ -9,7 +9,15 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
+
+func newLegacyBuilderProvenance(a *Attestation) iface.Provenance {
+	return &provenanceV02{
+		upperEnv: false,
+		prov:     a,
+	}
+}
 
 // provenanceV02 implements basic logic for SLSA v0.2 provenance.
 type provenanceV02 struct {
@@ -26,6 +34,11 @@ func (p *provenanceV02) Predicate() slsa02.ProvenancePredicate {
 // BuilderID implements Provenance.BuilderID.
 func (p *provenanceV02) BuilderID() (string, error) {
 	return p.prov.Predicate.Builder.ID, nil
+}
+
+// BuildType implements Provenance.BuildType.
+func (p *provenanceV02) BuildType() (string, error) {
+	return p.prov.Predicate.BuildType, nil
 }
 
 // SourceURI implements Provenance.SourceURI.

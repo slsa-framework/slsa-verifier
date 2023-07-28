@@ -6,16 +6,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
+	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
 type testProvenance struct {
 	builderID         string
+	buildType         string
 	sourceURI         string
 	triggerURI        string
 	subjects          []intoto.Subject
@@ -31,6 +33,7 @@ type testProvenance struct {
 }
 
 func (p *testProvenance) BuilderID() (string, error)           { return p.builderID, nil }
+func (p *testProvenance) BuildType() (string, error)           { return p.buildType, nil }
 func (p *testProvenance) SourceURI() (string, error)           { return p.sourceURI, nil }
 func (p *testProvenance) TriggerURI() (string, error)          { return p.triggerURI, nil }
 func (p *testProvenance) Subjects() ([]intoto.Subject, error)  { return p.subjects, nil }
@@ -75,7 +78,7 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
 						},
 					},
@@ -90,7 +93,7 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
 						},
 					},
@@ -111,7 +114,7 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
@@ -125,7 +128,7 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
@@ -138,17 +141,17 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
 						},
 					},
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
@@ -161,17 +164,17 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
 						},
 					},
@@ -184,17 +187,17 @@ func Test_VerifyDigest(t *testing.T) {
 			prov: &testProvenance{
 				subjects: []intoto.Subject{
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "03e7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha256": "0ae7e4fa71686538440012ee36a2634dbaa19df2dd16a466f52411fb348bbc4e",
 						},
 					},
 					{
-						Digest: common.DigestSet{
+						Digest: slsacommon.DigestSet{
 							"sha1": "4506290e2e8feb1f34b27a044f7cc863c830ef6b",
 						},
 					},
@@ -220,6 +223,7 @@ func Test_verifySourceURI(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name               string
+		provBuildType      string
 		provMaterialsURI   string
 		provTriggerURI     string
 		expectedSourceURI  string
@@ -283,14 +287,37 @@ func Test_verifySourceURI(t *testing.T) {
 			expectedSourceURI: "https://github.com/some/repo",
 		},
 		{
-			name:               "match source no git no material ref",
-			provTriggerURI:     "git+https://github.com/some/repo@v1.2.3",
-			provMaterialsURI:   "git+https://github.com/some/repo",
-			allowNoMaterialRef: true,
-			expectedSourceURI:  "https://github.com/some/repo",
+			name:              "match source no git no material ref (npm)",
+			provBuildType:     common.NpmCLIBuildTypeV1,
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo",
+			expectedSourceURI: "https://github.com/some/repo",
 		},
 		{
-			name:              "match source no git no material ref ref not allowed",
+			name:              "mismatch source material ref (npm)",
+			provBuildType:     common.NpmCLIBuildTypeV1,
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.4",
+			expectedSourceURI: "https://github.com/some/repo",
+			err:               serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:              "match source no git no material ref (byob)",
+			provBuildType:     common.BYOBBuildTypeV0,
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo",
+			expectedSourceURI: "https://github.com/some/repo",
+		},
+		{
+			name:              "mismatch source material ref (byob)",
+			provBuildType:     common.BYOBBuildTypeV0,
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.4",
+			expectedSourceURI: "https://github.com/some/repo",
+			err:               serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name:              "match source no git no material ref",
 			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
 			provMaterialsURI:  "git+https://github.com/some/repo",
 			expectedSourceURI: "https://github.com/some/repo",
@@ -358,11 +385,12 @@ func Test_verifySourceURI(t *testing.T) {
 			t.Parallel()
 
 			prov02 := &testProvenance{
+				buildType:  tt.provBuildType,
 				sourceURI:  tt.provMaterialsURI,
 				triggerURI: tt.provTriggerURI,
 			}
 
-			err := verifySourceURI(prov02, tt.expectedSourceURI, tt.allowNoMaterialRef)
+			err := verifySourceURI(prov02, tt.expectedSourceURI)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
