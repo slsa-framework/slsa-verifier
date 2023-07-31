@@ -58,10 +58,10 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-// Inputs value in place of --BuilderID for slsa-github-generator builders such that the builderID for
+// Inputs value in place of --BuilderID for builders of ExpectedPath such that the builderID for
 // the builders do not need to be inputted as the expectedBuilderID will default to
-// the delegator builder ID for BYOB.
-func verifyBuilderIDPath(prov iface.Provenance, builderOpts *options.BuilderOpts, provenanceOpts *options.ProvenanceOpts) error {
+// the delegator builder ID for BYOB. Currently slsa-framework path is the only supported for ExpectedBuilderPath.
+func verifyExpectedBuilderIDPath(prov iface.Provenance, builderOpts *options.BuilderOpts, provenanceOpts *options.ProvenanceOpts) error {
 	id, err := prov.BuilderID()
 	if err != nil {
 		return err
@@ -72,16 +72,16 @@ func verifyBuilderIDPath(prov iface.Provenance, builderOpts *options.BuilderOpts
 		return err
 	}
 
-	// This is the prefix to check for to verify that the builder is from slsa-framework.
+	// This is the prefix to check for to verify that the builder is from expected builder path
 	// If this prefix is present, then the --builder-id flag is not needed at CLI command.
-	slsa_prefix := provenanceOpts.ExpectedBuilderPath
+	builder_path_prefix := provenanceOpts.ExpectedBuilderPath
 
-	if !(strings.HasPrefix(provBuilderID.Name(), slsa_prefix)) {
-		return fmt.Errorf("%w: expected slsa-framework BYOB Builder ID in provenance in order to not input --builder-id at command line: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name())
+	if !(strings.HasPrefix(provBuilderID.Name(), builder_path_prefix)) {
+		return fmt.Errorf("%w: expected slsa-framework BYOB Builder ID in provenance in order to not input --builder-id at command line. Got: %q. Expected: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name(), builder_path_prefix)
 	}
 
-	// Only set if user input is empty and builder is one of slsa-framework's
-	if strings.HasPrefix(provBuilderID.Name(), slsa_prefix) && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+	// Only set if user input is empty and builder is one of expected builders of Expected Builder Path
+	if strings.HasPrefix(provBuilderID.Name(), builder_path_prefix) && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 		// Allocate temp string to set pointer, tempBuilderID, to set builderOpts.ExpectedID
 		var str string
 		str = provBuilderID.Name()
@@ -336,11 +336,11 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			return err
 		}
 
-		// If the --builder-id flag is empty and the builder used to build artifact is not from slsa-framework
+		// If the --builder-id flag is empty and the builder used to build artifact is not from ExpectedBuilderPath
 		// then throw the error.
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			// If the --builder-id is empty, check to see if is made with an Expected Builder
-			if err := verifyBuilderIDPath(prov, builderOpts, provenanceOpts); err != nil {
+			if err := verifyExpectedBuilderIDPath(prov, builderOpts, provenanceOpts); err != nil {
 				return err
 			}
 		}
