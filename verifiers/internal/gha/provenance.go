@@ -59,9 +59,10 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 }
 
 // Inputs value in place of --BuilderID for builders of ExpectedPath such that the builderID for
-// the builders do not need to be inputted as the expectedBuilderID will default to
-// the delegator builder ID for BYOB. Currently slsa-framework path is the only supported for ExpectedBuilderPath.
-func verifyExpectedBuilderIDPath(prov iface.Provenance, builderOpts *options.BuilderOpts, provenanceOpts *options.ProvenanceOpts) error {
+// the builders do not need to be inputted. Example: the expectedBuilderID will default to
+// the delegator builder ID for BYOB, this can verify actual BYOB builder for user without --builder-id flag.
+// Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
+func verifyBuilderIDPath(prov iface.Provenance, builderOpts *options.BuilderOpts, provenanceOpts *options.ProvenanceOpts) error {
 	id, err := prov.BuilderID()
 	if err != nil {
 		return err
@@ -340,7 +341,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		// then throw the error.
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			// If the --builder-id is empty, check to see if is made with an Expected Builder
-			if err := verifyExpectedBuilderIDPath(prov, builderOpts, provenanceOpts); err != nil {
+			if err := verifyBuilderIDPath(prov, builderOpts, provenanceOpts); err != nil {
 				return err
 			}
 		}
