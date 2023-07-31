@@ -54,6 +54,7 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			ExpectedVersionedTag:   c.SourceVersionTag,
 			ExpectedTag:            c.SourceTag,
 			ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+			ExpectedBuilderPath:    "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/",
 		}
 
 		builderOpts := &options.BuilderOpts{

@@ -58,6 +58,42 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
+// Inputs value in place of --BuilderID for slsa-github-generator builders such that the builderID for
+// the builders do not need to be inputted as the expectedBuilderID will default to
+// the delegator builder ID for BYOB.
+func verifyBuilderIDPath(prov iface.Provenance, builderOpts *options.BuilderOpts, provenanceOpts *options.ProvenanceOpts) error {
+	id, err := prov.BuilderID()
+	if err != nil {
+		return err
+	}
+
+	provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
+	if err != nil {
+		return err
+	}
+
+	// This is the prefix to check for to verify that the builder is from slsa-framework.
+	// If this prefix is present, then the --builder-id flag is not needed at CLI command.
+	slsa_prefix := provenanceOpts.ExpectedBuilderPath
+
+	if !(strings.HasPrefix(provBuilderID.Name(), slsa_prefix)) {
+		return fmt.Errorf("%w: expected slsa-framework BYOB Builder ID in provenance in order to not input --builder-id at command line: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name())
+	}
+
+	// Only set if user input is empty and builder is one of slsa-framework's
+	if strings.HasPrefix(provBuilderID.Name(), slsa_prefix) && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+		// Allocate temp string to set pointer, tempBuilderID, to set builderOpts.ExpectedID
+		var str string
+		str = provBuilderID.Name()
+
+		var tempBuilderID *string
+		tempBuilderID = &(str)
+		builderOpts.ExpectedID = tempBuilderID
+	}
+
+	return nil
+}
+
 // Verify Builder ID in provenance statement.
 // This function verifies the names match. If the expected builder ID contains a version,
 // it also verifies the versions match.
@@ -300,45 +336,18 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			return err
 		}
 
-		id, err := prov.BuilderID()
-		if err != nil {
-			return err
-		}
-
-		provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
-		if err != nil {
-			return err
-		}
-
-		// Create structs for slsa-github-generator builders such that the builderID for
-		// the builders do not need to be inputted as the expectedBuilderID will default to
-		// the delegator builder ID for BYOB.
-
-		// This is the prefix to check for to verify that the builder is from slsa-framework.
-		// If this prefix is present, then the --builder-id flag is not needed at CLI command.
-		slsa_prefix := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/"
-
 		// If the --builder-id flag is empty and the builder used to build artifact is not from slsa-framework
 		// then throw the error.
-		if (builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "") && !(strings.HasPrefix(provBuilderID.Name(), slsa_prefix)) {
-			// NOTE: we will need to update the logic here once our default trusted builders
-			// are migrated to using BYOB.
-			return fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
-		}
-
-		// Only set if user input is empty and builder is one of slsa-framework's
-		if strings.HasPrefix(provBuilderID.Name(), slsa_prefix) && builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
-			// Allocate temp string to set pointer, tempBuilderID, to set builderOpts.ExpectedID
-			var str string
-			str = provBuilderID.Name()
-
-			var tempBuilderID *string
-			tempBuilderID = &(str)
-			builderOpts.ExpectedID = tempBuilderID
+		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
+			// If the --builder-id is empty, check to see if is made with an Expected Builder
+			if err := verifyBuilderIDPath(prov, builderOpts, provenanceOpts); err != nil {
+				return err
+			}
 		}
 
 		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
+		// or is taken from the user if it matches expected builder and --builder-id is empty
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
 		}

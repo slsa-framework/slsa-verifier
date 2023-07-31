@@ -28,6 +28,8 @@ type ProvenanceOpts struct {
 	ExpectedPackageName *string
 
 	ExpectedPackageVersion *string
+
+	ExpectedBuilderPath string
 }
 
 // BuildOpts are the options for checking the builder.
