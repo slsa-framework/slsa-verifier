@@ -18,7 +18,8 @@ type ProvenanceOpts struct {
 	// ExpectedSourceURI is the expected source URI in the provenance.
 	ExpectedSourceURI string
 
-	// ExpectedBuilderID is the expected builder ID.
+	// ExpectedBuilderID is the expected builder ID that is parsed from the envelope
+	// of the provenance.
 	ExpectedBuilderID string
 
 	// ExpectedWorkflowInputs is a map of key=value inputs.
@@ -27,10 +28,13 @@ type ProvenanceOpts struct {
 	ExpectedPackageName *string
 
 	ExpectedPackageVersion *string
+
+	ExpectedBuilderPath string
 }
 
 // BuildOpts are the options for checking the builder.
 type BuilderOpts struct {
-	// ExpectedID is the expected builder ID.
+	// ExpectedID is the expected builder ID that is inputted
+	// at the command line by the user to be verified.
 	ExpectedID *string
 }
