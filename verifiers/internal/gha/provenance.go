@@ -58,9 +58,11 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-// Inputs value in place of --BuilderID for builders of ExpectedPath such that the builderID for
-// the builders do not need to be inputted. Example: the expectedBuilderID will default to
-// the delegator builder ID for BYOB, this can verify actual BYOB builder for user without --builder-id flag.
+// Verifies expectedBuilderIDPath against path in provenance, and returns the actual
+// builderIDPath if verified against inputted expected path.
+//
+// Example: the expectedBuilderID will default to the delegator builder ID for BYOB.
+// This can verify actual BYOB builderIDPath against the trusted builderIDPath inputted,
 // Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
 func verifyBuilderIDPath(prov iface.Provenance, expectedBuilderIDPath string) (string, error) {
 	id, err := prov.BuilderID()
