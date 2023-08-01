@@ -58,12 +58,9 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-// Verifies expectedBuilderIDPath against path in provenance, and returns the actual
-// builderIDPath if verified against inputted expected path.
-//
-// Example: the expectedBuilderID will default to the delegator builder ID for BYOB.
-// This can verify actual BYOB builderIDPath against the trusted builderIDPath inputted,
-// Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
+// Verifies expectedBuilderIDPath by checking to see if the builderID in provenance
+// starts with inputted expectedBuilderIDPath.
+// Returns provenance builderID if verified against inputted expected path.
 func verifyBuilderIDPath(prov iface.Provenance, expectedBuilderIDPath string) (string, error) {
 	id, err := prov.BuilderID()
 	if err != nil {
@@ -328,6 +325,10 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		// If ExpectedID is empty, check to see if it is a trusted builder.
 		// If empty and trusted builder, populate with path from provenance,
 		// otherwise, populate from user input.
+		//
+		// Example: the expectedBuilderID will default to the delegator builder ID for BYOB.
+		// This can verify actual BYOB builderIDPath against the trusted builderIDPath inputted,
+		// Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			var trustedBuilderRepositoryPath = httpsGithubCom + trustedBuilderRepository + "/.github/workflows/"
 			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPath(prov, trustedBuilderRepositoryPath); err != nil {
