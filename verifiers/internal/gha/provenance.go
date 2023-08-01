@@ -75,7 +75,7 @@ func verifyBuilderIDPath(prov iface.Provenance, expectedBuilderIDPath string) (s
 		return "", err
 	}
 
-	// Compare actual BuilderIDPath with the expected
+	// Compare actual BuilderIDPath with the expected.
 	if !strings.HasPrefix(provBuilderID.Name(), expectedBuilderIDPath) {
 		return "", fmt.Errorf("%w: BuilderID Path Mismatch. Got: %q. Expected: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name(), expectedBuilderIDPath)
 	}
@@ -325,7 +325,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			return err
 		}
 
-		// If ExpectedID is empty, check to see if it is a trusted builder
+		// If ExpectedID is empty, check to see if it is a trusted builder.
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			var trustedBuilderRepositoryPath = "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/"
 			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPath(prov, trustedBuilderRepositoryPath); err != nil {
