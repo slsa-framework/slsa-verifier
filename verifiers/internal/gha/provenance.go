@@ -326,11 +326,15 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		}
 
 		// If ExpectedID is empty, check to see if it is a trusted builder.
+		// If empty and trusted builder, populate with path from provenance,
+		// otherwise, populate from user input.
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			var trustedBuilderRepositoryPath = "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/"
 			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPath(prov, trustedBuilderRepositoryPath); err != nil {
 				return err
 			}
+		} else {
+			provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
 		}
 
 		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user
