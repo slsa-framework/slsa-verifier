@@ -122,10 +122,8 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		// If both are true, we don't match the user-provided builder ID
 		// against the certificate. Instead that will be done by the caller.
 		//
-		// If using a trusted delgator builder, then return the builderID and true
-		// for byob to enable non-compulsory flag for builder-id, which allows
-		// the user to use slsa-github-generator builders and not type the --builder-id
-		// flag on the command line.
+		// This return enables non-compulsory builderID feature for BYOB builders
+		//by setting byob flag to true.
 		if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
 			return trustedBuilderID, true, nil
 		}
