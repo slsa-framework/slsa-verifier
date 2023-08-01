@@ -285,6 +285,19 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	return utils.IsValidBuilderTag(parts[1], false)
 }
 
+// BuilderID returns the full builder ID from the provenance.
+func BuilderID(env *dsselib.Envelope, trustedBuilderID *utils.TrustedBuilderID) (string, error){
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
+	if err != nil {
+		return "", err
+	}
+	id, err := prov.BuilderID()
+	if err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, byob bool) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
