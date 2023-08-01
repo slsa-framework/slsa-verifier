@@ -122,8 +122,8 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		// If both are true, we don't match the user-provided builder ID
 		// against the certificate. Instead that will be done by the caller.
 		//
-		// This return enables non-compulsory builderID feature for BYOB builders
-		// by setting byob flag to true.
+		// This return of the delegator builderID enables non-compulsory
+		// builderID feature for BYOB builders by setting byob flag to true.
 		if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
 			return trustedBuilderID, true, nil
 		}
