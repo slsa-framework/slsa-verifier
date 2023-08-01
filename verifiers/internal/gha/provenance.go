@@ -331,8 +331,8 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			}
 		}
 
-		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
-		// or is taken from the user if it matches expected builder and --builder-id is empty
+		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user
+		// or from return of verifyBuilderIDPath.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
 		}
