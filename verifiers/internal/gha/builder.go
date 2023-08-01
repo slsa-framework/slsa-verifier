@@ -161,7 +161,6 @@ func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuild
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
 func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	fmt.Println(id.SourceRepository, options.TestingEnabled())
 	if (id.SourceRepository == trustedBuilderRepository ||
 		id.SourceRepository == e2eTestRepository) &&
 		options.TestingEnabled() {

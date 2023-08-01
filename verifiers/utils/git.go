@@ -48,7 +48,6 @@ func ParseGitRef(ref string) (string, string) {
 func ValidateGitRef(refType, ref string) (string, error) {
 	typ, name := ParseGitRef(ref)
 	if typ != refType {
-		panic("hi")
 		return "", fmt.Errorf("%w: %q: unexpected ref type: %q", serrors.ErrorInvalidRef, ref, typ)
 	}
 	if name == "" {
