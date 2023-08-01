@@ -41,10 +41,25 @@ The Maven Verification Plugin can be run from the root of a given project file. 
 4. `cd /tmp`
 5. `git clone _your_repository_`
 6. `cd _your_repository_`
-7. `mvn io.github.slsa-framework:slsa-verification-plugin:0.0.1:verify`
+7. `mvn io.github.slsa-framework.slsa-verifier:dependency-plugin:0.0.1:verify`
 
 The plugin will now go through all the dependencies in the `pom.xml` file and check if they have a provenance statement attached to their release. If a dependency has a SLSA provenance file, the Maven verification plugin will fetch it from the remote repository and invoke the `slsa-verifier` binary against the dependency and the provenance file.
 
 ### Integrating it into your Maven build cycle
 
-The plugin can also live in your Maven build cycle. If you add it to your own `pom.xml`, the plugin will execute during the validation phase of the Maven build cycle.
+The plugin can also live in your Maven build cycle. If you add it to your own `pom.xml`, the plugin will execute during the validation phase of the Maven build cycle:
+
+```xml
+<plugin>
+    <groupId>io.github.slsa-framework.slsa-verifier</groupId>
+    <artifactId>dependency-plugin</artifactId>
+    <version>0.0.1</version>
+    <executions>
+        <execution>
+           <goals>
+                <goal>verify</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
