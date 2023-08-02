@@ -321,14 +321,14 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			return err
 		}
 
-		// If ExpectedID is empty, check to see if it is a trusted builder.
-		// If empty, then a trusted builder is expected, to populate provenanceOpts.ExpectedBuilderID
+		// If ExpectedID is not provided, check to see if it is a trusted builder.
+		// If not provided, then a trusted builder is expected, to populate provenanceOpts.ExpectedBuilderID
 		// with that builder, otherwise, populate from user input.
 		//
 		// Example: the expectedBuilderID will default to the delegator builder ID for BYOB.
 		// This can verify the actual BYOB builderIDPath against the trusted builderIDPath provided.
 		// Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
-		if expectedID == nil || *expectedID == "" {
+		if expectedID == nil {
 			var trustedBuilderRepositoryPath = httpsGithubCom + trustedBuilderRepository + "/.github/workflows/"
 			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPathPrefix(prov, trustedBuilderRepositoryPath); err != nil {
 				return err
