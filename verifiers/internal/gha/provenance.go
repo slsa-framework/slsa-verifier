@@ -58,8 +58,7 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-// Verifies expectedBuilderIDPath by checking to see if the builderID in provenance
-// starts with inputted expectedBuilderIDPath.
+// verifyBuilderIDPath verifies that the builder ID in provenance matches the provided expectedBuilderIDPrefix.
 // Returns provenance builderID if verified against inputted expected path.
 func verifyBuilderIDPath(prov iface.Provenance, expectedBuilderIDPath string) (string, error) {
 	id, err := prov.BuilderID()
