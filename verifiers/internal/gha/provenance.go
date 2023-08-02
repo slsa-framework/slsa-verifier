@@ -337,7 +337,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			provenanceOpts.ExpectedBuilderID = *expectedID
 		}
 
-		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user
+		// NOTE: `provenanceOpts.ExpectedBuilderID` is provided by the user
 		// or from return of verifyBuilderIDPath.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
