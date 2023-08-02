@@ -72,7 +72,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
 
-	if err := VerifyProvenance(env, provenanceOpts, verifiedBuilderID, byob, builderOpts); err != nil {
+	if err := VerifyProvenance(env, provenanceOpts, verifiedBuilderID, byob, builderOpts.ExpectedID); err != nil {
 		return nil, nil, err
 	}
 
