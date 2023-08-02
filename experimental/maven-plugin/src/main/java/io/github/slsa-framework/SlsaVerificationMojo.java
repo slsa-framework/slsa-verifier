@@ -122,8 +122,6 @@ public class SlsaVerificationMojo extends AbstractMojo {
                 continue;
             }
 
-            // Run slsa verification on the artifact and print the result
-            // It will never fail the build process
             // TODO(#665): Harden against script injections.
             String arguments = "verify-artifact --provenance-path ";
             arguments += "${project.build.directory}/slsa/" + artifact.getArtifactId() + "-" + artifact.getVersion() + "-jar.build.slsa ";
