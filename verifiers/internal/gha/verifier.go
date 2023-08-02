@@ -90,7 +90,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 			return nil, nil, err
 		}
 	}
-	
+
 	fmt.Fprintf(os.Stderr, "Verified build using builder %q at commit %s\n",
 		verifiedBuilderID.String(),
 		workflowInfo.SourceSha1)
