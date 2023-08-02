@@ -58,9 +58,9 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
-// verifyBuilderIDPath verifies that the builder ID in provenance matches the provided expectedBuilderIDPrefix.
-// Returns provenance builderID if verified against inputted expected path.
-func verifyBuilderIDPath(prov iface.Provenance, expectedBuilderIDPath string) (string, error) {
+// verifyBuilderIDPathPrefix verifies that the builder ID in provenance matches the provided expectedBuilderIDPathPrefix.
+// Returns provenance builderID if verified against provided expected Builder ID path prefix.
+func verifyBuilderIDPathPrefix(prov iface.Provenance, expectedBuilderIDPathPrefix string) (string, error) {
 	id, err := prov.BuilderID()
 	if err != nil {
 		return "", err
@@ -71,9 +71,9 @@ func verifyBuilderIDPath(prov iface.Provenance, expectedBuilderIDPath string) (s
 		return "", err
 	}
 
-	// Compare actual BuilderIDPath with the expected.
-	if !strings.HasPrefix(provBuilderID.Name(), expectedBuilderIDPath) {
-		return "", fmt.Errorf("%w: BuilderID Path Mismatch. Got: %q. Expected: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name(), expectedBuilderIDPath)
+	// Compare actual BuilderID with the expected BuilderID Path Prefix.
+	if !strings.HasPrefix(provBuilderID.Name(), expectedBuilderIDPathPrefix) {
+		return "", fmt.Errorf("%w: BuilderID Path Mismatch. Got: %q. Expected BuilderID Path Prefix: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name(), expectedBuilderIDPathPrefix)
 	}
 
 	return provBuilderID.Name(), nil
@@ -330,7 +330,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		// Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
 		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
 			var trustedBuilderRepositoryPath = httpsGithubCom + trustedBuilderRepository + "/.github/workflows/"
-			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPath(prov, trustedBuilderRepositoryPath); err != nil {
+			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPathPrefix(prov, trustedBuilderRepositoryPath); err != nil {
 				return err
 			}
 		} else {
