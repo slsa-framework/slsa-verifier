@@ -32,7 +32,6 @@ type ProvenanceOpts struct {
 
 // BuildOpts are the options for checking the builder.
 type BuilderOpts struct {
-	// ExpectedID is the expected builder ID that is inputted
-	// at the command line by the user to be verified.
+	// ExpectedID is the expected builder ID that is provided by the user.
 	ExpectedID *string
 }
