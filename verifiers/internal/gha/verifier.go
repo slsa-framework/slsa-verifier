@@ -41,20 +41,6 @@ func (v *GHAVerifier) IsAuthoritativeFor(builderID string) bool {
 	return strings.HasPrefix(builderID, httpsGithubCom)
 }
 
-// builderID retrieves the builder ID from the provenance via the DSSE envelope.
-func builderID(env *dsse.Envelope, trustedBuilderID *utils.TrustedBuilderID) (*utils.TrustedBuilderID, error) {
-	id, err := BuilderID(env, trustedBuilderID)
-	if err != nil {
-		return nil, err
-	}
-	
-	verifiedBuilderID, err := utils.TrustedBuilderIDNew(id, true)
-	if err != nil {
-		return nil, err
-	}
-	return verifiedBuilderID, nil
-}
-
 func verifyEnvAndCert(env *dsse.Envelope,
 	cert *x509.Certificate,
 	provenanceOpts *options.ProvenanceOpts,
