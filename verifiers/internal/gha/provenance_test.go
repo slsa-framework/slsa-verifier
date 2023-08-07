@@ -1218,9 +1218,9 @@ func Test_VerifyProvenance(t *testing.T) {
 				ExpectedBuilderID:      "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.8.0",
 				ExpectedWorkflowInputs: map[string]string{},
 			},
-			byob: true,
+			byob:                 true,
 			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.8.0",
-			expectedID: nil,
+			expectedID:           nil,
 		},
 	}
 	for _, tt := range tests {
@@ -1272,10 +1272,9 @@ func Test_VerifyProvenance2(t *testing.T) {
 				ExpectedBuilderID:      "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
 				ExpectedWorkflowInputs: map[string]string{},
 			},
-			byob: true,
+			byob:                 true,
 			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
-
-			expectedID: nil,
+			expectedID:           nil,
 		},
 	}
 	for _, tt := range tests {
