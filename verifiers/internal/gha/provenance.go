@@ -339,7 +339,7 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 			return err
 		}
 
-		// If ExpectedID is not provided, check to see if it is a trusted builder.
+		// If expectedID is not provided, check to see if it is a trusted builder.
 		// If not provided, then a trusted builder is expected, to populate provenanceOpts.ExpectedBuilderID
 		// with that builder, otherwise, populate from user input.
 		//

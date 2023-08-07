@@ -1219,9 +1219,7 @@ func Test_VerifyProvenance(t *testing.T) {
 				ExpectedWorkflowInputs: map[string]string{},
 			},
 			byob: true,
-
 			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.8.0",
-
 			expectedID: nil,
 		},
 	}
@@ -1275,7 +1273,6 @@ func Test_VerifyProvenance2(t *testing.T) {
 				ExpectedWorkflowInputs: map[string]string{},
 			},
 			byob: true,
-
 			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
 
 			expectedID: nil,
