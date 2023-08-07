@@ -307,6 +307,24 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	return utils.IsValidBuilderTag(parts[1], false)
 }
 
+// builderID returns the trusted builder ID from the provenance.
+// The certTrustedBuilderID input is from the Fulcio certificate.
+func builderID(env *dsselib.Envelope, certTrustedBuilderID *utils.TrustedBuilderID) (*utils.TrustedBuilderID, error) {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(certTrustedBuilderID.Name(), env)
+	if err != nil {
+		return nil, err
+	}
+	id, err := prov.BuilderID()
+	if err != nil {
+		return nil, err
+	}
+	verifiedBuilderID, err := utils.TrustedBuilderIDNew(id, true)
+	if err != nil {
+		return nil, err
+	}
+	return verifiedBuilderID, nil
+}
+
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
 func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, byob bool,
 	expectedID *string) error {

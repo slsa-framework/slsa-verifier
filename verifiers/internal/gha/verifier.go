@@ -76,9 +76,18 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		return nil, nil, err
 	}
 
+	if byob {
+		// Overwrite the builderID to match the one in the provenance.
+		verifiedBuilderID, err = builderID(env, verifiedBuilderID)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	fmt.Fprintf(os.Stderr, "Verified build using builder %q at commit %s\n",
-		workflowInfo.SubjectWorkflow.String(),
+		verifiedBuilderID.String(),
 		workflowInfo.SourceSha1)
+
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
