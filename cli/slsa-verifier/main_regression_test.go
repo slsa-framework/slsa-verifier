@@ -1383,7 +1383,12 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 
 			for _, v := range checkVersions {
 				testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-				provenancePath := fmt.Sprintf("%s.intoto.sigstore", testPath)
+				var provenancePath string
+				if semver.Compare(v, "v1.8.0") >= 0 {
+					provenancePath = fmt.Sprintf("%s.intoto.build.slsa", testPath)
+				} else {
+					provenancePath = fmt.Sprintf("%s.intoto.sigstore", testPath)
+				}
 
 				artifacts := make([]string, len(tt.artifacts))
 				for i, artifact := range tt.artifacts {
