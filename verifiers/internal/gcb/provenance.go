@@ -161,19 +161,28 @@ func (p *Provenance) VerifyTextProvenance() error {
 		return err
 	}
 
-	header, err := p.verifiedProvenance.Header()
+	statement := p.verifiedIntotoStatement
+	header, err := (*statement).Header()
 	if err != nil {
 		return err
 	}
-	pred, err := p.verifiedProvenance.Predicate()
+
+	predicate, err := (*statement).Predicate()
 	if err != nil {
 		return err
 	}
-	// Note: there is an additional field `metadata.buildInvocationId` which
-	// is not part of the specs but is present. This field is currently ignored during comparison.
-	unverifiedTextIntotoStatement := v01.IntotoStatement{
-		StatementHeader: header,
-		Predicate:       pred,
+
+	var unverifiedTextIntotoStatement interface{}
+	switch v := predicate.(type) {
+	case v01.ProvenancePredicate:
+		// Note: there is an additional field `metadata.buildInvocationId` which
+		// is not part of the specs but is present. This field is currently ignored during comparison.
+		unverifiedTextIntotoStatement = v01.IntotoStatement{
+			StatementHeader: header,
+			Pred:            v,
+		}
+	default:
+		return fmt.Errorf("%w: unknown %v type", serrors.ErrorInvalidFormat, v)
 	}
 
 	// Note: DeepEqual() has problem with time comparisons: https://github.com/onsi/gomega/issues/264

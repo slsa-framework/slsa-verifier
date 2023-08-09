@@ -12,6 +12,7 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/common"
 	v01 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v0.1"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
@@ -21,15 +22,15 @@ import (
 // expect this statement to be populated; and this is done only
 // after the signature is verified.
 func setStatement(gcb *Provenance) error {
-	var statement v01.IntotoStatement
 	payload, err := utils.PayloadFromEnvelope(&gcb.gcloudProv.ProvenanceSummary.Provenance[0].Envelope)
 	if err != nil {
 		return fmt.Errorf("payloadFromEnvelope: %w", err)
 	}
-	if err := json.Unmarshal(payload, &statement); err != nil {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	stmt, err := v01.New(payload)
+	if err != nil {
+		return fmt.Errorf("v01.New: %w", err)
 	}
-	gcb.verifiedIntotoStatement = &statement
+	gcb.verifiedIntotoStatement = &stmt
 	gcb.verifiedProvenance = &gcb.gcloudProv.ProvenanceSummary.Provenance[0]
 	return nil
 }
@@ -244,7 +245,7 @@ func Test_VerifyBuilder(t *testing.T) {
 	}
 }
 
-func Test_validateRecipeType(t *testing.T) {
+func Test_validateBuildType(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -304,7 +305,7 @@ func Test_validateRecipeType(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
-			err = validateRecipeType(*builderID, tt.recipeType)
+			err = validateBuildType(*builderID, tt.recipeType)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
@@ -996,19 +997,19 @@ func Test_getSubstitutionsField(t *testing.T) {
 			name:  "no substitutions field",
 			path:  "./testdata/gcloud-container-github.json",
 			field: "TAG_NAME",
-			err:   errorSubstitutionError,
+			err:   common.ErrSubstitution,
 		},
 		{
 			name:  "tag not present",
 			path:  "./testdata/gcloud-container-tag-notpresent.json",
 			field: "TAG_NAME",
-			err:   errorSubstitutionError,
+			err:   common.ErrSubstitution,
 		},
 		{
 			name:  "tag not string",
 			path:  "./testdata/gcloud-container-tag-notstring.json",
 			field: "TAG_NAME",
-			err:   errorSubstitutionError,
+			err:   common.ErrSubstitution,
 		},
 	}
 	for _, tt := range tests {
@@ -1030,7 +1031,7 @@ func Test_getSubstitutionsField(t *testing.T) {
 				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
-			value, err := getSubstitutionsField(prov.verifiedIntotoStatement, tt.field)
+			value, err := getSubstitutionsField(*prov.verifiedIntotoStatement, tt.field)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
