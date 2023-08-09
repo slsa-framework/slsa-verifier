@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
@@ -311,14 +310,14 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 
 	// Validate the recipe argument type for v0.2 provenance only.
-	header, err := (*statement).Header()
+	predicate, err := (*statement).Predicate()
 	if err != nil {
 		return nil, err
 	}
-	switch header.Type {
-	case v01.PredicateSLSAProvenance:
+	switch v := predicate.(type) {
+	case v01.ProvenancePredicate:
 		expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
-		args, ok := statement.Predicate.Recipe.Arguments.(map[string]interface{})
+		args, ok := v.Recipe.Arguments.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
 		}
@@ -332,7 +331,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 				expectedType, ts)
 		}
 	default:
-		return nil, fmt.Errorf("%w: unknown type %v", serrors.ErrorInvalidFormat, header.Type)
+		return nil, fmt.Errorf("%w: unknown type %v", serrors.ErrorInvalidFormat, v)
 	}
 	return provBuilderID, nil
 }
