@@ -310,9 +310,13 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		return nil, err
 	}
 
-	//TODO: only for v0.1 provenance.
-	// Validate the recipe argument type.
-	/*
+	// Validate the recipe argument type for v0.2 provenance only.
+	header, err := (*statement).Header()
+	if err != nil {
+		return nil, err
+	}
+	switch header.Type {
+	case v01.PredicateSLSAProvenance:
 		expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
 		args, ok := statement.Predicate.Recipe.Arguments.(map[string]interface{})
 		if !ok {
@@ -327,7 +331,9 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 			return nil, fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
 				expectedType, ts)
 		}
-	*/
+	default:
+		return nil, fmt.Errorf("%w: unknown type %v", serrors.ErrorInvalidFormat, header.Type)
+	}
 	return provBuilderID, nil
 }
 
