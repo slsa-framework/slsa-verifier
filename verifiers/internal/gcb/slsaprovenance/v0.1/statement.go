@@ -84,7 +84,7 @@ type DigestSet map[string]string
 
 type IntotoStatement struct {
 	intoto.StatementHeader
-	Predicate ProvenancePredicate `json:"predicate"`
+	Pred ProvenancePredicate `json:"predicate"`
 }
 
 func New(payload []byte) (iface.Statement, error) {
@@ -95,23 +95,27 @@ func New(payload []byte) (iface.Statement, error) {
 	return &statement, nil
 }
 
+func (stmt *IntotoStatement) Predicate() (interface{}, error) {
+	return stmt.Pred, nil
+}
+
 func (stmt *IntotoStatement) Header() (intoto.StatementHeader, error) {
 	return stmt.StatementHeader, nil
 }
 
 // BuilderID implements Statement.BuilderID.
 func (stmt *IntotoStatement) BuilderID() (string, error) {
-	return stmt.Predicate.Builder.ID, nil
+	return stmt.Pred.Builder.ID, nil
 }
 
 // BuildType implements Statement.BuildType.
 func (stmt *IntotoStatement) BuildType() (string, error) {
-	return stmt.Predicate.Recipe.Type, nil
+	return stmt.Pred.Recipe.Type, nil
 }
 
 // BuildType implements Statement.GetSystemParameters.
 func (stmt *IntotoStatement) GetSystemParameters() (map[string]any, error) {
-	arguments := stmt.Predicate.Recipe.Arguments
+	arguments := stmt.Pred.Recipe.Arguments
 	argsMap, ok := arguments.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot cast arguments as map", common.ErrSubstitution)
@@ -131,10 +135,10 @@ func (stmt *IntotoStatement) GetSystemParameters() (map[string]any, error) {
 
 // SourceURI implements Statement.SourceURI.
 func (stmt *IntotoStatement) SourceURI() (string, error) {
-	if len(stmt.Predicate.Materials) == 0 {
+	if len(stmt.Pred.Materials) == 0 {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no material")
 	}
-	uri := stmt.Predicate.Materials[0].URI
+	uri := stmt.Pred.Materials[0].URI
 	if uri == "" {
 		return "", fmt.Errorf("%w: empty uri", serrors.ErrorMalformedURI)
 	}

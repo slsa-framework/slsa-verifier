@@ -6,7 +6,10 @@ import (
 
 // Statement represents statement for a predicate type and build type.
 type Statement interface {
-	// header returns the statement header.
+	// Predicate returns the predicate.
+	Predicate() (interface{}, error)
+
+	// Header returns the statement header.
 	Header() (intoto.StatementHeader, error)
 
 	// BuilderID returns the builder id in the predicate.
