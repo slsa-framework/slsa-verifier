@@ -27,7 +27,7 @@ import (
 const (
 	// PredicateSLSAProvenance represents a build provenance for an artifact.
 	PredicateSLSAProvenance = "https://slsa.dev/provenance/v0.1"
-	// StatementInToto is the statement type for v0.1
+	// StatementInToto is the statement type for v0.1.
 	StatementInToto = intoto.StatementInTotoV01
 )
 

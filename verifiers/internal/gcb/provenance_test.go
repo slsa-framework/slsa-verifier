@@ -858,7 +858,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			}
 
 			// Alter fields.
-			cpy, err := json.Marshal(prov.verifiedProvenance.Build.UnverifiedTextIntotoStatement)
+			cpy, err := json.Marshal(prov.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01)
 			if err != nil {
 				panic(err)
 			}
@@ -895,7 +895,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 					patch[i] += 1
 				}
 
-				if err = json.Unmarshal(patch, &prov.verifiedProvenance.Build.UnverifiedTextIntotoStatement); err != nil {
+				if err = json.Unmarshal(patch, &prov.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01); err != nil {
 					// If we updated a character that makes a non-string field invalid, like Time, unmarshaling will fail,
 					// so we ignore the error.
 					i += 1
