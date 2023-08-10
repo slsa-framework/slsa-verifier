@@ -27,6 +27,8 @@ import (
 const (
 	// PredicateSLSAProvenance represents a build provenance for an artifact.
 	PredicateSLSAProvenance = "https://slsa.dev/provenance/v0.1"
+	// StatementInToto is the statement type for v0.1
+	StatementInToto = intoto.StatementInTotoV01
 )
 
 // ProvenancePredicate is the provenance predicate definition.
@@ -81,6 +83,15 @@ type ProvenanceComplete struct {
 // DigestSet contains a set of digests. It is represented as a map from
 // algorithm name to lowercase hex-encoded value.
 type DigestSet map[string]string
+
+// The GCB provenance contains a human-readable version of the intoto
+// statement, but it is not compliant with the standard. It uses `slsaProvenance`
+// instead of `predicate`. For backward compatibility, this has not been fixed
+// by the GCB team.
+type GCBIntotoStatement struct {
+	intoto.StatementHeader
+	SlsaProvenance ProvenancePredicate `json:"slsaProvenance"`
+}
 
 type IntotoStatement struct {
 	intoto.StatementHeader

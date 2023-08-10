@@ -29,18 +29,9 @@ var GCBBuilderIDs = []string{
 
 var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
 
-// The GCB provenance contains a human-readable version of the intoto
-// statement, but it is not compliant with the standard. It uses `slsaProvenance`
-// instead of `predicate`. For backward compatibility, this has not been fixed
-// by the GCB team.
-type v01GCBIntotoStatement struct {
-	intoto.StatementHeader
-	SlsaProvenance v01.ProvenancePredicate `json:"slsaProvenance"`
-}
-
 type provenance struct {
 	Build struct {
-		UnverifiedTextIntotoStatement v01GCBIntotoStatement `json:"intotoStatement"`
+		UnverifiedTextIntotoStatement v01.GCBIntotoStatement `json:"intotoStatement"`
 	} `json:"build"`
 	Kind        string           `json:"kind"`
 	ResourceURI string           `json:"resourceUri"`
@@ -208,16 +199,30 @@ func (p *Provenance) VerifyIntotoHeaders() error {
 	if err != nil {
 		return err
 	}
-	// https://in-toto.io/Statement/v0.1
-	if header.Type != intoto.StatementInTotoV01 {
-		return fmt.Errorf("%w: expected statement header type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, intoto.StatementInTotoV01, header.Type)
+
+	predicate, err := (*statement).Predicate()
+	if err != nil {
+		return err
 	}
 
-	// https://slsa.dev/provenance/v0.1
-	if header.PredicateType != v01.PredicateSLSAProvenance {
+	var tyIntoto, tyProvenance string
+	switch v := predicate.(type) {
+	case v01.ProvenancePredicate:
+		tyProvenance = v01.PredicateSLSAProvenance
+		tyIntoto = v01.StatementInToto
+	default:
+		return fmt.Errorf("%w: unexpected statement header type '%s'",
+			serrors.ErrorInvalidDssePayload, v)
+	}
+
+	if header.Type != tyIntoto {
+		return fmt.Errorf("%w: expected statement header type '%s', got '%s'",
+			serrors.ErrorInvalidDssePayload, tyIntoto, header.Type)
+	}
+
+	if header.PredicateType != tyProvenance {
 		return fmt.Errorf("%w: expected statement predicate type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, v01.PredicateSLSAProvenance, header.PredicateType)
+			serrors.ErrorInvalidDssePayload, tyProvenance, header.PredicateType)
 	}
 
 	return nil
@@ -232,18 +237,20 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func validateBuildType(builderID utils.TrustedBuilderID, recipeType string) error {
+func validateBuildType(builderID utils.TrustedBuilderID, buildType string) error {
 	var err error
 	v := builderID.Version()
 	switch v {
+	// NOTE: buildType is called recipeType in v0.1 specification.
+	// Builders with version <= v0.3 use v0.1 specification.
 	case "v0.2":
 		// In this version, the recipe type should be the same as
 		// the builder ID.
-		if builderID.String() == recipeType {
+		if builderID.String() == buildType {
 			return nil
 		}
 		err = fmt.Errorf("%w: expected '%s', got '%s'",
-			serrors.ErrorInvalidRecipe, builderID.String(), recipeType)
+			serrors.ErrorInvalidRecipe, builderID.String(), buildType)
 
 	case "v0.3":
 		// In this version, two recipe types are allowed, depending how the
@@ -254,12 +261,12 @@ func validateBuildType(builderID utils.TrustedBuilderID, recipeType string) erro
 			"https://cloudbuild.googleapis.com/CloudBuildSteps@",
 		}
 		for _, r := range recipes {
-			if strings.HasPrefix(recipeType, r) {
+			if strings.HasPrefix(buildType, r) {
 				return nil
 			}
 		}
 		err = fmt.Errorf("%w: expected on of '%s', got '%s'",
-			serrors.ErrorInvalidRecipe, strings.Join(recipes, ","), recipeType)
+			serrors.ErrorInvalidRecipe, strings.Join(recipes, ","), buildType)
 	default:
 		err = fmt.Errorf("%w: version '%s'",
 			serrors.ErrorInvalidBuilderID, v)
