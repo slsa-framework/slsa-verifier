@@ -88,7 +88,7 @@ type DigestSet map[string]string
 // statement, but it is not compliant with the standard. It uses `slsaProvenance`
 // instead of `predicate`. For backward compatibility, this has not been fixed
 // by the GCB team.
-type GCBIntotoStatement struct {
+type GCBIntotoTextStatement struct {
 	intoto.StatementHeader
 	SlsaProvenance ProvenancePredicate `json:"slsaProvenance"`
 }

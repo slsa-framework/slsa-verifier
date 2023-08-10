@@ -31,7 +31,7 @@ var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/location
 
 type provenance struct {
 	Build struct {
-		UnverifiedTextIntotoStatement v01.GCBIntotoStatement `json:"intotoStatement"`
+		UnverifiedTextIntotoStatementV01 v01.GCBIntotoTextStatement `json:"intotoStatement"`
 	} `json:"build"`
 	Kind        string           `json:"kind"`
 	ResourceURI string           `json:"resourceUri"`
@@ -152,11 +152,6 @@ func (p *Provenance) VerifyTextProvenance() error {
 	}
 
 	statement := p.verifiedIntotoStatement
-	header, err := (*statement).Header()
-	if err != nil {
-		return err
-	}
-
 	predicate, err := (*statement).Predicate()
 	if err != nil {
 		return err
@@ -168,8 +163,8 @@ func (p *Provenance) VerifyTextProvenance() error {
 		// Note: there is an additional field `metadata.buildInvocationId` which
 		// is not part of the specs but is present. This field is currently ignored during comparison.
 		unverifiedTextIntotoStatement = v01.IntotoStatement{
-			StatementHeader: header,
-			Pred:            v,
+			StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.StatementHeader,
+			Pred:            p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.SlsaProvenance,
 		}
 	default:
 		return fmt.Errorf("%w: unknown %v type", serrors.ErrorInvalidFormat, v)
@@ -561,8 +556,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 			continue
 		}
 
-		// Try v1.0, then v0.1 provenance.
-		// TODO: peek thru GCB text provenance.
+		// TODO(#683): try v1.0 verification.
 		stmt, err := v01.New(payload)
 		if err != nil {
 			errs = append(errs, err)
