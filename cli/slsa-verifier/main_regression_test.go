@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -546,7 +545,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				}
 
 				// TODO(#258): invalid builder ref.
-				sv := path.Base(v)
+				sv := filepath.Base(v)
 				// For each test, we run 4 sub-tests:
 				// 	1. With the the full builderID including the semver in short form.
 				//	2. With the the full builderID including the semver in long form.
@@ -773,7 +772,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			for _, v := range checkVersions {
 				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				// TODO(#258): test for tagged builder.
-				sv := path.Base(v)
+				sv := filepath.Base(v)
 				// For each test, we run 2 sub-tests:
 				//	1. With the the full builderID including the semver in short form.
 				//	2. With the the full builderID including the semver in long form.
@@ -1220,7 +1219,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
-				semver := path.Base(v)
+				semver := filepath.Base(v)
 				// For each test, we run 2 sub-tests:
 				// 	1. With the the full builderID including the semver.
 				//	2. With only the name of the builder.
@@ -1383,7 +1382,13 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 
 			for _, v := range checkVersions {
 				testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-				provenancePath := fmt.Sprintf("%s.intoto.sigstore", testPath)
+				sv := filepath.Base(v)
+				var provenancePath string
+				if semver.Compare(sv, "v1.8.0") >= 0 {
+					provenancePath = fmt.Sprintf("%s.intoto.build.slsa", testPath)
+				} else {
+					provenancePath = fmt.Sprintf("%s.intoto.sigstore", testPath)
+				}
 
 				artifacts := make([]string, len(tt.artifacts))
 				for i, artifact := range tt.artifacts {
@@ -1395,7 +1400,6 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 				//	2. With the the full builderID including the semver in long form.
 				//	3. With only the name of the builder.
 				//	4. With no builder ID.
-				sv := path.Base(v)
 				builder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_container-based_slsa3.yml"
 
 				refName := "@refs/tags/"
