@@ -480,8 +480,8 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		{
 			// This is a BYOB workflow without an id that tests non-compulsory builder-id
 			// feature of slsa-verifier and expects byob to be true
-			name:     "generic delegator workflow no id",
-			path:     trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml",
+			name: "generic delegator workflow no id",
+			path: trustedBuilderRepository + "/.github/workflows/delegator_generic_slsa3.yml",
 			// NOTE: id is nil.
 			id:       nil,
 			tag:      "refs/tags/v1.2.3",
@@ -499,8 +499,8 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		{
 			// This is a BYOB workflow without an id that tests non-compulsory builder-id
 			// feature of slsa-verifier and expects byob to be true
-			name:     "low perms delegator workflow no ID provided",
-			path:     trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml",
+			name: "low perms delegator workflow no ID provided",
+			path: trustedBuilderRepository + "/.github/workflows/delegator_lowperms-generic_slsa3.yml",
 			// NOTE: id is nil.
 			id:       nil,
 			tag:      "v1.2.3",
