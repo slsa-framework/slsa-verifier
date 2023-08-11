@@ -1,6 +1,8 @@
 package gha
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -9,6 +11,8 @@ import (
 	slsacommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
@@ -1177,6 +1181,147 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			t.Parallel()
 
 			if err := VerifyVersionedTag(tt.prov, tt.tag); !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
+func Test_VerifyProvenance(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name                 string
+		envelopePath         string
+		provenanceOpts       *options.ProvenanceOpts
+		trustedBuilderIDName string
+		byob                 bool
+		expectedID           *string
+		expected             error
+	}{
+		{
+			name:         "Verify Trusted (slsa-github-generator) Bazel Builder (v1.8.0)",
+			envelopePath: "bazel-trusted-dsseEnvelope.build.slsa",
+			provenanceOpts: &options.ProvenanceOpts{
+				ExpectedBranch:         nil,
+				ExpectedTag:            nil,
+				ExpectedVersionedTag:   nil,
+				ExpectedDigest:         "caaadba2846905ac477c777e96a636e1c2e067fdf6fed90ec9eeca4df18d6ed9",
+				ExpectedSourceURI:      "github.com/enteraga6/slsa-lvl3-generic-provenance-with-bazel-example",
+				ExpectedBuilderID:      "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.8.0",
+				ExpectedWorkflowInputs: map[string]string{},
+			},
+			byob:                 true,
+			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.8.0",
+			expectedID:           nil,
+		},
+		{
+			name:         "Verify Un-Trusted (slsa-github-generator) Bazel Builder (from enteraga6/slsa-github-generator)",
+			envelopePath: "bazel-untrusted-dsseEnvelope.sigstore",
+			provenanceOpts: &options.ProvenanceOpts{
+				ExpectedBranch:         nil,
+				ExpectedTag:            nil,
+				ExpectedVersionedTag:   nil,
+				ExpectedDigest:         "caaadba2846905ac477c777e96a636e1c2e067fdf6fed90ec9eeca4df18d6ed9",
+				ExpectedSourceURI:      "github.com/enteraga6/slsa-lvl3-generic-provenance-with-bazel-example",
+				ExpectedBuilderID:      "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
+				ExpectedWorkflowInputs: map[string]string{},
+			},
+			byob:                 true,
+			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
+			expectedID:           nil,
+			expected:             serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:         "Verify Trusted - Empty ExpectedBuilderID",
+			envelopePath: "bazel-trusted-dsseEnvelope.build.slsa",
+			provenanceOpts: &options.ProvenanceOpts{
+				ExpectedBranch:         nil,
+				ExpectedTag:            nil,
+				ExpectedVersionedTag:   nil,
+				ExpectedDigest:         "caaadba2846905ac477c777e96a636e1c2e067fdf6fed90ec9eeca4df18d6ed9",
+				ExpectedSourceURI:      "github.com/enteraga6/slsa-lvl3-generic-provenance-with-bazel-example",
+				ExpectedBuilderID:      "",
+				ExpectedWorkflowInputs: map[string]string{},
+			},
+			byob:                 true,
+			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.8.0",
+			expectedID:           nil,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			trustedBuilderID, tErr := utils.TrustedBuilderIDNew(tt.trustedBuilderIDName, true)
+			if tErr != nil {
+				t.Errorf("Provenance Verification FAILED. Error: %v", tErr)
+			}
+
+			envelopeBytes, err := os.ReadFile(filepath.Join("testdata", tt.envelopePath))
+			if err != nil {
+				t.Errorf("os.ReadFile: %v", err)
+			}
+
+			env, err := EnvelopeFromBytes(envelopeBytes)
+			if err != nil {
+				t.Errorf("unexpected error parsing envelope %v", err)
+			}
+
+			if err := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID); !errCmp(err, tt.expected) {
+				t.Errorf(cmp.Diff(err, tt.expected))
+			}
+		})
+	}
+}
+
+func Test_VerifyUntrustedProvenance(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name                 string
+		envelopePath         string
+		provenanceOpts       *options.ProvenanceOpts
+		trustedBuilderIDName string
+		byob                 bool
+		expectedID           *string
+		expected             error
+	}{
+		{
+			name:         "Verify Un-Trusted (slsa-github-generator) Bazel Builder (from enteraga6/slsa-github-generator)",
+			envelopePath: "bazel-untrusted-dsseEnvelope.sigstore",
+			provenanceOpts: &options.ProvenanceOpts{
+				ExpectedBranch:         nil,
+				ExpectedTag:            nil,
+				ExpectedVersionedTag:   nil,
+				ExpectedDigest:         "caaadba2846905ac477c777e96a636e1c2e067fdf6fed90ec9eeca4df18d6ed9",
+				ExpectedSourceURI:      "github.com/enteraga6/slsa-lvl3-generic-provenance-with-bazel-example",
+				ExpectedBuilderID:      "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
+				ExpectedWorkflowInputs: map[string]string{},
+			},
+			byob:                 true,
+			trustedBuilderIDName: "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@refs/tags/v1.7.0",
+			expectedID:           nil,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			trustedBuilderID, tErr := utils.TrustedBuilderIDNew(tt.trustedBuilderIDName, true)
+			if tErr != nil {
+				t.Errorf("Provenance Verification FAILED. Error: %v", tErr)
+			}
+
+			envelopeBytes, err := os.ReadFile(filepath.Join("testdata", tt.envelopePath))
+			if err != nil {
+				t.Errorf("os.ReadFile: %v", err)
+			}
+
+			env, err := EnvelopeFromBytes(envelopeBytes)
+			if err != nil {
+				t.Errorf("unexpected error parsing envelope %v", err)
+			}
+
+			if err := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID); errCmp(err, tt.expected) {
 				t.Errorf(cmp.Diff(err, tt.expected))
 			}
 		})

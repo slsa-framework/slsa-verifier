@@ -109,14 +109,8 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		if _, ok := defaultTrustedBuilders[certBuilderID]; !ok {
 			return nil, false, fmt.Errorf("%w: %s with builderID provided: %t", serrors.ErrorUntrustedReusableWorkflow, certBuilderID, expectedBuilderID != nil)
 		}
+
 		// Construct the builderID using the certificate's builder's name and tag.
-		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
-		if err != nil {
-			return nil, false, err
-		}
-	} else {
-		// Verify the builderID.
-		// We only accept IDs on github.com.
 		trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
 		if err != nil {
 			return nil, false, err
@@ -127,16 +121,33 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 		// - the caller trusts the BYOB builder
 		// If both are true, we don't match the user-provided builder ID
 		// against the certificate. Instead that will be done by the caller.
-		if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
-			return trustedBuilderID, true, nil
-		}
+		//
+		// This return of the delegator builderID enables non-compulsory
+		// builderID feature for BYOB builders by setting byob flag to true.
+		return trustedBuilderID, isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders), nil
+	}
 
-		// Not a BYOB builder. BuilderID provided by user should match the certificate.
-		// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
-		// so we pass `allowRef = true`.
-		if err := trustedBuilderID.MatchesLoose(*expectedBuilderID, true); err != nil {
-			return nil, false, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
-		}
+	// Verify the builderID.
+	// We only accept IDs on github.com.
+	trustedBuilderID, err = utils.TrustedBuilderIDNew(certBuilderID+"@"+certTag, true)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// Check if:
+	// - the builder in the cert is a BYOB builder
+	// - the caller trusts the BYOB builder
+	// If both are true, we don't match the user-provided builder ID
+	// against the certificate. Instead that will be done by the caller.
+	if isTrustedDelegatorBuilder(trustedBuilderID, defaultTrustedBuilders) {
+		return trustedBuilderID, true, nil
+	}
+
+	// Not a BYOB builder. BuilderID provided by user should match the certificate.
+	// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
+	// so we pass `allowRef = true`.
+	if err := trustedBuilderID.MatchesLoose(*expectedBuilderID, true); err != nil {
+		return nil, false, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
 	}
 
 	return trustedBuilderID, false, nil
