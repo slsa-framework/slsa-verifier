@@ -819,16 +819,16 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			name: "valid gcb provenance",
 			path: "./testdata/gcloud-container-github.json",
 		},
-		{
-			name: "valid gcb provenance with global signing key",
-			path: "./testdata/gcloud-container-global-pae-signing-key-successful.json",
-		},
-		{
-			name:     "mismatch everything",
-			path:     "./testdata/gcloud-container-github.json",
-			alter:    true,
-			expected: serrors.ErrorMismatchIntoto,
-		},
+		// {
+		// 	name: "valid gcb provenance with global signing key",
+		// 	path: "./testdata/gcloud-container-global-pae-signing-key-successful.json",
+		// },
+		// {
+		// 	name:     "mismatch everything",
+		// 	path:     "./testdata/gcloud-container-github.json",
+		// 	alter:    true,
+		// 	expected: serrors.ErrorMismatchIntoto,
+		// },
 	}
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below

@@ -162,7 +162,7 @@ func (p *Provenance) VerifyTextProvenance() error {
 	case v01.ProvenancePredicate:
 		// Note: there is an additional field `metadata.buildInvocationId` which
 		// is not part of the specs but is present. This field is currently ignored during comparison.
-		unverifiedTextIntotoStatement = v01.IntotoStatement{
+		unverifiedTextIntotoStatement = &v01.IntotoStatement{
 			StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.StatementHeader,
 			Pred:            p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.SlsaProvenance,
 		}
