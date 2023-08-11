@@ -1,7 +1,6 @@
 package gha
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -1227,12 +1226,12 @@ func Test_VerifyTrustedProvenance(t *testing.T) {
 
 			envelopeBytes, err := os.ReadFile(filepath.Join("testdata", tt.envelopePath))
 			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
+				t.Errorf("os.ReadFile: %v", err)
 			}
 
 			env, err := EnvelopeFromBytes(envelopeBytes)
 			if err != nil {
-				panic(fmt.Errorf("unexpected error parsing envelope %s", err))
+				t.Errorf("unexpected error parsing envelope %v", err)
 			}
 
 			vErr := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID)
@@ -1282,12 +1281,12 @@ func Test_VerifyUntrustedProvenance(t *testing.T) {
 
 			envelopeBytes, err := os.ReadFile(filepath.Join("testdata", tt.envelopePath))
 			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
+				t.Errorf("os.ReadFile: %v", err)
 			}
 
 			env, err := EnvelopeFromBytes(envelopeBytes)
 			if err != nil {
-				panic(fmt.Errorf("unexpected error parsing envelope %s", err))
+				t.Errorf("unexpected error parsing envelope %v", err)
 			}
 
 			vErr := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID)
