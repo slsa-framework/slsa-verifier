@@ -1192,7 +1192,7 @@ func Test_VerifyTrustedProvenance(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name                 string
-		provenancePath       string
+		envelopePath         string
 		provenanceOpts       *options.ProvenanceOpts
 		trustedBuilderIDName string
 		byob                 bool
@@ -1200,8 +1200,8 @@ func Test_VerifyTrustedProvenance(t *testing.T) {
 		expected             error
 	}{
 		{
-			name:           "Verify Trusted (slsa-github-generator) Bazel Builder (v1.8.0",
-			provenancePath: "bazel-trusted-att.build.slsa",
+			name:         "Verify Trusted (slsa-github-generator) Bazel Builder (v1.8.0",
+			envelopePath: "bazel-trusted-dsseEnvelope.build.slsa",
 			provenanceOpts: &options.ProvenanceOpts{
 				ExpectedBranch:         nil,
 				ExpectedTag:            nil,
@@ -1225,16 +1225,16 @@ func Test_VerifyTrustedProvenance(t *testing.T) {
 				t.Errorf("Provenance Verification FAILED. Error: %v", tErr)
 			}
 
-			provenanceBytes, err := os.ReadFile(filepath.Join("testdata", tt.provenancePath))
+			envelopeBytes, err := os.ReadFile(filepath.Join("testdata", tt.envelopePath))
 			if err != nil {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			env, err := EnvelopeFromBytes(provenanceBytes)
+			env, err := EnvelopeFromBytes(envelopeBytes)
 			if err != nil {
 				panic(fmt.Errorf("unexpected error parsing envelope %s", err))
 			}
-			println(env)
+
 			vErr := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID)
 			if vErr != nil {
 				t.Errorf("Provenance Verification FAILED. Error: %v", vErr)
@@ -1246,9 +1246,8 @@ func Test_VerifyTrustedProvenance(t *testing.T) {
 func Test_VerifyUntrustedProvenance(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name string
-		// env                  *dsselib.Envelope
-		provenancePath       string
+		name                 string
+		envelopePath         string
 		provenanceOpts       *options.ProvenanceOpts
 		trustedBuilderIDName string
 		byob                 bool
@@ -1256,8 +1255,8 @@ func Test_VerifyUntrustedProvenance(t *testing.T) {
 		expected             error
 	}{
 		{
-			name:           "Verify Un-Trusted (slsa-github-generator) Bazel Builder (from enteraga6/slsa-github-generator)",
-			provenancePath: "bazel-untrusted-att.sigstore",
+			name:         "Verify Un-Trusted (slsa-github-generator) Bazel Builder (from enteraga6/slsa-github-generator)",
+			envelopePath: "bazel-untrusted-dsseEnvelope.sigstore",
 			provenanceOpts: &options.ProvenanceOpts{
 				ExpectedBranch:         nil,
 				ExpectedTag:            nil,
@@ -1281,12 +1280,12 @@ func Test_VerifyUntrustedProvenance(t *testing.T) {
 				t.Errorf("Provenance Verification FAILED. Error: %v", tErr)
 			}
 
-			provenanceBytes, err := os.ReadFile(filepath.Join("testdata", tt.provenancePath))
+			envelopeBytes, err := os.ReadFile(filepath.Join("testdata", tt.envelopePath))
 			if err != nil {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			env, err := EnvelopeFromBytes(provenanceBytes)
+			env, err := EnvelopeFromBytes(envelopeBytes)
 			if err != nil {
 				panic(fmt.Errorf("unexpected error parsing envelope %s", err))
 			}
