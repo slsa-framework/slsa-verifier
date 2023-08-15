@@ -105,7 +105,7 @@ func New(payload []byte) (iface.Provenance, error) {
 	if err := json.Unmarshal(payload, &provenance); err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
-	fmt.Println(provenance.StatementHeader)
+
 	// Validate the intoto type.
 	if provenance.StatementHeader.Type != statementInToto {
 		return nil, fmt.Errorf("%w: expected statement header type '%s', got '%s'",
