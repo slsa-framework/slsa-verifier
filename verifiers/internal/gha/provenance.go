@@ -294,17 +294,42 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	if err != nil {
 		return err
 	}
+
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return err
+	}
+
+	uri, _, err := utils.ParseGitURIAndRef(sourceURI)
+	if err != nil {
+		return err
+	}
+
 	parts := strings.Split(id, "@")
 	if len(parts) != 2 {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
 	}
+	ref := parts[1]
 
 	// Exception for JReleaser builders.
 	// See https://github.com/slsa-framework/slsa-github-generator/issues/2035#issuecomment-1579963802.
 	if strings.HasPrefix(parts[0], JReleaserRepository) {
-		return utils.IsValidJreleaserBuilderTag(parts[1])
+		return utils.IsValidJreleaserBuilderTag(ref)
 	}
-	return utils.IsValidBuilderTag(parts[1], false)
+
+	// To enable e2e tests for BYBO-built builders
+	// referenced at main.
+	e2eRepo := utils.NormalizeGitURI(httpsGithubCom + e2eTestRepository)
+	uri = utils.NormalizeGitURI(uri)
+	if (uri == e2eRepo) &&
+		options.TestingEnabled() {
+		// Allow verification on the main branch to support e2e tests.
+		if ref == "refs/heads/main" {
+			return nil
+		}
+	}
+
+	return utils.IsValidBuilderTag(ref, false)
 }
 
 // builderID returns the trusted builder ID from the provenance.
