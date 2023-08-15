@@ -318,11 +318,12 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	}
 
 	// Exception to enable e2e tests for BYOB builders referenced at main.
-	normalizedE2eRepoUri := utils.NormalizeGitURI(httpsGithubCom + e2eTestRepository)
-	normalizedUri := utils.NormalizeGitURI(uri)
-	if normalizedUri == normalizedE2eRepoUri && options.TestingEnabled() {
+	normalizedE2eRepoURI := utils.NormalizeGitURI(httpsGithubCom + e2eTestRepository)
+	normalizedURI := utils.NormalizeGitURI(uri)
+	if normalizedURI == normalizedE2eRepoURI && options.TestingEnabled() {
 		// Allow verification on the main branch to support e2e tests.
 		if builderRef == "refs/heads/main" {
+			fmt.Println("here")
 			return nil
 		}
 	}
