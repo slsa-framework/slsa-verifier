@@ -51,9 +51,9 @@ type gloudProvenance struct {
 }
 
 type Provenance struct {
-	gcloudProv              *gloudProvenance
-	verifiedProvenance      *provenance
-	verifiedIntotoStatement *iface.Statement
+	gcloudProv         *gloudProvenance
+	verifiedProvenance *provenance
+	verifiedStatement  iface.Provenance
 }
 
 func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
@@ -70,8 +70,7 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 
 func (p *Provenance) isVerified() error {
 	// Check that the signature is verified.
-	if p.verifiedIntotoStatement == nil ||
-		p.verifiedProvenance == nil {
+	if p.verifiedStatement == nil || p.verifiedProvenance == nil {
 		return serrors.ErrorNoValidSignature
 	}
 	return nil
@@ -81,7 +80,7 @@ func (p *Provenance) GetVerifiedIntotoStatement() ([]byte, error) {
 	if err := p.isVerified(); err != nil {
 		return nil, err
 	}
-	d, err := json.Marshal(p.verifiedIntotoStatement)
+	d, err := json.Marshal(p.verifiedStatement)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
@@ -151,73 +150,32 @@ func (p *Provenance) VerifyTextProvenance() error {
 		return err
 	}
 
-	statement := p.verifiedIntotoStatement
-	predicate, err := (*statement).Predicate()
+	statement := p.verifiedStatement
+	predicateType, err := statement.PredicateType()
 	if err != nil {
 		return err
 	}
 
 	var unverifiedTextIntotoStatement interface{}
-	switch v := predicate.(type) {
-	case v01.ProvenancePredicate:
+	switch predicateType {
+	case v01.PredicateSLSAProvenance:
 		// NOTE: there is an additional field `metadata.buildInvocationId` which
 		// is not part of the specs but is present. This field is currently ignored during comparison.
-		unverifiedTextIntotoStatement = &v01.IntotoStatement{
+		unverifiedTextIntotoStatement = &v01.Provenance{
 			StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.StatementHeader,
 			Pred:            p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.SlsaProvenance,
 		}
 	default:
-		return fmt.Errorf("%w: unknown %v type", serrors.ErrorInvalidFormat, v)
+		return fmt.Errorf("%w: unknown %v type", serrors.ErrorInvalidFormat, predicateType)
 	}
 
 	// Note: DeepEqual() has problem with time comparisons: https://github.com/onsi/gomega/issues/264
 	// but this should not affect us since both times are supposed to have the same string and
 	// they are both taken from a string representation.
 	// We do not use cmp.Equal() because it *can* panic and is intended for unit tests only.
-	if !reflect.DeepEqual(unverifiedTextIntotoStatement, *p.verifiedIntotoStatement) {
+	if !reflect.DeepEqual(unverifiedTextIntotoStatement, p.verifiedStatement) {
 		return fmt.Errorf("%w: diff '%s'", serrors.ErrorMismatchIntoto,
-			cmp.Diff(unverifiedTextIntotoStatement, *p.verifiedIntotoStatement))
-	}
-
-	return nil
-}
-
-// VerifyIntotoHeaders verifies the headers are intoto format and the expected
-// slsa predicate.
-func (p *Provenance) VerifyIntotoHeaders() error {
-	if err := p.isVerified(); err != nil {
-		return err
-	}
-
-	statement := p.verifiedIntotoStatement
-	header, err := (*statement).Header()
-	if err != nil {
-		return err
-	}
-
-	predicate, err := (*statement).Predicate()
-	if err != nil {
-		return err
-	}
-
-	var tyIntoto, tyProvenance string
-	switch v := predicate.(type) {
-	case v01.ProvenancePredicate:
-		tyProvenance = v01.PredicateSLSAProvenance
-		tyIntoto = v01.StatementInToto
-	default:
-		return fmt.Errorf("%w: unexpected statement header type '%s'",
-			serrors.ErrorInvalidDssePayload, v)
-	}
-
-	if header.Type != tyIntoto {
-		return fmt.Errorf("%w: expected statement header type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, tyIntoto, header.Type)
-	}
-
-	if header.PredicateType != tyProvenance {
-		return fmt.Errorf("%w: expected statement predicate type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, tyProvenance, header.PredicateType)
+			cmp.Diff(unverifiedTextIntotoStatement, p.verifiedStatement))
 	}
 
 	return nil
@@ -279,8 +237,8 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		return nil, err
 	}
 
-	statement := p.verifiedIntotoStatement
-	predicateBuilderID, err := (*statement).BuilderID()
+	statement := p.verifiedStatement
+	predicateBuilderID, err := statement.BuilderID()
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +261,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 
 	// Valiate the recipe type.
-	buildType, err := (*statement).BuildType()
+	buildType, err := statement.BuildType()
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +270,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 
 	// Validate the recipe argument type for v0.2 provenance only.
-	predicate, err := (*statement).Predicate()
+	predicate, err := statement.Predicate()
 	if err != nil {
 		return nil, err
 	}
@@ -356,8 +314,8 @@ func (p *Provenance) VerifySubjectDigest(expectedHash string) error {
 		return err
 	}
 
-	statement := p.verifiedIntotoStatement
-	subjects, err := (*statement).Subjects()
+	statement := p.verifiedStatement
+	subjects, err := statement.Subjects()
 	if err != nil {
 		return err
 	}
@@ -382,8 +340,8 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 		return err
 	}
 
-	statement := p.verifiedIntotoStatement
-	uri, err := (*statement).SourceURI()
+	statement := p.verifiedStatement
+	uri, err := statement.SourceURI()
 	if err != nil {
 		return err
 	}
@@ -462,8 +420,8 @@ func (p *Provenance) getTag() (string, error) {
 		return "", err
 	}
 
-	statement := p.verifiedIntotoStatement
-	provenanceTag, err := getSubstitutionsField(*statement, "TAG_NAME")
+	statement := p.verifiedStatement
+	provenanceTag, err := getSubstitutionsField(statement, "TAG_NAME")
 	if err != nil {
 		return "", err
 	}
@@ -471,7 +429,7 @@ func (p *Provenance) getTag() (string, error) {
 	return provenanceTag, nil
 }
 
-func getSubstitutionsField(statement iface.Statement, name string) (string, error) {
+func getSubstitutionsField(statement iface.Provenance, name string) (string, error) {
 	sysParams, err := statement.GetSystemParameters()
 	if err != nil {
 		return "", err
@@ -557,12 +515,13 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 		}
 
 		// TODO(#683): try v1.0 verification.
+		// We can use the text.SlsaprovenanceV01 field to dis-ambiguate.
 		stmt, err := v01.New(payload)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		p.verifiedIntotoStatement = &stmt
+		p.verifiedStatement = stmt
 		p.verifiedProvenance = prov
 		fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
 		return nil

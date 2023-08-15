@@ -30,62 +30,9 @@ func setStatement(gcb *Provenance) error {
 	if err != nil {
 		return fmt.Errorf("v01.New: %w", err)
 	}
-	gcb.verifiedIntotoStatement = &stmt
+	gcb.verifiedStatement = stmt
 	gcb.verifiedProvenance = &gcb.gcloudProv.ProvenanceSummary.Provenance[0]
 	return nil
-}
-
-func Test_VerifyIntotoHeaders(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name     string
-		path     string
-		expected error
-	}{
-		{
-			name: "valid gcb provenance",
-			path: "./testdata/gcloud-container-github.json",
-		},
-		{
-			name: "valid gcb provenance gcs",
-			path: "./testdata/gcloud-container-gcs.json",
-		},
-		{
-			name:     "invalid intoto header",
-			path:     "./testdata/gcloud-container-invalid-intotoheader.json",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:     "invalid provenance header",
-			path:     "./testdata/gcloud-container-invalid-slsaheader.json",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-
-			prov, err := ProvenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
-			}
-
-			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("setStatement: %w", err))
-			}
-
-			err = prov.VerifyIntotoHeaders()
-			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
-			}
-		})
-	}
 }
 
 func Test_VerifyBuilder(t *testing.T) {
@@ -1031,7 +978,7 @@ func Test_getSubstitutionsField(t *testing.T) {
 				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
-			value, err := getSubstitutionsField(*prov.verifiedIntotoStatement, tt.field)
+			value, err := getSubstitutionsField(prov.verifiedStatement, tt.field)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
