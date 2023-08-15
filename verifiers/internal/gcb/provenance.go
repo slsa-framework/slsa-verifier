@@ -160,7 +160,7 @@ func (p *Provenance) VerifyTextProvenance() error {
 	var unverifiedTextIntotoStatement interface{}
 	switch v := predicate.(type) {
 	case v01.ProvenancePredicate:
-		// Note: there is an additional field `metadata.buildInvocationId` which
+		// NOTE: there is an additional field `metadata.buildInvocationId` which
 		// is not part of the specs but is present. This field is currently ignored during comparison.
 		unverifiedTextIntotoStatement = &v01.IntotoStatement{
 			StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.StatementHeader,
