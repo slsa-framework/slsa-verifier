@@ -64,11 +64,6 @@ func (v *GCBVerifier) VerifyImage(ctx context.Context,
 		return nil, nil, err
 	}
 
-	// Verify intoto header.
-	if err := prov.VerifyIntotoHeaders(); err != nil {
-		return nil, nil, err
-	}
-
 	// Verify the builder.
 	builderID, err := prov.VerifyBuilder(builderOpts)
 	if err != nil {
