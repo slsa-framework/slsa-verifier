@@ -317,7 +317,7 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 		return utils.IsValidJreleaserBuilderTag(builderRef)
 	}
 
-	// Exeption to enable e2e tests for BYOB builders referenced at main.
+	// Exception to enable e2e tests for BYOB builders referenced at main.
 	normalizedE2eRepoUri := utils.NormalizeGitURI(httpsGithubCom + e2eTestRepository)
 	normalizedUri := utils.NormalizeGitURI(uri)
 	if normalizedUri == normalizedE2eRepoUri && options.TestingEnabled() {
