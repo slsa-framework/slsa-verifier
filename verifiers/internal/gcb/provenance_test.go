@@ -12,6 +12,8 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/common"
+	v01 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v0.1"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -20,70 +22,17 @@ import (
 // expect this statement to be populated; and this is done only
 // after the signature is verified.
 func setStatement(gcb *Provenance) error {
-	var statement v01IntotoStatement
 	payload, err := utils.PayloadFromEnvelope(&gcb.gcloudProv.ProvenanceSummary.Provenance[0].Envelope)
 	if err != nil {
 		return fmt.Errorf("payloadFromEnvelope: %w", err)
 	}
-	if err := json.Unmarshal(payload, &statement); err != nil {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+	stmt, err := v01.New(payload)
+	if err != nil {
+		return fmt.Errorf("v01.New: %w", err)
 	}
-	gcb.verifiedIntotoStatement = &statement
+	gcb.verifiedStatement = stmt
 	gcb.verifiedProvenance = &gcb.gcloudProv.ProvenanceSummary.Provenance[0]
 	return nil
-}
-
-func Test_VerifyIntotoHeaders(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name     string
-		path     string
-		expected error
-	}{
-		{
-			name: "valid gcb provenance",
-			path: "./testdata/gcloud-container-github.json",
-		},
-		{
-			name: "valid gcb provenance gcs",
-			path: "./testdata/gcloud-container-gcs.json",
-		},
-		{
-			name:     "invalid intoto header",
-			path:     "./testdata/gcloud-container-invalid-intotoheader.json",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-		{
-			name:     "invalid provenance header",
-			path:     "./testdata/gcloud-container-invalid-slsaheader.json",
-			expected: serrors.ErrorInvalidDssePayload,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			content, err := os.ReadFile(tt.path)
-			if err != nil {
-				panic(fmt.Errorf("os.ReadFile: %w", err))
-			}
-
-			prov, err := ProvenanceFromBytes(content)
-			if err != nil {
-				panic(fmt.Errorf("ProvenanceFromBytes: %w", err))
-			}
-
-			if err := setStatement(prov); err != nil {
-				panic(fmt.Errorf("setStatement: %w", err))
-			}
-
-			err = prov.VerifyIntotoHeaders()
-			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
-			}
-		})
-	}
 }
 
 func Test_VerifyBuilder(t *testing.T) {
@@ -243,7 +192,7 @@ func Test_VerifyBuilder(t *testing.T) {
 	}
 }
 
-func Test_validateRecipeType(t *testing.T) {
+func Test_validateBuildType(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -303,7 +252,7 @@ func Test_validateRecipeType(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("BuilderIDNew: %w", err))
 			}
-			err = validateRecipeType(*builderID, tt.recipeType)
+			err = validateBuildType(*builderID, tt.recipeType)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
@@ -856,7 +805,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			}
 
 			// Alter fields.
-			cpy, err := json.Marshal(prov.verifiedProvenance.Build.UnverifiedTextIntotoStatement)
+			cpy, err := json.Marshal(prov.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01)
 			if err != nil {
 				panic(err)
 			}
@@ -893,7 +842,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 					patch[i] += 1
 				}
 
-				if err = json.Unmarshal(patch, &prov.verifiedProvenance.Build.UnverifiedTextIntotoStatement); err != nil {
+				if err = json.Unmarshal(patch, &prov.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01); err != nil {
 					// If we updated a character that makes a non-string field invalid, like Time, unmarshaling will fail,
 					// so we ignore the error.
 					i += 1
@@ -995,19 +944,19 @@ func Test_getSubstitutionsField(t *testing.T) {
 			name:  "no substitutions field",
 			path:  "./testdata/gcloud-container-github.json",
 			field: "TAG_NAME",
-			err:   errorSubstitutionError,
+			err:   common.ErrSubstitution,
 		},
 		{
 			name:  "tag not present",
 			path:  "./testdata/gcloud-container-tag-notpresent.json",
 			field: "TAG_NAME",
-			err:   errorSubstitutionError,
+			err:   common.ErrSubstitution,
 		},
 		{
 			name:  "tag not string",
 			path:  "./testdata/gcloud-container-tag-notstring.json",
 			field: "TAG_NAME",
-			err:   errorSubstitutionError,
+			err:   common.ErrSubstitution,
 		},
 	}
 	for _, tt := range tests {
@@ -1029,7 +978,7 @@ func Test_getSubstitutionsField(t *testing.T) {
 				panic(fmt.Errorf("setStatement: %w", err))
 			}
 
-			value, err := getSubstitutionsField(prov.verifiedIntotoStatement, tt.field)
+			value, err := getSubstitutionsField(prov.verifiedStatement, tt.field)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}

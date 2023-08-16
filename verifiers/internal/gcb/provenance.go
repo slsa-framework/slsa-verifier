@@ -3,7 +3,6 @@ package gcb
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -11,13 +10,15 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/keys"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/iface"
+	v01 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v0.1"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -28,25 +29,9 @@ var GCBBuilderIDs = []string{
 
 var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
 
-var errorSubstitutionError = errors.New("GCB substitution variable error")
-
-type v01IntotoStatement struct {
-	intoto.StatementHeader
-	Predicate ProvenancePredicate `json:"predicate"`
-}
-
-// The GCB provenance contains a human-readable version of the intoto
-// statement, but it is not compliant with the standard. It uses `slsaProvenance`
-// instead of `predicate`. For backward compatibility, this has not been fixed
-// by the GCB team.
-type v01GCBIntotoStatement struct {
-	intoto.StatementHeader
-	SlsaProvenance ProvenancePredicate `json:"slsaProvenance"`
-}
-
 type provenance struct {
 	Build struct {
-		UnverifiedTextIntotoStatement v01GCBIntotoStatement `json:"intotoStatement"`
+		UnverifiedTextIntotoStatementV01 v01.GCBIntotoTextStatement `json:"intotoStatement"`
 	} `json:"build"`
 	Kind        string           `json:"kind"`
 	ResourceURI string           `json:"resourceUri"`
@@ -66,9 +51,9 @@ type gloudProvenance struct {
 }
 
 type Provenance struct {
-	gcloudProv              *gloudProvenance
-	verifiedProvenance      *provenance
-	verifiedIntotoStatement *v01IntotoStatement
+	gcloudProv         *gloudProvenance
+	verifiedProvenance *provenance
+	verifiedStatement  iface.Provenance
 }
 
 func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
@@ -85,8 +70,7 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 
 func (p *Provenance) isVerified() error {
 	// Check that the signature is verified.
-	if p.verifiedIntotoStatement == nil ||
-		p.verifiedProvenance == nil {
+	if p.verifiedStatement == nil || p.verifiedProvenance == nil {
 		return serrors.ErrorNoValidSignature
 	}
 	return nil
@@ -96,7 +80,7 @@ func (p *Provenance) GetVerifiedIntotoStatement() ([]byte, error) {
 	if err := p.isVerified(); err != nil {
 		return nil, err
 	}
-	d, err := json.Marshal(p.verifiedIntotoStatement)
+	d, err := json.Marshal(p.verifiedStatement)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
@@ -166,43 +150,32 @@ func (p *Provenance) VerifyTextProvenance() error {
 		return err
 	}
 
-	// Note: there is an additional field `metadata.buildInvocationId` which
-	// is not part of the specs but is present. This field is currently ignored during comparison.
-	unverifiedTextIntotoStatement := v01IntotoStatement{
-		StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatement.StatementHeader,
-		Predicate:       p.verifiedProvenance.Build.UnverifiedTextIntotoStatement.SlsaProvenance,
+	statement := p.verifiedStatement
+	predicateType, err := statement.PredicateType()
+	if err != nil {
+		return err
+	}
+
+	var unverifiedTextIntotoStatement interface{}
+	switch predicateType {
+	case v01.PredicateSLSAProvenance:
+		// NOTE: there is an additional field `metadata.buildInvocationId` which
+		// is not part of the specs but is present. This field is currently ignored during comparison.
+		unverifiedTextIntotoStatement = &v01.Provenance{
+			StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.StatementHeader,
+			Pred:            p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01.SlsaProvenance,
+		}
+	default:
+		return fmt.Errorf("%w: unknown %v type", serrors.ErrorInvalidFormat, predicateType)
 	}
 
 	// Note: DeepEqual() has problem with time comparisons: https://github.com/onsi/gomega/issues/264
 	// but this should not affect us since both times are supposed to have the same string and
 	// they are both taken from a string representation.
 	// We do not use cmp.Equal() because it *can* panic and is intended for unit tests only.
-	if !reflect.DeepEqual(unverifiedTextIntotoStatement, *p.verifiedIntotoStatement) {
+	if !reflect.DeepEqual(unverifiedTextIntotoStatement, p.verifiedStatement) {
 		return fmt.Errorf("%w: diff '%s'", serrors.ErrorMismatchIntoto,
-			cmp.Diff(unverifiedTextIntotoStatement, *p.verifiedIntotoStatement))
-	}
-
-	return nil
-}
-
-// VerifyIntotoHeaders verifies the headers are intoto format and the expected
-// slsa predicate.
-func (p *Provenance) VerifyIntotoHeaders() error {
-	if err := p.isVerified(); err != nil {
-		return err
-	}
-
-	statement := p.verifiedIntotoStatement
-	// https://in-toto.io/Statement/v0.1
-	if statement.StatementHeader.Type != intoto.StatementInTotoV01 {
-		return fmt.Errorf("%w: expected statement header type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, intoto.StatementInTotoV01, statement.StatementHeader.Type)
-	}
-
-	// https://slsa.dev/provenance/v0.1
-	if statement.StatementHeader.PredicateType != PredicateSLSAProvenance {
-		return fmt.Errorf("%w: expected statement predicate type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, PredicateSLSAProvenance, statement.StatementHeader.PredicateType)
+			cmp.Diff(unverifiedTextIntotoStatement, p.verifiedStatement))
 	}
 
 	return nil
@@ -217,18 +190,20 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func validateRecipeType(builderID utils.TrustedBuilderID, recipeType string) error {
+func validateBuildType(builderID utils.TrustedBuilderID, buildType string) error {
 	var err error
 	v := builderID.Version()
 	switch v {
+	// NOTE: buildType is called recipeType in v0.1 specification.
+	// Builders with version <= v0.3 use v0.1 specification.
 	case "v0.2":
 		// In this version, the recipe type should be the same as
 		// the builder ID.
-		if builderID.String() == recipeType {
+		if builderID.String() == buildType {
 			return nil
 		}
 		err = fmt.Errorf("%w: expected '%s', got '%s'",
-			serrors.ErrorInvalidRecipe, builderID.String(), recipeType)
+			serrors.ErrorInvalidRecipe, builderID.String(), buildType)
 
 	case "v0.3":
 		// In this version, two recipe types are allowed, depending how the
@@ -239,12 +214,12 @@ func validateRecipeType(builderID utils.TrustedBuilderID, recipeType string) err
 			"https://cloudbuild.googleapis.com/CloudBuildSteps@",
 		}
 		for _, r := range recipes {
-			if strings.HasPrefix(recipeType, r) {
+			if strings.HasPrefix(buildType, r) {
 				return nil
 			}
 		}
 		err = fmt.Errorf("%w: expected on of '%s', got '%s'",
-			serrors.ErrorInvalidRecipe, strings.Join(recipes, ","), recipeType)
+			serrors.ErrorInvalidRecipe, strings.Join(recipes, ","), buildType)
 	default:
 		err = fmt.Errorf("%w: version '%s'",
 			serrors.ErrorInvalidBuilderID, v)
@@ -262,8 +237,11 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		return nil, err
 	}
 
-	statement := p.verifiedIntotoStatement
-	predicateBuilderID := statement.Predicate.Builder.ID
+	statement := p.verifiedStatement
+	predicateBuilderID, err := statement.BuilderID()
+	if err != nil {
+		return nil, err
+	}
 
 	// Sanity check the builderID.
 	if err := isValidBuilderID(predicateBuilderID); err != nil {
@@ -283,26 +261,38 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 
 	// Valiate the recipe type.
-	if err := validateRecipeType(*provBuilderID, statement.Predicate.Recipe.Type); err != nil {
-		return nil, err
-	}
-
-	// Validate the recipe argument type.
-	expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
-	args, ok := statement.Predicate.Recipe.Arguments.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
-	}
-	ts, err := getAsString(args, "@type")
+	buildType, err := statement.BuildType()
 	if err != nil {
 		return nil, err
 	}
-
-	if ts != expectedType {
-		return nil, fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
-			expectedType, ts)
+	if err := validateBuildType(*provBuilderID, buildType); err != nil {
+		return nil, err
 	}
 
+	// Validate the recipe argument type for v0.2 provenance only.
+	predicate, err := statement.Predicate()
+	if err != nil {
+		return nil, err
+	}
+	switch v := predicate.(type) {
+	case v01.ProvenancePredicate:
+		expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
+		args, ok := v.Recipe.Arguments.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
+		}
+		ts, err := getAsString(args, "@type")
+		if err != nil {
+			return nil, err
+		}
+
+		if ts != expectedType {
+			return nil, fmt.Errorf("%w: expected '%s', got '%s'", serrors.ErrorMismatchBuilderID,
+				expectedType, ts)
+		}
+	default:
+		return nil, fmt.Errorf("%w: unknown type %v", serrors.ErrorInvalidFormat, v)
+	}
 	return provBuilderID, nil
 }
 
@@ -324,8 +314,12 @@ func (p *Provenance) VerifySubjectDigest(expectedHash string) error {
 		return err
 	}
 
-	statement := p.verifiedIntotoStatement
-	for _, subject := range statement.StatementHeader.Subject {
+	statement := p.verifiedStatement
+	subjects, err := statement.Subjects()
+	if err != nil {
+		return err
+	}
+	for _, subject := range subjects {
 		digestSet := subject.Digest
 		hash, exists := digestSet["sha256"]
 		if !exists {
@@ -346,12 +340,11 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 		return err
 	}
 
-	statement := p.verifiedIntotoStatement
-	materials := statement.Predicate.Materials
-	if len(materials) == 0 {
-		return fmt.Errorf("%w: no materials", serrors.ErrorInvalidDssePayload)
+	statement := p.verifiedStatement
+	uri, err := statement.SourceURI()
+	if err != nil {
+		return err
 	}
-	uri := materials[0].URI
 	// NOTE: the material URI did not contain 'git+' for GCB versions <= v0.3.
 	// A change occurred sometimes in v0.3 witout version bump.
 	// Versions >= 0.3 contain the prefix (https://github.com/slsa-framework/slsa-verifier/pull/519).
@@ -370,7 +363,6 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`)
 	}
 
-	var err error
 	v := builderID.Version()
 	switch v {
 	case "v0.2":
@@ -428,7 +420,7 @@ func (p *Provenance) getTag() (string, error) {
 		return "", err
 	}
 
-	statement := p.verifiedIntotoStatement
+	statement := p.verifiedStatement
 	provenanceTag, err := getSubstitutionsField(statement, "TAG_NAME")
 	if err != nil {
 		return "", err
@@ -437,32 +429,20 @@ func (p *Provenance) getTag() (string, error) {
 	return provenanceTag, nil
 }
 
-func getSubstitutionsField(statement *v01IntotoStatement, name string) (string, error) {
-	arguments := statement.Predicate.Recipe.Arguments
-
-	argsMap, ok := arguments.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: cannot cast arguments as map", errorSubstitutionError)
+func getSubstitutionsField(statement iface.Provenance, name string) (string, error) {
+	sysParams, err := statement.GetSystemParameters()
+	if err != nil {
+		return "", err
 	}
 
-	substitutions, ok := argsMap["substitutions"]
+	value, ok := sysParams[name]
 	if !ok {
-		return "", fmt.Errorf("%w: no 'substitutions' field", errorSubstitutionError)
-	}
-
-	m, ok := substitutions.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: cannot convert substitutions to a map", errorSubstitutionError)
-	}
-
-	value, ok := m[name]
-	if !ok {
-		return "", fmt.Errorf("%w: no entry '%v' in substitution map", errorSubstitutionError, name)
+		return "", fmt.Errorf("%w: no entry '%v' in substitution map", common.ErrSubstitution, name)
 	}
 
 	valueStr, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: value '%v' is not a string", errorSubstitutionError, value)
+		return "", fmt.Errorf("%w: value '%v' is not a string", common.ErrSubstitution, value)
 	}
 
 	return valueStr, nil
@@ -534,11 +514,14 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 			continue
 		}
 
-		var statement v01IntotoStatement
-		if err := json.Unmarshal(payload, &statement); err != nil {
-			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		// TODO(#683): try v1.0 verification.
+		// We can use the text.SlsaprovenanceV01 field to dis-ambiguate.
+		stmt, err := v01.New(payload)
+		if err != nil {
+			errs = append(errs, err)
+			continue
 		}
-		p.verifiedIntotoStatement = &statement
+		p.verifiedStatement = stmt
 		p.verifiedProvenance = prov
 		fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
 		return nil

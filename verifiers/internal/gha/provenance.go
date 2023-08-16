@@ -58,6 +58,27 @@ func verifyBuilderIDExactMatch(prov iface.Provenance, expectedBuilderID string) 
 	return nil
 }
 
+// verifyBuilderIDPathPrefix verifies that the builder ID in provenance matches the provided expectedBuilderIDPathPrefix.
+// Returns provenance builderID if verified against provided expected Builder ID path prefix.
+func verifyBuilderIDPathPrefix(prov iface.Provenance, expectedBuilderIDPathPrefix string) (string, error) {
+	id, err := prov.BuilderID()
+	if err != nil {
+		return "", err
+	}
+
+	provBuilderID, err := utils.TrustedBuilderIDNew(id, false)
+	if err != nil {
+		return "", err
+	}
+
+	// Compare actual BuilderID with the expected BuilderID Path Prefix.
+	if !strings.HasPrefix(provBuilderID.Name(), expectedBuilderIDPathPrefix) {
+		return "", fmt.Errorf("%w: BuilderID Path Mismatch. Got: %q. Expected BuilderID Path Prefix: %q", serrors.ErrorInvalidBuilderID, provBuilderID.Name(), expectedBuilderIDPathPrefix)
+	}
+
+	return provBuilderID.Name(), nil
+}
+
 // Verify Builder ID in provenance statement.
 // This function verifies the names match. If the expected builder ID contains a version,
 // it also verifies the versions match.
@@ -70,6 +91,7 @@ func verifyBuilderIDLooseMatch(prov iface.Provenance, expectedBuilderID string) 
 	if err != nil {
 		return err
 	}
+
 	if err := provBuilderID.MatchesLoose(expectedBuilderID, true); err != nil {
 		return err
 	}
@@ -272,21 +294,62 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 	if err != nil {
 		return err
 	}
+
 	parts := strings.Split(id, "@")
 	if len(parts) != 2 {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
 	}
+	builderRef := parts[1]
 
 	// Exception for JReleaser builders.
 	// See https://github.com/slsa-framework/slsa-github-generator/issues/2035#issuecomment-1579963802.
 	if strings.HasPrefix(parts[0], JReleaserRepository) {
-		return utils.IsValidJreleaserBuilderTag(parts[1])
+		return utils.IsValidJreleaserBuilderTag(builderRef)
 	}
-	return utils.IsValidBuilderTag(parts[1], false)
+
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return err
+	}
+
+	uri, _, err := utils.ParseGitURIAndRef(sourceURI)
+	if err != nil {
+		return err
+	}
+	// Exception to enable e2e tests for BYOB builders referenced at main.
+	normalizedE2eRepoURI := utils.NormalizeGitURI(httpsGithubCom + e2eTestRepository)
+	normalizedURI := utils.NormalizeGitURI(uri)
+	if normalizedURI == normalizedE2eRepoURI && options.TestingEnabled() {
+		// Allow verification on the main branch to support e2e tests.
+		if builderRef == "refs/heads/main" {
+			return nil
+		}
+	}
+
+	return utils.IsValidBuilderTag(builderRef, false)
+}
+
+// builderID returns the trusted builder ID from the provenance.
+// The certTrustedBuilderID input is from the Fulcio certificate.
+func builderID(env *dsselib.Envelope, certTrustedBuilderID *utils.TrustedBuilderID) (*utils.TrustedBuilderID, error) {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(certTrustedBuilderID.Name(), env)
+	if err != nil {
+		return nil, err
+	}
+	id, err := prov.BuilderID()
+	if err != nil {
+		return nil, err
+	}
+	verifiedBuilderID, err := utils.TrustedBuilderIDNew(id, true)
+	if err != nil {
+		return nil, err
+	}
+	return verifiedBuilderID, nil
 }
 
 // VerifyProvenance verifies the provenance for the given DSSE envelope.
-func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, byob bool) error {
+func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceOpts, trustedBuilderID *utils.TrustedBuilderID, byob bool,
+	expectedID *string) error {
 	prov, err := slsaprovenance.ProvenanceFromEnvelope(trustedBuilderID.Name(), env)
 	if err != nil {
 		return err
@@ -297,7 +360,24 @@ func VerifyProvenance(env *dsselib.Envelope, provenanceOpts *options.ProvenanceO
 		if err := isValidDelegatorBuilderID(prov); err != nil {
 			return err
 		}
-		// Note: `provenanceOpts.ExpectedBuilderID` is provided by the user.
+
+		// If expectedID is not provided, check to see if it is a trusted builder.
+		// If not provided, then a trusted builder is expected, to populate provenanceOpts.ExpectedBuilderID
+		// with that builder, otherwise, populate from user input.
+		//
+		// This can verify the actual BYOB builderIDPath against the trusted builderIDPath provided.
+		// Currently slsa-framework path is the only one supported for ExpectedBuilderPath.
+		if expectedID == nil {
+			var trustedBuilderRepositoryPath = httpsGithubCom + trustedBuilderRepository + "/.github/workflows/"
+			if provenanceOpts.ExpectedBuilderID, err = verifyBuilderIDPathPrefix(prov, trustedBuilderRepositoryPath); err != nil {
+				return err
+			}
+		} else {
+			provenanceOpts.ExpectedBuilderID = *expectedID
+		}
+
+		// NOTE: `provenanceOpts.ExpectedBuilderID` is provided by the user
+		// or from return of verifyBuilderIDPath.
 		if err := verifyBuilderIDLooseMatch(prov, provenanceOpts.ExpectedBuilderID); err != nil {
 			return err
 		}

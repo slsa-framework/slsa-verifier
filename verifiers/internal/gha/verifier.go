@@ -71,21 +71,23 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// There is a corner-case to handle: if the verified builder ID from the cert
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
-	if byob {
-		if builderOpts.ExpectedID == nil || *builderOpts.ExpectedID == "" {
-			// NOTE: we will need to update the logic here once our default trusted builders
-			// are migrated to using BYOB.
-			return nil, nil, fmt.Errorf("%w: empty ID", serrors.ErrorInvalidBuilderID)
-		}
-		provenanceOpts.ExpectedBuilderID = *builderOpts.ExpectedID
-	}
-	if err := VerifyProvenance(env, provenanceOpts, verifiedBuilderID, byob); err != nil {
+
+	if err := VerifyProvenance(env, provenanceOpts, verifiedBuilderID, byob, builderOpts.ExpectedID); err != nil {
 		return nil, nil, err
 	}
 
+	if byob {
+		// Overwrite the builderID to match the one in the provenance.
+		verifiedBuilderID, err = builderID(env, verifiedBuilderID)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	fmt.Fprintf(os.Stderr, "Verified build using builder %q at commit %s\n",
-		workflowInfo.SubjectWorkflow.String(),
+		verifiedBuilderID.String(),
 		workflowInfo.SourceSha1)
+
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
