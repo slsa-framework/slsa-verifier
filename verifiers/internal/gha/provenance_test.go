@@ -403,45 +403,76 @@ func Test_verifySourceURI(t *testing.T) {
 }
 
 func Test_isValidDelegatorBuilderID(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
-		name      string
-		builderID string
-		err       error
+		name           string
+		builderID      string
+		sourceURI      string
+		testingEnabled bool
+		err            error
 	}{
 		{
 			name:      "no @",
 			builderID: "some/builderID",
+			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidBuilderID,
 		},
 		{
 			name:      "invalid ref",
 			builderID: "some/builderID@v1.2.3",
+			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "invalid ref not tag",
 			builderID: "some/builderID@refs/head/v1.2.3",
+			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "invalid ref not full semver",
 			builderID: "some/builderID@refs/heads/v1.2",
+			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "valid builder",
+			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
 			builderID: "some/builderID@refs/tags/v1.2.3",
+		},
+		{
+			name:           "invalid builder ref not e2e repo with testing enabled",
+			sourceURI:      "git+" + httpsGithubCom + "some/repo",
+			builderID:      "some/builderID@refs/heads/main",
+			testingEnabled: true,
+			err:            serrors.ErrorInvalidRef,
+		},
+		{
+			name:           "invalid builder ref e2e repo with testing enabled",
+			sourceURI:      "git+" + httpsGithubCom + e2eTestRepository,
+			builderID:      "some/builderID@refs/heads/main",
+			testingEnabled: true,
+		},
+		{
+			name:      "invalid builder ref e2e repo",
+			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			builderID: "some/builderID@refs/heads/main",
+			err:       serrors.ErrorInvalidRef,
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			prov := &testProvenance{
 				builderID: tt.builderID,
+				sourceURI: tt.sourceURI,
+			}
+
+			if tt.testingEnabled {
+				t.Setenv("SLSA_VERIFIER_TESTING", "1")
+			} else {
+				// Ensure that the variable is not set.
+				t.Setenv("SLSA_VERIFIER_TESTING", "")
 			}
 
 			err := isValidDelegatorBuilderID(prov)
