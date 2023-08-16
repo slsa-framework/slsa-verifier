@@ -295,16 +295,6 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 		return err
 	}
 
-	sourceURI, err := prov.SourceURI()
-	if err != nil {
-		return err
-	}
-
-	uri, _, err := utils.ParseGitURIAndRef(sourceURI)
-	if err != nil {
-		return err
-	}
-
 	parts := strings.Split(id, "@")
 	if len(parts) != 2 {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidBuilderID, id)
@@ -317,13 +307,21 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 		return utils.IsValidJreleaserBuilderTag(builderRef)
 	}
 
+	sourceURI, err := prov.SourceURI()
+	if err != nil {
+		return err
+	}
+
+	uri, _, err := utils.ParseGitURIAndRef(sourceURI)
+	if err != nil {
+		return err
+	}
 	// Exception to enable e2e tests for BYOB builders referenced at main.
 	normalizedE2eRepoURI := utils.NormalizeGitURI(httpsGithubCom + e2eTestRepository)
 	normalizedURI := utils.NormalizeGitURI(uri)
 	if normalizedURI == normalizedE2eRepoURI && options.TestingEnabled() {
 		// Allow verification on the main branch to support e2e tests.
 		if builderRef == "refs/heads/main" {
-			fmt.Println("here")
 			return nil
 		}
 	}
