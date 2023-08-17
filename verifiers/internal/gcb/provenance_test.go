@@ -12,7 +12,6 @@ import (
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/iface"
 	v01 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v0.1"
 	v10 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v1.0"
