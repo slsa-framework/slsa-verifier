@@ -18,6 +18,11 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
+const (
+	versionV01 = "v0.1"
+	versionV10 = "v1.0"
+)
+
 type pNewFunc func(payload []byte) (iface.Provenance, error)
 
 // This function sets the statement of the provenance, as if
@@ -31,9 +36,9 @@ func setStatement(gcb *Provenance, version string) error {
 	}
 	var pfunc pNewFunc
 	switch version {
-	case "v0.1":
+	case versionV01:
 		pfunc = v01.New
-	case "v1.0":
+	case versionV10:
 		pfunc = v10.New
 	default:
 		return fmt.Errorf("%w: version '%v'", serrors.ErrorInvalidFormat, version)
@@ -167,19 +172,19 @@ func Test_VerifyBuilder(t *testing.T) {
 			name:      "v1.0 correct single provenance",
 			path:      "./testdata/v1.0-gcloud-container-github-single.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 		{
 			name:      "v1.0 correct includes v0.1 provenance",
 			path:      "./testdata/v1.0-gcloud-container-github.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 		{
 			name:      "v1.0 includes v0.1 provenance - incorrect builder",
 			path:      "./testdata/v1.0-gcloud-container-github.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorke",
-			version:   "v1.0",
+			version:   versionV10,
 			expected:  serrors.ErrorMismatchBuilderID,
 		},
 	}
@@ -199,7 +204,7 @@ func Test_VerifyBuilder(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -482,14 +487,14 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-github.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://github.com/khalkie/gcb-prod-prov",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 		{
 			name:      "invalid v1.0-format provenance resolvdeDeps != repository",
 			path:      "./testdata/v1.0-gcloud-container-github-sourcediff.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://github.com/khalkie/gcb-prod-prov",
-			version:   "v1.0",
+			version:   versionV10,
 			expected:  serrors.ErrorMismatchSource,
 		},
 		{
@@ -497,14 +502,14 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-github-nogit.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://github.com/khalkie/gcb-prod-prov",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 		{
 			name:      "valid v1.0-format provenance - with ref",
 			path:      "./testdata/v1.0-gcloud-container-github.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://github.com/khalkie/gcb-prod-prov@refs/heads/main",
-			version:   "v1.0",
+			version:   versionV10,
 			expected:  serrors.ErrorMismatchSource,
 		},
 		{
@@ -512,7 +517,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-github-inline.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "eyJzdGVwcyI6W3sibmFtZSI6InVidW50dSIsImVudiI6WyJCQVI9JFBST0pFQ1RfSUQiXSwic2NyaXB0IjoiZWNobyAkQkFSIn0seyJuYW1lIjoiZ2NyLmlvL2Nsb3VkLWJ1aWxkZXJzL2djbG91ZCIsImFyZ3MiOlsidG9vbHMvbXlTY3JpcHQuc2giLCItLWZvbyJdLCJlbnRyeXBvaW50IjoiYmFzaCJ9LHsibmFtZSI6InVidW50dSIsImFyZ3MiOlsiZWNobyIsIkhlbGxvIHdvcmxkIl19XSwic3Vic3RpdHV0aW9ucyI6eyJQUk9KRUNUX0lEIjoiMTIzNDUiLCJUUklHR0VSX0JVSUxEX0NPTkZJR19QQVRIIjoiIiwiX1VTRVJfU1VCIjoidXNlci1zdWItdmFsdWUifX0=",
-			version:   "v1.0",
+			version:   versionV10,
 			expected:  serrors.ErrorMismatchSource,
 		},
 		{
@@ -520,7 +525,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-github-inline.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://github.com/khalkie/gcb-prod-prov",
-			version:   "v1.0",
+			version:   versionV10,
 			expected:  serrors.ErrorMismatchSource,
 		},
 		{
@@ -529,7 +534,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-gitlab.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://gitlab.com/proctorprober/khalk-slsav1",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 		{
 
@@ -537,7 +542,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-gitlabent.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://gle-us-central1.gcb-test.com/proctorprober/khalk-slsav1",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 		{
 
@@ -545,7 +550,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			path:      "./testdata/v1.0-gcloud-container-bb.json",
 			builderID: "https://cloudbuild.googleapis.com/GoogleHostedWorker",
 			source:    "https://bbs.gcb-test.com:8443/staging-qual-us-west1-push2",
-			version:   "v1.0",
+			version:   versionV10,
 		},
 	}
 	for _, tt := range tests {
@@ -564,7 +569,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -777,13 +782,13 @@ func Test_VerifySubjectDigest(t *testing.T) {
 			name:    "valid subject",
 			path:    "./testdata/v1.0-gcloud-container-github.json",
 			hash:    "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:     "mismatch hash",
 			path:     "./testdata/v1.0-gcloud-container-github.json",
 			hash:     "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e4",
-			version:  "v1.0",
+			version:  versionV10,
 			expected: serrors.ErrorMismatchHash,
 		},
 	}
@@ -803,7 +808,7 @@ func Test_VerifySubjectDigest(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -854,13 +859,13 @@ func Test_VerifySummary(t *testing.T) {
 			name:    "v1.0 valid gcb provenance",
 			path:    "./testdata/v1.0-gcloud-container-github.json",
 			hash:    "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:     "v1.0 mismatch digest",
 			path:     "./testdata/v1.0-gcloud-container-github.json",
 			hash:     "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e4",
-			version:  "v1.0",
+			version:  versionV10,
 			expected: serrors.ErrorMismatchHash,
 		},
 	}
@@ -880,7 +885,7 @@ func Test_VerifySummary(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -929,20 +934,20 @@ func Test_VerifyMetadata(t *testing.T) {
 			name:    "v1.0 valid gcb provenance",
 			path:    "./testdata/v1.0-gcloud-container-github.json",
 			hash:    "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:     "v1.0 mismatch hash",
 			path:     "./testdata/v1.0-gcloud-container-github.json",
 			hash:     "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e4",
-			version:  "v1.0",
+			version:  versionV10,
 			expected: serrors.ErrorMismatchHash,
 		},
 		{
 			name:     "v1.0 invalid kind",
 			path:     "./testdata/v1.0-gcloud-container-github-invalid-kind.json",
 			hash:     "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e4",
-			version:  "v1.0",
+			version:  versionV10,
 			expected: serrors.ErrorInvalidFormat,
 		},
 	}
@@ -962,7 +967,7 @@ func Test_VerifyMetadata(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -1007,13 +1012,13 @@ func Test_VerifyTextProvenance(t *testing.T) {
 		{
 			name:    "v1.0 valid gcb provenance",
 			path:    "./testdata/v1.0-gcloud-container-github.json",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:     "v1.0 mismatch everything",
 			path:     "./testdata/v1.0-gcloud-container-github.json",
 			alter:    true,
-			version:  "v1.0",
+			version:  versionV10,
 			expected: serrors.ErrorMismatchIntoto,
 		},
 	}
@@ -1033,7 +1038,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -1049,7 +1054,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 
 			// Alter fields.
 			var cpy []byte
-			if tt.version == "v0.1" {
+			if tt.version == versionV01 {
 				cpy, err = json.Marshal(prov.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01)
 				if err != nil {
 					panic(err)
@@ -1094,7 +1099,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 					patch[i] += 1
 				}
 
-				if tt.version == "v0.1" {
+				if tt.version == versionV01 {
 					if err = json.Unmarshal(patch, &prov.verifiedProvenance.Build.UnverifiedTextIntotoStatementV01); err != nil {
 						// If we updated a character that makes a non-string field invalid, like Time, unmarshaling will fail,
 						// so we ignore the error.
@@ -1160,7 +1165,7 @@ func Test_VerifyBranch(t *testing.T) {
 		{
 			name:     "v1.0 valid gcb provenance",
 			path:     "./testdata/v1.0-gcloud-container-github.json",
-			version:  "v1.0",
+			version:  versionV10,
 			branch:   "master",
 			expected: serrors.ErrorNotSupported,
 		},
@@ -1181,7 +1186,7 @@ func Test_VerifyBranch(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -1248,34 +1253,34 @@ func Test_VerifyTag(t *testing.T) {
 			name:    "v1.0 match tag",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33.0.4",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "v1.0 no match major only",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33",
-			version: "v1.0",
+			version: versionV10,
 			err:     serrors.ErrorMismatchTag,
 		},
 		{
 			name:    "v1.0 no match major and minor only",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33.0",
-			version: "v1.0",
+			version: versionV10,
 			err:     serrors.ErrorMismatchTag,
 		},
 		{
 			name:    "v1.0 no match major",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v34.0.4",
-			version: "v1.0",
+			version: versionV10,
 			err:     serrors.ErrorMismatchTag,
 		},
 		{
 			name:    "v1.0 tag not present",
 			path:    "./testdata/v1.0-gcloud-container-github.json",
 			tag:     "v34.0.4",
-			version: "v1.0",
+			version: versionV10,
 			err:     serrors.ErrorMismatchTag,
 		},
 	}
@@ -1295,7 +1300,7 @@ func Test_VerifyTag(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
@@ -1402,81 +1407,81 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			name:    "match tag",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33.0.4",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "match minor",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33.0",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match minor",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33.1",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match minor with patch",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33.1.0",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "match major",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v33",
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match major greater",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v34",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match major greater with minor",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v34.0",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match major greater with minor and patch",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v34.0.4",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match major lower",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v32",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match major lower with minor",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v32.0",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "no match major lower with minor and patch",
 			path:    "./testdata/v1.0-gcloud-container-github-tag.json",
 			tag:     "v32.0.4",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 		{
 			name:    "tag not present",
 			path:    "./testdata/v1.0-gcloud-container-github.json",
 			err:     serrors.ErrorMismatchVersionedTag,
-			version: "v1.0",
+			version: versionV10,
 		},
 	}
 	for _, tt := range tests {
@@ -1495,7 +1500,7 @@ func Test_VerifyVersionedTag(t *testing.T) {
 			}
 
 			if tt.version == "" {
-				tt.version = "v0.1"
+				tt.version = versionV01
 			}
 			if err := setStatement(prov, tt.version); err != nil {
 				panic(fmt.Errorf("setStatement: %w", err))
