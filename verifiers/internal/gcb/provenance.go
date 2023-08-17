@@ -540,7 +540,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 		var keyName string
 
 		// Global PAE keys.
-		if sig.KeyID == keys.V10_GlobalPAEKeyID || sig.KeyID == keys.V01_GlobalPAEKeyID {
+		if sig.KeyID == keys.V10GlobalPAEKeyID || sig.KeyID == keys.V01GlobalPAEKeyID {
 			// Global key for v1.0 or v0.1.
 			// If the signature is signed with the global PAE key, use a DSSE verifier
 			// to verify the DSSE/PAE-encoded signature.
@@ -588,12 +588,12 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 
 		// Success.
 		var stmt iface.Provenance
-		if sig.KeyID == keys.V10_GlobalPAEKeyID {
+		if sig.KeyID == keys.V10GlobalPAEKeyID {
 			// v1.0 provenance.
 			stmt, err = v10.New(payload)
 		} else {
 			// v0.1 provenance.
-			// kkeys.V01_GlobalPAEKeyID or regional key.
+			// kkeys.V01GlobalPAEKeyID or regional key.
 			stmt, err = v01.New(payload)
 		}
 		if err != nil {

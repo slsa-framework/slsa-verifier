@@ -15,7 +15,7 @@ var intotoStatements = map[string]bool{
 func ValidateStatementTypes(statementType, predicateType, expectedPredicateType string) error {
 	// Validate the intoto type.
 	if _, exists := intotoStatements[statementType]; !exists {
-		return fmt.Errorf("%w: expected statement header type on of '%s', got '%s'",
+		return fmt.Errorf("%w: expected statement header type on of '%v', got '%s'",
 			serrors.ErrorInvalidDssePayload, intotoStatements, statementType)
 	}
 

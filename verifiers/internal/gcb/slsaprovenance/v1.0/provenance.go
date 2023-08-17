@@ -103,6 +103,9 @@ func (p *Provenance) SourceTag() (string, error) {
 
 	subsTag := "refs/heads/" + subsTagName
 	configTag, err := configSourceField(sysParams, "ref")
+	if err != nil {
+		return "", err
+	}
 	if subsTag != configTag {
 		return "", fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidDssePayload, subsTag, configTag)
 	}

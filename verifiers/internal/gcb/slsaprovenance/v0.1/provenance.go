@@ -29,8 +29,6 @@ import (
 const (
 	// PredicateSLSAProvenance represents a build provenance for an artifact.
 	PredicateSLSAProvenance = intotov01.PredicateSLSAProvenance
-	// StatementInToto is the statement type for v0.1.
-	statementInToto = intoto.StatementInTotoV01
 )
 
 var RegionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)

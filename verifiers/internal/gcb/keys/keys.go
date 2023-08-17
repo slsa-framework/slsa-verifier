@@ -22,16 +22,16 @@ var publicKeys embed.FS
 const (
 	// v1.0 global keys.
 	// Run command `gcloud kms keys versions get-public-key 1 --keyring attestor --key google-hosted-worker --project verified-builder --location global`.
-	V10_GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/google-hosted-worker/cryptoKeyVersions/1"
+	V10GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/google-hosted-worker/cryptoKeyVersions/1"
 
 	// v0.1 global keys.
 	// Run command `gcloud kms keys versions get-public-key 1 --keyring attestor --key provenanceSigner --project verified-builder --location global`.
-	V01_GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
+	V01GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
 )
 
 var globalKeyNames = map[string]string{
-	V10_GlobalPAEKeyID: "global-pae-google-hosted-worker_1",
-	V01_GlobalPAEKeyID: "global-pae-provenanceSigner_1",
+	V10GlobalPAEKeyID: "global-pae-google-hosted-worker_1",
+	V01GlobalPAEKeyID: "global-pae-provenanceSigner_1",
 }
 
 type PublicKey struct {
