@@ -101,8 +101,13 @@ func (p *Provenance) SourceTag() (string, error) {
 		return "", err
 	}
 
-	subsTag := "refs/heads/" + subsTagName
-	configTag, err := configSourceField(sysParams, "ref")
+	extParams, err := p.externalParameters()
+	if err != nil {
+		return "", err
+	}
+
+	subsTag := "refs/tags/" + subsTagName
+	configTag, err := configSourceField(extParams, "ref")
 	if err != nil {
 		return "", err
 	}
@@ -139,14 +144,21 @@ func (p *Provenance) SourceBranch() (string, error) {
 	return "", fmt.Errorf("%w: branch verification", serrors.ErrorNotSupported)
 }
 
-// SourceURI implements Provenance.SourceURI.
-func (p *Provenance) SourceURI() (string, error) {
+func (p *Provenance) externalParameters() (map[string]any, error) {
 	extParams, ok := p.Pred.BuildDefinition.ExternalParameters.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	}
+	return extParams, nil
+}
+
+// SourceURI implements Provenance.SourceURI.
+func (p *Provenance) SourceURI() (string, error) {
+	extParams, err := p.externalParameters()
+	if err != nil {
+		return "", err
 	}
 
-	// We use externalParameters.buildConfigSource.
 	ref, err := configSourceField(extParams, "ref")
 	if err != nil {
 		return "", err
@@ -159,6 +171,7 @@ func (p *Provenance) SourceURI() (string, error) {
 }
 
 func configSourceField(extParams map[string]any, field string) (string, error) {
+	// We use externalParameters.buildConfigSource.
 	buildConfigSource, ok := extParams["buildConfigSource"]
 	if !ok {
 		return "", fmt.Errorf("%w: buildConfigSource", serrors.ErrorNotPresent)
