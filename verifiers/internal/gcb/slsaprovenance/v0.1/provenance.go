@@ -16,6 +16,7 @@ package v01
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -31,6 +32,13 @@ const (
 	// StatementInToto is the statement type for v0.1.
 	statementInToto = intoto.StatementInTotoV01
 )
+
+var RegionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
+
+var BuilderIDs = []string{
+	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
+	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
+}
 
 // ProvenancePredicate is the provenance predicate definition.
 type ProvenancePredicate struct {
@@ -106,18 +114,37 @@ func New(payload []byte) (iface.Provenance, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 
-	// Validate the intoto type.
-	if provenance.StatementHeader.Type != statementInToto {
-		return nil, fmt.Errorf("%w: expected statement header type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, statementInToto, provenance.StatementHeader.Type)
+	if err := common.ValidateStatementTypes(provenance.StatementHeader.Type, provenance.StatementHeader.PredicateType, PredicateSLSAProvenance); err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
 
-	// Validate the predicate type.
-	if provenance.StatementHeader.PredicateType != PredicateSLSAProvenance {
-		return nil, fmt.Errorf("%w: expected statement predicate type '%s', got '%s'",
-			serrors.ErrorInvalidDssePayload, PredicateSLSAProvenance, provenance.StatementHeader.PredicateType)
-	}
 	return &provenance, nil
+}
+
+// SourceTag implements Provenance.SourceTag.
+func (p *Provenance) SourceTag() (string, error) {
+	sysParams, err := p.GetSystemParameters()
+	if err != nil {
+		return "", err
+	}
+	return getSubstitutionsField(sysParams, "TAG_NAME")
+}
+
+func getSubstitutionsField(sysParams map[string]any, name string) (string, error) {
+	value, ok := sysParams[name]
+	if !ok {
+		return "", fmt.Errorf("%w: no entry '%v' in substitution map", common.ErrSubstitution, name)
+	}
+	valueStr, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: value '%v' is not a string", common.ErrSubstitution, value)
+	}
+	return valueStr, nil
+}
+
+// SourceBranch implements Provenance.SourceBranch.
+func (p *Provenance) SourceBranch() (string, error) {
+	return "", fmt.Errorf("%w: branch verification", serrors.ErrorNotSupported)
 }
 
 func (p *Provenance) Predicate() (interface{}, error) {

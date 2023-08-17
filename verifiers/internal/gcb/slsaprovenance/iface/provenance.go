@@ -29,4 +29,10 @@ type Provenance interface {
 
 	// Get system pararmeters.
 	GetSystemParameters() (map[string]any, error)
+
+	// GetTag retuns the tag of the source.
+	SourceTag() (string, error)
+
+	// GetBranch retuns the branch of the source.
+	SourceBranch() (string, error)
 }
