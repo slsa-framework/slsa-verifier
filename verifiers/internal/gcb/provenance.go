@@ -242,7 +242,7 @@ func validatebuildTypeV01(builderID utils.TrustedBuilderID, buildType string) er
 
 func validatebuildTypeV10(builderID utils.TrustedBuilderID, buildType string) error {
 	if buildType != v10.BuildType {
-		return fmt.Errorf("%w: invalid build type %v", serrors.ErrorInvalidBuildType, buildType)
+		return fmt.Errorf("%w: %v", serrors.ErrorInvalidBuildType, buildType)
 	}
 	return nil
 }
