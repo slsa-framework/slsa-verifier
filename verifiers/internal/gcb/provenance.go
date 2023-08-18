@@ -180,7 +180,7 @@ func (p *Provenance) VerifyTextProvenance() error {
 	return nil
 }
 
-func (p *Provenance) isValidBuilderID(id string) error {
+func (p *Provenance) validateBuilderID(id string) error {
 	predicateType, err := p.verifiedStatement.PredicateType()
 	if err != nil {
 		return err
