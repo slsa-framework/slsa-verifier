@@ -45,7 +45,7 @@ func setStatement(gcb *Provenance, version string) error {
 	}
 	stmt, err := pfunc(payload)
 	if err != nil {
-		return fmt.Errorf("f: %w", err)
+		return fmt.Errorf("creating provenance: %w", err)
 	}
 	gcb.verifiedStatement = stmt
 	gcb.verifiedProvenance = &gcb.gcloudProv.ProvenanceSummary.Provenance[0]
