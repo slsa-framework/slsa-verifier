@@ -465,7 +465,7 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 	case v01.PredicateSLSAProvenance:
 		return verifySourceURIV01(builderID, uri, expectedSourceURI)
 	default:
-		return fmt.Errorf("%w: unknown %v type", serrors.ErrorInvalidFormat, predicateType)
+		return fmt.Errorf("%w: unknown predicate type: %v", serrors.ErrorInvalidFormat, predicateType)
 	}
 }
 
