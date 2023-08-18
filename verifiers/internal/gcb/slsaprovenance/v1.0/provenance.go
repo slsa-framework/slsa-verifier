@@ -147,7 +147,7 @@ func (p *Provenance) SourceBranch() (string, error) {
 func (p *Provenance) externalParameters() (map[string]any, error) {
 	extParams, ok := p.Pred.BuildDefinition.ExternalParameters.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+		return nil, fmt.Errorf("%w: system parameters type", serrors.ErrorInvalidDssePayload)
 	}
 	return extParams, nil
 }
