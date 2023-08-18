@@ -24,6 +24,12 @@ type Provenance interface {
 	// SourceURI is the full URI (including tag).
 	SourceURI() (string, error)
 
+	// SourceTag is the tag of the source.
+	SourceTag() (string, error)
+
+	// SourceBranch is the branch of the source.
+	SourceBranch() (string, error)
+
 	// Subject is the list of intoto subjects in the provenance.
 	Subjects() ([]intoto.Subject, error)
 

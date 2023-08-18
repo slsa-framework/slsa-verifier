@@ -19,8 +19,20 @@ import (
 //go:embed materials/*
 var publicKeys embed.FS
 
-const GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
-const GlobalPAEPublicKeyName = "global-pae"
+const (
+	// v1.0 global keys.
+	// Run command `gcloud kms keys versions get-public-key 1 --keyring attestor --key google-hosted-worker --project verified-builder --location global`.
+	V10GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/google-hosted-worker/cryptoKeyVersions/1"
+
+	// v0.1 global keys.
+	// Run command `gcloud kms keys versions get-public-key 1 --keyring attestor --key provenanceSigner --project verified-builder --location global`.
+	V01GlobalPAEKeyID = "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1"
+)
+
+var globalKeyNames = map[string]string{
+	V10GlobalPAEKeyID: "global-pae-google-hosted-worker_1",
+	V01GlobalPAEKeyID: "global-pae-provenanceSigner_1",
+}
 
 type PublicKey struct {
 	value  []byte
@@ -69,18 +81,31 @@ func (p *PublicKey) VerifySignature(digest [32]byte, sig []byte) error {
 	return nil
 }
 
+func (p *PublicKey) Name() string {
+	return p.region
+}
+
 type GlobalPAEKey struct {
 	publicKey *PublicKey
+	id        string
 	Verifier  *dsselib.EnvelopeVerifier
 }
 
-func NewGlobalPAEKey() (*GlobalPAEKey, error) {
-	publicKey, err := NewPublicKey(GlobalPAEPublicKeyName)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create public key for Global PAE key: %w", err)
+func NewGlobalPAEKey(id string) (*GlobalPAEKey, error) {
+	name, ok := globalKeyNames[id]
+	if !ok {
+		return nil, fmt.Errorf("%w: unknown key %v", serrors.ErrorInternal, id)
 	}
 
-	globalPaeKey := &GlobalPAEKey{publicKey: publicKey}
+	publicKey, err := NewPublicKey(name)
+	if err != nil {
+		return nil, fmt.Errorf("%w: unable to create public key for Global PAE key %v", err, name)
+	}
+
+	globalPaeKey := &GlobalPAEKey{
+		publicKey: publicKey,
+		id:        id,
+	}
 	envVerifier, err := dsselib.NewEnvelopeVerifier(globalPaeKey)
 	if err != nil {
 		return nil, err
@@ -104,10 +129,14 @@ func (v *GlobalPAEKey) Verify(_ context.Context, data, sig []byte) error {
 
 // KeyID implements dsse.Verifier.KeyID.
 func (v *GlobalPAEKey) KeyID() (string, error) {
-	return GlobalPAEKeyID, nil
+	return v.id, nil
 }
 
 // Public implements dsse.Verifier.Public.
 func (v *GlobalPAEKey) Public() crypto.PublicKey {
 	return v.publicKey
+}
+
+func (v *GlobalPAEKey) Name() string {
+	return v.publicKey.Name()
 }

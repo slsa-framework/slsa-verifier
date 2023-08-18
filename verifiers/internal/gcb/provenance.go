@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
@@ -16,22 +17,16 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/keys"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/iface"
 	v01 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v0.1"
+	v10 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb/slsaprovenance/v1.0"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
-
-var GCBBuilderIDs = []string{
-	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.2",
-	"https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3",
-}
-
-var regionalKeyRegex = regexp.MustCompile(`^projects\/verified-builder\/locations\/(.*)\/keyRings\/attestor\/cryptoKeys\/builtByGCB\/cryptoKeyVersions\/1$`)
 
 type provenance struct {
 	Build struct {
 		UnverifiedTextIntotoStatementV01 v01.GCBIntotoTextStatement `json:"intotoStatement"`
+		UnverifiedTextIntotoStatementV10 v10.GCBIntotoTextStatement `json:"inTotoSlsaProvenanceV1"`
 	} `json:"build"`
 	Kind        string           `json:"kind"`
 	ResourceURI string           `json:"resourceUri"`
@@ -150,14 +145,18 @@ func (p *Provenance) VerifyTextProvenance() error {
 		return err
 	}
 
-	statement := p.verifiedStatement
-	predicateType, err := statement.PredicateType()
+	predicateType, err := p.verifiedStatement.PredicateType()
 	if err != nil {
 		return err
 	}
 
 	var unverifiedTextIntotoStatement interface{}
 	switch predicateType {
+	case v10.PredicateSLSAProvenance:
+		unverifiedTextIntotoStatement = &v10.Provenance{
+			StatementHeader: p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV10.StatementHeader,
+			Pred:            p.verifiedProvenance.Build.UnverifiedTextIntotoStatementV10.Pred,
+		}
 	case v01.PredicateSLSAProvenance:
 		// NOTE: there is an additional field `metadata.buildInvocationId` which
 		// is not part of the specs but is present. This field is currently ignored during comparison.
@@ -181,8 +180,21 @@ func (p *Provenance) VerifyTextProvenance() error {
 	return nil
 }
 
-func isValidBuilderID(id string) error {
-	for _, b := range GCBBuilderIDs {
+func (p *Provenance) validateBuilderID(id string) error {
+	predicateType, err := p.verifiedStatement.PredicateType()
+	if err != nil {
+		return err
+	}
+	var builders []string
+	switch predicateType {
+	case v01.PredicateSLSAProvenance:
+		builders = v01.BuilderIDs
+	case v10.PredicateSLSAProvenance:
+		builders = v10.BuilderIDs
+	default:
+		return fmt.Errorf("%w: unknown predicate type: %v", serrors.ErrorInvalidDssePayload, predicateType)
+	}
+	for _, b := range builders {
 		if id == b {
 			return nil
 		}
@@ -190,7 +202,7 @@ func isValidBuilderID(id string) error {
 	return serrors.ErrorInvalidBuilderID
 }
 
-func validateBuildType(builderID utils.TrustedBuilderID, buildType string) error {
+func validatebuildTypeV01(builderID utils.TrustedBuilderID, buildType string) error {
 	var err error
 	v := builderID.Version()
 	switch v {
@@ -228,6 +240,26 @@ func validateBuildType(builderID utils.TrustedBuilderID, buildType string) error
 	return err
 }
 
+func validatebuildTypeV10(builderID utils.TrustedBuilderID, buildType string) error {
+	if buildType != v10.BuildType {
+		return fmt.Errorf("%w: %v", serrors.ErrorInvalidBuildType, buildType)
+	}
+	return nil
+}
+
+func validateBuildType(builderID utils.TrustedBuilderID, buildType string) error {
+	// v0.1 provenance.
+	if slices.Contains(v01.BuilderIDs, builderID.String()) {
+		return validatebuildTypeV01(builderID, buildType)
+	}
+
+	// v1.0 provenance.
+	if slices.Contains(v10.BuilderIDs, builderID.String()) {
+		return validatebuildTypeV10(builderID, buildType)
+	}
+	return fmt.Errorf("%w: %v", serrors.ErrorInvalidBuilderID, builderID.String())
+}
+
 // VerifyBuilder verifies the builder in the DSSE payload:
 // - in the recipe type
 // - the recipe argument type
@@ -244,11 +276,25 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 
 	// Sanity check the builderID.
-	if err := isValidBuilderID(predicateBuilderID); err != nil {
+	if err := p.validateBuilderID(predicateBuilderID); err != nil {
 		return nil, err
 	}
 
-	provBuilderID, err := utils.TrustedBuilderIDNew(predicateBuilderID, true)
+	predicateType, err := statement.PredicateType()
+	if err != nil {
+		return nil, err
+	}
+
+	var provBuilderID *utils.TrustedBuilderID
+	switch predicateType {
+	case v01.PredicateSLSAProvenance:
+		provBuilderID, err = utils.TrustedBuilderIDNew(predicateBuilderID, true)
+	case v10.PredicateSLSAProvenance:
+		// v1.0 has no builder version.
+		provBuilderID, err = utils.TrustedBuilderIDNew(predicateBuilderID, false)
+	default:
+		return nil, fmt.Errorf("%w: unknown predicate type %v", serrors.ErrorInvalidFormat, predicateType)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -260,11 +306,11 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		}
 	}
 
-	// Valiate the recipe type.
 	buildType, err := statement.BuildType()
 	if err != nil {
 		return nil, err
 	}
+	// Validate the build type.
 	if err := validateBuildType(*provBuilderID, buildType); err != nil {
 		return nil, err
 	}
@@ -275,7 +321,14 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		return nil, err
 	}
 	switch v := predicate.(type) {
+	case v10.ProvenancePredicate:
+		if predicateType != v10.PredicateSLSAProvenance {
+			return nil, fmt.Errorf("%w: expected %q, got %q", serrors.ErrorInvalidFormat, v10.PredicateSLSAProvenance, predicateType)
+		}
 	case v01.ProvenancePredicate:
+		if predicateType != v01.PredicateSLSAProvenance {
+			return nil, fmt.Errorf("%w: expected %q, got %q", serrors.ErrorInvalidFormat, v01.PredicateSLSAProvenance, predicateType)
+		}
 		expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
 		args, ok := v.Recipe.Arguments.(map[string]interface{})
 		if !ok {
@@ -314,8 +367,7 @@ func (p *Provenance) VerifySubjectDigest(expectedHash string) error {
 		return err
 	}
 
-	statement := p.verifiedStatement
-	subjects, err := statement.Subjects()
+	subjects, err := p.verifiedStatement.Subjects()
 	if err != nil {
 		return err
 	}
@@ -332,6 +384,50 @@ func (p *Provenance) VerifySubjectDigest(expectedHash string) error {
 	}
 
 	return fmt.Errorf("expected hash '%s' not found: %w", expectedHash, serrors.ErrorMismatchHash)
+}
+
+func verifySourceURIV01(builderID utils.TrustedBuilderID, provenanceURI, expectedSourceURI string) error {
+	var err error
+	v := builderID.Version()
+	switch v {
+	case "v0.2":
+		// In v0.2, it uses format
+		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`.
+		// The latter case is a versioned GCS source which looks like
+		// `"gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729"`.
+		if !strings.HasPrefix(provenanceURI, expectedSourceURI+"/commit/") &&
+			!strings.HasPrefix(provenanceURI, expectedSourceURI+"#") {
+			return fmt.Errorf("%w: expected '%s', got '%s'",
+				serrors.ErrorMismatchSource, expectedSourceURI, provenanceURI)
+		}
+	case "v0.3":
+		// In v0.3, it uses the standard intoto and has the commit sha in its own `digest.sha1` field.
+		// The latter case is a versioned GCS source which looks like
+		// `"gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729"`.
+		if provenanceURI != expectedSourceURI &&
+			!strings.HasPrefix(provenanceURI, expectedSourceURI+"#") {
+			return fmt.Errorf("%w: expected '%s', got '%s'",
+				serrors.ErrorMismatchSource, expectedSourceURI, provenanceURI)
+		}
+	default:
+		err = fmt.Errorf("%w: version '%s'",
+			serrors.ErrorInvalidBuilderID, v)
+	}
+
+	return err
+}
+
+func verifySourceURIV10(builderID utils.TrustedBuilderID, provenanceURI, expectedSourceURI string) error {
+	parts := strings.Split(provenanceURI, "@")
+	if len(parts) != 2 {
+		return fmt.Errorf("%w: no version found in '%v'",
+			serrors.ErrorInvalidFormat, provenanceURI)
+	}
+	if parts[0] != expectedSourceURI {
+		return fmt.Errorf("%w: expected '%s', got '%s'",
+			serrors.ErrorMismatchSource, expectedSourceURI, parts[0])
+	}
+	return nil
 }
 
 // Verify source URI in provenance statement.
@@ -363,35 +459,35 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`)
 	}
 
-	v := builderID.Version()
-	switch v {
-	case "v0.2":
-		// In v0.2, it uses format
-		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`.
-		if !strings.HasPrefix(uri, expectedSourceURI+"/commit/") &&
-			!strings.HasPrefix(uri, expectedSourceURI+"#") {
-			return fmt.Errorf("%w: expected '%s', got '%s'",
-				serrors.ErrorMismatchSource, expectedSourceURI, uri)
-		}
-		// In v0.3, it uses the standard intoto and has the commit sha in its own
-		// `digest.sha1` field.
-	case "v0.3":
-		// The latter case is a versioned GCS source.
-		if uri != expectedSourceURI &&
-			!strings.HasPrefix(uri, expectedSourceURI+"#") {
-			return fmt.Errorf("%w: expected '%s', got '%s'",
-				serrors.ErrorMismatchSource, expectedSourceURI, uri)
-		}
-	default:
-		err = fmt.Errorf("%w: version '%s'",
-			serrors.ErrorInvalidBuilderID, v)
+	predicateType, err := statement.PredicateType()
+	if err != nil {
+		return err
 	}
 
-	return err
+	switch predicateType {
+	case v10.PredicateSLSAProvenance:
+		return verifySourceURIV10(builderID, uri, expectedSourceURI)
+	case v01.PredicateSLSAProvenance:
+		return verifySourceURIV01(builderID, uri, expectedSourceURI)
+	default:
+		return fmt.Errorf("%w: unknown predicate type: %v", serrors.ErrorInvalidFormat, predicateType)
+	}
 }
 
 func (p *Provenance) VerifyBranch(branch string) error {
-	return fmt.Errorf("%w: GCB branch verification", serrors.ErrorNotSupported)
+	if err := p.isVerified(); err != nil {
+		return err
+	}
+
+	provBranch, err := p.verifiedStatement.SourceBranch()
+	if err != nil {
+		return err
+	}
+	if provBranch != branch {
+		return fmt.Errorf("%w: expected branch %q, got %q",
+			serrors.ErrorNotSupported, branch, provBranch)
+	}
+	return nil
 }
 
 func (p *Provenance) VerifyTag(expectedTag string) error {
@@ -420,32 +516,7 @@ func (p *Provenance) getTag() (string, error) {
 		return "", err
 	}
 
-	statement := p.verifiedStatement
-	provenanceTag, err := getSubstitutionsField(statement, "TAG_NAME")
-	if err != nil {
-		return "", err
-	}
-
-	return provenanceTag, nil
-}
-
-func getSubstitutionsField(statement iface.Provenance, name string) (string, error) {
-	sysParams, err := statement.GetSystemParameters()
-	if err != nil {
-		return "", err
-	}
-
-	value, ok := sysParams[name]
-	if !ok {
-		return "", fmt.Errorf("%w: no entry '%v' in substitution map", common.ErrSubstitution, name)
-	}
-
-	valueStr, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("%w: value '%v' is not a string", common.ErrSubstitution, value)
-	}
-
-	return valueStr, nil
+	return p.verifiedStatement.SourceTag()
 }
 
 // verifySignatures iterates over all the signatures in the DSSE and verifies them.
@@ -471,12 +542,14 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 	var errs []error
 
 	for _, sig := range prov.Envelope.Signatures {
-		var region string
-		if sig.KeyID == keys.GlobalPAEKeyID {
+		var keyName string
+
+		// Global PAE keys.
+		if sig.KeyID == keys.V10GlobalPAEKeyID || sig.KeyID == keys.V01GlobalPAEKeyID {
+			// Global key for v1.0 or v0.1.
 			// If the signature is signed with the global PAE key, use a DSSE verifier
 			// to verify the DSSE/PAE-encoded signature.
-			region = keys.GlobalPAEPublicKeyName
-			globalPaeKey, err := keys.NewGlobalPAEKey()
+			globalPaeKey, err := keys.NewGlobalPAEKey(sig.KeyID)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -484,14 +557,16 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 
 			err = globalPaeKey.VerifyPAESignature(&prov.Envelope)
 			if err != nil {
-				errs = append(errs, err)
+				errs = append(errs, fmt.Errorf("%w: key %q", err, globalPaeKey.Name()))
 				continue
 			}
-		} else if match := regionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
+			// Success.
+			keyName = globalPaeKey.Name()
+		} else if match := v01.RegionalKeyRegex.FindStringSubmatch(sig.KeyID); len(match) == 2 {
+			// Regional key for v0.1.
 			// If the signature is signed with a regional key, verify the legacy
 			// signing which is over the envelope (not PAE-encoded).
-			region = match[1]
-			pubKey, err := keys.NewPublicKey(region)
+			pubKey, err := keys.NewPublicKey(match[1])
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -510,20 +585,30 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 				errs = append(errs, err)
 				continue
 			}
+			// Success.
+			keyName = match[1]
 		} else {
 			continue
 		}
 
-		// TODO(#683): try v1.0 verification.
-		// We can use the text.SlsaprovenanceV01 field to dis-ambiguate.
-		stmt, err := v01.New(payload)
+		// Success.
+		var stmt iface.Provenance
+		if sig.KeyID == keys.V10GlobalPAEKeyID {
+			// v1.0 provenance.
+			stmt, err = v10.New(payload)
+		} else {
+			// v0.1 provenance.
+			// kkeys.V01GlobalPAEKeyID or regional key.
+			stmt, err = v01.New(payload)
+		}
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
+
 		p.verifiedStatement = stmt
 		p.verifiedProvenance = prov
-		fmt.Fprintf(os.Stderr, "Verification succeeded with region key '%s'\n", region)
+		fmt.Fprintf(os.Stderr, "Verification succeeded with key %q\n", keyName)
 		return nil
 	}
 
