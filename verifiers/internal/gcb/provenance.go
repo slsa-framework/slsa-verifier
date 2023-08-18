@@ -603,7 +603,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 
 		p.verifiedStatement = stmt
 		p.verifiedProvenance = prov
-		fmt.Fprintf(os.Stderr, "Verification succeeded with key '%s'\n", keyName)
+		fmt.Fprintf(os.Stderr, "Verification succeeded with key %q\n", keyName)
 		return nil
 	}
 
