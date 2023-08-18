@@ -552,7 +552,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 
 			err = globalPaeKey.VerifyPAESignature(&prov.Envelope)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("%w: key '%v'", err, globalPaeKey.Name()))
+				errs = append(errs, fmt.Errorf("%w: key %q", err, globalPaeKey.Name()))
 				continue
 			}
 			// Success.
