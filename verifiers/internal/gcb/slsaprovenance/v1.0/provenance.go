@@ -112,7 +112,7 @@ func (p *Provenance) SourceTag() (string, error) {
 		return "", err
 	}
 	if subsTag != configTag {
-		return "", fmt.Errorf("%w: '%v' != '%v'", serrors.ErrorInvalidDssePayload, subsTag, configTag)
+		return "", fmt.Errorf("%w: %q != %q", serrors.ErrorInvalidDssePayload, subsTag, configTag)
 	}
 	return subsTagName, nil
 }
