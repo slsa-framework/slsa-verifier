@@ -84,7 +84,7 @@ func (p *Provenance) BuildType() (string, error) {
 func (p *Provenance) GetSystemParameters() (map[string]any, error) {
 	sysParams, ok := p.Pred.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+		return nil, fmt.Errorf("%w: system parameters type", serrors.ErrorInvalidDssePayload)
 	}
 
 	return sysParams, nil
