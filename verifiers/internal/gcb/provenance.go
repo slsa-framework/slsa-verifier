@@ -293,7 +293,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 		// v1.0 has no builder version.
 		provBuilderID, err = utils.TrustedBuilderIDNew(predicateBuilderID, false)
 	default:
-		return nil, fmt.Errorf("%w: unknown type %v", serrors.ErrorInvalidFormat, predicateType)
+		return nil, fmt.Errorf("%w: unknown predicate type %v", serrors.ErrorInvalidFormat, predicateType)
 	}
 	if err != nil {
 		return nil, err
