@@ -41,7 +41,7 @@ func setStatement(gcb *Provenance, version string) error {
 	case versionV10:
 		pfunc = v10.New
 	default:
-		return fmt.Errorf("%w: version '%v'", serrors.ErrorInvalidFormat, version)
+		return fmt.Errorf("%w: version %q", serrors.ErrorInvalidFormat, version)
 	}
 	stmt, err := pfunc(payload)
 	if err != nil {
