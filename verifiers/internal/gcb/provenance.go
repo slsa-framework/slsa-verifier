@@ -257,7 +257,7 @@ func validateBuildType(builderID utils.TrustedBuilderID, buildType string) error
 	if slices.Contains(v10.BuilderIDs, builderID.String()) {
 		return validatebuildTypeV10(builderID, buildType)
 	}
-	return fmt.Errorf("%w: unknown builder ID %v", serrors.ErrorInvalidBuilderID, builderID.String())
+	return fmt.Errorf("%w: %v", serrors.ErrorInvalidBuilderID, builderID.String())
 }
 
 // VerifyBuilder verifies the builder in the DSSE payload:
