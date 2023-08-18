@@ -131,11 +131,11 @@ func (p *Provenance) SourceTag() (string, error) {
 func getSubstitutionsField(sysParams map[string]any, name string) (string, error) {
 	value, ok := sysParams[name]
 	if !ok {
-		return "", fmt.Errorf("%w: no entry '%v' in substitution map", common.ErrSubstitution, name)
+		return "", fmt.Errorf("%w: no entry %q in substitution map", common.ErrSubstitution, name)
 	}
 	valueStr, ok := value.(string)
 	if !ok {
-		return "", fmt.Errorf("%w: value '%v' is not a string", common.ErrSubstitution, value)
+		return "", fmt.Errorf("%w: value %q is not a string", common.ErrSubstitution, value)
 	}
 	return valueStr, nil
 }

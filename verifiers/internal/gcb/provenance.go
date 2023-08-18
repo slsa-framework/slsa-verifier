@@ -276,7 +276,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 
 	// Sanity check the builderID.
-	if err := p.isValidBuilderID(predicateBuilderID); err != nil {
+	if err := p.validateBuilderID(predicateBuilderID); err != nil {
 		return nil, err
 	}
 
@@ -322,9 +322,13 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	}
 	switch v := predicate.(type) {
 	case v10.ProvenancePredicate:
-		// Nothing to do here.
-		break
+		if predicateType != v10.PredicateSLSAProvenance {
+			return nil, fmt.Errorf("%w: expected %q, got %q", serrors.ErrorInvalidFormat, v10.PredicateSLSAProvenance, predicateType)
+		}
 	case v01.ProvenancePredicate:
+		if predicateType != v01.PredicateSLSAProvenance {
+			return nil, fmt.Errorf("%w: expected %q, got %q", serrors.ErrorInvalidFormat, v01.PredicateSLSAProvenance, predicateType)
+		}
 		expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
 		args, ok := v.Recipe.Arguments.(map[string]interface{})
 		if !ok {
@@ -389,15 +393,17 @@ func verifySourceURIV01(builderID utils.TrustedBuilderID, provenanceURI, expecte
 	case "v0.2":
 		// In v0.2, it uses format
 		// `https://github.com/laurentsimon/gcb-tests/commit/01ce393d04eb6df2a7b2b3e95d4126e687afb7ae`.
+		// The latter case is a versioned GCS source which looks like
+		// `"gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729"`.
 		if !strings.HasPrefix(provenanceURI, expectedSourceURI+"/commit/") &&
 			!strings.HasPrefix(provenanceURI, expectedSourceURI+"#") {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
 				serrors.ErrorMismatchSource, expectedSourceURI, provenanceURI)
 		}
-		// In v0.3, it uses the standard intoto and has the commit sha in its own
-		// `digest.sha1` field.
 	case "v0.3":
-		// The latter case is a versioned GCS source.
+		// In v0.3, it uses the standard intoto and has the commit sha in its own `digest.sha1` field.
+		// The latter case is a versioned GCS source which looks like
+		// `"gs://damith-sds_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz#1665165361152729"`.
 		if provenanceURI != expectedSourceURI &&
 			!strings.HasPrefix(provenanceURI, expectedSourceURI+"#") {
 			return fmt.Errorf("%w: expected '%s', got '%s'",
@@ -453,7 +459,6 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`)
 	}
 
-	// TODO: v1.0 support
 	predicateType, err := statement.PredicateType()
 	if err != nil {
 		return err
