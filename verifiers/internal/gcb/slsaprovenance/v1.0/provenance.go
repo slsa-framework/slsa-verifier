@@ -120,7 +120,7 @@ func (p *Provenance) SourceTag() (string, error) {
 func getSubstitutionsField(sysParams map[string]any, name string) (string, error) {
 	substitutions, ok := sysParams["systemSubstitutions"]
 	if !ok {
-		return "", fmt.Errorf("%w: no entry '%v' in substitution map", common.ErrSubstitution, "systemSubstitutions")
+		return "", fmt.Errorf("%w: substitution entry %q not found", common.ErrSubstitution, "systemSubstitutions")
 	}
 	substitutionsMap, ok := substitutions.(map[string]interface{})
 	if !ok {
