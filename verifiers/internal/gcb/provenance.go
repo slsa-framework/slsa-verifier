@@ -479,7 +479,7 @@ func (p *Provenance) VerifyBranch(branch string) error {
 		return err
 	}
 	if provBranch != branch {
-		return fmt.Errorf("%w: expected branch '%v', got '%v'",
+		return fmt.Errorf("%w: expected branch %q, got %q",
 			serrors.ErrorNotSupported, branch, provBranch)
 	}
 	return nil
