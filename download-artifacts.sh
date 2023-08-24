@@ -101,10 +101,17 @@ unzip_files() {
 copy_files() {
     local binary="$1"
     local path="$2"
+
     mkdir -p "${path}"
     for fn in $(ls | grep "${binary}"); do
         prefix=$(echo "${fn}" | cut -d- -f1)"-"
-        cp "${fn}" "${path}/${fn#"${prefix}"}"
+        is_dispatch=$(echo "${fn}" | grep "dispatch" || true)
+        if [[ "${is_dispatch}" != "" ]]; then
+            cp "${fn}" "${path}/${fn#"${prefix}"}"
+        else
+            f="${fn/amd64/amd64-push}"
+            cp "${fn}" "${path}/${f#"${prefix}"}"
+        fi
     done;
 }
 
