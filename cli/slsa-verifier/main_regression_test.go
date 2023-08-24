@@ -65,9 +65,6 @@ func getBuildersAndVersions(t *testing.T,
 			if f.IsDir() && (optionalMinVersion == "" ||
 				semver.Compare(optionalMinVersion, f.Name()) <= 0) {
 				// These are the supported versions of the builder
-				if f.Name() != "v1.9.0" {
-					continue
-				}
 				res = append(res, filepath.Join(builder, f.Name()))
 			}
 		}
