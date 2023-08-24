@@ -4,6 +4,7 @@ set -euo pipefail
 # USAGE: mkdir -p tmp/v14 tmp/v14.2 tmp/v13.0.30 tmp/dispatch
 # cd in each folder, and run `bash ../../download-artifacts.sh run_id builder_tag
 # example: bash ../../download-artifacts.sh 5947345583 v1.9.0
+# TODO: get the run id automatically thru GitHub APIs.
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 run_id version"
@@ -139,26 +140,26 @@ version="$2"
 output_path="."
 repo=slsa-framework/example-package
 
-# artifacts=$($GH api \
-#     -H "Accept: application/vnd.github+json" \
-#     -H "X-GitHub-Api-Version: 2022-11-28" \
-#     "/repos/${repo}/actions/runs/${run_id}/artifacts" |
-#     jq -r -c '.artifacts')
+artifacts=$($GH api \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "/repos/${repo}/actions/runs/${run_id}/artifacts" |
+    jq -r -c '.artifacts')
 
-# arr=$(echo "$artifacts" | jq -c '.[]')
+arr=$(echo "$artifacts" | jq -c '.[]')
 
-# for item in ${arr}; do
-#     artifact_id=$(echo "${item}" | jq -r '.id')
-#     artifact_name=$(echo "${item}" | jq -r '.name')
-#     zip_path="${output_path}/${artifact_name}.zip"
-#     $GH api \
-#         -H "Accept: application/vnd.github+json" \
-#         -H "X-GitHub-Api-Version: 2022-11-28" \
-#         "/repos/${repo}/actions/artifacts/${artifact_id}/zip" \
-#         >"${zip_path}"
-#     echo "Downloaded ${zip_path}"
-#     unzip_files "${zip_path}" "${output_path}"
-# done
+for item in ${arr}; do
+    artifact_id=$(echo "${item}" | jq -r '.id')
+    artifact_name=$(echo "${item}" | jq -r '.name')
+    zip_path="${output_path}/${artifact_name}.zip"
+    $GH api \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "/repos/${repo}/actions/artifacts/${artifact_id}/zip" \
+        >"${zip_path}"
+    echo "Downloaded ${zip_path}"
+    unzip_files "${zip_path}" "${output_path}"
+done
 
 rename_java_files "test-java-project-" "maven"
 rename_java_files "workflow_dispatch-" "gradle"
