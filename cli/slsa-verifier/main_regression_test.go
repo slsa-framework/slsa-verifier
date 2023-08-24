@@ -36,7 +36,7 @@ func pString(s string) *string {
 const TEST_DIR = "./testdata"
 
 var (
-	GHA_ARTIFACT_PATH_BUILDERS = []string{"gha_go", "gha_generic"}
+	GHA_ARTIFACT_PATH_BUILDERS = []string{"gha_go", "gha_generic", "gha_delegator", "gha_maven", "gha_gradle"}
 	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/485): Merge this with
 	// GHA_ARTIFACT_PATH_BUILDERS.
 	GHA_ARTIFACT_CONTAINER_BUILDERS = []string{"gha_container-based"}
@@ -80,6 +80,9 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	t.Parallel()
 	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
 	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
+	delegatorBuilder := "https://github.com/slsa-framework/example-trw/.github/workflows/builder_high-perms_slsa3.yml"
+	mavenBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_maven_slsa3.yml"
+	gradleBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_gradle_slsa3.yml"
 
 	tests := []struct {
 		name         string
@@ -532,9 +535,15 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 			for _, v := range checkVersions {
 				var provenancePath string
+				var byob bool
 				if tt.provenancePath == "" {
 					testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-					provenancePath = fmt.Sprintf("%s.intoto.jsonl", testPath)
+					if strings.Contains(testPath, "delegator") || strings.Contains(testPath, "maven") || strings.Contains(testPath, "gradle") {
+						provenancePath = fmt.Sprintf("%s.build.slsa", testPath)
+						byob = true
+					} else {
+						provenancePath = fmt.Sprintf("%s.intoto.jsonl", testPath)
+					}
 				} else {
 					provenancePath = filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenancePath))
 				}
@@ -564,6 +573,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					builder = goBuilder
 				case strings.HasSuffix(name, "_generic"):
 					builder = genericBuilder
+				case strings.HasSuffix(name, "_delegator"):
+					builder = delegatorBuilder
+				case strings.HasSuffix(name, "_maven"):
+					builder = mavenBuilder
+				case strings.HasSuffix(name, "_gradle"):
+					builder = gradleBuilder
 				default:
 					builder = genericBuilder
 				}
@@ -571,7 +586,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// Default builders to test.
 				builderIDs := []*string{
 					pString(builder),
-					nil,
+				}
+
+				// Do not run without explicit builder ID for the delegator,
+				// because it's hosted on a different repo slsa-framework/example-package.
+				if builder != delegatorBuilder {
+					builderIDs = append(builderIDs, nil)
 				}
 
 				// We only add the tags to tests for versions >= 1,
@@ -600,6 +620,10 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						BuildWorkflowInputs: tt.inputs,
 					}
 
+					// BYOB-based builders ignore the reusable workflow.
+					if errCmp(tt.err, serrors.ErrorUntrustedReusableWorkflow) && byob {
+						tt.err = serrors.ErrorMismatchBuilderID
+					}
 					// The outBuilderID is the actual builder ID from the provenance.
 					// This is always long form for the GHA builders.
 					outBuilderID, err := cmd.Exec(context.Background(), artifacts)
@@ -699,6 +723,10 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		// or testdata from malicious untrusted builders.
 		// When true, this does not iterate over all builder versions.
 		noversion bool
+		// minversion is a special case to test a newly added feature into a builder.
+		minversion string
+		// maxversion is a special case to handle incompatible error changes in the builder.
+		maxversion string
 	}{
 		{
 			name:     "valid main branch default",
@@ -718,7 +746,6 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			source:   "github.com/slsa-framework/example-package",
 			pbranch:  pString("main"),
 		},
-
 		{
 			name:     "wrong branch master",
 			artifact: "container_workflow_dispatch",
@@ -745,18 +772,36 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			err:      serrors.ErrorMismatchSource,
 		},
 		{
-			name:     "tag no match empty tag workflow_dispatch",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-			ptag:     pString("v1.2.3"),
-			err:      serrors.ErrorInvalidRef,
+			name:       "tag no match empty tag workflow_dispatch",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v1.2.3"),
+			maxversion: "v1.8.0",
+			err:        serrors.ErrorInvalidRef,
 		},
 		{
 			name:        "versioned tag no match empty tag workflow_dispatch",
 			artifact:    "container_workflow_dispatch",
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
+			maxversion:  "v1.8.0",
 			err:         serrors.ErrorInvalidRef,
+		},
+		{
+			name:       "tag no match empty tag workflow_dispatch > v1.9.0",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v1.2.3"),
+			minversion: "v1.9.0",
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch > v1.9.0",
+			artifact:    "container_workflow_dispatch",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v1"),
+			minversion:  "v1.9.0",
+			err:         serrors.ErrorMismatchTag,
 		},
 	}
 	for _, tt := range tests {
@@ -770,6 +815,19 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
+				parts := strings.Split(v, "/")
+				version := ""
+				if len(parts) > 1 {
+					version = parts[1]
+				}
+				if version != "" && tt.minversion != "" && semver.Compare(version, tt.minversion) <= 0 {
+					fmt.Println("skiping due to min:", version)
+					continue
+				}
+				if version != "" && tt.maxversion != "" && semver.Compare(version, tt.maxversion) > 0 {
+					fmt.Println("skiping due to max:", version)
+					continue
+				}
 				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				// TODO(#258): test for tagged builder.
 				sv := filepath.Base(v)
