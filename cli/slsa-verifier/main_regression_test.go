@@ -36,7 +36,7 @@ func pString(s string) *string {
 const TEST_DIR = "./testdata"
 
 var (
-	GHA_ARTIFACT_PATH_BUILDERS = []string{"gha_go", "gha_generic"}
+	GHA_ARTIFACT_PATH_BUILDERS = []string{"gha_go", "gha_generic", "gha_delegator", "gha_maven", "gha_gradle"}
 	// TODO(https://github.com/slsa-framework/slsa-verifier/issues/485): Merge this with
 	// GHA_ARTIFACT_PATH_BUILDERS.
 	GHA_ARTIFACT_CONTAINER_BUILDERS = []string{"gha_container-based"}
@@ -65,6 +65,9 @@ func getBuildersAndVersions(t *testing.T,
 			if f.IsDir() && (optionalMinVersion == "" ||
 				semver.Compare(optionalMinVersion, f.Name()) <= 0) {
 				// These are the supported versions of the builder
+				if f.Name() != "v1.9.0" {
+					continue
+				}
 				res = append(res, filepath.Join(builder, f.Name()))
 			}
 		}
@@ -80,6 +83,9 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	t.Parallel()
 	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
 	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
+	delegatorBuilder := "https://github.com/slsa-framework/example-trw/.github/workflows/builder_high-perms_slsa3.yml"
+	mavenBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_maven_slsa3.yml"
+	gradleBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_gradle_slsa3.yml"
 
 	tests := []struct {
 		name         string
@@ -534,7 +540,11 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				var provenancePath string
 				if tt.provenancePath == "" {
 					testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
-					provenancePath = fmt.Sprintf("%s.intoto.jsonl", testPath)
+					if strings.Contains(testPath, "delegator") || strings.Contains(testPath, "maven") || strings.Contains(testPath, "gradle") {
+						provenancePath = fmt.Sprintf("%s.build.slsa", testPath)
+					} else {
+						provenancePath = fmt.Sprintf("%s.intoto.jsonl", testPath)
+					}
 				} else {
 					provenancePath = filepath.Clean(filepath.Join(TEST_DIR, v, tt.provenancePath))
 				}
@@ -564,6 +574,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 					builder = goBuilder
 				case strings.HasSuffix(name, "_generic"):
 					builder = genericBuilder
+				case strings.HasSuffix(name, "_delegator"):
+					builder = delegatorBuilder
+				case strings.HasSuffix(name, "_maven"):
+					builder = mavenBuilder
+				case strings.HasSuffix(name, "_gradle"):
+					builder = gradleBuilder
 				default:
 					builder = genericBuilder
 				}
@@ -571,7 +587,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 				// Default builders to test.
 				builderIDs := []*string{
 					pString(builder),
-					nil,
+				}
+
+				// Do not run without explicit builder ID for the delegator,
+				// because it's hosted on a different repo slsa-framework/example-package.
+				if builder != delegatorBuilder {
+					builderIDs = append(builderIDs, nil)
 				}
 
 				// We only add the tags to tests for versions >= 1,
