@@ -535,10 +535,12 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 
 			for _, v := range checkVersions {
 				var provenancePath string
+				var byob bool
 				if tt.provenancePath == "" {
 					testPath := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifacts[0]))
 					if strings.Contains(testPath, "delegator") || strings.Contains(testPath, "maven") || strings.Contains(testPath, "gradle") {
 						provenancePath = fmt.Sprintf("%s.build.slsa", testPath)
+						byob = true
 					} else {
 						provenancePath = fmt.Sprintf("%s.intoto.jsonl", testPath)
 					}
@@ -618,6 +620,10 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						BuildWorkflowInputs: tt.inputs,
 					}
 
+					// BYOB-based builders ignore the reusable workflow.
+					if errCmp(tt.err, serrors.ErrorUntrustedReusableWorkflow) && byob {
+						tt.err = serrors.ErrorMismatchBuilderID
+					}
 					// The outBuilderID is the actual builder ID from the provenance.
 					// This is always long form for the GHA builders.
 					outBuilderID, err := cmd.Exec(context.Background(), artifacts)
