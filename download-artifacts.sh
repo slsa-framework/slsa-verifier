@@ -104,7 +104,9 @@ copy_files() {
 
     mkdir -p "${path}"
     for fn in $(ls | grep "${binary}"); do
-        prefix=$(echo "${fn}" | cut -d- -f1)"-"
+        # The prefix is what precedes "binary-linux".
+        # May be 'gha_container-based-', etc.
+        prefix=${fn%%binary-linux*}
         is_dispatch=$(echo "${fn}" | grep "dispatch" || true)
         if [[ "${is_dispatch}" != "" ]]; then
             cp "${fn}" "${path}/${fn#"${prefix}"}"
@@ -137,26 +139,26 @@ version="$2"
 output_path="."
 repo=slsa-framework/example-package
 
-artifacts=$($GH api \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "/repos/${repo}/actions/runs/${run_id}/artifacts" |
-    jq -r -c '.artifacts')
+# artifacts=$($GH api \
+#     -H "Accept: application/vnd.github+json" \
+#     -H "X-GitHub-Api-Version: 2022-11-28" \
+#     "/repos/${repo}/actions/runs/${run_id}/artifacts" |
+#     jq -r -c '.artifacts')
 
-arr=$(echo "$artifacts" | jq -c '.[]')
+# arr=$(echo "$artifacts" | jq -c '.[]')
 
-for item in ${arr}; do
-    artifact_id=$(echo "${item}" | jq -r '.id')
-    artifact_name=$(echo "${item}" | jq -r '.name')
-    zip_path="${output_path}/${artifact_name}.zip"
-    $GH api \
-        -H "Accept: application/vnd.github+json" \
-        -H "X-GitHub-Api-Version: 2022-11-28" \
-        "/repos/${repo}/actions/artifacts/${artifact_id}/zip" \
-        >"${zip_path}"
-    echo "Downloaded ${zip_path}"
-    unzip_files "${zip_path}" "${output_path}"
-done
+# for item in ${arr}; do
+#     artifact_id=$(echo "${item}" | jq -r '.id')
+#     artifact_name=$(echo "${item}" | jq -r '.name')
+#     zip_path="${output_path}/${artifact_name}.zip"
+#     $GH api \
+#         -H "Accept: application/vnd.github+json" \
+#         -H "X-GitHub-Api-Version: 2022-11-28" \
+#         "/repos/${repo}/actions/artifacts/${artifact_id}/zip" \
+#         >"${zip_path}"
+#     echo "Downloaded ${zip_path}"
+#     unzip_files "${zip_path}" "${output_path}"
+# done
 
 rename_java_files "test-java-project-" "maven"
 rename_java_files "workflow_dispatch-" "gradle"
@@ -165,14 +167,14 @@ rename_java_files "workflow_dispatch-" "gradle"
 repo_path="../.."
 
 # Go builder files.
-copy_files "gha_go-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_go/${version}"
+#copy_files "gha_go-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_go/${version}"
 
 # Generic generator.
-copy_files "gha_generic-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_generic/${version}"
+#copy_files "gha_generic-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_generic/${version}"
 # Container based.
 copy_files "gha_container-based-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_container-based/${version}"
 # TODO: generic container
-
+exit 1
 # Delegator
 copy_files "gha_delegator-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_delegator/${version}"
 # Maven builder

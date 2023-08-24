@@ -723,6 +723,10 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		// or testdata from malicious untrusted builders.
 		// When true, this does not iterate over all builder versions.
 		noversion bool
+		// minversion is a special case to test a newly added feature into a builder
+		minversion string
+		// minversion is a special case to handle incompatible error changes in the builder
+		maxversion string
 	}{
 		{
 			name:     "valid main branch default",
@@ -742,7 +746,6 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			source:   "github.com/slsa-framework/example-package",
 			pbranch:  pString("main"),
 		},
-
 		{
 			name:     "wrong branch master",
 			artifact: "container_workflow_dispatch",
@@ -769,18 +772,36 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			err:      serrors.ErrorMismatchSource,
 		},
 		{
-			name:     "tag no match empty tag workflow_dispatch",
-			artifact: "container_workflow_dispatch",
-			source:   "github.com/slsa-framework/example-package",
-			ptag:     pString("v1.2.3"),
-			err:      serrors.ErrorInvalidRef,
+			name:       "tag no match empty tag workflow_dispatch",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v1.2.3"),
+			maxversion: "v1.8.0",
+			err:        serrors.ErrorInvalidRef,
 		},
 		{
 			name:        "versioned tag no match empty tag workflow_dispatch",
 			artifact:    "container_workflow_dispatch",
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
+			maxversion:  "v1.8.0",
 			err:         serrors.ErrorInvalidRef,
+		},
+		{
+			name:       "tag no match empty tag workflow_dispatch > v1.9.0",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v1.2.3"),
+			minversion: "v1.9.0",
+			err:        serrors.ErrorMismatchTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch > v1.9.0",
+			artifact:    "container_workflow_dispatch",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v1"),
+			minversion:  "v1.9.0",
+			err:         serrors.ErrorMismatchTag,
 		},
 	}
 	for _, tt := range tests {
@@ -794,6 +815,19 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			}
 
 			for _, v := range checkVersions {
+				parts := strings.Split(v, "/")
+				version := ""
+				if len(parts) > 1 {
+					version = parts[1]
+				}
+				if version != "" && tt.minversion != "" && semver.Compare(version, tt.minversion) <= 0 {
+					fmt.Println("skiping due to min:", version)
+					continue
+				}
+				if version != "" && tt.maxversion != "" && semver.Compare(version, tt.maxversion) > 0 {
+					fmt.Println("skiping due to max:", version)
+					continue
+				}
 				image := filepath.Clean(filepath.Join(TEST_DIR, v, tt.artifact))
 				// TODO(#258): test for tagged builder.
 				sv := filepath.Base(v)
