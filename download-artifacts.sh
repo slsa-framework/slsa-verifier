@@ -168,14 +168,14 @@ rename_java_files "workflow_dispatch-" "gradle"
 repo_path="../.."
 
 # Go builder files.
-#copy_files "gha_go-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_go/${version}"
+copy_files "gha_go-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_go/${version}"
 
 # Generic generator.
-#copy_files "gha_generic-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_generic/${version}"
+copy_files "gha_generic-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_generic/${version}"
 # Container based.
 copy_files "gha_container-based-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_container-based/${version}"
 # TODO: generic container
-exit 1
+
 # Delegator
 copy_files "gha_delegator-binary-linux-amd64-" "${repo_path}/cli/slsa-verifier/testdata/gha_delegator/${version}"
 # Maven builder
