@@ -723,9 +723,9 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 		// or testdata from malicious untrusted builders.
 		// When true, this does not iterate over all builder versions.
 		noversion bool
-		// minversion is a special case to test a newly added feature into a builder
+		// minversion is a special case to test a newly added feature into a builder.
 		minversion string
-		// minversion is a special case to handle incompatible error changes in the builder
+		// maxversion is a special case to handle incompatible error changes in the builder.
 		maxversion string
 	}{
 		{
