@@ -24,6 +24,9 @@ tag="$1"
 mkdir -p "${dir}"
 rm -rf "${dir:?}/"* 2>/dev/null || true
 
+echo "INFO: using dir: ${dir}"
+echo
+
 # Download artifacts and provenance.
 cd "${dir}"
 "${GH}" release -R slsa-framework/slsa-verifier download "${tag}"
