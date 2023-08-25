@@ -83,6 +83,7 @@ Follow the steps:
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier
 # $ (Optional: git checkout tags/v1.1.1: you may need to change the command below)
+# You can run `bash verify-release.sh vX.Y.Z`: it will download all artifacts and verify them.
 $ go run ./cli/slsa-verifier verify-artifact ~/Downloads/slsa-verifier-linux-amd64 --provenance-path ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl --source-uri github.com/slsa-framework/slsa-verifier --source-tag vX.Y.Z
 ```
 

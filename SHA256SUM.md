@@ -1,3 +1,12 @@
+### [v2.4.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.4.0)
+
+9e67318937b936014b6127affc14bc45f1fb10d9899b0105877778e8179b3029  slsa-verifier-darwin-amd64
+b55009be65f8f6dae4399522e4ab5685a5cfe0b72dca3134f12ba144b8860607  slsa-verifier-darwin-arm64
+9883e4c7fd0fead95815de1533db62d1ae19daf9d333b359e192fc65ffb401b2  slsa-verifier-linux-amd64
+bb025462acd9e93da32694e3ed82bfa57cb487a28c989a083caf2a3569d3cfbe  slsa-verifier-linux-arm64
+a8ea35a4abf450f3828d42cf0b9be3628692508184bec8610a472a7bf4afc843  slsa-verifier-windows-amd64.exe
+b14cd8228fecabe53e3676ec2d94b53d7aee11f6f5a8dabbe07e840143d48e8d  slsa-verifier-windows-arm64.exe
+
 ### [v2.3.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.3.0)
 
 44ae609925c2dddafa45b2f98da62b40abcf739bbbe6f9dc792f3aba6e236e9c slsa-verifier-darwin-amd64
