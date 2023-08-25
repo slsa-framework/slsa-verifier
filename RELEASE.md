@@ -43,7 +43,7 @@ Check the following:
 ```shell
 $ ./slsa-verifier version 2>&1 | grep GitVersion
 ```
-5. Ensure the installer Action works by manually running the [schedule.installer.yml](https://github.com/slsa-framework/slsa-verifier/actions/workflows/pre-submit.actions.yml). 
+5. Ensure the installer Action works by manually running the [e2e.schedule.installer.yml](https://github.com/slsa-framework/slsa-verifier/actions/workflows/e2e.schedule.installer.yml). 
 
 
 If both of these steps succeed, then move on to the [Final Release](#final-release).
