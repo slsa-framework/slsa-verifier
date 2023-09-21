@@ -167,7 +167,7 @@ $ sha256sum -c --strict SHA256SUM.md
 
 ### Use Homebrew on macOS
 
-If you are using macOS and Homebrew, then you can install the verifier using this [formula](https://formulae.brew.sh/formula/slsa-verifier).
+If you are using macOS and Homebrew, then you can install the verifier using this community-maintained [formula](https://formulae.brew.sh/formula/slsa-verifier).
 
 ## Available options
 
