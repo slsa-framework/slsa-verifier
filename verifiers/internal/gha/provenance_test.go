@@ -311,7 +311,7 @@ func Test_verifySourceURI(t *testing.T) {
 			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
 			provMaterialsURI:  "git+https://github.com/some/repo",
 			expectedSourceURI: "https://github.com/some/repo",
-			// NOTE: Unline for v1, we expect the URIs in material and trigger to match.
+			// NOTE: Unlike for v1, we expect the URIs in material and trigger to match.
 			err: serrors.ErrorMalformedURI,
 		},
 		{
