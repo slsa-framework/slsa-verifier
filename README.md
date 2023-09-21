@@ -22,6 +22,7 @@
     - [Option 2: Compile manually](#option-2-compile-manually)
   - [Use the installer Action on GitHub Actions](#use-the-installer-action-on-github-actions)
   - [Download the binary](#download-the-binary)
+  - [Use Homebrew on macOS](#use-homebrew-on-macos)
 - [Available options](#available-options)
 - [Option list](#option-list)
   - [Option details](#option-details)
@@ -163,6 +164,10 @@ Verify the checksum:
 $ sha256sum -c --strict SHA256SUM.md
   slsa-verifier-linux-amd64: OK
 ```
+
+### Use Homebrew on macOS
+
+If you are using macOS and Homebrew, then you can install the verifier using this [formula](https://formulae.brew.sh/formula/slsa-verifier).
 
 ## Available options
 
