@@ -306,6 +306,23 @@ func Test_verifySourceURI(t *testing.T) {
 			err:               serrors.ErrorInvalidDssePayload,
 		},
 		{
+			name:              "match source no git no material ref (npm) v2 buildType",
+			provBuildType:     common.NpmCLIBuildTypeV2,
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo",
+			expectedSourceURI: "https://github.com/some/repo",
+			// NOTE: Unline for v1, we expect the URIs in material and trigger to match.
+			err: serrors.ErrorMalformedURI,
+		},
+		{
+			name:              "mismatch source material ref (npm) v2 builtType",
+			provBuildType:     common.NpmCLIBuildTypeV2,
+			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
+			provMaterialsURI:  "git+https://github.com/some/repo@v1.2.4",
+			expectedSourceURI: "https://github.com/some/repo",
+			err:               serrors.ErrorInvalidDssePayload,
+		},
+		{
 			name:              "match source no git no material ref (byob)",
 			provBuildType:     common.BYOBBuildTypeV0,
 			provTriggerURI:    "git+https://github.com/some/repo@v1.2.3",
