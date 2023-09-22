@@ -71,7 +71,6 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	// There is a corner-case to handle: if the verified builder ID from the cert
 	// is a delegator builder, the user MUST provide an expected builder ID
 	// and we MUST match it against the content of the provenance.
-
 	if err := VerifyProvenance(env, provenanceOpts, verifiedBuilderID, byob, builderOpts.ExpectedID); err != nil {
 		return nil, nil, err
 	}
@@ -259,7 +258,6 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 		RekorPubKeys:      trustedRoot.RekorPubKeys,
 		CTLogPubKeys:      trustedRoot.CTPubKeys,
 	}
-
 	atts, _, err := container.RunCosignImageVerification(ctx,
 		artifactImage, opts)
 	if err != nil {
