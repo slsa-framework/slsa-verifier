@@ -43,4 +43,5 @@ var (
 	ErrorInvalidSubject            = errors.New("invalid subject")
 	ErrorInvalidHash               = errors.New("invalid hash")
 	ErrorNotPresent                = errors.New("not present")
+	ErrorInvalidPublicKey          = errors.New("invalid public key")
 )

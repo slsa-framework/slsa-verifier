@@ -150,13 +150,14 @@ func (n *Npm) verifyPublishAttestationSignature() error {
 		return fmt.Errorf("DecodeString: %w", err)
 	}
 
-	envVerifier, err := utils.DsseVerifierNew(derKey, utils.KeyFormatDER, npmRegistryPublicKeyID)
+	envVerifier, err := utils.DsseVerifierNew(derKey, utils.KeyFormatDER, npmRegistryPublicKeyID, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := envVerifier.Verify(context.Background(), signedPublish.Envelope, nil); err != nil {
-		return err
+	_, err = envVerifier.Verify(context.Background(), signedPublish.Envelope)
+	if err != nil {
+		return fmt.Errorf("%w: %w", serrors.ErrorInvalidSignature, err)
 	}
 
 	// Verification done.

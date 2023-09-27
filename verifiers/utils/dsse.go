@@ -59,7 +59,7 @@ func StatementFromEnvelope(env *dsselib.Envelope) (*intoto.Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	statement, err := StatementFromPayload(payload)
+	statement, err := StatementFromBytes(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +107,9 @@ const (
 )
 
 type publicKey struct {
-	keyID    string
-	pubKey   *crypto.PublicKey
-	encoding SignatureEncoding // Default is SignatureEncodingDER.
+	keyID       string
+	pubKey      *crypto.PublicKey
+	sigEncoding SignatureEncoding // Default is SignatureEncodingDER.
 }
 
 func (p *publicKey) Verify(ctx context.Context, data, sig []byte) error {
@@ -121,7 +121,7 @@ func (p *publicKey) Verify(ctx context.Context, data, sig []byte) error {
 	default:
 		return fmt.Errorf("unknown key type: %T", v)
 	case *ecdsa.PublicKey:
-		switch p.encoding {
+		switch p.sigEncoding {
 		case SignatureEncodingDER:
 			if !ecdsa.VerifyASN1(v, digest[:], sig) {
 				return fmt.Errorf("%w: cannot verify signature",
@@ -137,7 +137,7 @@ func (p *publicKey) Verify(ctx context.Context, data, sig []byte) error {
 					serrors.ErrorInvalidSignature)
 			}
 		default:
-			return fmt.Errorf("unsupported encoding: %v", p.encoding)
+			return fmt.Errorf("unsupported encoding: %v", p.sigEncoding)
 		}
 	}
 	return nil
@@ -153,11 +153,6 @@ func (p *publicKey) Public() crypto.PublicKey {
 	return p.pubKey
 }
 
-type DsseVerifier struct {
-	pubKey   publicKey
-	verifier *dsselib.EnvelopeVerifier
-}
-
 type KeyFormat int
 
 const (
@@ -165,9 +160,12 @@ const (
 	KeyFormatPEM
 )
 
-func DsseVerifierNew(content []byte, format KeyFormat, keyID string) (*DsseVerifier, error) {
+func DsseVerifierNew(content []byte, format KeyFormat, keyID string, sigEncoding *SignatureEncoding) (*dsselib.EnvelopeVerifier, error) {
 	if format == KeyFormatPEM {
-		block, _ := pem.Decode(content)
+		block, rest := pem.Decode(content)
+		if rest != nil {
+			return nil, fmt.Errorf("%w: additional data found", serrors.ErrorInvalidPEM)
+		}
 		if block == nil {
 			return nil, fmt.Errorf("%w: unable to decode PEM format", serrors.ErrorInvalidPEM)
 		}
@@ -176,41 +174,26 @@ func DsseVerifierNew(content []byte, format KeyFormat, keyID string) (*DsseVerif
 
 	key, err := x509.ParsePKIXPublicKey(content)
 	if err != nil {
-		return nil, fmt.Errorf("x509.ParsePKIXPublicKey: %w", err)
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidPublicKey, err)
 	}
 
 	pubKey, ok := key.(crypto.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("not a public key")
+		return nil, fmt.Errorf("%w: not a public key", serrors.ErrorInvalidPublicKey)
 	}
 
-	self := &DsseVerifier{
-		pubKey: publicKey{
-			pubKey: &pubKey,
-			keyID:  keyID,
-		},
+	dssePubKey := publicKey{
+		pubKey: &pubKey,
+		keyID:  keyID,
 	}
-	verifier, err := dsselib.NewEnvelopeVerifier(&self.pubKey)
+	if sigEncoding != nil {
+		dssePubKey.sigEncoding = *sigEncoding
+	}
+
+	verifier, err := dsselib.NewEnvelopeVerifier(&dssePubKey)
 	if err != nil {
 		return nil, fmt.Errorf("creating verifier: %w", err)
 	}
 
-	self.verifier = verifier
-	return self, nil
-}
-
-func (v *DsseVerifier) Verify(ctx context.Context, envelope *dsselib.Envelope, encoding *SignatureEncoding) error {
-	if v.verifier == nil {
-		return fmt.Errorf("%w: verifier is empty", serrors.ErrorInternal)
-	}
-	// NOTE: we cannot pass the encoding to the verifier because
-	// its Verify() function does not allow it.
-	if encoding != nil {
-		v.pubKey.encoding = *encoding
-	}
-	_, err := v.verifier.Verify(ctx, envelope)
-	if err != nil {
-		return fmt.Errorf("%w: %v", serrors.ErrorInvalidSignature, err)
-	}
-	return err
+	return verifier, nil
 }
