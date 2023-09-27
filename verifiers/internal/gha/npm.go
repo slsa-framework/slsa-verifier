@@ -312,7 +312,7 @@ func subjectsFromAttestation(att *SignedAttestation) ([]intoto.Subject, error) {
 	env := att.Envelope
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 	statement := struct {
 		intoto.StatementHeader
