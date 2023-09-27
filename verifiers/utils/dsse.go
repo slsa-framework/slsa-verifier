@@ -25,7 +25,7 @@ func EnvelopeFromBytes(payload []byte) (*dsselib.Envelope, error) {
 	}
 
 	if env.PayloadType != intoto.PayloadType {
-		return nil, fmt.Errorf("%w: expected payload type '%s', got %s",
+		return nil, fmt.Errorf("%w: expected payload type %q, got %q",
 			serrors.ErrorInvalidDssePayload, intoto.PayloadType, env.PayloadType)
 	}
 	return &env, nil
