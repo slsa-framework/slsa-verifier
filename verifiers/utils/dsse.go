@@ -36,7 +36,7 @@ func PayloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
 	}
-	if payload == nil {
+	if len(payload) == 0 {
 		return nil, fmt.Errorf("%w: empty payload", serrors.ErrorInvalidFormat)
 	}
 	return payload, nil
