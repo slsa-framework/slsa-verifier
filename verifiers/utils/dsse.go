@@ -42,7 +42,7 @@ func PayloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	return payload, nil
 }
 
-func StatementFromPayload(payload []byte) (*intoto.Statement, error) {
+func StatementFromBytes(payload []byte) (*intoto.Statement, error) {
 	var statement intoto.Statement
 	if err := json.Unmarshal(payload, &statement); err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
