@@ -45,7 +45,7 @@ func PayloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 func StatementFromBytes(payload []byte) (*intoto.Statement, error) {
 	var statement intoto.Statement
 	if err := json.Unmarshal(payload, &statement); err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	if statement.Type != intoto.StatementInTotoV01 {
