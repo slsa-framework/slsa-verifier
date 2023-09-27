@@ -49,7 +49,7 @@ func StatementFromBytes(payload []byte) (*intoto.Statement, error) {
 	}
 
 	if statement.Type != intoto.StatementInTotoV01 {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, statement.Type)
+		return nil, fmt.Errorf("%w: invalid statement type: %q", serrors.ErrorInvalidDssePayload, statement.Type)
 	}
 	return &statement, nil
 }
