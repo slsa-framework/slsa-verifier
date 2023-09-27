@@ -6,6 +6,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -15,6 +16,14 @@ var BYOBBuildType = "https://github.com/slsa-framework/slsa-github-generator/del
 // BYOBProvenance is SLSA v1.0 provenance for the slsa-github-generator BYOB build type.
 type BYOBProvenance struct {
 	*provenanceV1
+}
+
+func newBYOB(a *Attestation) iface.Provenance {
+	return &BYOBProvenance{
+		provenanceV1: &provenanceV1{
+			prov: a,
+		},
+	}
 }
 
 // GetBranch implements Provenance.GetBranch.

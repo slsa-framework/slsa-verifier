@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -20,6 +22,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
+
+const statementInTotoV1 = "https://in-toto.io/Statement/v1"
 
 type hosted string
 
@@ -31,6 +35,8 @@ const (
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
+
+var provenanceTypes = []string{common.ProvenanceV02Type, common.ProvenanceV1Type}
 
 /*
 NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
@@ -48,7 +54,7 @@ NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
 		]
 	}
 */
-var npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
+const npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
 
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
@@ -113,7 +119,7 @@ func extractAttestations(attestations []attestation) (*attestation, *attestation
 	for i := range attestations {
 		att := attestations[i]
 		// Provenance type verification.
-		if att.PredicateType == common.ProvenanceV02Type {
+		if slices.Contains(provenanceTypes, att.PredicateType) {
 			provenanceAttestation = &att
 		}
 		// Publish type verification.
@@ -195,17 +201,17 @@ func (n *Npm) verifyPublishAttesttationSignature() error {
 
 func (n *Npm) verifyIntotoHeaders() error {
 	if err := verifyIntotoTypes(n.verifiedProvenanceAtt,
-		common.ProvenanceV02Type, intoto.PayloadType, false); err != nil {
+		provenanceTypes, intoto.PayloadType, false); err != nil {
 		return err
 	}
 	if err := verifyIntotoTypes(n.verifiedPublishAtt,
-		publishAttestationV01, intoto.PayloadType, true); err != nil {
+		[]string{publishAttestationV01}, intoto.PayloadType, true); err != nil {
 		return err
 	}
 	return nil
 }
 
-func verifyIntotoTypes(att *SignedAttestation, predicateType, payloadType string, prefix bool) error {
+func verifyIntotoTypes(att *SignedAttestation, predicateTypes []string, payloadType string, prefix bool) error {
 	env := att.Envelope
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -224,18 +230,27 @@ func verifyIntotoTypes(att *SignedAttestation, predicateType, payloadType string
 	}
 
 	// Statement verification.
-	if statement.Type != intoto.StatementInTotoV01 {
-		return fmt.Errorf("%w: expected statement type '%v', got '%s'",
-			serrors.ErrorInvalidDssePayload, intoto.StatementInTotoV01, statement.Type)
+	if statement.Type != intoto.StatementInTotoV01 && statement.Type != statementInTotoV1 {
+		return fmt.Errorf("%w: expected statement type one of '%v', got '%s'",
+			serrors.ErrorInvalidDssePayload, []string{intoto.StatementInTotoV01, statementInTotoV1}, statement.Type)
 	}
 
-	if !prefix && statement.PredicateType != predicateType {
+	if !prefix && !slices.Contains(predicateTypes, statement.PredicateType) {
 		return fmt.Errorf("%w: expected predicate type '%v', got '%s'",
-			serrors.ErrorInvalidDssePayload, predicateType, statement.PredicateType)
+			serrors.ErrorInvalidDssePayload, predicateTypes, statement.PredicateType)
 	}
-	if prefix && !strings.HasPrefix(statement.PredicateType, predicateType) {
+
+	if prefix {
+		// Matcxh on the prefix.
+		for i := range predicateTypes {
+			predicateType := &predicateTypes[i]
+			if strings.HasPrefix(statement.PredicateType, *predicateType) {
+				return nil
+			}
+		}
+		// No match, failure.
 		return fmt.Errorf("%w: expected predicate type '%v', got '%s'",
-			serrors.ErrorInvalidDssePayload, predicateType, statement.PredicateType)
+			serrors.ErrorInvalidDssePayload, predicateTypes, statement.PredicateType)
 	}
 
 	return nil
@@ -326,15 +341,12 @@ func verifyPublishPredicateVersion(att *SignedAttestation, expectedVersion strin
 }
 
 func verifyPublishPredicateName(att *SignedAttestation, expectedName string) error {
-	name, _, err := getPublishPredicateData(att)
+	name, version, err := getPublishPredicateData(att)
 	if err != nil {
 		return err
 	}
-	if name != expectedName {
-		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageName,
-			name, expectedName)
-	}
-	return nil
+
+	return verifyName(name, expectedName, version)
 }
 
 func getPublishPredicateData(att *SignedAttestation) (string, string, error) {
@@ -392,12 +404,12 @@ func verifyPublishSubjectVersion(att *SignedAttestation, expectedVersion string)
 }
 
 func verifyPublishSubjectName(att *SignedAttestation, expectedName string) error {
-	name, _, err := getPublishPredicateData(att)
+	name, version, err := getPublishPredicateData(att)
 	if err != nil {
 		return err
 	}
 
-	return verifyName(name, expectedName)
+	return verifyName(name, expectedName, version)
 }
 
 func verifyProvenanceSubjectName(b *utils.TrustedBuilderID, att *SignedAttestation, expectedName string) error {
@@ -426,18 +438,19 @@ func verifyProvenanceSubjectName(b *utils.TrustedBuilderID, att *SignedAttestati
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidEncoding, err)
 	}
 
-	return verifyName(subjectName, expectedName)
+	fmt.Println(subjectName, expectedName)
+	return verifyName(subjectName, expectedName, "")
 }
 
-func verifyName(actual, expected string) error {
-	subName, _, err := getPackageNameAndVersion(actual)
-	if err != nil {
-		return err
-	}
+func verifyName(actual, expected, version string) error {
+	// In v0.1, "name": "pkg:npm/<package-name>"
+	if actual != expected {
+		// In v1, "name": "pkg:npm/<package-name>@<version>"
+		if fmt.Sprintf("%s@%s", actual, version) != expected {
+			return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageName,
+				actual, expected)
+		}
 
-	if subName != expected {
-		return fmt.Errorf("%w: got '%v', expected '%v'", serrors.ErrorMismatchPackageName,
-			subName, expected)
 	}
 
 	return nil

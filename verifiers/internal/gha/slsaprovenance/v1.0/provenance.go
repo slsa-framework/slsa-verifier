@@ -26,27 +26,12 @@ type ProvenanceV1 interface {
 
 type provFunc func(*Attestation) iface.Provenance
 
-func newBYOB(a *Attestation) iface.Provenance {
-	return &BYOBProvenance{
-		provenanceV1: &provenanceV1{
-			prov: a,
-		},
-	}
-}
-
-func newContainerBased(a *Attestation) iface.Provenance {
-	return &ContainerBasedProvenance{
-		provenanceV1: &provenanceV1{
-			prov: a,
-		},
-	}
-}
-
 // buildTypeMap is a map of builder IDs to supported buildTypes.
 var buildTypeMap = map[string]map[string]provFunc{
 	common.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOB},
 	common.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOB},
 	common.ContainerBasedBuilderID:           {common.ContainerBasedBuildTypeV01Draft: newContainerBased},
+	common.NpmCLIHostedBuilderID:             {common.NpmCLIBuildTypeV1_1: newCLIBuilderProvenance},
 }
 
 // New returns a new Provenance object based on the payload.

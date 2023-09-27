@@ -145,7 +145,7 @@ func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow parameters type")
 	}
 
-	wMap, ok := w.(map[string]string)
+	wMap, ok := w.(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
 	}
@@ -154,7 +154,11 @@ func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no path entry on workflow")
 	}
-	return v, nil
+	vStr, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "path not a string")
+	}
+	return vStr, nil
 }
 
 // GetBuildInvocationID implements Provenance.GetBuildInvocationID.
