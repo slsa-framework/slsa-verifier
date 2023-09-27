@@ -192,7 +192,7 @@ func DsseVerifierNew(content []byte, format KeyFormat, keyID string) (*DsseVerif
 	}
 	verifier, err := dsselib.NewEnvelopeVerifier(&self.pubKey)
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("creating verifier: %w", err)
 	}
 
 	self.verifier = verifier
