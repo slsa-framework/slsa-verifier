@@ -318,7 +318,7 @@ func subjectsFromAttestation(att *SignedAttestation) ([]intoto.Subject, error) {
 		intoto.StatementHeader
 	}{}
 	if err := json.Unmarshal(pyld, &statement); err != nil {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, err.Error())
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	if len(statement.Subject) == 0 {
