@@ -322,7 +322,7 @@ func subjectsFromAttestation(att *SignedAttestation) ([]intoto.Subject, error) {
 	}
 
 	if len(statement.Subject) == 0 {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no subjects")
+		return nil, fmt.Errorf("%w: no subjects", serrors.ErrorInvalidDssePayload)
 	}
 	return statement.Subject, nil
 }
