@@ -21,7 +21,7 @@ func EnvelopeFromBytes(payload []byte) (*dsselib.Envelope, error) {
 	var env dsselib.Envelope
 	err := json.Unmarshal(payload, &env)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidDssePayload, err)
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	if env.PayloadType != intoto.PayloadType {
