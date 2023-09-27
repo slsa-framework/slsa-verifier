@@ -108,11 +108,12 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string) error {
 			source)
 	}
 
-	// Verify source in the trigger
-	fullTriggerURI, err := prov.TriggerURI()
+	// Verify source in the trigger.
+	triggerURI, err := prov.TriggerURI()
 	if err != nil {
 		return err
 	}
+	fullTriggerURI := utils.NormalizeGitURI(triggerURI)
 
 	triggerURI, triggerRef, err := utils.ParseGitURIAndRef(fullTriggerURI)
 	if err != nil {
@@ -150,7 +151,7 @@ func verifySourceURI(prov iface.Provenance, expectedSourceURI string) error {
 		// NOTE: this is an exception for npm packages built before GA,
 		// see https://github.com/slsa-framework/slsa-verifier/issues/492.
 		// We don't need to compare the ref since materialSourceURI does not contain it.
-		if buildType == common.NpmCLIBuildTypeV1 {
+		if buildType == common.NpmCLIBuildTypeV02_1 {
 			return nil
 		}
 		// NOTE: BYOB builders can build from a different ref than the triggering ref.

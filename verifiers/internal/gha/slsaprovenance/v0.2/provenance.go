@@ -41,13 +41,13 @@ var buildTypeMap = map[string]map[string]provFunc{
 	common.ContainerGeneratorBuilderID: {common.ContainerGeneratorBuildTypeV1: newLegacyBuilderProvenance},
 
 	common.NpmCLILegacyBuilderID: {
-		common.NpmCLIBuildTypeV1: newLegacyBuilderProvenance,
-		common.NpmCLIBuildTypeV2: newLegacyBuilderProvenance,
+		common.NpmCLIBuildTypeV02_1: newLegacyBuilderProvenance,
+		common.NpmCLIBuildTypeV02_2: newLegacyBuilderProvenance,
 	},
 
 	common.NpmCLIHostedBuilderID: {
-		common.NpmCLIBuildTypeV1: newLegacyBuilderProvenance,
-		common.NpmCLIBuildTypeV2: newLegacyBuilderProvenance,
+		common.NpmCLIBuildTypeV02_1: newLegacyBuilderProvenance,
+		common.NpmCLIBuildTypeV02_2: newLegacyBuilderProvenance,
 	},
 	// NOTE: we don't support Npm CLI on self-hosted.
 }
