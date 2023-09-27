@@ -377,7 +377,7 @@ func (n *Npm) verifySubjectDigest(expectedHash string) error {
 	bitLength := len(expectedHash) * 4
 	expectedAlgo := fmt.Sprintf("sha%v", bitLength)
 	if bitLength < 256 {
-		return fmt.Errorf("%w: expected minimum 256-bit. Got %d", serrors.ErrorInvalidHash, bitLength)
+		return fmt.Errorf("%w: expected minimum sha256, got %s", serrors.ErrorInvalidHash, expectedAlgo)
 	}
 
 	for _, subject := range publishSubjects {
