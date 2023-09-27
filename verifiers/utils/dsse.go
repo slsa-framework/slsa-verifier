@@ -169,7 +169,7 @@ func DsseVerifierNew(content []byte, format KeyFormat, keyID string) (*DsseVerif
 	if format == KeyFormatPEM {
 		block, _ := pem.Decode(content)
 		if block == nil {
-			return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidPEM, content)
+			return nil, fmt.Errorf("%w: unable to decode PEM format", serrors.ErrorInvalidPEM)
 		}
 		content = block.Bytes
 	}
