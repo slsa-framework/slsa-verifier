@@ -131,7 +131,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 
 	// Users must always provide the builder ID.
 	if builderOpts == nil || builderOpts.ExpectedID == nil {
-		return nil, fmt.Errorf("%w: empty", serrors.ErrorInvalidBuilderID)
+		return nil, fmt.Errorf("%w: no expected builder ID", serrors.ErrorInvalidBuilderID)
 	}
 
 	// WARNING: builderID may be empty if it's not a trusted reusable builder workflow.
