@@ -241,7 +241,7 @@ func verifyIntotoTypes(att *SignedAttestation, predicateTypes []string, payloadT
 	}
 
 	if prefix {
-		// Matcxh on the prefix.
+		// Match on the prefix.
 		for i := range predicateTypes {
 			predicateType := &predicateTypes[i]
 			if strings.HasPrefix(statement.PredicateType, *predicateType) {
@@ -438,7 +438,6 @@ func verifyProvenanceSubjectName(b *utils.TrustedBuilderID, att *SignedAttestati
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidEncoding, err)
 	}
 
-	fmt.Println(subjectName, expectedName)
 	return verifyName(subjectName, expectedName, "")
 }
 

@@ -298,7 +298,7 @@ func verifySystemParameters(prov iface.Provenance, workflow *WorkflowIdentity) e
 	var isV1 bool
 	switch p := prov.(type) {
 	case slsav1.ProvenanceV1:
-		// Validate the parameters: there shoudl be a single "github" entry.
+		// Validate the parameters: there should be a single "github" entry.
 		if len(sysParams) > 1 {
 			return fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "more than one entry in external parameters")
 		}
