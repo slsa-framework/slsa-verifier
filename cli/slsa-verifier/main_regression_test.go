@@ -1595,7 +1595,7 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			name:      "invalid signature provenance npm CLI",
 			artifact:  "supreme-googles-cli-v02-tag-invalidsigpub.tgz",
 			source:    "github.com/trishankatdatadog/supreme-goggles",
-			pkgName:   PointerTo("@trishankatdatadog/supreme-goggleS"),
+			pkgName:   PointerTo("@trishankatdatadog/supreme-goggles"),
 			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
 			err:       serrors.ErrorInvalidSignature,
 		},
