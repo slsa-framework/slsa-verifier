@@ -1287,5 +1287,3 @@ func Test_verifyProvenanceAttestationSignature(t *testing.T) {
 		})
 	}
 }
-
-// TODO: prvenance signature verification.

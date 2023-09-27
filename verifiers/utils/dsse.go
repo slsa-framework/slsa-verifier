@@ -103,7 +103,7 @@ const (
 	// The IEEE_P1363 signature's format is r || s, where r and s are zero-padded
 	// and have the same size in bytes as the order of the curve. For example, for
 	// NIST P-256 curve, r and s are zero-padded to 32 bytes.
-	SignatureEncodingIEEE_P1363
+	SignatureEncodingIEEEP1363
 )
 
 type publicKey struct {
@@ -127,7 +127,7 @@ func (p *publicKey) Verify(ctx context.Context, data, sig []byte) error {
 				return fmt.Errorf("%w: cannot verify signature",
 					serrors.ErrorInvalidSignature)
 			}
-		case SignatureEncodingIEEE_P1363:
+		case SignatureEncodingIEEEP1363:
 			r := new(big.Int)
 			r.SetBytes(sig[:32])
 			s := new(big.Int)
