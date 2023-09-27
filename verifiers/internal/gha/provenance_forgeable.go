@@ -314,7 +314,6 @@ func verifySystemParameters(prov iface.Provenance, workflow *WorkflowIdentity) e
 		sysParams = ghMap
 		// Set the list of supported keys.
 		// Verify that the parameters contain only fields we are able to verify.
-		// There are 10 fields to verify.
 		supportedNames = map[string]bool{
 			normalize("event_name", true):          true,
 			normalize("repository_id", true):       true,
