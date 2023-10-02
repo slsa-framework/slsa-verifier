@@ -163,7 +163,7 @@ const (
 func DsseVerifierNew(content []byte, format KeyFormat, keyID string, sigEncoding *SignatureEncoding) (*dsselib.EnvelopeVerifier, error) {
 	if format == KeyFormatPEM {
 		block, rest := pem.Decode(content)
-		if rest != nil {
+		if len(rest) != 0 {
 			return nil, fmt.Errorf("%w: additional data found", serrors.ErrorInvalidPEM)
 		}
 		if block == nil {
