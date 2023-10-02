@@ -798,6 +798,84 @@ func Test_verifyPackageName(t *testing.T) {
 	}
 }
 
+func Test_verifySubjectDigest(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		path string
+		hash string
+		err  error
+	}{
+		{
+			name: "correct hash",
+			path: "npm-attestations.intoto.sigstore",
+			hash: "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+		},
+		{
+			name: "incorrect hash",
+			path: "npm-attestations.intoto.sigstore",
+			hash: "39d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+			err:  serrors.ErrorMismatchHash,
+		},
+		{
+			name: "no subjects",
+			path: "npm-att-publish-nosubjects.intoto.sigstore",
+			hash: "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+			err:  serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name: "no digest",
+			path: "npm-att-publish-nodigest.intoto.sigstore",
+			hash: "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+			err:  serrors.ErrorMismatchHash,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(filepath.Join("testdata", tt.path))
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			npm, err := NpmNew(ctx, trustedRoot, content)
+			if err != nil {
+				panic(fmt.Errorf("NpmNew: %w", err))
+			}
+			// Set provenance attestation.
+			env, err := getEnvelopeFromBundleBytes(npm.provenanceAttestation.BundleBytes)
+			if err != nil {
+				panic(fmt.Errorf("getEnvelopeFromBundleBytes: %w", err))
+			}
+			npm.verifiedProvenanceAtt = &SignedAttestation{
+				Envelope: env,
+			}
+
+			env, err = getEnvelopeFromBundleBytes(npm.publishAttestation.BundleBytes)
+			if err != nil {
+				panic(fmt.Errorf("getEnvelopeFromBundleBytes: %w", err))
+			}
+			npm.verifiedPublishAtt = &SignedAttestation{
+				Envelope: env,
+			}
+
+			err = npm.verifySubjectDigest(tt.hash)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
 func Test_verifyPackageVersion(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -1109,6 +1187,100 @@ func Test_NpmNew(t *testing.T) {
 			}
 
 			_, err = NpmNew(ctx, trustedRoot, content)
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_verifyPublishAttestationSignature(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		version string
+		err     error
+	}{
+		{
+			name: "correct",
+			path: "npm-attestations.intoto.sigstore",
+		},
+		{
+			name: "incorrect signature",
+			path: "npm-att-publish-invalid-signature.intoto.sigstore",
+			err:  serrors.ErrorInvalidSignature,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(filepath.Join("testdata", tt.path))
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			npm, err := NpmNew(ctx, trustedRoot, content)
+			if err != nil {
+				t.Fatalf("unexpected error: \n%s", err)
+			}
+			err = npm.verifyPublishAttestationSignature()
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_verifyProvenanceAttestationSignature(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		version string
+		err     error
+	}{
+		{
+			name: "correct",
+			path: "npm-attestations.intoto.sigstore",
+		},
+		{
+			name: "incorrect signature",
+			path: "npm-att-prov-invalid-signature.intoto.sigstore",
+			err:  serrors.ErrorInvalidSignature,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(filepath.Join("testdata", tt.path))
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			npm, err := NpmNew(ctx, trustedRoot, content)
+			if err != nil {
+				t.Fatalf("unexpected error: \n%s", err)
+			}
+			err = npm.verifyProvenanceAttestationSignature()
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}

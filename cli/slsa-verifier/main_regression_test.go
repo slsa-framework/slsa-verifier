@@ -1495,3 +1495,306 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 		})
 	}
 }
+
+func Test_runVerifyNpmPackage(t *testing.T) {
+	// We cannot use t.Setenv due to parallelized tests.
+	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		artifact   string
+		builderID  *string
+		source     string
+		pkgVersion *string
+		pkgName    *string
+		err        error
+	}{
+		// npm CLI with tag.
+		{
+			name:       "valid npm CLI builder",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggles",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:       "valid npm CLI builder short runner name",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggles",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID:  PointerTo("https://github.com/actions/runner"),
+		},
+		{
+			name:       "valid npm CLI builder no builder",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggles",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@trishankatdatadog/supreme-goggles"),
+			err:        serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:       "valid npm CLI builder mismatch builder",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggles",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID:  PointerTo("https://github.com/actions/runner2"),
+			err:        serrors.ErrorNotSupported,
+		},
+		{
+			name:       "valid npm CLI builder no package name",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggles",
+			pkgVersion: PointerTo("1.0.5"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:      "valid npm CLI builder no package version",
+			artifact:  "supreme-googles-cli-v02-tag.tgz",
+			source:    "github.com/trishankatdatadog/supreme-goggles",
+			pkgName:   PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:       "valid npm CLI builder mismatch source",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggleS",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "valid npm CLI builder mismatch package version",
+			artifact:   "supreme-googles-cli-v02-tag.tgz",
+			source:     "github.com/trishankatdatadog/supreme-goggles",
+			pkgVersion: PointerTo("1.0.4"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:        serrors.ErrorMismatchPackageVersion,
+		},
+		{
+			name:      "valid npm CLI builder mismatch package name",
+			artifact:  "supreme-googles-cli-v02-tag.tgz",
+			source:    "github.com/trishankatdatadog/supreme-goggles",
+			pkgName:   PointerTo("@trishankatdatadog/supreme-goggleS"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorMismatchPackageName,
+		},
+		{
+			name:      "invalid signature provenance npm CLI",
+			artifact:  "supreme-googles-cli-v02-tag-invalidsigprov.tgz",
+			source:    "github.com/trishankatdatadog/supreme-goggles",
+			pkgName:   PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorInvalidSignature,
+		},
+		{
+			name:      "invalid signature provenance npm CLI",
+			artifact:  "supreme-googles-cli-v02-tag-invalidsigpub.tgz",
+			source:    "github.com/trishankatdatadog/supreme-goggles",
+			pkgName:   PointerTo("@trishankatdatadog/supreme-goggles"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorInvalidSignature,
+		},
+		// npm CLI with main branch.
+		{
+			name:       "valid npm CLI builder",
+			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.3"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:       "valid npm CLI builder short runner name",
+			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.3"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/actions/runner"),
+		},
+		{
+			name:       "valid npm CLI builder no builder",
+			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.3"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			err:        serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:       "valid npm CLI builder mismatch builder",
+			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.3"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/actions/runner2"),
+			err:        serrors.ErrorNotSupported,
+		},
+		{
+			name:       "valid npm CLI builder no package name",
+			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
+			pkgVersion: PointerTo("1.0.3"),
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:      "valid npm CLI builder no package version",
+			artifact:  "provenance-npm-test-cli-v02-prega.tgz",
+			source:    "github.com/laurentsimon/provenance-npm-test",
+			pkgName:   PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:      "valid npm CLI builder mismatch source",
+			artifact:  "provenance-npm-test-cli-v02-prega.tgz",
+			source:    "github.com/laurentsimon/provenance-npm-test2",
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "valid npm CLI builder mismatch package version",
+			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.4"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:        serrors.ErrorMismatchPackageVersion,
+		},
+		{
+			name:      "valid npm CLI builder mismatch package name",
+			artifact:  "provenance-npm-test-cli-v02-prega.tgz",
+			source:    "github.com/laurentsimon/provenance-npm-test",
+			pkgName:   PointerTo("@laurentsimon/provenance-npm-test2"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorMismatchPackageName,
+		},
+		{
+			name:      "invalid signature provenance npm CLI",
+			artifact:  "provenance-npm-test-cli-v02-prega-invalidsigprov.tgz",
+			source:    "github.com/laurentsimon/provenance-npm-test",
+			pkgName:   PointerTo("@laurentsimon/provenance-npm-test2"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorInvalidSignature,
+		},
+		{
+			name:      "invalid signature publish npm CLI",
+			artifact:  "provenance-npm-test-cli-v02-prega-invalidsigpub.tgz",
+			source:    "github.com/laurentsimon/provenance-npm-test",
+			pkgName:   PointerTo("@laurentsimon/provenance-npm-test2"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorInvalidSignature,
+		},
+		// OSSF builder.
+		{
+			name:       "valid npm OSSF builder",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+		},
+		{
+			name:       "valid npm OSSF builder no builder",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			err:        serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:       "valid npm OSSF builder mismatch builder",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa.yml"),
+			err:        serrors.ErrorMismatchBuilderID,
+		},
+		{
+			name:       "valid npm OSSF builder no package name",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+		},
+		{
+			name:      "valid npm OSSF builder no package version",
+			artifact:  "provenance-npm-test-ossf.tgz",
+			source:    "github.com/laurentsimon/provenance-npm-test",
+			pkgName:   PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID: PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+		},
+		{
+			name:       "valid npm OSSF builder mismatch package name",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test2"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+			err:        serrors.ErrorMismatchPackageName,
+		},
+		{
+			name:       "valid npm OSSF builder mismatch package version",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.6"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+			err:        serrors.ErrorMismatchPackageVersion,
+		},
+		{
+			name:       "valid npm OSSF builder mismatch mismatch source",
+			artifact:   "provenance-npm-test-ossf.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test2",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+			err:        serrors.ErrorMismatchSource,
+		},
+		{
+			name:       "invalid signature provenance npm OSSF builder",
+			artifact:   "provenance-npm-test-ossf-invalidsigprov.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+			err:        serrors.ErrorInvalidSignature,
+		},
+		{
+			name:       "invalid signature publish npm OSSF builder",
+			artifact:   "provenance-npm-test-ossf-invalidsigpub.tgz",
+			source:     "github.com/laurentsimon/provenance-npm-test",
+			pkgVersion: PointerTo("1.0.5"),
+			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID:  PointerTo("https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"),
+			err:        serrors.ErrorInvalidSignature,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			artifactPath := filepath.Clean(filepath.Join(TEST_DIR, "npm", "gha", tt.artifact))
+			attestationsPath := fmt.Sprintf("%s.json", artifactPath)
+			cmd := verify.VerifyNpmPackageCommand{
+				AttestationsPath: attestationsPath,
+				BuilderID:        tt.builderID,
+				SourceURI:        tt.source,
+				PackageName:      tt.pkgName,
+				PackageVersion:   tt.pkgVersion,
+			}
+
+			_, err := cmd.Exec(context.Background(), []string{artifactPath})
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func PointerTo[K any](object K) *K {
+	return &object
+}

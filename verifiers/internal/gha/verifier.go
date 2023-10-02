@@ -131,7 +131,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 
 	// Users must always provide the builder ID.
 	if builderOpts == nil || builderOpts.ExpectedID == nil {
-		return nil, fmt.Errorf("builder ID is empty")
+		return nil, fmt.Errorf("%w: no expected builder ID", serrors.ErrorInvalidBuilderID)
 	}
 
 	// WARNING: builderID may be empty if it's not a trusted reusable builder workflow.
@@ -325,16 +325,21 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		return nil, nil, err
 	}
 
-	// Verify publish attesttation signature.
-	if err := npm.verifyPublishAttesttationSignature(); err != nil {
-		return nil, nil, err
-	}
-
-	// Verify builder information.
+	// Verify provenance builder information.
 	builder, err := npm.verifyBuilderID(
 		provenanceOpts, builderOpts,
 		defaultBYOBReusableWorkflows)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	// Verify publish attesttation signature.
+	if err := npm.verifyPublishAttestationSignature(); err != nil {
+		return nil, nil, err
+	}
+
+	// Verify publish subject digest.
+	if err := npm.verifySubjectDigest(provenanceOpts.ExpectedDigest); err != nil {
 		return nil, nil, err
 	}
 
