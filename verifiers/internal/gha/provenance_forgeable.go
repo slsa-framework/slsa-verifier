@@ -29,7 +29,7 @@ func verifyProvenanceMatchesCertificate(prov iface.Provenance, workflow *Workflo
 	}
 
 	// Verify subjects.
-	if err := verifySubjectDigestName(prov, "sha512"); err != nil {
+	if err := verifyPublishAttestationSubjectDigestName(prov, "sha512"); err != nil {
 		return err
 	}
 
@@ -63,7 +63,7 @@ func verifyProvenanceMatchesCertificate(prov iface.Provenance, workflow *Workflo
 	return nil
 }
 
-func verifySubjectDigestName(prov iface.Provenance, digestName string) error {
+func verifyPublishAttestationSubjectDigestName(prov iface.Provenance, digestName string) error {
 	subjects, err := prov.Subjects()
 	if err != nil {
 		return err
