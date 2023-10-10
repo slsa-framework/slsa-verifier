@@ -12,7 +12,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
-func Test_verifySubjectDigestName(t *testing.T) {
+func Test_verifyPublishAttestationSubjectDigestName(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -66,7 +66,7 @@ func Test_verifySubjectDigestName(t *testing.T) {
 			prov := &testProvenance{
 				subjects: tt.subject,
 			}
-			if err := verifySubjectDigestName(prov, tt.digestName); !errCmp(err, tt.err) {
+			if err := verifyPublishAttestationSubjectDigestName(prov, tt.digestName); !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
 		})

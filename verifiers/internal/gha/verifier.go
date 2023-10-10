@@ -339,7 +339,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	}
 
 	// Verify publish subject digest.
-	if err := npm.verifySubjectDigest(provenanceOpts.ExpectedDigest); err != nil {
+	if err := npm.verifyPublishAttestationSubjectDigest(provenanceOpts.ExpectedDigest); err != nil {
 		return nil, nil, err
 	}
 
