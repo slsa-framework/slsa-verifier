@@ -1,0 +1,17 @@
+{
+    "systemSubstitutions": {
+      "BRANCH_NAME": "main",
+      "BUILD_ID": "9c11d255-0469-4a6a-b7d0-d510c6697c54",
+      "COMMIT_SHA": "2ce3f90facdb51aeb950d5bc641e981be61fdf48",
+      "LOCATION": "us-west2",
+      "PROJECT_NUMBER": "265426041527",
+      "REF_NAME": "main",
+      "REPO_FULL_NAME": "khalkie/gcb-prod-prov",
+      "REPO_NAME": "gcb-prod-prov",
+      "REVISION_ID": "2ce3f90facdb51aeb950d5bc641e981be61fdf48",
+      "SHORT_SHA": "2ce3f90",
+      "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+      "TRIGGER_NAME": "sample-trigger-1"
+    },
+    "triggerUri": "projects/0/locations//triggers/15e57958-19b3-4a52-a052-6906244088ce"
+  }

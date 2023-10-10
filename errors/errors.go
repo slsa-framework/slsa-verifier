@@ -9,6 +9,7 @@ var (
 	ErrorMismatchPackageName       = errors.New("package name does not match provenance")
 	ErrorMismatchBuilderID         = errors.New("builderID does not match provenance")
 	ErrorInvalidBuilderID          = errors.New("builderID is invalid")
+	ErrorInvalidBuildType          = errors.New("buildType is invalid")
 	ErrorMismatchSource            = errors.New("source used to generate the binary does not match provenance")
 	ErrorMismatchWorkflowInputs    = errors.New("workflow input does not match")
 	ErrorMalformedURI              = errors.New("URI is malformed")
@@ -42,4 +43,5 @@ var (
 	ErrorInvalidSubject            = errors.New("invalid subject")
 	ErrorInvalidHash               = errors.New("invalid hash")
 	ErrorNotPresent                = errors.New("not present")
+	ErrorInvalidPublicKey          = errors.New("invalid public key")
 )

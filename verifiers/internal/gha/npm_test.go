@@ -2,17 +2,20 @@ package gha
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 func Test_verifyName(t *testing.T) {
@@ -81,7 +84,15 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJwcmVkaWNhdGVUeXBlIjogImh0dHBzOi8vZ2l0aHViLmNvbS9ucG0vYXR0ZXN0YXRpb24vdHJlZS9tYWluL3NwZWNzL3B1Ymxpc2gvdjAuMSIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJuYW1lIjogIkBsYXVyZW50c2ltb24vcHJvdmVuYW5jZS1ucG0tdGVzdCIsCiAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAicmVnaXN0cnkiOiAiaHR0cHM6Ly9yZWdpc3RyeS5ucG1qcy5vcmciCiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "predicateType": "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+					  "predicate": {
+						"name": "@laurentsimon/provenance-npm-test",
+						"version": "1.0.0",
+						"registry": "https://registry.npmjs.org"
+					  }
+					}`)),
 				},
 			},
 			version: "1.0.0",
@@ -91,7 +102,15 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJwcmVkaWNhdGVUeXBlIjogImh0dHBzOi8vZ2l0aHViLmNvbS9ucG0vYXR0ZXN0YXRpb24vdHJlZS9tYWluL3NwZWNzL3B1Ymxpc2gvdjAuMSIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJuYW1lIjogIkBsYXVyZW50c2ltb24vcHJvdmVuYW5jZS1ucG0tdGVzdCIsCiAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAicmVnaXN0cnkiOiAiaHR0cHM6Ly9yZWdpc3RyeS5ucG1qcy5vcmciCiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "predicateType": "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+					  "predicate": {
+						"name": "@laurentsimon/provenance-npm-test",
+						"version": "1.0.0",
+						"registry": "https://registry.npmjs.org"
+					  }
+					}`)),
 				},
 			},
 			version: "1.0",
@@ -102,7 +121,15 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJwcmVkaWNhdGVUeXBlIjogImh0dHBzOi8vZ2l0aHViLmNvbS9ucG0vYXR0ZXN0YXRpb24vdHJlZS9tYWluL3NwZWNzL3B1Ymxpc2gvdjAuMSIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJuYW1lIjogIkBsYXVyZW50c2ltb24vcHJvdmVuYW5jZS1ucG0tdGVzdCIsCiAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAicmVnaXN0cnkiOiAiaHR0cHM6Ly9yZWdpc3RyeS5ucG1qcy5vcmciCiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "predicateType": "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+					  "predicate": {
+						"name": "@laurentsimon/provenance-npm-test",
+						"version": "1.0.0",
+						"registry": "https://registry.npmjs.org"
+					  }
+					}`)),
 				},
 			},
 			version: "1.0.1",
@@ -113,7 +140,15 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJwcmVkaWNhdGVUeXBlIjogImh0dHBzOi8vZ2l0aHViLmNvbS9ucG0vYXR0ZXN0YXRpb24vdHJlZS9tYWluL3NwZWNzL3B1Ymxpc2gvdjAuMSIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJuYW1lIjogIkBsYXVyZW50c2ltb24vcHJvdmVuYW5jZS1ucG0tdGVzdCIsCiAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAicmVnaXN0cnkiOiAiaHR0cHM6Ly9yZWdpc3RyeS5ucG1qcy5vcmciCiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "predicateType": "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+					  "predicate": {
+						"name": "@laurentsimon/provenance-npm-test",
+						"version": "1.0.0",
+						"registry": "https://registry.npmjs.org"
+					  }
+					}`)),
 				},
 			},
 			version: "1.1.0",
@@ -124,7 +159,15 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJwcmVkaWNhdGVUeXBlIjogImh0dHBzOi8vZ2l0aHViLmNvbS9ucG0vYXR0ZXN0YXRpb24vdHJlZS9tYWluL3NwZWNzL3B1Ymxpc2gvdjAuMSIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJuYW1lIjogIkBsYXVyZW50c2ltb24vcHJvdmVuYW5jZS1ucG0tdGVzdCIsCiAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAicmVnaXN0cnkiOiAiaHR0cHM6Ly9yZWdpc3RyeS5ucG1qcy5vcmciCiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "predicateType": "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+					  "predicate": {
+						"name": "@laurentsimon/provenance-npm-test",
+						"version": "1.0.0",
+						"registry": "https://registry.npmjs.org"
+					  }
+					}`)),
 				},
 			},
 			version: "2.0.0",
@@ -138,8 +181,8 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 
 			err := verifyPublishSubjectVersion(tt.att, tt.version)
 
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}
 		})
 	}
@@ -149,60 +192,151 @@ func Test_verifyProvenanceSubjectVersion(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		att     *SignedAttestation
-		version string
-		err     error
+		name      string
+		builderID string
+		att       *SignedAttestation
+		version   string
+		err       error
 	}{
 		{
-			name: "correct version",
+			name:      "correct version",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			version: "1.0.0",
 		},
 		{
-			name: "incorrect subset version",
+			name:      "incorrect subset version",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			version: "1.0",
 			err:     serrors.ErrorMismatchPackageVersion,
 		},
 		{
-			name: "incorrect patch version",
+			name:      "incorrect patch version",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			version: "1.0.1",
 			err:     serrors.ErrorMismatchPackageVersion,
 		},
 		{
-			name: "incorrect minor version",
+			name:      "incorrect minor version",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			version: "1.1.0",
 			err:     serrors.ErrorMismatchPackageVersion,
 		},
 		{
-			name: "incorrect major version",
+			name:      "incorrect major version",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			version: "2.0.0",
@@ -213,11 +347,14 @@ func Test_verifyProvenanceSubjectVersion(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			builderID, err := utils.TrustedBuilderIDNew(tt.builderID, false)
+			if err != nil {
+				panic(err)
+			}
 
-			err := verifyProvenanceSubjectVersion(tt.att, tt.version)
-
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+			err = verifyProvenanceSubjectVersion(builderID, tt.att, tt.version)
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}
 		})
 	}
@@ -439,49 +576,122 @@ func Test_verifyProvenanceSubjectName(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		att     *SignedAttestation
-		subject string
-		err     error
+		name      string
+		builderID string
+		att       *SignedAttestation
+		subject   string
+		err       error
 	}{
 		{
-			name: "correct name",
+			name:      "correct name",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			subject: "@laurentsimon/provenance-npm-test",
 		},
 		{
-			name: "incorrect name",
+			name:      "incorrect name",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			subject: "wrong name",
 			err:     serrors.ErrorMismatchPackageName,
 		},
 		{
-			name: "incorrect scope",
+			name:      "incorrect scope",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			subject: "laurentsimon/provenance-npm-test",
 			err:     serrors.ErrorMismatchPackageName,
 		},
 		{
-			name: "incorrect with version",
+			name:      "incorrect with version",
+			builderID: common.NpmCLIHostedBuilderID,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
-					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+					Payload: base64.StdEncoding.EncodeToString([]byte(`{
+					  "_type": "https://in-toto.io/Statement/v0.1",
+					  "subject": [
+						{
+						  "name": "pkg:npm/%40laurentsimon/provenance-npm-test@1.0.0",
+						  "digest": {
+							"sha512": "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20"
+						  }
+						}
+					  ],
+					  "predicateType": "https://slsa.dev/provenance/v0.2",
+					  "predicate": {
+						"buildType": "https://github.com/npm/cli/gha@v1",
+						"builder": {
+						  "id": "https://github.com/npm/cli@9.5.0"
+						}
+					  }
+					}`)),
 				},
 			},
 			subject: "@laurentsimon/provenance-npm-test@1.0.0",
@@ -492,11 +702,14 @@ func Test_verifyProvenanceSubjectName(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			builderID, err := utils.TrustedBuilderIDNew(tt.builderID, false)
+			if err != nil {
+				panic(err)
+			}
 
-			err := verifyProvenanceSubjectName(tt.att, tt.subject)
-
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+			err = verifyProvenanceSubjectName(builderID, tt.att, tt.subject)
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}
 		})
 	}
@@ -572,7 +785,90 @@ func Test_verifyPackageName(t *testing.T) {
 				Envelope: env,
 			}
 
+			npm.verifiedBuilderID, err = utils.TrustedBuilderIDNew(common.NpmCLIHostedBuilderID, false)
+			if err != nil {
+				panic(err)
+			}
+
 			err = npm.verifyPackageName(&tt.subject)
+			if !errCmp(err, tt.err) {
+				t.Errorf(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
+func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		path string
+		hash string
+		err  error
+	}{
+		{
+			name: "correct hash",
+			path: "npm-attestations.intoto.sigstore",
+			hash: "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+		},
+		{
+			name: "incorrect hash",
+			path: "npm-attestations.intoto.sigstore",
+			hash: "39d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+			err:  serrors.ErrorMismatchHash,
+		},
+		{
+			name: "no subjects",
+			path: "npm-att-publish-nosubjects.intoto.sigstore",
+			hash: "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+			err:  serrors.ErrorInvalidDssePayload,
+		},
+		{
+			name: "no digest",
+			path: "npm-att-publish-nodigest.intoto.sigstore",
+			hash: "29d19f26233f4441328412b34fd73ed104ecfef62f14097890cccf7455b521b65c5acff851849faa85c85395aa22d401436f01f3afb61b19c780e906c88c7f20",
+			err:  serrors.ErrorMismatchHash,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(filepath.Join("testdata", tt.path))
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			npm, err := NpmNew(ctx, trustedRoot, content)
+			if err != nil {
+				panic(fmt.Errorf("NpmNew: %w", err))
+			}
+			// Set provenance attestation.
+			env, err := getEnvelopeFromBundleBytes(npm.provenanceAttestation.BundleBytes)
+			if err != nil {
+				panic(fmt.Errorf("getEnvelopeFromBundleBytes: %w", err))
+			}
+			npm.verifiedProvenanceAtt = &SignedAttestation{
+				Envelope: env,
+			}
+
+			env, err = getEnvelopeFromBundleBytes(npm.publishAttestation.BundleBytes)
+			if err != nil {
+				panic(fmt.Errorf("getEnvelopeFromBundleBytes: %w", err))
+			}
+			npm.verifiedPublishAtt = &SignedAttestation{
+				Envelope: env,
+			}
+
+			err = npm.verifyPublishAttestationSubjectDigest(tt.hash)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
@@ -640,6 +936,11 @@ func Test_verifyPackageVersion(t *testing.T) {
 			}
 			npm.verifiedProvenanceAtt = &SignedAttestation{
 				Envelope: env,
+			}
+
+			npm.verifiedBuilderID, err = utils.TrustedBuilderIDNew(common.NpmCLIHostedBuilderID, false)
+			if err != nil {
+				panic(err)
 			}
 
 			env, err = getEnvelopeFromBundleBytes(npm.publishAttestation.BundleBytes)
@@ -886,8 +1187,102 @@ func Test_NpmNew(t *testing.T) {
 			}
 
 			_, err = NpmNew(ctx, trustedRoot, content)
-			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_verifyPublishAttestationSignature(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		version string
+		err     error
+	}{
+		{
+			name: "correct",
+			path: "npm-attestations.intoto.sigstore",
+		},
+		{
+			name: "incorrect signature",
+			path: "npm-att-publish-invalid-signature.intoto.sigstore",
+			err:  serrors.ErrorInvalidSignature,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(filepath.Join("testdata", tt.path))
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			npm, err := NpmNew(ctx, trustedRoot, content)
+			if err != nil {
+				t.Fatalf("unexpected error: \n%s", err)
+			}
+			err = npm.verifyPublishAttestationSignature()
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_verifyProvenanceAttestationSignature(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		version string
+		err     error
+	}{
+		{
+			name: "correct",
+			path: "npm-attestations.intoto.sigstore",
+		},
+		{
+			name: "incorrect signature",
+			path: "npm-att-prov-invalid-signature.intoto.sigstore",
+			err:  serrors.ErrorInvalidSignature,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			content, err := os.ReadFile(filepath.Join("testdata", tt.path))
+			if err != nil {
+				panic(fmt.Errorf("os.ReadFile: %w", err))
+			}
+
+			npm, err := NpmNew(ctx, trustedRoot, content)
+			if err != nil {
+				t.Fatalf("unexpected error: \n%s", err)
+			}
+			err = npm.verifyProvenanceAttestationSignature()
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}
 		})
 	}

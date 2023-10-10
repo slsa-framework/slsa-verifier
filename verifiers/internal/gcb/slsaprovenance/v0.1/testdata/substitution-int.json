@@ -1,0 +1,10 @@
+{
+    "COMMIT_SHA": "01ce393d04eb6df2a7b2b3e95d4126e687afb7ae",
+    "REF_NAME": "v39",
+    "REPO_NAME": "gcb-tests",
+    "REVISION_ID": "01ce393d04eb6df2a7b2b3e95d4126e687afb7ae",
+    "SHORT_SHA": "01ce393",
+    "TAG_NAME": 123,
+    "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+    "TRIGGER_NAME": "Tag"
+}

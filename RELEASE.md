@@ -43,7 +43,7 @@ Check the following:
 ```shell
 $ ./slsa-verifier version 2>&1 | grep GitVersion
 ```
-5. Ensure the installer Action works by manually running the [schedule.installer.yml](https://github.com/slsa-framework/slsa-verifier/actions/workflows/pre-submit.actions.yml). 
+5. Ensure the installer Action works by manually running the [e2e.schedule.installer.yml](https://github.com/slsa-framework/slsa-verifier/actions/workflows/e2e.schedule.installer.yml). 
 
 
 If both of these steps succeed, then move on to the [Final Release](#final-release).
@@ -83,6 +83,7 @@ Follow the steps:
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
 $ cd slsa-verifier
 # $ (Optional: git checkout tags/v1.1.1: you may need to change the command below)
+# You can run `bash verify-release.sh vX.Y.Z`: it will download all artifacts and verify them.
 $ go run ./cli/slsa-verifier verify-artifact ~/Downloads/slsa-verifier-linux-amd64 --provenance-path ~/Downloads/slsa-verifier-linux-amd64.intoto.jsonl --source-uri github.com/slsa-framework/slsa-verifier --source-tag vX.Y.Z
 ```
 

@@ -22,6 +22,7 @@
     - [Option 2: Compile manually](#option-2-compile-manually)
   - [Use the installer Action on GitHub Actions](#use-the-installer-action-on-github-actions)
   - [Download the binary](#download-the-binary)
+  - [Use Homebrew on macOS](#use-homebrew-on-macos)
 - [Available options](#available-options)
 - [Option list](#option-list)
   - [Option details](#option-details)
@@ -97,7 +98,7 @@ You have two options to install the verifier.
 If you want to install the verifier, you can run the following command:
 
 ```bash
-$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.3.0
+$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.4.0
 $ slsa-verifier <options>
 ```
 
@@ -143,7 +144,7 @@ $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
 
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v2.3.0
+$ cd slsa-verifier && git checkout v2.4.0
 $ go run ./cli/slsa-verifier <options>
 ```
 
@@ -153,7 +154,7 @@ If you need to install the verifier to run in a GitHub workflow, use the install
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.3.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.3.0)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.4.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.4.0)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
@@ -163,6 +164,10 @@ Verify the checksum:
 $ sha256sum -c --strict SHA256SUM.md
   slsa-verifier-linux-amd64: OK
 ```
+
+### Use Homebrew on macOS
+
+If you are using macOS and Homebrew, then you can install the verifier using this community-maintained [formula](https://formulae.brew.sh/formula/slsa-verifier).
 
 ## Available options
 

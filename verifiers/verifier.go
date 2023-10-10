@@ -44,7 +44,6 @@ func VerifyImage(ctx context.Context, artifactImage string,
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
 }
 

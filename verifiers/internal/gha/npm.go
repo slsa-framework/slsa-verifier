@@ -2,8 +2,6 @@ package gha
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -15,6 +13,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -32,7 +31,7 @@ const (
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
 
 /*
-NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
+NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys and https://github.com/sigstore/root-signing/blob/main/repository/repository/targets/registry.npmjs.org/7a8ec9678ad824cdccaa7a6dc0961caf8f8df61bc7274189122c123446248426.keys.json
 
 			https://docs.npmjs.com/about-registry-signatures
 		{
@@ -47,7 +46,8 @@ NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys
 		]
 	}
 */
-var npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
+const npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
+const npmRegistryPublicKeyID = "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
 
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
@@ -68,6 +68,7 @@ func (b *BundleBytes) UnmarshalJSON(data []byte) error {
 type Npm struct {
 	ctx                   context.Context
 	root                  *TrustedRoot
+	verifiedBuilderID     *utils.TrustedBuilderID
 	verifiedProvenanceAtt *SignedAttestation
 	verifiedPublishAtt    *SignedAttestation
 	provenanceAttestation *attestation
@@ -93,8 +94,9 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 		return nil, err
 	}
 	return &Npm{
-		ctx:                   ctx,
-		root:                  root,
+		ctx:  ctx,
+		root: root,
+
 		provenanceAttestation: prov,
 		publishAttestation:    pub,
 	}, nil
@@ -135,54 +137,27 @@ func (n *Npm) verifyProvenanceAttestationSignature() error {
 	return nil
 }
 
-func (n *Npm) verifyPublishAttesttationSignature() error {
+func (n *Npm) verifyPublishAttestationSignature() error {
 	// First verify the bundle and its rekor entry.
 	signedPublish, err := verifyBundleAndEntryFromBytes(n.ctx, n.publishAttestation.BundleBytes, n.root, false)
 	if err != nil {
 		return err
 	}
 
-	// Second, we verify the signature, which uses a static key.
-	// Extract payload.
-	env := signedPublish.Envelope
-	payload, err := utils.PayloadFromEnvelope(env)
-	if err != nil {
-		return err
-	}
-
-	// Extract the signature.
-	if len(env.Signatures) == 0 {
-		return fmt.Errorf("%w: no signatures found in envelope", serrors.ErrorNoValidSignature)
-	}
-
-	// The registry signs with a single, static, non-rotated key.
-	sig := env.Signatures[0].Sig
-	// TODO(#496): verify the keyid, both in DSSE and hint.
-
-	// Verify the signature.
-	payloadHash := sha256.Sum256(payload)
-	rawKey, err := base64.StdEncoding.DecodeString(npmRegistryPublicKey)
+	// Verify the PAE signature.
+	derKey, err := base64.StdEncoding.DecodeString(npmRegistryPublicKey)
 	if err != nil {
 		return fmt.Errorf("DecodeString: %w", err)
 	}
 
-	key, err := x509.ParsePKIXPublicKey(rawKey)
+	envVerifier, err := utils.DsseVerifierNew(derKey, utils.KeyFormatDER, npmRegistryPublicKeyID, nil)
 	if err != nil {
-		return fmt.Errorf("x509.ParsePKIXPublicKey: %w", err)
+		return err
 	}
 
-	pubKey, ok := key.(*ecdsa.PublicKey)
-	if !ok {
-		return fmt.Errorf("%w: public key not of type ECDSA", err)
-	}
-
-	rsig, err := utils.DecodeSignature(sig)
+	_, err = envVerifier.Verify(context.Background(), signedPublish.Envelope)
 	if err != nil {
-		return fmt.Errorf("decodeSigature: %w: %s", serrors.ErrorInvalidEncoding, err)
-	}
-
-	if ecdsa.VerifyASN1(pubKey, payloadHash[:], rsig) {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, sig)
+		return fmt.Errorf("%w: %w", serrors.ErrorInvalidSignature, err)
 	}
 
 	// Verification done.
@@ -251,7 +226,7 @@ func (n *Npm) verifyPackageName(name *string) error {
 	}
 
 	// Verify subject name in provenance.
-	if err := verifyProvenanceSubjectName(n.verifiedProvenanceAtt, *name); err != nil {
+	if err := verifyProvenanceSubjectName(n.verifiedBuilderID, n.verifiedProvenanceAtt, *name); err != nil {
 		return err
 	}
 
@@ -274,7 +249,7 @@ func (n *Npm) verifyPackageVersion(version *string) error {
 	}
 
 	// Verify subject version in provenance.
-	if err := verifyProvenanceSubjectVersion(n.verifiedProvenanceAtt, *version); err != nil {
+	if err := verifyProvenanceSubjectVersion(n.verifiedBuilderID, n.verifiedProvenanceAtt, *version); err != nil {
 		return err
 	}
 
@@ -291,8 +266,27 @@ func (n *Npm) verifyPackageVersion(version *string) error {
 	return nil
 }
 
+func (n *Npm) verifyBuilderID(
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+	defaultBuilders map[string]bool,
+) (*utils.TrustedBuilderID, error) {
+	// Verify certificate information.
+	builder, err := verifyNpmEnvAndCert(
+		n.ProvenanceEnvelope(),
+		n.ProvenanceLeafCertificate(),
+		provenanceOpts, builderOpts,
+		defaultBuilders,
+	)
+	if err != nil {
+		return nil, err
+	}
+	n.verifiedBuilderID = builder
+	return builder, err
+}
+
 func verifyPublishPredicateVersion(att *SignedAttestation, expectedVersion string) error {
-	_, version, err := getPublishPredicateData(att)
+	_, version, err := publishPredicateData(att)
 	if err != nil {
 		return err
 	}
@@ -304,7 +298,7 @@ func verifyPublishPredicateVersion(att *SignedAttestation, expectedVersion strin
 }
 
 func verifyPublishPredicateName(att *SignedAttestation, expectedName string) error {
-	name, _, err := getPublishPredicateData(att)
+	name, _, err := publishPredicateData(att)
 	if err != nil {
 		return err
 	}
@@ -315,7 +309,26 @@ func verifyPublishPredicateName(att *SignedAttestation, expectedName string) err
 	return nil
 }
 
-func getPublishPredicateData(att *SignedAttestation) (string, string, error) {
+func subjectsFromAttestation(att *SignedAttestation) ([]intoto.Subject, error) {
+	env := att.Envelope
+	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
+	}
+	statement := struct {
+		intoto.StatementHeader
+	}{}
+	if err := json.Unmarshal(pyld, &statement); err != nil {
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
+	}
+
+	if len(statement.Subject) == 0 {
+		return nil, fmt.Errorf("%w: no subjects", serrors.ErrorInvalidDssePayload)
+	}
+	return statement.Subject, nil
+}
+
+func publishPredicateData(att *SignedAttestation) (string, string, error) {
 	env := att.Envelope
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -336,8 +349,8 @@ func getPublishPredicateData(att *SignedAttestation) (string, string, error) {
 	return statement.Predicate.Name, statement.Predicate.Version, nil
 }
 
-func verifyProvenanceSubjectVersion(att *SignedAttestation, expectedVersion string) error {
-	subject, err := getSubject(att)
+func verifyProvenanceSubjectVersion(b *utils.TrustedBuilderID, att *SignedAttestation, expectedVersion string) error {
+	subject, err := getSubject(b, att)
 	if err != nil {
 		return err
 	}
@@ -355,8 +368,37 @@ func verifyProvenanceSubjectVersion(att *SignedAttestation, expectedVersion stri
 	return nil
 }
 
+func (n *Npm) verifyPublishAttestationSubjectDigest(expectedHash string) error {
+	publishSubjects, err := subjectsFromAttestation(n.verifiedPublishAtt)
+	if err != nil {
+		return err
+	}
+
+	// 8 bit represented in hex, so 8/2=4.
+	bitLength := len(expectedHash) * 4
+	expectedAlgo := fmt.Sprintf("sha%v", bitLength)
+	if bitLength < 256 {
+		return fmt.Errorf("%w: expected minimum sha256, got %s", serrors.ErrorInvalidHash, expectedAlgo)
+	}
+
+	for _, subject := range publishSubjects {
+		digestSet := subject.Digest
+		hash, exists := digestSet[expectedAlgo]
+		if !exists {
+			continue
+		}
+		if hash == expectedHash {
+			return nil
+		}
+	}
+
+	// NOTE: We don't need to verify that the digest matches the one in the provenance
+	// because the provenance verification will verify the hash as well.
+	return fmt.Errorf("expected hash '%s' not found: %w", expectedHash, serrors.ErrorMismatchHash)
+}
+
 func verifyPublishSubjectVersion(att *SignedAttestation, expectedVersion string) error {
-	_, version, err := getPublishPredicateData(att)
+	_, version, err := publishPredicateData(att)
 	if err != nil {
 		return err
 	}
@@ -370,7 +412,7 @@ func verifyPublishSubjectVersion(att *SignedAttestation, expectedVersion string)
 }
 
 func verifyPublishSubjectName(att *SignedAttestation, expectedName string) error {
-	name, _, err := getPublishPredicateData(att)
+	name, _, err := publishPredicateData(att)
 	if err != nil {
 		return err
 	}
@@ -378,15 +420,15 @@ func verifyPublishSubjectName(att *SignedAttestation, expectedName string) error
 	return verifyName(name, expectedName)
 }
 
-func verifyProvenanceSubjectName(att *SignedAttestation, expectedName string) error {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(att.Envelope)
+func verifyProvenanceSubjectName(b *utils.TrustedBuilderID, att *SignedAttestation, expectedName string) error {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(b.Name(), att.Envelope)
 	if err != nil {
-		return nil
+		return fmt.Errorf("reading provenance: %w", err)
 	}
 
 	subjects, err := prov.Subjects()
 	if err != nil {
-		return fmt.Errorf("%w", serrors.ErrorInvalidDssePayload)
+		return fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 	if len(subjects) != 1 {
 		return fmt.Errorf("%w: expected 1 subject, got %v", serrors.ErrorInvalidDssePayload, len(subjects))
@@ -443,8 +485,8 @@ func getPackageNameAndVersion(name string) (string, string, error) {
 	return pkgname, pkgtag, nil
 }
 
-func getSubject(att *SignedAttestation) (string, error) {
-	prov, err := slsaprovenance.ProvenanceFromEnvelope(att.Envelope)
+func getSubject(b *utils.TrustedBuilderID, att *SignedAttestation) (string, error) {
+	prov, err := slsaprovenance.ProvenanceFromEnvelope(b.Name(), att.Envelope)
 	if err != nil {
 		return "", err
 	}

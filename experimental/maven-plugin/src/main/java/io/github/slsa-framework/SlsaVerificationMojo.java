@@ -78,6 +78,7 @@ public class SlsaVerificationMojo extends AbstractMojo {
                 // Retrieve the slsa file of the artifact
                 executeMojo(
                     plugin(
+                        // NOTE: https://mvnrepository.com/artifact/com.googlecode.maven-download-plugin.
                         groupId("com.googlecode.maven-download-plugin"),
                         artifactId("download-maven-plugin"),
                         version("1.7.0")
@@ -88,7 +89,7 @@ public class SlsaVerificationMojo extends AbstractMojo {
                         element(name("groupId"), artifact.getGroupId()),
                         element(name("artifactId"), artifact.getArtifactId()),
                         element(name("version"), artifact.getVersion()),
-                        element(name("type"), "intoto.build.slsa"),
+                        element(name("type"), "build.slsa"),
                         element(name("classifier"), "jar")
                     ),
                     executionEnvironment(
@@ -117,41 +118,34 @@ public class SlsaVerificationMojo extends AbstractMojo {
                     )
                 );
             } catch(MojoExecutionException e) {
-                getLog().info("Skipping slsa verification for " + artifactStr + ": No slsa file found.");
+                getLog().info("Skipping SLSA verification for " + artifactStr + ": No SLSA provenance found.");
                 continue;
             }
 
-            // Verify slsa file
-            try {
-                // Run slsa verification on the artifact and print the result
-                // It will never fail the build process
-                // This might be prone to command-injections. TODO: Secure against that. 
-                String arguments = "verify-artifact --provenance-path ";
-                arguments += "${project.build.directory}/slsa/" + artifact.getArtifactId() + "-" + artifact.getVersion() + "-jar.intoto.build.slsa ";
-                arguments += " --source-uri ./ ${project.build.directory}/slsa/" + artifact.getArtifactId() + "-" + artifact.getVersion() + ".jar";
-                executeMojo(
-                    plugin(
-                        groupId("org.codehaus.mojo"),
-                        artifactId("exec-maven-plugin"),
-                        version("3.1.0")
-                    ),
-                    goal("exec"),
-                    configuration(
-                        element(name("executable"), verifierPath),
-                        element(name("commandlineArgs"), arguments),
-                        element(name("useMavenLogger"), "true")
-                    ),
-                    executionEnvironment(
-                        project,
-                        mavenSession,
-                        pluginManager
-                    )
-                );
-            } catch(MojoExecutionException e) {
-                // TODO: Properly interpret the output based on the verification plugin.
-                getLog().info("Skipping slsa verification: Fail to run slsa verifier.");
-                return;
-            }
+            // TODO(#665): Harden against script injections.
+            String arguments = "verify-artifact --provenance-path ";
+            arguments += "${project.build.directory}/slsa/" + artifact.getArtifactId() + "-" + artifact.getVersion() + "-jar.build.slsa ";
+            arguments += " --source-uri ./ ${project.build.directory}/slsa/" + artifact.getArtifactId() + "-" + artifact.getVersion() + ".jar";
+            // NOTE: This command may throw an exception, indicating that provenance verification failed.
+            executeMojo(
+                plugin(
+                    groupId("org.codehaus.mojo"),
+                    artifactId("exec-maven-plugin"),
+                    version("3.1.0")
+                ),
+                goal("exec"),
+                configuration(
+                    element(name("executable"), verifierPath),
+                    element(name("commandlineArgs"), arguments),
+                    element(name("useMavenLogger"), "true")
+                ),
+                executionEnvironment(
+                    project,
+                    mavenSession,
+                    pluginManager
+                )
+            );
+        }
         }
     }
 }
