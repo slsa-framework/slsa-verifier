@@ -798,7 +798,7 @@ func Test_verifyPackageName(t *testing.T) {
 	}
 }
 
-func Test_verifySubjectDigest(t *testing.T) {
+func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
@@ -868,7 +868,7 @@ func Test_verifySubjectDigest(t *testing.T) {
 				Envelope: env,
 			}
 
-			err = npm.verifySubjectDigest(tt.hash)
+			err = npm.verifyPublishAttestationSubjectDigest(tt.hash)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}

@@ -368,7 +368,7 @@ func verifyProvenanceSubjectVersion(b *utils.TrustedBuilderID, att *SignedAttest
 	return nil
 }
 
-func (n *Npm) verifySubjectDigest(expectedHash string) error {
+func (n *Npm) verifyPublishAttestationSubjectDigest(expectedHash string) error {
 	publishSubjects, err := subjectsFromAttestation(n.verifiedPublishAtt)
 	if err != nil {
 		return err
