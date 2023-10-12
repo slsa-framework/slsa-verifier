@@ -36,7 +36,7 @@ Do **NOT** submit any more code between now and the final release.
 
 Check the following:
 
-1. Ensure that the release is successful and provenance can be verified properly.
+1. Ensure that the release is successful and provenance can be verified properly. Use the [verify-release.sh](./verify-release.sh).
 2. Either manually trigger or wait for a nightly scheduled run of all [example-package e2e tests](https://github.com/slsa-framework/example-package/tree/main/.github/workflows) and ensure that all tests are passing.
 3. Ensure that the latest release can be installed via a `go install`.
 4. Verify that the version reported by the `version` command is correct:
