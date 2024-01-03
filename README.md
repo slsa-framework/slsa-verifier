@@ -274,6 +274,29 @@ Get the digest for your container _without_ pulling it using the [crane](https:/
 IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
 ```
 
+**Optional:** 
+
+Refer [Specifying a provenance target repository](https://docs.sigstore.dev/system_config/registry_support/#specifying-registry) when stored separately:
+
+- Make sure to authenticate against the provenance target repository
+
+- _Defaults_ when **NOT** specified:
+
+  **_registry_**: `index.docker.io` 
+
+  **_namespace_**: `library`
+
+  **_provenance-target-repository_**: **Required**
+
+- Run the below to set provenance target repository
+  ```shell
+  export COSIGN_REPOSITORY=<registry>/<namespace>/<provenance-target-repository>
+  ```
+
+
+  
+
+
 To verify a container image, run the following command. Note that to use `ghcr.io` you need to set the `GH_TOKEN` environment variable as well.
 
 ```shell
