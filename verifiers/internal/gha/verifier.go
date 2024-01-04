@@ -19,6 +19,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
+
+	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 )
 
 const VerifierName = "GHA"
@@ -252,11 +254,27 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// Parse any provenance target repository set using environment variable COSIGN_REPOSITORY
+	provenanceTargetRepository, err := ociremote.GetEnvTargetRepository()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	registryClientOpts := []ociremote.Option{}
+
+	// Append target repository to OCI Registry opts
+	// Must be authenticated against the specified target repository externally
+	if provenanceTargetRepository.Name() != "" {
+		registryClientOpts = append(registryClientOpts, ociremote.WithTargetRepository(provenanceTargetRepository))
+	}
+
 	opts := &cosign.CheckOpts{
-		RootCerts:         trustedRoot.FulcioRoot,
-		IntermediateCerts: trustedRoot.FulcioIntermediates,
-		RekorPubKeys:      trustedRoot.RekorPubKeys,
-		CTLogPubKeys:      trustedRoot.CTPubKeys,
+		RegistryClientOpts: registryClientOpts,
+		RootCerts:          trustedRoot.FulcioRoot,
+		IntermediateCerts:  trustedRoot.FulcioIntermediates,
+		RekorPubKeys:       trustedRoot.RekorPubKeys,
+		CTLogPubKeys:       trustedRoot.CTPubKeys,
 	}
 	atts, _, err := container.RunCosignImageVerification(ctx,
 		artifactImage, opts)
