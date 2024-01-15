@@ -262,6 +262,28 @@ The only requirement is that the provenance file covers all artifacts passed as 
 
 To verify a container image, you need to pass a container image name that is _immutable_ by providing its digest, in order to avoid [TOCTOU attacks](#toctou-attacks).
 
+#### The verify-image command
+
+```bash
+$ slsa-verifier verify-image --help
+Verifies SLSA provenance for an image
+
+Usage:
+  slsa-verifier verify-image [flags] tarball
+
+Flags:
+      --build-workflow-input map[]    [optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions). (default map[])
+      --builder-id string             [optional] the unique builder ID who created the provenance
+  -h, --help                          help for verify-npm-package
+      --print-provenance              [optional] print the verified provenance to stdout
+      --provenance-path string        path to a provenance file
+      --provenance-repository  string [optional] provenance repository when stored different from image repository. When set, overrides COSIGN_REPOSITORY environment variable
+      --source-branch string          [optional] expected branch the binary was compiled from
+      --source-tag string             [optional] expected tag the binary was compiled from
+      --source-uri string             expected source repository that should have produced the binary, e.g. github.com/some/repo
+      --source-versioned-tag string   [optional] expected version the binary was compiled from. Uses semantic version to match the tag
+```
+
 First set the image name:
 
 ```shell

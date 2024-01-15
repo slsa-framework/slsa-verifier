@@ -74,6 +74,48 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
+// VerifyImageOptions is the top-level options for the `verifyImage` command
+
+type VerifyImageOptions struct {
+	VerifyOptions
+	/* Other */
+	ProvenanceRepository string
+}
+
+var _ Interface = (*VerifyImageOptions)(nil)
+
+// AddFlags implements Interface.
+func (o *VerifyImageOptions) AddFlags(cmd *cobra.Command) {
+	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
+		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions).")
+
+	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "[optional] the unique builder ID who created the provenance")
+
+	/* Source options */
+	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
+		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
+
+	cmd.Flags().StringVar(&o.SourceBranch, "source-branch", "", "[optional] expected branch the binary was compiled from")
+
+	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
+
+	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
+		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+
+	/* Other options */
+	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
+		"path to a provenance file")
+
+	cmd.Flags().StringVar(&o.ProvenanceRepository, "provenance-repository", "",
+		"image repository for provenance with format: <registry>/<repository>. When set, overrides COSIGN_REPOSITORY environment variable")
+
+	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
+		"[optional] print the verified provenance to stdout")
+
+	cmd.MarkFlagRequired("source-uri")
+	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
+}
+
 // VerifyNpmOptions is the top-level options for the `verifyNpmPackage` command.
 type VerifyNpmOptions struct {
 	VerifyOptions

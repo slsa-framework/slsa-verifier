@@ -50,8 +50,8 @@ func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 
 // VerifyImage verifies provenance for an OCI image.
 func (v *GCBVerifier) VerifyImage(ctx context.Context,
-	provenance []byte, artifactImage string,
-	provenanceOpts *options.ProvenanceOpts,
+	provenance []byte, provenanceRepository string,
+	artifactImage string, provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	prov, err := ProvenanceFromBytes(provenance)
