@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-go@v5.0.0
         with:
           go-version-file: "__THIS_REPO__/go.mod"
+          cache: false
 
       - name: Build verifier at HEAD
         working-directory: __THIS_REPO__
