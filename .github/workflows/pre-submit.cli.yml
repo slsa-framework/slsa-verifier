@@ -20,7 +20,7 @@ jobs:
       - name: setup-go
         uses: actions/setup-go@v5.0.0
         with:
-          go-version-file: "go.mod"
+          go-version-file: "__THIS_REPO__/go.mod"
 
       - name: Save event name
         env:
