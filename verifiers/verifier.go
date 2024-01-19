@@ -37,6 +37,18 @@ func getVerifier(builderOpts *options.BuilderOpts) (register.SLSAVerifier, error
 
 func VerifyImage(ctx context.Context, artifactImage string,
 	provenance []byte,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	verifier, err := getVerifier(builderOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
+}
+
+func VerifyImageProvenanceRepo(ctx context.Context, artifactImage string,
+	provenance []byte,
 	provenanceRepository string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
@@ -45,7 +57,7 @@ func VerifyImage(ctx context.Context, artifactImage string,
 	if err != nil {
 		return nil, nil, err
 	}
-	return verifier.VerifyImage(ctx, provenance, provenanceRepository, artifactImage, provenanceOpts, builderOpts)
+	return verifier.VerifyImageProvenanceRepo(ctx, provenance, provenanceRepository, artifactImage, provenanceOpts, builderOpts)
 }
 
 func VerifyArtifact(ctx context.Context,

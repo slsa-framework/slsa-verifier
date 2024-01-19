@@ -71,12 +71,15 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 		}
 	}
 
-	var provenanceRepository string
+	var verifiedProvenance []byte
+	var outBuilderID *utils.TrustedBuilderID
+
 	if c.ProvenanceRepository != nil {
-		provenanceRepository = *c.ProvenanceRepository
+		verifiedProvenance, outBuilderID, err = verifiers.VerifyImageProvenanceRepo(ctx, artifacts[0], provenance, *c.ProvenanceRepository, provenanceOpts, builderOpts)
+	} else {
+		verifiedProvenance, outBuilderID, err = verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
 	}
 
-	verifiedProvenance, outBuilderID, err := verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceRepository, provenanceOpts, builderOpts)
 	if err != nil {
 		return nil, err
 	}

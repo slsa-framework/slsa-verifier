@@ -244,48 +244,9 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		utils.MergeMaps(defaultArtifactTrustedReusableWorkflows, defaultBYOBReusableWorkflows))
 }
 
-// VerifyImage verifies provenance for an OCI image.
-func (v *GHAVerifier) VerifyImage(ctx context.Context,
-	provenance []byte, provenanceRepository string,
-	artifactImage string, provenanceOpts *options.ProvenanceOpts,
-	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.TrustedBuilderID, error) {
-	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
-	trustedRoot, err := TrustedRootSingleton(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var provenanceTargetRepository name.Repository
-	// Consume input for --provenance-repository when set
-	if provenanceRepository != "" {
-		provenanceTargetRepository, err = name.NewRepository(provenanceRepository)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		// If user input --provenance-repository is empty, look for COSIGN_REPOSITORY environment
-		provenanceTargetRepository, err = ociremote.GetEnvTargetRepository()
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	registryClientOpts := []ociremote.Option{}
-
-	// Append target repository to OCI Registry opts
-	// Must be authenticated against the specified target repository externally
-	if provenanceTargetRepository.Name() != "" {
-		registryClientOpts = append(registryClientOpts, ociremote.WithTargetRepository(provenanceTargetRepository))
-	}
-
-	opts := &cosign.CheckOpts{
-		RegistryClientOpts: registryClientOpts,
-		RootCerts:          trustedRoot.FulcioRoot,
-		IntermediateCerts:  trustedRoot.FulcioIntermediates,
-		RekorPubKeys:       trustedRoot.RekorPubKeys,
-		CTLogPubKeys:       trustedRoot.CTPubKeys,
-	}
+// verifyImageWithOptions abstracts the cosign options and returns verified provenance for an artifact.
+func verifyImageWithOptions(ctx context.Context, artifactImage string, provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts, opts *cosign.CheckOpts) ([]byte, *utils.TrustedBuilderID, error) {
 	atts, _, err := container.RunCosignImageVerification(ctx,
 		artifactImage, opts)
 	if err != nil {
@@ -330,6 +291,70 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 		return nil, nil, fmt.Errorf("%w%s", errs[0], s)
 	}
 	return nil, nil, fmt.Errorf("%w", serrors.ErrorNoValidSignature)
+}
+
+// VerifyImage verifies provenance for an OCI image.
+func (v *GHAVerifier) VerifyImage(ctx context.Context,
+	provenance []byte, artifactImage string, provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	opts := &cosign.CheckOpts{
+		RootCerts:         trustedRoot.FulcioRoot,
+		IntermediateCerts: trustedRoot.FulcioIntermediates,
+		RekorPubKeys:      trustedRoot.RekorPubKeys,
+		CTLogPubKeys:      trustedRoot.CTPubKeys,
+	}
+	return verifyImageWithOptions(ctx, artifactImage, provenanceOpts, builderOpts, opts)
+}
+
+// VerifyImageProvenanceRepo verifies provenance from a separate store for an OCI image.
+func (v *GHAVerifier) VerifyImageProvenanceRepo(ctx context.Context,
+	provenance []byte, provenanceRepository string,
+	artifactImage string, provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
+	trustedRoot, err := TrustedRootSingleton(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var provenanceTargetRepository name.Repository
+	// Consume input for --provenance-repository when set
+	if provenanceRepository != "" {
+		provenanceTargetRepository, err = name.NewRepository(provenanceRepository)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		// If user input --provenance-repository is empty, look for COSIGN_REPOSITORY environment
+		provenanceTargetRepository, err = ociremote.GetEnvTargetRepository()
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	registryClientOpts := []ociremote.Option{}
+
+	// Append target repository to OCI Registry opts
+	// Must be authenticated against the specified target repository externally
+	if provenanceTargetRepository.Name() != "" {
+		registryClientOpts = append(registryClientOpts, ociremote.WithTargetRepository(provenanceTargetRepository))
+	}
+
+	opts := &cosign.CheckOpts{
+		RegistryClientOpts: registryClientOpts,
+		RootCerts:          trustedRoot.FulcioRoot,
+		IntermediateCerts:  trustedRoot.FulcioIntermediates,
+		RekorPubKeys:       trustedRoot.RekorPubKeys,
+		CTLogPubKeys:       trustedRoot.CTPubKeys,
+	}
+	return verifyImageWithOptions(ctx, artifactImage, provenanceOpts, builderOpts, opts)
 }
 
 // VerifyNpmPackage verifies an npm package tarball.
