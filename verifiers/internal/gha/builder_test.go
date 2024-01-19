@@ -21,7 +21,7 @@ var (
 	refs123               = "@refs/tags/v1.2.3"
 	githubWorkflows       = "/.github/workflows/"
 	builderGoSlsa3        = githubWorkflows + "builder_go_slsa3.yml"
-	builderGoSlsa3GitUrl  = httpsGithubCom + trustedBuilderRepository + builderGoSlsa3
+	builderGoSlsa3GitURL  = httpsGithubCom + trustedBuilderRepository + builderGoSlsa3
 	delegatorGenericSlsa3 = githubWorkflows + "delegator_generic_slsa3.yml"
 	generatorGenericSlsa3 = githubWorkflows + "generator_generic_slsa3.yml"
 )
@@ -103,7 +103,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           "https://token.actions.githubusercontent.com",
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid generic delegator builder without tag",
@@ -141,7 +141,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           certOidcIssuer,
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid main ref for e2e test - match builderID",
@@ -153,10 +153,10 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
-				ExpectedID: asStringPointer(builderGoSlsa3GitUrl),
+				ExpectedID: asStringPointer(builderGoSlsa3GitURL),
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid main ref for e2e test - mismatch builderID",
@@ -183,10 +183,10 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
-				ExpectedID: asStringPointer(builderGoSlsa3GitUrl),
+				ExpectedID: asStringPointer(builderGoSlsa3GitURL),
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid workflow identity - mismatch builderID",
@@ -214,7 +214,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 			},
 			err:       serrors.ErrorInvalidRef,
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "invalid workflow identity with build",
@@ -250,7 +250,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           certOidcIssuer,
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid workflow identity with fully qualified source - no default",
@@ -262,9 +262,9 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
-				ExpectedID: asStringPointer(builderGoSlsa3GitUrl),
+				ExpectedID: asStringPointer(builderGoSlsa3GitURL),
 			},
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid workflow identity with fully qualified source - match builderID",
@@ -276,10 +276,10 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 				Issuer:           certOidcIssuer,
 			},
 			buildOpts: &options.BuilderOpts{
-				ExpectedID: asStringPointer(builderGoSlsa3GitUrl),
+				ExpectedID: asStringPointer(builderGoSlsa3GitURL),
 			},
 			defaults:  defaultArtifactTrustedReusableWorkflows,
-			builderID: builderGoSlsa3GitUrl,
+			builderID: builderGoSlsa3GitURL,
 		},
 		{
 			name: "valid workflow identity with fully qualified source - mismatch builderID",
