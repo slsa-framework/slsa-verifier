@@ -30,14 +30,15 @@ type ComputeDigestFn func(string) (string, error)
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
 type VerifyImageCommand struct {
 	// May be nil if supplied alongside in the registry
-	ProvenancePath      *string
-	BuilderID           *string
-	SourceURI           string
-	SourceBranch        *string
-	SourceTag           *string
-	SourceVersionTag    *string
-	BuildWorkflowInputs map[string]string
-	PrintProvenance     bool
+	ProvenancePath       *string
+	ProvenanceRepository *string
+	BuilderID            *string
+	SourceURI            string
+	SourceBranch         *string
+	SourceTag            *string
+	SourceVersionTag     *string
+	BuildWorkflowInputs  map[string]string
+	PrintProvenance      bool
 }
 
 func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
@@ -50,12 +51,13 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:      c.SourceURI,
-		ExpectedBranch:         c.SourceBranch,
-		ExpectedDigest:         digest,
-		ExpectedVersionedTag:   c.SourceVersionTag,
-		ExpectedTag:            c.SourceTag,
-		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+		ExpectedSourceURI:            c.SourceURI,
+		ExpectedBranch:               c.SourceBranch,
+		ExpectedDigest:               digest,
+		ExpectedVersionedTag:         c.SourceVersionTag,
+		ExpectedTag:                  c.SourceTag,
+		ExpectedProvenanceRepository: c.ProvenanceRepository,
+		ExpectedWorkflowInputs:       c.BuildWorkflowInputs,
 	}
 
 	builderOpts := &options.BuilderOpts{
@@ -71,6 +73,7 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	}
 
 	verifiedProvenance, outBuilderID, err := verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
+
 	if err != nil {
 		return nil, err
 	}
