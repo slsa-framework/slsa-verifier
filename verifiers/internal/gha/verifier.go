@@ -257,14 +257,8 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 
 	var provenanceTargetRepository name.Repository
 	// Consume input for --provenance-repository when set
-	if *provenanceOpts.ExpectedProvenanceRepository != "" {
+	if provenanceOpts.ExpectedProvenanceRepository != nil {
 		provenanceTargetRepository, err = name.NewRepository(*provenanceOpts.ExpectedProvenanceRepository)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		// If user input --provenance-repository is empty, look for COSIGN_REPOSITORY environment
-		provenanceTargetRepository, err = ociremote.GetEnvTargetRepository()
 		if err != nil {
 			return nil, nil, err
 		}

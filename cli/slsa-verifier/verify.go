@@ -76,7 +76,7 @@ func verifyArtifactCmd() *cobra.Command {
 }
 
 func verifyImageCmd() *cobra.Command {
-	o := &verify.VerifyImageOptions{}
+	o := &verify.VerifyOptions{}
 
 	cmd := &cobra.Command{
 		Use: "verify-image [flags] image",
