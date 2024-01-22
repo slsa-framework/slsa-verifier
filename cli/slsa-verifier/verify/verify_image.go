@@ -51,12 +51,13 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	}
 
 	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:      c.SourceURI,
-		ExpectedBranch:         c.SourceBranch,
-		ExpectedDigest:         digest,
-		ExpectedVersionedTag:   c.SourceVersionTag,
-		ExpectedTag:            c.SourceTag,
-		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+		ExpectedSourceURI:            c.SourceURI,
+		ExpectedBranch:               c.SourceBranch,
+		ExpectedDigest:               digest,
+		ExpectedVersionedTag:         c.SourceVersionTag,
+		ExpectedTag:                  c.SourceTag,
+		ExpectedProvenanceRepository: c.ProvenanceRepository,
+		ExpectedWorkflowInputs:       c.BuildWorkflowInputs,
 	}
 
 	builderOpts := &options.BuilderOpts{
@@ -74,11 +75,7 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	var verifiedProvenance []byte
 	var outBuilderID *utils.TrustedBuilderID
 
-	if c.ProvenanceRepository != nil {
-		verifiedProvenance, outBuilderID, err = verifiers.VerifyImageProvenanceRepo(ctx, artifacts[0], provenance, *c.ProvenanceRepository, provenanceOpts, builderOpts)
-	} else {
-		verifiedProvenance, outBuilderID, err = verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
-	}
+	verifiedProvenance, outBuilderID, err = verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
 
 	if err != nil {
 		return nil, err

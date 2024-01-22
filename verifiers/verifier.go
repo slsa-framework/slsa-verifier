@@ -47,19 +47,6 @@ func VerifyImage(ctx context.Context, artifactImage string,
 	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
 }
 
-func VerifyImageProvenanceRepo(ctx context.Context, artifactImage string,
-	provenance []byte,
-	provenanceRepository string,
-	provenanceOpts *options.ProvenanceOpts,
-	builderOpts *options.BuilderOpts,
-) ([]byte, *utils.TrustedBuilderID, error) {
-	verifier, err := getVerifier(builderOpts)
-	if err != nil {
-		return nil, nil, err
-	}
-	return verifier.VerifyImageProvenanceRepo(ctx, provenance, provenanceRepository, artifactImage, provenanceOpts, builderOpts)
-}
-
 func VerifyArtifact(ctx context.Context,
 	provenance []byte, artifactHash string,
 	provenanceOpts *options.ProvenanceOpts,

@@ -24,14 +24,8 @@ type SLSAVerifier interface {
 
 	// VerifyImage verifies a provenance for a supplied OCI image.
 	VerifyImage(ctx context.Context,
-		provenance []byte, artifactImage string, provenanceOpts *options.ProvenanceOpts,
-		builderOpts *options.BuilderOpts,
-	) ([]byte, *utils.TrustedBuilderID, error)
-
-	// VerifyImageProvenanceRepo verifies a provenance stored in a separate repository for a supplied OCI image.
-	VerifyImageProvenanceRepo(ctx context.Context,
-		provenance []byte, provenanceRepository string,
-		artifactImage string, provenanceOpts *options.ProvenanceOpts,
+		provenance []byte, artifactImage string,
+		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
 	) ([]byte, *utils.TrustedBuilderID, error)
 
