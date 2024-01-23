@@ -38,8 +38,9 @@ type VerifyOptions struct {
 	BuildWorkflowInputs workflowInputs
 	BuilderID           string
 	/* Other */
-	ProvenancePath  string
-	PrintProvenance bool
+	ProvenancePath       string
+	ProvenanceRepository string
+	PrintProvenance      bool
 }
 
 var _ Interface = (*VerifyOptions)(nil)
@@ -66,6 +67,9 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	/* Other options */
 	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
 		"path to a provenance file")
+
+	cmd.Flags().StringVar(&o.ProvenanceRepository, "provenance-repository", "",
+		"image repository for provenance with format: <registry>/<repository>")
 
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"[optional] print the verified provenance to stdout")
