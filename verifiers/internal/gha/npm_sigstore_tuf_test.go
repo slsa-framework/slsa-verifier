@@ -89,7 +89,7 @@ type mockSigstoreTufClient struct {
 }
 
 // NewMockSigstoreTufClient returns an instance of the mock client,
-// with fileContentMap as input and outputs of the GetTarget() method
+// with fileContentMap as input and outputs of the GetTarget() method.
 func NewMockSigstoreTufClient() *mockSigstoreTufClient {
 	return &mockSigstoreTufClient{fileContentMap: mockFileContentMap}
 }
