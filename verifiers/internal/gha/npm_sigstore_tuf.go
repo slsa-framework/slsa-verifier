@@ -79,15 +79,14 @@ func getKeyDataWithNpmjsKeysTarget(keys *npmjsKeysTarget, keyID, keyUsage string
 	return "", fmt.Errorf("%w: 'keyId': %s, 'keyUsage':%s", ErrorMissingNpmjsKeyIDKeyUsage, keyID, keyUsage)
 }
 
-
 // getKeyDataFromSigstoreTuf given a keyid and keyusage, retriive the keyfile from sigstore's TUF root,
 // parse the file and return the specific key material.
 // See documentation for getNpmjsKeysTarget
 //
 // example params:
 //
-// 	keyID: "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
-// 	keyUsage: "npm:attestations"
+//	keyID: "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
+//	keyUsage: "npm:attestations"
 func getKeyDataFromSigstoreTuf(keyID, keyUsage string) (string, error) {
 	client, err := newSigstoreTufClient()
 	if err != nil {
