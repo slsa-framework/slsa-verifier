@@ -19,7 +19,7 @@ require (
 	github.com/google/go-containerregistry v0.17.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sigstore/cosign/v2 v2.2.0
-	github.com/sigstore/sigstore-go v0.0.0-20240108223800-a3df13b8ba29
+	github.com/sigstore/sigstore-go v0.1.1-0.20240130092146-e87063c92bd2
 	github.com/slsa-framework/slsa-github-generator v1.4.0
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/mod v0.14.0
