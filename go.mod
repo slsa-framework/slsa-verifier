@@ -4,6 +4,9 @@ go 1.21
 
 toolchain go1.21.6
 
+// TODO: use the pending PR #41 branch tuf-client-2, use official release after merging
+require github.com/sigstore/sigstore-go v0.1.1-0.20240130092146-e87063c92bd2
+
 require (
 	github.com/docker/go v1.5.1-1
 	github.com/go-openapi/runtime v0.27.1
@@ -18,13 +21,10 @@ require (
 require (
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/go-openapi/swag v0.22.9
-	github.com/google/go-containerregistry v0.17.0
-	github.com/gorilla/mux v1.8.0
+	github.com/google/go-containerregistry v0.18.0
+	github.com/gorilla/mux v1.8.1
 	github.com/sigstore/cosign/v2 v2.2.0
-
-	// TODO: use the pending PR #41 branch tuf-client-2, use official release after merging
-	github.com/sigstore/sigstore-go v0.1.1-0.20240130092146-e87063c92bd2
-	github.com/slsa-framework/slsa-github-generator v1.4.0
+	github.com/slsa-framework/slsa-github-generator v1.9.0
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/mod v0.14.0
 	sigs.k8s.io/release-utils v0.7.7
@@ -157,7 +157,7 @@ require (
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
-	github.com/sigstore/fulcio v1.4.0
+	github.com/sigstore/fulcio v1.4.3
 	github.com/sigstore/protobuf-specs v0.2.1
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
