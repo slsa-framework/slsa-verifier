@@ -22,7 +22,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-const BOOTSTRAP_VERSION = "v2.5.0-rc.0";
+const BOOTSTRAP_VERSION = "v2.5.1-rc.0";
 const BOOTSTRAP_VERIFIER_SHA256 =
   "ccd1edf540ceb9283688745069c041907e5f4cda9dd07a344e601cafb4d11dd2";
 const BINARY_NAME = "slsa-verifier";
