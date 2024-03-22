@@ -22,9 +22,9 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-const BOOTSTRAP_VERSION = "v2.0.0";
+const BOOTSTRAP_VERSION = "v2.5.0-rc.0";
 const BOOTSTRAP_VERIFIER_SHA256 =
-  "8d2e93a9ea0126d5daec22f2778b42fea79192605d16955f0c91847c3a6a8921";
+  "ccd1edf540ceb9283688745069c041907e5f4cda9dd07a344e601cafb4d11dd2";
 const BINARY_NAME = "slsa-verifier";
 const PROVENANCE_NAME = "slsa-verifier-linux-amd64.intoto.jsonl";
 
