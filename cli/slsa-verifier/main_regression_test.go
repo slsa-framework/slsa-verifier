@@ -801,7 +801,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
 			minversion:  "v1.9.0",
-			err:         serrors.ErrorMismatchTag,
+			err:         serrors.ErrorMismatchVersionedTag,
 		},
 	}
 	for _, tt := range tests {

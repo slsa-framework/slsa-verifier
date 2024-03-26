@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/client"
@@ -19,6 +20,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
+
+	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 )
 
 const VerifierName = "GHA"
@@ -243,8 +246,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 
 // VerifyImage verifies provenance for an OCI image.
 func (v *GHAVerifier) VerifyImage(ctx context.Context,
-	provenance []byte, artifactImage string,
-	provenanceOpts *options.ProvenanceOpts,
+	provenance []byte, artifactImage string, provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
@@ -252,12 +254,32 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	if err != nil {
 		return nil, nil, err
 	}
-	opts := &cosign.CheckOpts{
-		RootCerts:         trustedRoot.FulcioRoot,
-		IntermediateCerts: trustedRoot.FulcioIntermediates,
-		RekorPubKeys:      trustedRoot.RekorPubKeys,
-		CTLogPubKeys:      trustedRoot.CTPubKeys,
+
+	var provenanceTargetRepository name.Repository
+	// Consume input for --provenance-repository when set
+	if provenanceOpts.ExpectedProvenanceRepository != nil {
+		provenanceTargetRepository, err = name.NewRepository(*provenanceOpts.ExpectedProvenanceRepository)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
+
+	registryClientOpts := []ociremote.Option{}
+
+	// Append target repository to OCI Registry opts
+	// Must be authenticated against the specified target repository externally
+	if provenanceTargetRepository.Name() != "" {
+		registryClientOpts = append(registryClientOpts, ociremote.WithTargetRepository(provenanceTargetRepository))
+	}
+
+	opts := &cosign.CheckOpts{
+		RegistryClientOpts: registryClientOpts,
+		RootCerts:          trustedRoot.FulcioRoot,
+		IntermediateCerts:  trustedRoot.FulcioIntermediates,
+		RekorPubKeys:       trustedRoot.RekorPubKeys,
+		CTLogPubKeys:       trustedRoot.CTPubKeys,
+	}
+
 	atts, _, err := container.RunCosignImageVerification(ctx,
 		artifactImage, opts)
 	if err != nil {
