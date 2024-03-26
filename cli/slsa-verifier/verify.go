@@ -96,6 +96,9 @@ func verifyImageCmd() *cobra.Command {
 			if cmd.Flags().Changed("provenance-path") {
 				v.ProvenancePath = &o.ProvenancePath
 			}
+			if cmd.Flags().Changed("provenance-repository") {
+				v.ProvenanceRepository = &o.ProvenanceRepository
+			}
 			if cmd.Flags().Changed("source-branch") {
 				v.SourceBranch = &o.SourceBranch
 			}

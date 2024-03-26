@@ -385,11 +385,11 @@ func GetWorkflowInfoFromCertificate(cert *x509.Certificate) (*WorkflowIdentity, 
 		return nil, err
 	}
 	if deprecatedSourceRepository != "" && sourceURI != "" &&
-		"https://github.com/"+deprecatedSourceRepository != sourceURI {
+		httpsGithubCom+deprecatedSourceRepository != sourceURI {
 		return nil, fmt.Errorf("%w: '%v' != '%v'",
-			serrors.ErrorInvalidFormat, "https://github.com/"+deprecatedSourceRepository, sourceURI)
+			serrors.ErrorInvalidFormat, httpsGithubCom+deprecatedSourceRepository, sourceURI)
 	}
-	sourceRepository := strings.TrimPrefix(sourceURI, "https://github.com/")
+	sourceRepository := strings.TrimPrefix(sourceURI, httpsGithubCom)
 	// Handle old certifcates.
 	if sourceRepository == "" {
 		sourceRepository = deprecatedSourceRepository

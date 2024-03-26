@@ -15,8 +15,6 @@ import (
 
 	cjson "github.com/docker/go/canonical/json"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/entries"
@@ -24,11 +22,14 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/models"
 	"github.com/sigstore/rekor/pkg/sharding"
 	"github.com/sigstore/rekor/pkg/types"
-	intotod "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
+	"github.com/sigstore/rekor/pkg/types/dsse"
+	dsse_v001 "github.com/sigstore/rekor/pkg/types/dsse/v0.0.1"
+	"github.com/sigstore/rekor/pkg/types/intoto"
+	intoto_v001 "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
 	rverify "github.com/sigstore/rekor/pkg/verify"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
-	"github.com/sigstore/sigstore/pkg/signature/dsse"
+	dsseverifier "github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -123,13 +124,18 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 
 	var publicKeyB64 []byte
 	switch e := eimpl.(type) {
-	case *intotod.V001Entry:
+	case *intoto_v001.V001Entry:
 		publicKeyB64, err = e.IntotoObj.PublicKey.MarshalText()
-		if err != nil {
-			return nil, err
+	case *dsse_v001.V001Entry:
+		if len(e.DSSEObj.Signatures) > 1 {
+			return nil, errors.New("multiple signatures on DSSE envelopes are not currently supported")
 		}
+		publicKeyB64, err = e.DSSEObj.Signatures[0].Verifier.MarshalText()
 	default:
 		return nil, errors.New("unexpected tlog entry type")
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	publicKey, err := base64.StdEncoding.DecodeString(string(publicKeyB64))
@@ -149,19 +155,31 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 	return certs[0], err
 }
 
-func intotoEntry(certPem, provenance []byte) (*intotod.V001Entry, error) {
+func intotoEntry(certPem, provenance []byte) (models.ProposedEntry, error) {
 	if len(certPem) == 0 {
 		return nil, fmt.Errorf("no signing certificate found in intoto envelope")
 	}
-	cert := strfmt.Base64(certPem)
-	return &intotod.V001Entry{
-		IntotoObj: models.IntotoV001Schema{
-			Content: &models.IntotoV001SchemaContent{
-				Envelope: string(provenance),
-			},
-			PublicKey: &cert,
-		},
-	}, nil
+	var pubKeyBytes [][]byte
+	pubKeyBytes = append(pubKeyBytes, certPem)
+
+	return types.NewProposedEntry(context.Background(), intoto.KIND, intoto_v001.APIVERSION, types.ArtifactProperties{
+		ArtifactBytes:  provenance,
+		PublicKeyBytes: pubKeyBytes,
+	})
+}
+
+func dsseEntry(certPem, provenance []byte) (models.ProposedEntry, error) {
+	if len(certPem) == 0 {
+		return nil, fmt.Errorf("no signing certificate found in intoto envelope")
+	}
+
+	var pubKeyBytes [][]byte
+	pubKeyBytes = append(pubKeyBytes, certPem)
+
+	return types.NewProposedEntry(context.Background(), dsse.KIND, dsse_v001.APIVERSION, types.ArtifactProperties{
+		ArtifactBytes:  provenance,
+		PublicKeyBytes: pubKeyBytes,
+	})
 }
 
 // getUUIDsByArtifactDigest finds all entry UUIDs by the digest of the artifact binary.
@@ -195,15 +213,15 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor,
 		return nil, fmt.Errorf("error getting certificate from provenance: %w", err)
 	}
 
-	e, err := intotoEntry(certPem, provenance)
+	intotoEntry, err := intotoEntry(certPem, provenance)
 	if err != nil {
 		return nil, fmt.Errorf("error creating intoto entry: %w", err)
 	}
-	entry := models.Intoto{
-		APIVersion: swag.String(e.APIVersion()),
-		Spec:       e.IntotoObj,
+	dsseEntry, err := dsseEntry(certPem, provenance)
+	if err != nil {
+		return nil, err
 	}
-	searchLogQuery.SetEntries([]models.ProposedEntry{&entry})
+	searchLogQuery.SetEntries([]models.ProposedEntry{intotoEntry, dsseEntry})
 
 	params.SetEntry(&searchLogQuery)
 	resp, err := rClient.Entries.SearchLogQuery(params)
@@ -347,7 +365,7 @@ func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *TrustedR
 	}
 
 	// 2. Verify signature using validated certificate.
-	verifier = dsse.WrapVerifier(verifier)
+	verifier = dsseverifier.WrapVerifier(verifier)
 	if err := verifier.VerifySignature(bytes.NewReader(attBytes), bytes.NewReader(attBytes)); err != nil {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}

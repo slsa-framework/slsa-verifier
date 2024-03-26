@@ -27,6 +27,9 @@ type ProvenanceOpts struct {
 	ExpectedPackageName *string
 
 	ExpectedPackageVersion *string
+
+	// ExpectedProvenanceRepository is the provenance repository that is passed from user and not verified
+	ExpectedProvenanceRepository *string
 }
 
 // BuildOpts are the options for checking the builder.

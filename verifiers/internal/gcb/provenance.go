@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/google/go-cmp/cmp"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 
@@ -173,8 +172,8 @@ func (p *Provenance) VerifyTextProvenance() error {
 	// they are both taken from a string representation.
 	// We do not use cmp.Equal() because it *can* panic and is intended for unit tests only.
 	if !reflect.DeepEqual(unverifiedTextIntotoStatement, p.verifiedStatement) {
-		return fmt.Errorf("%w: diff '%s'", serrors.ErrorMismatchIntoto,
-			cmp.Diff(unverifiedTextIntotoStatement, p.verifiedStatement))
+		return fmt.Errorf("%w: \nunverified: %v, \nverified: %v", serrors.ErrorMismatchIntoto,
+			unverifiedTextIntotoStatement, p.verifiedStatement)
 	}
 
 	return nil

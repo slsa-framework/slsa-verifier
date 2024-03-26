@@ -103,6 +103,8 @@ copy_files() {
     local binary="$1"
     local path="$2"
 
+    echo "** Copying files to ${path}"
+
     mkdir -p "${path}"
     for fn in $(ls | grep "${binary}"); do
         # The prefix is what precedes "binary-linux".
