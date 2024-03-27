@@ -23,13 +23,13 @@
     "nodejs": "^0.0.0"
   },
   "devDependencies": {
-    "@types/jasmine": "4.3.2",
-    "@types/node": "18.16.17",
+    "@types/jasmine": "5.1.4",
+    "@types/node": "20.11.30",
     "@vercel/ncc": "0.36.1",
     "eslint": "8.42.0",
     "eslint-plugin-github": "4.8.0",
     "jasmine": "5.0.1",
-    "prettier": "2.8.8",
+    "prettier": "3.2.5",
     "typescript": "5.1.3"
   }
 }
