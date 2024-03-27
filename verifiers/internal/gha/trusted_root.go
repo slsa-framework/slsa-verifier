@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
+	"github.com/sigstore/sigstore/pkg/fulcioroots"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
@@ -39,12 +39,12 @@ func getTrustedRoot(ctx context.Context) (*TrustedRoot, error) {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
 	}
 
-	roots, err := fulcio.GetRoots()
+	roots, err := fulcioroots.Get()
 	if err != nil {
 		// this is unexpected, hold on to this error.
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
 	}
-	intermediates, err := fulcio.GetIntermediates()
+	intermediates, err := fulcioroots.GetIntermediates()
 	if err != nil {
 		// this is unexpected, hold on to this error.
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
