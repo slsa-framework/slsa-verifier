@@ -16,8 +16,6 @@ require (
 )
 
 require (
-	github.com/go-openapi/strfmt v0.22.0
-	github.com/go-openapi/swag v0.22.8
 	github.com/google/go-containerregistry v0.18.0
 	github.com/gorilla/mux v1.8.1
 	github.com/sigstore/cosign/v2 v2.2.0
@@ -34,6 +32,8 @@ require (
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20230821155606-d1ad5ca9624c // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
+	github.com/go-openapi/strfmt v0.22.0 // indirect
+	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-github/v53 v53.2.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
@@ -185,7 +185,7 @@ require (
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/grpc v1.59.0 // indirect
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
