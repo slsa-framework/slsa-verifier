@@ -27,14 +27,14 @@ jobs:
       version: ${{ steps.generate-versions.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           # NOTE: the example-package needs to be checked out in the default workspace.
           repository: slsa-framework/example-package
           ref: main
 
       - name: Checkout
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           path: __THIS_REPO__
 
@@ -77,7 +77,7 @@ jobs:
       - name: Checkout this repository
         # Skip release candidates unless specified explicitly.
         if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           ref: ${{ matrix.version }}
 
@@ -196,7 +196,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           repository: slsa-framework/example-package
           ref: main
@@ -210,7 +210,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           repository: slsa-framework/example-package
           ref: main
