@@ -19,6 +19,8 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 )
 
+var gitPrefix = "git+"
+
 type testProvenance struct {
 	builderID         string
 	buildType         string
@@ -430,48 +432,48 @@ func Test_isValidDelegatorBuilderID(t *testing.T) {
 		{
 			name:      "no @",
 			builderID: "some/builderID",
-			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidBuilderID,
 		},
 		{
 			name:      "invalid ref",
 			builderID: "some/builderID@v1.2.3",
-			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "invalid ref not tag",
 			builderID: "some/builderID@refs/head/v1.2.3",
-			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "invalid ref not full semver",
 			builderID: "some/builderID@refs/heads/v1.2",
-			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			err:       serrors.ErrorInvalidRef,
 		},
 		{
 			name:      "valid builder",
-			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			builderID: "some/builderID@refs/tags/v1.2.3",
 		},
 		{
 			name:           "invalid builder ref not e2e repo with testing enabled",
-			sourceURI:      "git+" + httpsGithubCom + "some/repo",
+			sourceURI:      gitPrefix + httpsGithubCom + "some/repo",
 			builderID:      "some/builderID@refs/heads/main",
 			testingEnabled: true,
 			err:            serrors.ErrorInvalidRef,
 		},
 		{
 			name:           "invalid builder ref e2e repo with testing enabled",
-			sourceURI:      "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI:      gitPrefix + httpsGithubCom + e2eTestRepository,
 			builderID:      "some/builderID@refs/heads/main",
 			testingEnabled: true,
 		},
 		{
 			name:      "invalid builder ref e2e repo",
-			sourceURI: "git+" + httpsGithubCom + e2eTestRepository,
+			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			builderID: "some/builderID@refs/heads/main",
 			err:       serrors.ErrorInvalidRef,
 		},
