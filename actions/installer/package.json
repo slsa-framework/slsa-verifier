@@ -23,8 +23,8 @@
     "nodejs": "^0.0.0"
   },
   "devDependencies": {
-    "@types/jasmine": "4.6.4",
-    "@types/node": "18.19.28",
+    "@types/jasmine": "5.1.4",
+    "@types/node": "20.12.3",
     "@vercel/ncc": "0.38.1",
     "eslint": "^8.57.0",
     "eslint-plugin-github": "4.10.2",
