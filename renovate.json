@@ -6,6 +6,7 @@
     "schedule": "before 4am"
   },
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
+  "postUpgradeTasks": { "commands": ["(cd ./actions/installer && make clean && make package)"] },
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
