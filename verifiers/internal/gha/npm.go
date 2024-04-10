@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync/atomic"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
@@ -29,25 +30,7 @@ const (
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
-
-/*
-NOTE: key available at https://registry.npmjs.org/-/npm/v1/keys and https://github.com/sigstore/root-signing/blob/main/repository/repository/targets/registry.npmjs.org/7a8ec9678ad824cdccaa7a6dc0961caf8f8df61bc7274189122c123446248426.keys.json
-
-			https://docs.npmjs.com/about-registry-signatures
-		{
-		"keys": [
-		{
-			"expires": null,
-			"keyid": "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA",
-			"keytype": "ecdsa-sha2-nistp256",
-			"scheme": "ecdsa-sha2-nistp256",
-			"key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
-		}
-		]
-	}
-*/
-const npmRegistryPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1Olb3zMAFFxXKHiIkQO5cJ3Yhl5i6UPp+IhuteBJbuHcA5UogKo0EWtlWwW6KSaKoTNEYL7JlCQiVnkhBktUgg=="
-const npmRegistryPublicKeyID = "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
+var attestationKeyAtomicValue atomic.Value
 
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
@@ -127,6 +110,20 @@ func extractAttestations(attestations []attestation) (*attestation, *attestation
 	return provenanceAttestation, publishAttestation, nil
 }
 
+// getAttestationKey retrieves the attestation key and holds it in memory.
+func getAttestationKey(npmRegistryPublicKeyID string) (string, error) {
+	value := attestationKeyAtomicValue.Load()
+	if value != nil {
+		return value.(string), nil
+	}
+	npmRegistryPublicKey, err := getKeyDataFromSigstoreTuf(npmRegistryPublicKeyID, attestationKeyUsage)
+	if err != nil {
+		return "", err
+	}
+	attestationKeyAtomicValue.Store(npmRegistryPublicKey)
+	return npmRegistryPublicKey, nil
+}
+
 func (n *Npm) verifyProvenanceAttestationSignature() error {
 	// Re-use the standard bundle verification.
 	signedProvenance, err := VerifyProvenanceBundle(n.ctx, n.provenanceAttestation.BundleBytes, n.root)
@@ -140,6 +137,15 @@ func (n *Npm) verifyProvenanceAttestationSignature() error {
 func (n *Npm) verifyPublishAttestationSignature() error {
 	// First verify the bundle and its rekor entry.
 	signedPublish, err := verifyBundleAndEntryFromBytes(n.ctx, n.publishAttestation.BundleBytes, n.root, false)
+	if err != nil {
+		return err
+	}
+
+	// Get the keyID used to sign the attestaion
+	npmRegistryPublicKeyID := signedPublish.PublicKey.Hint
+
+	// Retrieve the key material.
+	npmRegistryPublicKey, err := getAttestationKey(npmRegistryPublicKeyID)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
 
+	proto_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/common/v1"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -29,6 +30,7 @@ type SignedAttestation struct {
 	// The signing certificate
 	SigningCert *x509.Certificate
 	// The associated verified Rekor entry
+	PublicKey  *proto_v1.PublicKeyIdentifier
 	RekorEntry *models.LogEntryAnon
 }
 

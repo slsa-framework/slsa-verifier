@@ -192,6 +192,9 @@ func verifyBundleAndEntry(ctx context.Context, bundle *bundle_v1.Bundle,
 		return nil, err
 	}
 
+	// Extract the PublicKey
+	publicKey := bundle.GetVerificationMaterial().GetPublicKey()
+
 	// Extract DSSE envelope.
 	env, err := getEnvelopeFromBundle(bundle)
 	if err != nil {
@@ -214,6 +217,7 @@ func verifyBundleAndEntry(ctx context.Context, bundle *bundle_v1.Bundle,
 
 	return &SignedAttestation{
 		SigningCert: cert,
+		PublicKey:   publicKey,
 		Envelope:    env,
 		RekorEntry:  rekorEntry,
 	}, nil
