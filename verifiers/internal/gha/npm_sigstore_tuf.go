@@ -68,7 +68,8 @@ func getNpmjsKeysTarget(client sigstoreTufClient, targetPath string) (*npmjsKeys
 }
 
 // getKeyDataWithNpmjsKeysTarget returns the target key's material, given our set of keys, return the target key's material.
-// We may also want to check the existing ValidFor.Start (and a potential future ValidFor.End).
+// TODO: We may also want to check the existing ValidFor.Start (and a potential future ValidFor.End).
+// https://github.com/slsa-framework/slsa-verifier/issues/757
 func getKeyDataWithNpmjsKeysTarget(keys *npmjsKeysTarget, keyID, keyUsage string) (string, error) {
 	for _, key := range keys.Keys {
 		if key.KeyID == keyID && key.KeyUsage == keyUsage {
