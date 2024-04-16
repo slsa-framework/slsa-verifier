@@ -75,7 +75,7 @@ func getKeyDataWithNpmjsKeysTarget(keys *npmjsKeysTarget, keyID, keyUsage string
 			return key.PublicKey.RawBytes, nil
 		}
 	}
-	return "", fmt.Errorf("%w: 'keyId': %s, 'keyUsage':%s", errorMissingNpmjsKeyIDKeyUsage, keyID, keyUsage)
+	return "", fmt.Errorf("%w: 'keyId': %q, 'keyUsage':%q", errorMissingNpmjsKeyIDKeyUsage, keyID, keyUsage)
 }
 
 // getKeyDataFromSigstoreTuf retrieves the keyfile from sigstore's TUF root, parses the file and returns the target key's material.
