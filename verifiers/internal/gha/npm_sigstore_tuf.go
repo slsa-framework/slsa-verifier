@@ -11,7 +11,6 @@ import (
 
 const (
 	attestationKeyUsage = "npm:attestations"
-	attestationKeyID    = "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
 	targetPath          = "registry.npmjs.org/keys.json"
 )
 
