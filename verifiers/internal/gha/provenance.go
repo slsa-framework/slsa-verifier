@@ -30,8 +30,9 @@ type SignedAttestation struct {
 	// The signing certificate
 	SigningCert *x509.Certificate
 	// The associated verified Rekor entry
-	PublicKey  *proto_v1.PublicKeyIdentifier
 	RekorEntry *models.LogEntryAnon
+	// The Public Key in the Bundle's VerificationMaterial
+	PublicKey  *proto_v1.PublicKeyIdentifier
 }
 
 // EnvelopeFromBytes reads a DSSE envelope from the given payload.
