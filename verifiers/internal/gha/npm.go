@@ -141,10 +141,12 @@ func (n *Npm) verifyPublishAttestationSignature() error {
 		return err
 	}
 
-	// Get the keyID used to sign the attestaion
+	// Get the keyID used to sign the attestaion.
+	// It is untrusted until we search the TUF root and find and key with the same KeyID.
 	npmRegistryPublicKeyID := signedPublish.PublicKey.Hint
 
 	// Retrieve the key material.
+	// We found the associated public key in the TUF root, so now we can trust this KeyID.
 	npmRegistryPublicKey, err := getAttestationKey(npmRegistryPublicKeyID)
 	if err != nil {
 		return err
