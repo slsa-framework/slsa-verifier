@@ -1,7 +1,7 @@
 # A workflow to run against renovate-bot's PRs,
 # such as `make package` after it updates the package.json and package-lock.json files.
 # The potentially untrusted code is first run inside a low-privilege Job, and the diff is uploaded as an artifact.
-# Then a higher-privilage Job applies the diff and pushes the changes to the PR.
+# Then a higher-privilege Job applies the diff and pushes the changes to the PR.
 # It's important to only run this workflow against PRs from trusted sources, after also reviewing the changes!
 
 name: Post-Commit
