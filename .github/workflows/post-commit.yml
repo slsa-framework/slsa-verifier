@@ -1,0 +1,95 @@
+# A workflow to run against renovate-bot's PRs,
+# such as `make package` after it updates the package.json and package-lock.json files.
+
+name: Post-Commit
+
+on:
+    workflow_dispatch:
+        inputs:
+            pr_number:
+                description: "The pull request number."
+                required: true
+                type: number
+
+env:
+    COMMAND: |
+        (
+            cd ./actions/installer/dist/../ && \
+            make clean && \
+            make package && \
+            true
+        )
+    COMMIT_MESSAGE: "apply post-commit changes"
+    ARTIFACT: changes.patch
+
+jobs:
+    diff:
+        permissions:
+            pull-requests: read
+        outputs:
+            patch_not_empty: ${{ steps.diff.outputs.patch_not_empty }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: checkout
+              uses: actions/checkout@v4
+              with:
+                  repository: ${{ github.repository }}
+                  persist-credentials: false
+            - name: checkout-pr
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh pr checkout ${{ inputs.pr_number }}
+            - name: run-command
+              run: ${{ env.COMMAND }}
+            - name: diff
+              id: diff
+              run: |
+                  git add .
+                  git status
+                  git diff HEAD > ${{ env.ARTIFACT }}
+                  [ -z "$(cat ${{ env.ARTIFACT }})" ] && RESULT=false || RESULT=true
+                  echo "patch_not_empty=$RESULT" >> "$GITHUB_OUTPUT"
+            - name: upload
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ env.ARTIFACT }}
+                  path: ${{ env.ARTIFACT }}
+
+    push:
+        if: needs.diff.outputs.patch_not_empty == 'true'
+        needs: diff
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: read
+            contents: write
+        steps:
+            - name: checkout
+              uses: actions/checkout@v4
+            - name: checkout-pr
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh pr checkout ${{ inputs.pr_number }}
+            - name: download-patch
+              uses: actions/download-artifact@v4
+              with:
+                  name: ${{ env.ARTIFACT }}
+            - id: apply
+              run: |
+                  git apply ${{ env.ARTIFACT }}
+                  rm ${{ env.ARTIFACT }}
+            # example from
+            # https://github.com/actions/checkout/blob/cd7d8d697e10461458bc61a30d094dc601a8b017/README.md#push-a-commit-using-the-built-in-token
+            - name: push
+              run: |
+                  git config user.name github-actions
+                  git config user.email github-actions@github.com
+                  git add .
+                  git status
+                  if git commit -m "${{ env.COMMIT_MESSAGE }}"
+                  then
+                  git push
+                  else
+                  echo "there is no diff"
+                  fi
