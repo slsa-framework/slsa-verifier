@@ -90,9 +90,5 @@ jobs:
                   git config user.email github-actions@github.com
                   git add .
                   git status
-                  if git commit -m "${{ env.COMMIT_MESSAGE }}"
-                  then
+                  git commit -m "${{ env.COMMIT_MESSAGE }}"
                   git push
-                  else
-                  echo "there is no diff"
-                  fi
