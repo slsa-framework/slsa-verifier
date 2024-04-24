@@ -6,8 +6,9 @@
 # It's important to only run this workflow against PRs from trusted sources, after also reviewing the changes!
 
 # There have been vulnerabilities with using `git apply` https://github.blog/2023-04-25-git-security-vulnerabilities-announced-4/
-# At this point a compromised git binary could modify any branch except `main` and `release/*`, due to our branch protection rules and CODEOWNERS.
-# It may also be able to submit a release https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs#overview
+# At this point a compromised git binary cannot modify any of this repo's branches, only the PR fork's branch,
+# due to our branch protection rules and CODEOWNERS.
+# It aslso cannot submit a new release or modify exsiting releases due to tag protection rules.
 
 name: Post-Commit
 
