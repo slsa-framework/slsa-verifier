@@ -22,16 +22,6 @@ on:
                 required: true
                 type: number
 
-env:
-    COMMAND: |
-        (
-            cd ./actions/installer/dist/../ && \
-            make clean && \
-            make package
-        )
-    COMMIT_MESSAGE: "apply post-commit changes"
-    ARTIFACT: changes.patch
-
 jobs:
     diff:
         permissions:
@@ -48,23 +38,27 @@ jobs:
             - name: checkout-pr
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: |
-                  gh pr checkout ${{ inputs.pr_number }}
+              run: gh pr checkout ${{ inputs.pr_number }}
             - name: run-command
-              run: ${{ env.COMMAND }}
+              run: |
+                (
+                    cd ./actions/installer/dist/../ && \
+                    make clean && \
+                    make package
+                )
             - name: diff
               id: diff
               run: |
                   git add .
                   git status
-                  git diff HEAD > ${{ env.ARTIFACT }}
-                  [ -z "$(cat ${{ env.ARTIFACT }})" ] && RESULT=false || RESULT=true
+                  git diff HEAD > changes.patch
+                  [ -z "$(cat changes.patch)" ] && RESULT=false || RESULT=true
                   echo "patch_not_empty=$RESULT" >> "$GITHUB_OUTPUT"
             - name: upload
               uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
               with:
-                  name: ${{ env.ARTIFACT }}
-                  path: ${{ env.ARTIFACT }}
+                  name: changes.patch
+                  path: changes.patch
 
     push:
         if: needs.diff.outputs.patch_not_empty == 'true'
@@ -79,16 +73,15 @@ jobs:
             - name: checkout-pr
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: |
-                  gh pr checkout ${{ inputs.pr_number }}
+              run: gh pr checkout ${{ inputs.pr_number }}
             - name: download-patch
               uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
               with:
-                  name: ${{ env.ARTIFACT }}
+                  name: changes.patch
             - id: apply
               run: |
-                  git apply ${{ env.ARTIFACT }}
-                  rm ${{ env.ARTIFACT }}
+                  git apply changes.patch
+                  rm changes.patch
             # example from
             # https://github.com/actions/checkout/blob/cd7d8d697e10461458bc61a30d094dc601a8b017/README.md#push-a-commit-using-the-built-in-token
             - name: push
@@ -97,5 +90,5 @@ jobs:
                   git config user.email github-actions@github.com
                   git add .
                   git status
-                  git commit -m "${{ env.COMMIT_MESSAGE }}"
+                  git commit -m "apply post-commit changes"
                   git push
