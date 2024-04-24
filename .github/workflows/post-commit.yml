@@ -21,8 +21,7 @@ env:
         (
             cd ./actions/installer/dist/../ && \
             make clean && \
-            make package && \
-            true
+            make package
         )
     COMMIT_MESSAGE: "apply post-commit changes"
     ARTIFACT: changes.patch
