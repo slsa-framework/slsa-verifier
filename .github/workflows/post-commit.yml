@@ -6,6 +6,8 @@
 
 name: Post-Commit
 
+permissions: {}
+
 on:
     workflow_dispatch:
         inputs:
