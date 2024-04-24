@@ -1,8 +1,13 @@
 # A workflow to run against renovate-bot's PRs,
 # such as `make package` after it updates the package.json and package-lock.json files.
+
 # The potentially untrusted code is first run inside a low-privilege Job, and the diff is uploaded as an artifact.
 # Then a higher-privilege Job applies the diff and pushes the changes to the PR.
 # It's important to only run this workflow against PRs from trusted sources, after also reviewing the changes!
+
+# There have been vulnerabilities with using `git apply` https://github.blog/2023-04-25-git-security-vulnerabilities-announced-4/
+# At this point a compromised git binary could modify any branch except `main` and `release/*`, due to our branch protection rules and CODEOWNERS.
+# It may also be able to submit a release https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs#overview
 
 name: Post-Commit
 
