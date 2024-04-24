@@ -38,3 +38,4 @@ for file in "${dir}"/*; do
     fi
     go run ./cli/slsa-verifier verify-artifact "${file}" --provenance-path "${file}".intoto.jsonl --source-uri github.com/slsa-framework/slsa-verifier --source-tag "${tag}"
 done
+
