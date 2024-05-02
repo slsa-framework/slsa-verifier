@@ -10,7 +10,7 @@
 # due to our branch protection rules and CODEOWNERS.
 # It aslso cannot submit a new release or modify exsiting releases due to tag protection rules.
 
-name: Post-Commit
+name: Update action dist post-commit
 
 permissions: {}
 
