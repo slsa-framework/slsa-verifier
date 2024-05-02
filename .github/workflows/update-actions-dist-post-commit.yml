@@ -68,7 +68,6 @@ jobs:
         permissions:
             # This Job does not run untrusted code, but it does need to push changes to the PR's branch.
             pull-requests: read
-            contents: write
         steps:
             - name: checkout
               uses: actions/checkout@v4
