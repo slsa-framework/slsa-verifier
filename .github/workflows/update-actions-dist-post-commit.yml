@@ -10,7 +10,7 @@
 # due to our branch protection rules and CODEOWNERS.
 # It aslso cannot submit a new release or modify exsiting releases due to tag protection rules.
 
-name: Update action dist post-commit
+name: Update actions dist post-commit
 
 permissions: {}
 
@@ -25,6 +25,7 @@ on:
 jobs:
     diff:
         permissions:
+            # This Job executes the PR's untrusted code, so it must how low permissions.
             pull-requests: read
         outputs:
             patch_not_empty: ${{ steps.diff.outputs.patch_not_empty }}
@@ -65,6 +66,7 @@ jobs:
         needs: diff
         runs-on: ubuntu-latest
         permissions:
+            # This Job does not run untrusted code, but it does need to push changes to the PR's branch.
             pull-requests: read
             contents: write
         steps:
