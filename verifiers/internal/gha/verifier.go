@@ -331,7 +331,12 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	sigstoreTufClient ...utils.SigstoreTufClient,
 ) ([]byte, *utils.TrustedBuilderID, error) {
+	if len(sigstoreTufClient) != 1 {
+		return nil, nil, fmt.Errorf("%w: length of variadic sigstoreTufClient must be exactl 1", serrors.ErrorInternal)
+	}
+
 	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -356,7 +361,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	}
 
 	// Verify publish attesttation signature.
-	if err := npm.verifyPublishAttestationSignature(); err != nil {
+	if err := npm.verifyPublishAttestationSignature(sigstoreTufClient[0]); err != nil {
 		return nil, nil, err
 	}
 

@@ -32,7 +32,7 @@ type SLSAVerifier interface {
 	VerifyNpmPackage(ctx context.Context,
 		attestations []byte, tarballHash string,
 		provenanceOpts *options.ProvenanceOpts,
-		builderOpts *options.BuilderOpts,
+		builderOpts *options.BuilderOpts, sigstoreTufClient ...utils.SigstoreTufClient,
 	) ([]byte, *utils.TrustedBuilderID, error)
 }
 

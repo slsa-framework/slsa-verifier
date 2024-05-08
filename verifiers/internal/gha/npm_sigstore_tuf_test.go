@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 var (
@@ -44,9 +45,11 @@ var (
 			}
 		]
 	}`
+	normalTargetPath          = "registry.npmjs.org/keys.json"
 	testTargetPath            = "my-registry.npmjs.org/keys.json"
 	testTargetInvalidJSONPath = "my-registry.npmjs.org/keys-invalid-json.json"
 	mockFileContentMap        = map[string]string{
+		normalTargetPath:          testTargetKeysFileContent,
 		testTargetPath:            testTargetKeysFileContent,
 		testTargetInvalidJSONPath: testTargetInvalidJSONFileContent,
 	}
@@ -87,9 +90,9 @@ type mockSigstoreTufClient struct {
 	fileContentMap map[string]string
 }
 
-// NewMockSigstoreTufClient returns an instance of the mock client,
+// newMockSigstoreTufClient returns an instance of the mock client,
 // with fileContentMap as input and outputs of the GetTarget() method.
-func NewMockSigstoreTufClient() *mockSigstoreTufClient {
+func newMockSigstoreTufClient() *mockSigstoreTufClient {
 	return &mockSigstoreTufClient{fileContentMap: mockFileContentMap}
 }
 
@@ -118,7 +121,7 @@ func TestGetNpmjsKeysTarget(t *testing.T) {
 		{
 			name:        "parsing non-existent registry.npmjs.org_keys.json",
 			targetPath:  "my-fake-path.json",
-			expectedErr: errorCouldNotFindTarget,
+			expectedErr: serrors.ErrorCouldNotFindTarget,
 		},
 		{
 			name:        "parsing invalid json",
@@ -128,7 +131,7 @@ func TestGetNpmjsKeysTarget(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := NewMockSigstoreTufClient()
+			mockClient := newMockSigstoreTufClient()
 			actualKeys, err := getNpmjsKeysTarget(mockClient, tt.targetPath)
 			if keyDataDiff := cmp.Diff(tt.expectedKeys, actualKeys, cmpopts.EquateComparable()); keyDataDiff != "" {
 				t.Errorf("expected equal values (-want +got):\n%s", keyDataDiff)
@@ -168,7 +171,7 @@ func TestGetKeyDataWithNpmjsKeysTarget(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := NewMockSigstoreTufClient()
+			mockClient := newMockSigstoreTufClient()
 			keys, err := getNpmjsKeysTarget(mockClient, tt.targetPath)
 			if err != nil {
 				t.Fatalf("getNpmjsKeysTarget: %v", err)
