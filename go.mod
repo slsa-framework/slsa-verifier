@@ -19,10 +19,10 @@ require (
 	github.com/google/go-containerregistry v0.19.1
 	github.com/gorilla/mux v1.8.1
 	github.com/sigstore/cosign/v2 v2.2.4
-	github.com/sigstore/sigstore-go v0.2.0
+	github.com/sigstore/sigstore-go v0.3.0
 	github.com/slsa-framework/slsa-github-generator v1.9.0
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/mod v0.16.0
+	golang.org/x/mod v0.17.0
 	sigs.k8s.io/release-utils v0.7.7
 )
 
@@ -38,7 +38,7 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sigstore/timestamp-authority v1.2.2 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
-	github.com/theupdateframework/go-tuf/v2 v2.0.0-20240207172116-f5cf71290141 // indirect
+	github.com/theupdateframework/go-tuf/v2 v2.0.0-20240223092044-1e7978e83f63 // indirect
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240311173647-c811ad7063a7 // indirect
@@ -91,7 +91,7 @@ require (
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/sigstore/fulcio v1.4.5
-	github.com/sigstore/protobuf-specs v0.3.0
+	github.com/sigstore/protobuf-specs v0.3.1
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
