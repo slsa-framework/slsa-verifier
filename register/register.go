@@ -2,6 +2,7 @@ package register
 
 import (
 	"context"
+	"io"
 
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -36,7 +37,7 @@ type SLSAVerifier interface {
 	) ([]byte, *utils.TrustedBuilderID, error)
 
 	VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
-		attestations []byte, tarballHash string,
+		attestations io.Reader, tarballHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts, sigstoreTufClient utils.SigstoreTufClient,
 	) ([]byte, *utils.TrustedBuilderID, error)
