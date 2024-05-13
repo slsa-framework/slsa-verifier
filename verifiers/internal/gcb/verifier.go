@@ -44,7 +44,16 @@ func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-	sigstoreTufClient ...utils.SigstoreTufClient,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	return nil, nil, serrors.ErrorNotSupported
+}
+
+// VerifyNpmPackage verifies an npm package tarball.
+func (v *GCBVerifier) VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
+	attestations []byte, tarballHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+	sigstoreTufClient utils.SigstoreTufClient,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	return nil, nil, serrors.ErrorNotSupported
 }

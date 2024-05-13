@@ -66,12 +66,13 @@ func VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	sigstoreTufClient, err := utils.NewSigstoreTufClient()
+	verifier, err := getVerifier(builderOpts)
 	if err != nil {
 		return nil, nil, err
 	}
-	return VerifyNpmPackageWithSigstoreTufClient(ctx, attestations, tarballHash,
-		provenanceOpts, builderOpts, sigstoreTufClient)
+
+	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
+		provenanceOpts, builderOpts)
 }
 
 func VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
@@ -85,6 +86,6 @@ func VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
 		return nil, nil, err
 	}
 
-	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
+	return verifier.VerifyNpmPackageWithSigstoreTufClient(ctx, attestations, tarballHash,
 		provenanceOpts, builderOpts, sigstoreTufClient)
 }
