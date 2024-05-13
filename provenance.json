@@ -1,0 +1,229 @@
+{
+  "image_summary": {
+    "digest": "sha256:086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9",
+    "fully_qualified_digest": "us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3@sha256:086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9",
+    "registry": "us-west2-docker.pkg.dev",
+    "repository": "example-package-repo",
+    "slsa_build_level": 3
+  },
+  "provenance_summary": {
+    "provenance": [
+      {
+        "build": {
+          "inTotoSlsaProvenanceV1": {
+            "_type": "https://in-toto.io/Statement/v1",
+            "predicate": {
+              "buildDefinition": {
+                "buildType": "https://cloud.google.com/build/gcb-buildtypes/google-worker/v1",
+                "externalParameters": {
+                  "buildConfigSource": {
+                    "path": "cloudbuild.yaml",
+                    "ref": "refs/heads/main",
+                    "repository": "git+https://github.com/slsa-framework/example-package"
+                  },
+                  "substitutions": {
+                    "_IMAGE_NAME": "slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3"
+                  }
+                },
+                "internalParameters": {
+                  "systemSubstitutions": {
+                    "BRANCH_NAME": "main",
+                    "BUILD_ID": "d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+                    "COMMIT_SHA": "8fb2f58e89cadf650116484a411aa532ca70685c",
+                    "LOCATION": "us-west2",
+                    "PROJECT_NUMBER": "819720953812",
+                    "REF_NAME": "main",
+                    "REPO_FULL_NAME": "slsa-framework/example-package",
+                    "REPO_NAME": "example-package",
+                    "REVISION_ID": "8fb2f58e89cadf650116484a411aa532ca70685c",
+                    "SERVICE_ACCOUNT": "projects/-/serviceAccounts/example-package-user@slsa-tooling.iam.gserviceaccount.com",
+                    "SERVICE_ACCOUNT_EMAIL": "example-package-user@slsa-tooling.iam.gserviceaccount.com",
+                    "SHORT_SHA": "8fb2f58",
+                    "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+                    "TRIGGER_NAME": "push-branch-main"
+                  },
+                  "triggerUri": "projects/819720953812/locations/us-west2/triggers/d77d09be-6a8e-482e-aee4-c2b21fa1623c"
+                },
+                "resolvedDependencies": [
+                  {
+                    "digest": {
+                      "gitCommit": "8fb2f58e89cadf650116484a411aa532ca70685c"
+                    },
+                    "uri": "git+https://github.com/slsa-framework/example-package@refs/heads/main"
+                  },
+                  {
+                    "digest": {
+                      "sha256": "9b6d804c504252255f4817a21dd6eaea8fab6cd62e9962b347255b6ec0964b5a"
+                    },
+                    "uri": "gcr.io/cloud-builders/docker@sha256:9b6d804c504252255f4817a21dd6eaea8fab6cd62e9962b347255b6ec0964b5a"
+                  }
+                ]
+              },
+              "runDetails": {
+                "builder": {
+                  "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker"
+                },
+                "byproducts": [
+                  {}
+                ],
+                "metadata": {
+                  "finishedOn": "2024-05-01T03:06:31.413520Z",
+                  "invocationId": "https://cloudbuild.googleapis.com/v1/projects/slsa-tooling/locations/us-west2/builds/d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+                  "startedOn": "2024-05-01T03:05:48.270670635Z"
+                }
+              }
+            },
+            "predicateType": "https://slsa.dev/provenance/v1",
+            "subject": [
+              {
+                "digest": {
+                  "sha256": "086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9"
+                },
+                "name": "https://us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3"
+              },
+              {
+                "digest": {
+                  "sha256": "086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9"
+                },
+                "name": "https://us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3:latest"
+              }
+            ]
+          }
+        },
+        "createTime": "2024-05-01T03:06:36.022556Z",
+        "envelope": {
+          "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCAic3ViamVjdCI6W3sibmFtZSI6Imh0dHBzOi8vdXMtd2VzdDItZG9ja2VyLnBrZy5kZXYvc2xzYS10b29saW5nL2V4YW1wbGUtcGFja2FnZS1yZXBvL2UyZS1nY2ItcHVzaC1tYWluLWRlZmF1bHQtc2xzYTMiLCAiZGlnZXN0Ijp7InNoYTI1NiI6IjA4NmJmZTdhODY3Nzg0N2YyMWViNTRiODgwYzlmODc3M2NlMjk3ZjY3YzBhY2Q0YzUxNzYzNTY4NTgwMTM4YjkifX0sIHsibmFtZSI6Imh0dHBzOi8vdXMtd2VzdDItZG9ja2VyLnBrZy5kZXYvc2xzYS10b29saW5nL2V4YW1wbGUtcGFja2FnZS1yZXBvL2UyZS1nY2ItcHVzaC1tYWluLWRlZmF1bHQtc2xzYTM6bGF0ZXN0IiwgImRpZ2VzdCI6eyJzaGEyNTYiOiIwODZiZmU3YTg2Nzc4NDdmMjFlYjU0Yjg4MGM5Zjg3NzNjZTI5N2Y2N2MwYWNkNGM1MTc2MzU2ODU4MDEzOGI5In19XSwgInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjEiLCAicHJlZGljYXRlIjp7ImJ1aWxkRGVmaW5pdGlvbiI6eyJidWlsZFR5cGUiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vYnVpbGQvZ2NiLWJ1aWxkdHlwZXMvZ29vZ2xlLXdvcmtlci92MSIsICJleHRlcm5hbFBhcmFtZXRlcnMiOnsiYnVpbGRDb25maWdTb3VyY2UiOnsicGF0aCI6ImNsb3VkYnVpbGQueWFtbCIsICJyZWYiOiJyZWZzL2hlYWRzL21haW4iLCAicmVwb3NpdG9yeSI6ImdpdCtodHRwczovL2dpdGh1Yi5jb20vc2xzYS1mcmFtZXdvcmsvZXhhbXBsZS1wYWNrYWdlIn0sICJzdWJzdGl0dXRpb25zIjp7Il9JTUFHRV9OQU1FIjoic2xzYS10b29saW5nL2V4YW1wbGUtcGFja2FnZS1yZXBvL2UyZS1nY2ItcHVzaC1tYWluLWRlZmF1bHQtc2xzYTMifX0sICJpbnRlcm5hbFBhcmFtZXRlcnMiOnsic3lzdGVtU3Vic3RpdHV0aW9ucyI6eyJCUkFOQ0hfTkFNRSI6Im1haW4iLCAiQlVJTERfSUQiOiJkOWE3ZjlkYy0wMjg4LTRhZDYtYWUwMi0zODllNDc4NmE3MmMiLCAiQ09NTUlUX1NIQSI6IjhmYjJmNThlODljYWRmNjUwMTE2NDg0YTQxMWFhNTMyY2E3MDY4NWMiLCAiTE9DQVRJT04iOiJ1cy13ZXN0MiIsICJQUk9KRUNUX05VTUJFUiI6IjgxOTcyMDk1MzgxMiIsICJSRUZfTkFNRSI6Im1haW4iLCAiUkVQT19GVUxMX05BTUUiOiJzbHNhLWZyYW1ld29yay9leGFtcGxlLXBhY2thZ2UiLCAiUkVQT19OQU1FIjoiZXhhbXBsZS1wYWNrYWdlIiwgIlJFVklTSU9OX0lEIjoiOGZiMmY1OGU4OWNhZGY2NTAxMTY0ODRhNDExYWE1MzJjYTcwNjg1YyIsICJTRVJWSUNFX0FDQ09VTlQiOiJwcm9qZWN0cy8tL3NlcnZpY2VBY2NvdW50cy9leGFtcGxlLXBhY2thZ2UtdXNlckBzbHNhLXRvb2xpbmcuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCAiU0VSVklDRV9BQ0NPVU5UX0VNQUlMIjoiZXhhbXBsZS1wYWNrYWdlLXVzZXJAc2xzYS10b29saW5nLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwgIlNIT1JUX1NIQSI6IjhmYjJmNTgiLCAiVFJJR0dFUl9CVUlMRF9DT05GSUdfUEFUSCI6ImNsb3VkYnVpbGQueWFtbCIsICJUUklHR0VSX05BTUUiOiJwdXNoLWJyYW5jaC1tYWluIn0sICJ0cmlnZ2VyVXJpIjoicHJvamVjdHMvODE5NzIwOTUzODEyL2xvY2F0aW9ucy91cy13ZXN0Mi90cmlnZ2Vycy9kNzdkMDliZS02YThlLTQ4MmUtYWVlNC1jMmIyMWZhMTYyM2MifSwgInJlc29sdmVkRGVwZW5kZW5jaWVzIjpbeyJ1cmkiOiJnaXQraHR0cHM6Ly9naXRodWIuY29tL3Nsc2EtZnJhbWV3b3JrL2V4YW1wbGUtcGFja2FnZUByZWZzL2hlYWRzL21haW4iLCAiZGlnZXN0Ijp7ImdpdENvbW1pdCI6IjhmYjJmNThlODljYWRmNjUwMTE2NDg0YTQxMWFhNTMyY2E3MDY4NWMifX0sIHsidXJpIjoiZ2NyLmlvL2Nsb3VkLWJ1aWxkZXJzL2RvY2tlckBzaGEyNTY6OWI2ZDgwNGM1MDQyNTIyNTVmNDgxN2EyMWRkNmVhZWE4ZmFiNmNkNjJlOTk2MmIzNDcyNTViNmVjMDk2NGI1YSIsICJkaWdlc3QiOnsic2hhMjU2IjoiOWI2ZDgwNGM1MDQyNTIyNTVmNDgxN2EyMWRkNmVhZWE4ZmFiNmNkNjJlOTk2MmIzNDcyNTViNmVjMDk2NGI1YSJ9fV19LCAicnVuRGV0YWlscyI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0dvb2dsZUhvc3RlZFdvcmtlciJ9LCAibWV0YWRhdGEiOnsiaW52b2NhdGlvbklkIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL3YxL3Byb2plY3RzL3Nsc2EtdG9vbGluZy9sb2NhdGlvbnMvdXMtd2VzdDIvYnVpbGRzL2Q5YTdmOWRjLTAyODgtNGFkNi1hZTAyLTM4OWU0Nzg2YTcyYyIsICJzdGFydGVkT24iOiIyMDI0LTA1LTAxVDAzOjA1OjQ4LjI3MDY3MDYzNVoiLCAiZmluaXNoZWRPbiI6IjIwMjQtMDUtMDFUMDM6MDY6MzEuNDEzNTIwWiJ9LCAiYnlwcm9kdWN0cyI6W3t9XX19fQ==",
+          "payloadType": "application/vnd.in-toto+json",
+          "signatures": [
+            {
+              "keyid": "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/google-hosted-worker/cryptoKeyVersions/1",
+              "sig": "MEUCIFnILFzp7vYzVHdH90LeGgwKklX0g8H255JY0Aoh9c0cAiEA91R7KqhSGfRfnuITEXqoOpsAgnS9clfu1cMemk39vjQ="
+            }
+          ]
+        },
+        "kind": "BUILD",
+        "name": "projects/slsa-tooling/occurrences/020b4e27-5a55-4bcb-847d-5fa196a77ad8",
+        "noteName": "projects/verified-builder/notes/intoto_slsa_v1_d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+        "resourceUri": "https://us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3@sha256:086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9",
+        "updateTime": "2024-05-01T03:06:36.022556Z"
+      },
+      {
+        "build": {
+          "intotoStatement": {
+            "_type": "https://in-toto.io/Statement/v0.1",
+            "predicateType": "https://slsa.dev/provenance/v0.1",
+            "slsaProvenance": {
+              "builder": {
+                "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker@v0.3"
+              },
+              "materials": [
+                {
+                  "digest": {
+                    "sha1": "8fb2f58e89cadf650116484a411aa532ca70685c"
+                  },
+                  "uri": "git+https://github.com/slsa-framework/example-package"
+                }
+              ],
+              "metadata": {
+                "buildFinishedOn": "2024-05-01T03:06:31.413520Z",
+                "buildInvocationId": "d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+                "buildStartedOn": "2024-05-01T03:05:48.270670635Z"
+              },
+              "recipe": {
+                "arguments": {
+                  "@type": "type.googleapis.com/google.devtools.cloudbuild.v1.Build",
+                  "id": "d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+                  "name": "projects/819720953812/locations/us-west2/builds/d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+                  "options": {
+                    "dynamicSubstitutions": true,
+                    "logging": "CLOUD_LOGGING_ONLY",
+                    "pool": {},
+                    "requestedVerifyOption": "VERIFIED",
+                    "sourceProvenanceHash": [
+                      "SHA256"
+                    ],
+                    "substitutionOption": "ALLOW_LOOSE"
+                  },
+                  "sourceProvenance": {
+                    "resolvedGitSource": {
+                      "revision": "8fb2f58e89cadf650116484a411aa532ca70685c",
+                      "url": "https://github.com/slsa-framework/example-package.git"
+                    }
+                  },
+                  "steps": [
+                    {
+                      "args": [
+                        "build",
+                        "-t",
+                        "us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3",
+                        "."
+                      ],
+                      "name": "gcr.io/cloud-builders/docker",
+                      "pullTiming": {
+                        "endTime": "2024-05-01T03:05:52.032549578Z",
+                        "startTime": "2024-05-01T03:05:52.029813421Z"
+                      },
+                      "status": "SUCCESS",
+                      "timing": {
+                        "endTime": "2024-05-01T03:06:29.787573435Z",
+                        "startTime": "2024-05-01T03:05:52.029813421Z"
+                      }
+                    }
+                  ],
+                  "substitutions": {
+                    "BRANCH_NAME": "main",
+                    "COMMIT_SHA": "8fb2f58e89cadf650116484a411aa532ca70685c",
+                    "REF_NAME": "main",
+                    "REPO_FULL_NAME": "slsa-framework/example-package",
+                    "REPO_NAME": "example-package",
+                    "REVISION_ID": "8fb2f58e89cadf650116484a411aa532ca70685c",
+                    "SHORT_SHA": "8fb2f58",
+                    "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+                    "TRIGGER_NAME": "push-branch-main",
+                    "_IMAGE_NAME": "slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3"
+                  }
+                },
+                "entryPoint": "cloudbuild.yaml",
+                "type": "https://cloudbuild.googleapis.com/CloudBuildYaml@v0.1"
+              }
+            },
+            "subject": [
+              {
+                "digest": {
+                  "sha256": "086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9"
+                },
+                "name": "https://us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3"
+              },
+              {
+                "digest": {
+                  "sha256": "086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9"
+                },
+                "name": "https://us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3:latest"
+              }
+            ]
+          }
+        },
+        "createTime": "2024-05-01T03:06:34.168170Z",
+        "envelope": {
+          "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZSI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0dvb2dsZUhvc3RlZFdvcmtlckB2MC4zIn0sIm1hdGVyaWFscyI6W3siZGlnZXN0Ijp7InNoYTEiOiI4ZmIyZjU4ZTg5Y2FkZjY1MDExNjQ4NGE0MTFhYTUzMmNhNzA2ODVjIn0sInVyaSI6ImdpdCtodHRwczovL2dpdGh1Yi5jb20vc2xzYS1mcmFtZXdvcmsvZXhhbXBsZS1wYWNrYWdlIn1dLCJtZXRhZGF0YSI6eyJidWlsZEZpbmlzaGVkT24iOiIyMDI0LTA1LTAxVDAzOjA2OjMxLjQxMzUyMFoiLCJidWlsZEludm9jYXRpb25JZCI6ImQ5YTdmOWRjLTAyODgtNGFkNi1hZTAyLTM4OWU0Nzg2YTcyYyIsImJ1aWxkU3RhcnRlZE9uIjoiMjAyNC0wNS0wMVQwMzowNTo0OC4yNzA2NzA2MzVaIn0sInJlY2lwZSI6eyJhcmd1bWVudHMiOnsiQHR5cGUiOiJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5kZXZ0b29scy5jbG91ZGJ1aWxkLnYxLkJ1aWxkIiwiaWQiOiJkOWE3ZjlkYy0wMjg4LTRhZDYtYWUwMi0zODllNDc4NmE3MmMiLCJuYW1lIjoicHJvamVjdHMvODE5NzIwOTUzODEyL2xvY2F0aW9ucy91cy13ZXN0Mi9idWlsZHMvZDlhN2Y5ZGMtMDI4OC00YWQ2LWFlMDItMzg5ZTQ3ODZhNzJjIiwib3B0aW9ucyI6eyJkeW5hbWljU3Vic3RpdHV0aW9ucyI6dHJ1ZSwibG9nZ2luZyI6IkNMT1VEX0xPR0dJTkdfT05MWSIsInBvb2wiOnt9LCJyZXF1ZXN0ZWRWZXJpZnlPcHRpb24iOiJWRVJJRklFRCIsInNvdXJjZVByb3ZlbmFuY2VIYXNoIjpbIlNIQTI1NiJdLCJzdWJzdGl0dXRpb25PcHRpb24iOiJBTExPV19MT09TRSJ9LCJzb3VyY2VQcm92ZW5hbmNlIjp7InJlc29sdmVkR2l0U291cmNlIjp7InJldmlzaW9uIjoiOGZiMmY1OGU4OWNhZGY2NTAxMTY0ODRhNDExYWE1MzJjYTcwNjg1YyIsInVybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9zbHNhLWZyYW1ld29yay9leGFtcGxlLXBhY2thZ2UuZ2l0In19LCJzdGVwcyI6W3siYXJncyI6WyJidWlsZCIsIi10IiwidXMtd2VzdDItZG9ja2VyLnBrZy5kZXYvc2xzYS10b29saW5nL2V4YW1wbGUtcGFja2FnZS1yZXBvL2UyZS1nY2ItcHVzaC1tYWluLWRlZmF1bHQtc2xzYTMiLCIuIl0sIm5hbWUiOiJnY3IuaW8vY2xvdWQtYnVpbGRlcnMvZG9ja2VyIiwicHVsbFRpbWluZyI6eyJlbmRUaW1lIjoiMjAyNC0wNS0wMVQwMzowNTo1Mi4wMzI1NDk1NzhaIiwic3RhcnRUaW1lIjoiMjAyNC0wNS0wMVQwMzowNTo1Mi4wMjk4MTM0MjFaIn0sInN0YXR1cyI6IlNVQ0NFU1MiLCJ0aW1pbmciOnsiZW5kVGltZSI6IjIwMjQtMDUtMDFUMDM6MDY6MjkuNzg3NTczNDM1WiIsInN0YXJ0VGltZSI6IjIwMjQtMDUtMDFUMDM6MDU6NTIuMDI5ODEzNDIxWiJ9fV0sInN1YnN0aXR1dGlvbnMiOnsiQlJBTkNIX05BTUUiOiJtYWluIiwiQ09NTUlUX1NIQSI6IjhmYjJmNThlODljYWRmNjUwMTE2NDg0YTQxMWFhNTMyY2E3MDY4NWMiLCJSRUZfTkFNRSI6Im1haW4iLCJSRVBPX0ZVTExfTkFNRSI6InNsc2EtZnJhbWV3b3JrL2V4YW1wbGUtcGFja2FnZSIsIlJFUE9fTkFNRSI6ImV4YW1wbGUtcGFja2FnZSIsIlJFVklTSU9OX0lEIjoiOGZiMmY1OGU4OWNhZGY2NTAxMTY0ODRhNDExYWE1MzJjYTcwNjg1YyIsIlNIT1JUX1NIQSI6IjhmYjJmNTgiLCJUUklHR0VSX0JVSUxEX0NPTkZJR19QQVRIIjoiY2xvdWRidWlsZC55YW1sIiwiVFJJR0dFUl9OQU1FIjoicHVzaC1icmFuY2gtbWFpbiIsIl9JTUFHRV9OQU1FIjoic2xzYS10b29saW5nL2V4YW1wbGUtcGFja2FnZS1yZXBvL2UyZS1nY2ItcHVzaC1tYWluLWRlZmF1bHQtc2xzYTMifX0sImVudHJ5UG9pbnQiOiJjbG91ZGJ1aWxkLnlhbWwiLCJ0eXBlIjoiaHR0cHM6Ly9jbG91ZGJ1aWxkLmdvb2dsZWFwaXMuY29tL0Nsb3VkQnVpbGRZYW1sQHYwLjEifX0sInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMSIsInNsc2FQcm92ZW5hbmNlIjp7ImJ1aWxkZXIiOnsiaWQiOiJodHRwczovL2Nsb3VkYnVpbGQuZ29vZ2xlYXBpcy5jb20vR29vZ2xlSG9zdGVkV29ya2VyQHYwLjMifSwibWF0ZXJpYWxzIjpbeyJkaWdlc3QiOnsic2hhMSI6IjhmYjJmNThlODljYWRmNjUwMTE2NDg0YTQxMWFhNTMyY2E3MDY4NWMifSwidXJpIjoiZ2l0K2h0dHBzOi8vZ2l0aHViLmNvbS9zbHNhLWZyYW1ld29yay9leGFtcGxlLXBhY2thZ2UifV0sIm1ldGFkYXRhIjp7ImJ1aWxkRmluaXNoZWRPbiI6IjIwMjQtMDUtMDFUMDM6MDY6MzEuNDEzNTIwWiIsImJ1aWxkSW52b2NhdGlvbklkIjoiZDlhN2Y5ZGMtMDI4OC00YWQ2LWFlMDItMzg5ZTQ3ODZhNzJjIiwiYnVpbGRTdGFydGVkT24iOiIyMDI0LTA1LTAxVDAzOjA1OjQ4LjI3MDY3MDYzNVoifSwicmVjaXBlIjp7ImFyZ3VtZW50cyI6eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmRldnRvb2xzLmNsb3VkYnVpbGQudjEuQnVpbGQiLCJpZCI6ImQ5YTdmOWRjLTAyODgtNGFkNi1hZTAyLTM4OWU0Nzg2YTcyYyIsIm5hbWUiOiJwcm9qZWN0cy84MTk3MjA5NTM4MTIvbG9jYXRpb25zL3VzLXdlc3QyL2J1aWxkcy9kOWE3ZjlkYy0wMjg4LTRhZDYtYWUwMi0zODllNDc4NmE3MmMiLCJvcHRpb25zIjp7ImR5bmFtaWNTdWJzdGl0dXRpb25zIjp0cnVlLCJsb2dnaW5nIjoiQ0xPVURfTE9HR0lOR19PTkxZIiwicG9vbCI6e30sInJlcXVlc3RlZFZlcmlmeU9wdGlvbiI6IlZFUklGSUVEIiwic291cmNlUHJvdmVuYW5jZUhhc2giOlsiU0hBMjU2Il0sInN1YnN0aXR1dGlvbk9wdGlvbiI6IkFMTE9XX0xPT1NFIn0sInNvdXJjZVByb3ZlbmFuY2UiOnsicmVzb2x2ZWRHaXRTb3VyY2UiOnsicmV2aXNpb24iOiI4ZmIyZjU4ZTg5Y2FkZjY1MDExNjQ4NGE0MTFhYTUzMmNhNzA2ODVjIiwidXJsIjoiaHR0cHM6Ly9naXRodWIuY29tL3Nsc2EtZnJhbWV3b3JrL2V4YW1wbGUtcGFja2FnZS5naXQifX0sInN0ZXBzIjpbeyJhcmdzIjpbImJ1aWxkIiwiLXQiLCJ1cy13ZXN0Mi1kb2NrZXIucGtnLmRldi9zbHNhLXRvb2xpbmcvZXhhbXBsZS1wYWNrYWdlLXJlcG8vZTJlLWdjYi1wdXNoLW1haW4tZGVmYXVsdC1zbHNhMyIsIi4iXSwibmFtZSI6Imdjci5pby9jbG91ZC1idWlsZGVycy9kb2NrZXIiLCJwdWxsVGltaW5nIjp7ImVuZFRpbWUiOiIyMDI0LTA1LTAxVDAzOjA1OjUyLjAzMjU0OTU3OFoiLCJzdGFydFRpbWUiOiIyMDI0LTA1LTAxVDAzOjA1OjUyLjAyOTgxMzQyMVoifSwic3RhdHVzIjoiU1VDQ0VTUyIsInRpbWluZyI6eyJlbmRUaW1lIjoiMjAyNC0wNS0wMVQwMzowNjoyOS43ODc1NzM0MzVaIiwic3RhcnRUaW1lIjoiMjAyNC0wNS0wMVQwMzowNTo1Mi4wMjk4MTM0MjFaIn19XSwic3Vic3RpdHV0aW9ucyI6eyJCUkFOQ0hfTkFNRSI6Im1haW4iLCJDT01NSVRfU0hBIjoiOGZiMmY1OGU4OWNhZGY2NTAxMTY0ODRhNDExYWE1MzJjYTcwNjg1YyIsIlJFRl9OQU1FIjoibWFpbiIsIlJFUE9fRlVMTF9OQU1FIjoic2xzYS1mcmFtZXdvcmsvZXhhbXBsZS1wYWNrYWdlIiwiUkVQT19OQU1FIjoiZXhhbXBsZS1wYWNrYWdlIiwiUkVWSVNJT05fSUQiOiI4ZmIyZjU4ZTg5Y2FkZjY1MDExNjQ4NGE0MTFhYTUzMmNhNzA2ODVjIiwiU0hPUlRfU0hBIjoiOGZiMmY1OCIsIlRSSUdHRVJfQlVJTERfQ09ORklHX1BBVEgiOiJjbG91ZGJ1aWxkLnlhbWwiLCJUUklHR0VSX05BTUUiOiJwdXNoLWJyYW5jaC1tYWluIiwiX0lNQUdFX05BTUUiOiJzbHNhLXRvb2xpbmcvZXhhbXBsZS1wYWNrYWdlLXJlcG8vZTJlLWdjYi1wdXNoLW1haW4tZGVmYXVsdC1zbHNhMyJ9fSwiZW50cnlQb2ludCI6ImNsb3VkYnVpbGQueWFtbCIsInR5cGUiOiJodHRwczovL2Nsb3VkYnVpbGQuZ29vZ2xlYXBpcy5jb20vQ2xvdWRCdWlsZFlhbWxAdjAuMSJ9fSwic3ViamVjdCI6W3siZGlnZXN0Ijp7InNoYTI1NiI6IjA4NmJmZTdhODY3Nzg0N2YyMWViNTRiODgwYzlmODc3M2NlMjk3ZjY3YzBhY2Q0YzUxNzYzNTY4NTgwMTM4YjkifSwibmFtZSI6Imh0dHBzOi8vdXMtd2VzdDItZG9ja2VyLnBrZy5kZXYvc2xzYS10b29saW5nL2V4YW1wbGUtcGFja2FnZS1yZXBvL2UyZS1nY2ItcHVzaC1tYWluLWRlZmF1bHQtc2xzYTMifSx7ImRpZ2VzdCI6eyJzaGEyNTYiOiIwODZiZmU3YTg2Nzc4NDdmMjFlYjU0Yjg4MGM5Zjg3NzNjZTI5N2Y2N2MwYWNkNGM1MTc2MzU2ODU4MDEzOGI5In0sIm5hbWUiOiJodHRwczovL3VzLXdlc3QyLWRvY2tlci5wa2cuZGV2L3Nsc2EtdG9vbGluZy9leGFtcGxlLXBhY2thZ2UtcmVwby9lMmUtZ2NiLXB1c2gtbWFpbi1kZWZhdWx0LXNsc2EzOmxhdGVzdCJ9XX0=",
+          "payloadType": "application/vnd.in-toto+json",
+          "signatures": [
+            {
+              "keyid": "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/provenanceSigner/cryptoKeyVersions/1",
+              "sig": "MEUCIFqSKSCNAAwB19i6xB9IDBTS_9fpezS2vACR9jzr4w9iAiEA98ZL9xyMRNVIFtBk5r27N-GPUvXdaQvsuMvfAFSgvKY="
+            },
+            {
+              "keyid": "projects/verified-builder/locations/us-west2/keyRings/attestor/cryptoKeys/builtByGCB/cryptoKeyVersions/1",
+              "sig": "MEUCIQDDCAkrOlE8fouch4FM7t5IDpmpy-aHM3G20l9E0SdLKAIgTU2Vg_ElAGnfw318k8gReNeyFKdlUcNbscmpNbZNpu0="
+            }
+          ]
+        },
+        "kind": "BUILD",
+        "name": "projects/slsa-tooling/occurrences/913c2f35-e223-4983-9642-879a91b94dd6",
+        "noteName": "projects/verified-builder/notes/intoto_d9a7f9dc-0288-4ad6-ae02-389e4786a72c",
+        "resourceUri": "https://us-west2-docker.pkg.dev/slsa-tooling/example-package-repo/e2e-gcb-push-main-default-slsa3@sha256:086bfe7a8677847f21eb54b880c9f8773ce297f67c0acd4c51763568580138b9",
+        "updateTime": "2024-05-01T03:06:34.168170Z"
+      }
+    ]
+  }
+}
