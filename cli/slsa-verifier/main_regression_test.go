@@ -527,7 +527,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			// Avoid rate limiting by not running the tests in parallel.
-			t.Parallel()
+			// t.Parallel()
 			checkVersions := getBuildersAndVersions(t, "v1.2.2", tt.builders, GHA_ARTIFACT_PATH_BUILDERS)
 			if tt.noversion {
 				checkVersions = []string{""}
