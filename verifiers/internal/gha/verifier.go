@@ -333,7 +333,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	atts := strings.NewReader("abcde")
+	atts := strings.NewReader(string(attestations))
 	sigstoreTufClient, err := utils.NewSigstoreTufClient()
 	if err != nil {
 		return nil, nil, err
