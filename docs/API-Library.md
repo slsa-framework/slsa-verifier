@@ -34,7 +34,12 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	packageVersion := "0.1.127"
 	packageName := "@ianlewis/actions-test"
 	builderId := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
-	attestations := []byte(`{"attestations":[{"predicateType":"https://giEntries":[{"logIndex":"2035" ... `)
+    attestationsReader, err := os.Open("../my/attestations.json")
+	if err != nil {
+		fmt.Printf("cant open attestations file: FAILED: %v", err)
+		return nil, err
+	}
+	defer attestationsReader.Close()
 	tarballHash := "ab786dbef723164a605e55ff0ebe83f8e879159bd411980d4423c9b1646b858a537b4bc4d494fc8f71195db715e5c5e9ab4b8809f8b1b399cd30ac053d180ba7"
 	provenanceOpts := &options.ProvenanceOpts{
 		ExpectedSourceURI:      "github.com/ianlewis/actions-test",
@@ -55,7 +60,7 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 		fmt.Printf("creating SigstoreTuf client: %v", err)
 		return nil, fmt.Errorf("creating SigstoreTuf client: %w", err)
 	}
-	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTufClient(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, client)
+	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTufClient(context.Background(), attestationsReader, tarballHash, provenanceOpts, builderOpts, client)
 	if err != nil {
 		fmt.Printf("Verifying npm package: FAILED: %v", err)
 		return nil, err
