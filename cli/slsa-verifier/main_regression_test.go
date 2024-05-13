@@ -1775,7 +1775,7 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			artifactPath := filepath.Clean(filepath.Join(TEST_DIR, "npm", "gha", tt.artifact))
 			attestationsPath := fmt.Sprintf("%s.json", artifactPath)
