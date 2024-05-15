@@ -17,14 +17,12 @@ package verify
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
@@ -40,50 +38,53 @@ type VerifyArtifactCommand struct {
 }
 
 func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
-	artifactHash, err := getArtifactHash(artifacts[0])
-	if err != nil {
-		return nil, err
+	var builderID *utils.TrustedBuilderID
+
+	for _, artifact := range artifacts {
+		artifactHash, err := computeFileHash(artifact, sha256.New())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+
+		provenanceOpts := &options.ProvenanceOpts{
+			ExpectedSourceURI:      c.SourceURI,
+			ExpectedBranch:         c.SourceBranch,
+			ExpectedDigest:         artifactHash,
+			ExpectedVersionedTag:   c.SourceVersionTag,
+			ExpectedTag:            c.SourceTag,
+			ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+		}
+
+		builderOpts := &options.BuilderOpts{
+			ExpectedID: c.BuilderID,
+		}
+
+		provenance, err := os.ReadFile(c.ProvenancePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+
+		verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+
+		if c.PrintProvenance {
+			fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
+		}
+
+		if builderID == nil {
+			builderID = outBuilderID
+		} else if *builderID != *outBuilderID {
+			err := fmt.Errorf("encountered different builderIDs %v %v", builderID, outBuilderID)
+			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			return nil, err
+		}
+		fmt.Fprintf(os.Stderr, "Verifying artifact %s: PASSED\n\n", artifact)
 	}
 
-	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:      c.SourceURI,
-		ExpectedBranch:         c.SourceBranch,
-		ExpectedDigest:         artifactHash,
-		ExpectedVersionedTag:   c.SourceVersionTag,
-		ExpectedTag:            c.SourceTag,
-		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
-	}
-
-	builderOpts := &options.BuilderOpts{
-		ExpectedID: c.BuilderID,
-	}
-
-	provenance, err := os.ReadFile(c.ProvenancePath)
-	if err != nil {
-		return nil, err
-	}
-
-	verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	if c.PrintProvenance {
-		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
-	}
-
-	return outBuilderID, nil
-}
-
-func getArtifactHash(artifactPath string) (string, error) {
-	f, err := os.Open(artifactPath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
+	return builderID, nil
 }

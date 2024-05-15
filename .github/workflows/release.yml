@@ -15,6 +15,8 @@ permissions: read-all
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   ISSUE_REPOSITORY: slsa-framework/slsa-verifier
+  # In case daily runs fail, the label for filing the issue
+  HEADER: release
 
 jobs:
   # Generate ldflags dynamically.
@@ -24,35 +26,94 @@ jobs:
       version: ${{ steps.ldflags.outputs.version }}
     steps:
       - id: checkout
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0
       - id: ldflags
         run: |
-          echo "::set-output name=version::$(git describe --tags --always --dirty | cut -c2-)"
+          echo "version=$(git describe --tags --always --dirty | cut -c2-)" >> "$GITHUB_OUTPUT"
 
   builder:
+    name: builder-${{matrix.os}}-${{matrix.arch}}
+    needs: [args]
+    strategy:
+      matrix:
+        os:
+          - linux
+          - windows
+          - darwin
+        arch:
+          - amd64
+          - arm64
     permissions:
       actions: read # For the detection of GitHub Actions environment.
       id-token: write # For signing.
       contents: write # For asset uploads.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v1.2.2
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v1.10.0
     with:
-      go-version: 1.18
-      config-file: .github/config-release.yml
+      go-version-file: "go.mod"
+      config-file: .slsa-goreleaser/${{matrix.os}}-${{matrix.arch}}.yml
       compile-builder: true
       evaluated-envs: "VERSION:${{needs.args.outputs.version}}"
 
-  # In case this fails, e.g. build configuration changes, file an issue in slsa-verifier
-  if-failed:
-    runs-on: ubuntu-latest
+  verification:
     needs: [builder]
-    if: always() && needs.builder.result == 'failure'
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    permissions: read-all
     steps:
-      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
-        with:
-          repository: slsa-framework/example-package
-      - run: |
+      - name: Install the verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.4.1
+
+      - name: Download assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATT_FILE_NAME: "${{ needs.builder.outputs.go-binary-name }}.intoto.jsonl"
+          ARTIFACT: ${{ needs.builder.outputs.go-binary-name }}
+        run: |
           set -euo pipefail
 
-          ./.github/workflows/scripts/e2e-report-failure.sh
+          gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p $ARTIFACT
+          gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p "$ATT_FILE_NAME"
+
+      - name: Verify assets
+        env:
+          ARTIFACT: ${{ needs.builder.outputs.go-binary-name }}
+          ATT_FILE_NAME: "${{ needs.builder.outputs.go-binary-name }}.intoto.jsonl"
+        run: |
+          set -euo pipefail
+
+          echo "Verifying $ARTIFACT using $ATT_FILE_NAME"
+          slsa-verifier verify-artifact --provenance-path "$ATT_FILE_NAME" \
+                                        --source-uri "github.com/$GITHUB_REPOSITORY" \
+                                        --source-tag "$GITHUB_REF_NAME" \
+                                        "$ARTIFACT"
+
+  if-succeed:
+    needs: [args, builder]
+    runs-on: ubuntu-latest
+    # We use `== 'failure'` instead of ` != 'success'` because we want to ignore skipped jobs, if there are any.
+    if: github.event_name == 'schedule' && needs.args.result != 'failure' && needs.builder.result != 'failure'
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          repository: slsa-framework/example-package
+          ref: main
+      - run: ./.github/workflows/scripts/e2e-report-success.sh
+
+  if-failed:
+    needs: [args, builder]
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'schedule' && (needs.args.result == 'failure' || needs.builder.result == 'failure')
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          repository: slsa-framework/example-package
+          ref: main
+      - run: ./.github/workflows/scripts/e2e-report-failure.sh

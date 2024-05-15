@@ -22,9 +22,9 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-const BOOTSTRAP_VERSION = "v1.3.0";
+const BOOTSTRAP_VERSION = "v2.5.1-rc.0";
 const BOOTSTRAP_VERIFIER_SHA256 =
-  "1326430d044e8a9522c51e5f721e237b5f75acb6b4e518d129f669403cf7a79a";
+  "ccd1edf540ceb9283688745069c041907e5f4cda9dd07a344e601cafb4d11dd2";
 const BINARY_NAME = "slsa-verifier";
 const PROVENANCE_NAME = "slsa-verifier-linux-amd64.intoto.jsonl";
 
@@ -49,7 +49,7 @@ export async function getVerifierVersion(actionRef: string): Promise<string> {
       {
         owner: "slsa-framework",
         repository: "slsa-verifier",
-      }
+      },
     );
     for (const tag of tags) {
       const commitSha = tag.commit.sha;
@@ -59,14 +59,14 @@ export async function getVerifierVersion(actionRef: string): Promise<string> {
     }
   }
   throw new Error(
-    `Invalid version provided: ${actionRef}. For the set of valid versions, see https://github.com/slsa-framework/slsa-verifier/releases.`
+    `Invalid version provided: ${actionRef}. For the set of valid versions, see https://github.com/slsa-framework/slsa-verifier/releases.`,
   );
 }
 
 // If true, then the file in `path` has the same SHA256 hash as `expectedSha256Hash``.
 export function fileHasExpectedSha256Hash(
   filePath: string,
-  expectedSha256Hash: string
+  expectedSha256Hash: string,
 ): boolean {
   if (!fs.existsSync(filePath)) {
     throw new Error(`File not found: ${filePath}`);
@@ -88,14 +88,19 @@ async function cleanup(): Promise<void> {
 
 async function run(): Promise<void> {
   // Get requested verifier version and validate
-  const actionRef = process.env.GITHUB_ACTION_REF || "";
+  // SLSA_VERIFIER_CI_ACTION_REF is a utility env variable to help us test
+  // the Action in CI.
+  const actionRef =
+    process.env.GITHUB_ACTION_REF ||
+    process.env.SLSA_VERIFIER_CI_ACTION_REF ||
+    "";
   let version: string;
   try {
     version = await getVerifierVersion(actionRef);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
     core.setFailed(
-      `Invalid version provided. For the set of valid versions, see https://github.com/slsa-framework/slsa-verifier/releases. ${errMsg}`
+      `Invalid version provided. For the set of valid versions, see https://github.com/slsa-framework/slsa-verifier/releases. ${errMsg}`,
     );
     cleanup();
     return;
@@ -110,7 +115,7 @@ async function run(): Promise<void> {
     // Download bootstrap version and validate SHA256 checksum
     bootstrapVerifierPath = await tc.downloadTool(
       `https://github.com/slsa-framework/slsa-verifier/releases/download/${BOOTSTRAP_VERSION}/slsa-verifier-linux-amd64`,
-      `${bootstrapDir}/${BINARY_NAME}`
+      `${bootstrapDir}/${BINARY_NAME}`,
     );
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -123,7 +128,7 @@ async function run(): Promise<void> {
     !fileHasExpectedSha256Hash(bootstrapVerifierPath, BOOTSTRAP_VERIFIER_SHA256)
   ) {
     core.setFailed(
-      `Unable to verify slsa-verifier checksum. Aborting installation.`
+      `Unable to verify slsa-verifier checksum. Aborting installation.`,
     );
     cleanup();
     return;
@@ -136,7 +141,7 @@ async function run(): Promise<void> {
     // Download requested version binary and provenance
     downloadedBinaryPath = await tc.downloadTool(
       `https://github.com/slsa-framework/slsa-verifier/releases/download/${version}/slsa-verifier-linux-amd64`,
-      `${installDir}/${BINARY_NAME}`
+      `${installDir}/${BINARY_NAME}`,
     );
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -148,7 +153,7 @@ async function run(): Promise<void> {
   try {
     downloadedProvenancePath = await tc.downloadTool(
       `https://github.com/slsa-framework/slsa-verifier/releases/download/${version}/slsa-verifier-linux-amd64.intoto.jsonl`,
-      `${installDir}/${PROVENANCE_NAME}`
+      `${installDir}/${PROVENANCE_NAME}`,
     );
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -162,15 +167,19 @@ async function run(): Promise<void> {
     const { exitCode, stdout, stderr } = await exec.getExecOutput(
       `${bootstrapVerifierPath}`,
       [
-        `-artifact-path=${downloadedBinaryPath}`,
-        `-provenance=${downloadedProvenancePath}`,
-        `-source=github.com/slsa-framework/slsa-verifier`,
-        `-tag=${version}`,
-      ]
+        "verify-artifact",
+        downloadedBinaryPath,
+        "--provenance-path",
+        downloadedProvenancePath,
+        "--source-uri",
+        "github.com/slsa-framework/slsa-verifier",
+        "--source-tag",
+        version,
+      ],
     );
     if (exitCode !== 0) {
       throw new Error(
-        `Unable to verify binary provenance. Aborting installation. stdout: ${stdout}; stderr: ${stderr}`
+        `Unable to verify binary provenance. Aborting installation. stdout: ${stdout}; stderr: ${stderr}`,
       );
     }
   } catch (error: unknown) {

@@ -4,6 +4,7 @@
   "vulnerabilityAlerts": {
     "schedule": "before 4am"
   },
+  "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
   "packageRules": [
     {
       "matchManagers": ["github-actions"],

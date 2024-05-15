@@ -2,12 +2,17 @@
 run:
   concurrency: 2
   deadline: 5m
+  # For generics.
+  go: 1.18
 issues:
   include:
     - EXC0012
     - EXC0013
     - EXC0014
     - EXC0015
+  exclude:
+    # TODO(#589): Remove after updating to Go 1.20
+    - "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
   # Maximum issues count per one linter.
   # Set to 0 to disable.
   # Default: 50
@@ -21,8 +26,6 @@ linters:
   disable-all: true
   enable:
     - asciicheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - deadcode
     - depguard
     - dogsled
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
@@ -36,11 +39,9 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - gocognit
     - goconst
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - gocritic
+    - gocritic
     - gocyclo
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - godot
+    - godot
     - godox
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - goerr113
@@ -60,8 +61,7 @@ linters:
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - lll
     - makezero
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - misspell
+    - misspell
     - nakedret
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - nestif
@@ -71,21 +71,98 @@ linters:
     - predeclared
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - revive
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - staticcheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - stylecheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - thelper
+    - staticcheck
+    - stylecheck
+    - thelper
     - typecheck
-    # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
-    # - unconvert
+    - unconvert
     - unused
-    - varcheck
     - whitespace
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - wrapcheck
 linters-settings:
+  depguard:
+    rules:
+      global:
+        files:
+          - $all
+          - "!$test"
+          - "!**/experimental/**"
+
+          # This is an exception for the existing code.
+          # TODO(#642): Don't allow go-cmp in non-test code.
+          - "!**/verifiers/internal/gcb/provenance.go"
+        allow:
+          - $gostd
+
+          # Approved orgs.
+          - "github.com/slsa-framework"
+          - "github.com/in-toto"
+          - "github.com/sigstore"
+          - "github.com/secure-systems-lab"
+          - "github.com/go-openapi"
+
+          # Approved packages.
+          - "sigs.k8s.io/release-utils/version"
+          - "github.com/spf13/cobra" # For CLI
+          - "github.com/docker/go/canonical/json" # For canonical json.
+          - "github.com/google/go-containerregistry" # For interacting with container registries.
+        deny:
+          - pkg: "reflect"
+            desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
+      test:
+        files:
+          - "$test"
+          # - "!**/experimental/**"
+          # This is an exception for the existing code.
+          # TODO(#642): Don't allow go-cmp in non-test code.
+          - "!**/verifiers/internal/gcb/provenance.go"
+          # NOTE: test code is allowed to use github.com/google/go-cmp (there is no
+          #       deny for it) but non-test code is not.
+        allow:
+          - $gostd
+
+          # Approved orgs.
+          - "github.com/slsa-framework"
+          - "github.com/in-toto"
+          - "github.com/sigstore"
+          - "github.com/secure-systems-lab"
+          - "github.com/go-openapi"
+
+          # Approved packages.
+          - "sigs.k8s.io/release-utils/version"
+          - "github.com/spf13/cobra" # For CLI
+          - "github.com/docker/go/canonical/json" # For canonical json.
+          - "github.com/google/go-containerregistry" # For interacting with container registries.
+
+          # Allowed in test code.
+          - "github.com/google/go-cmp"
+        deny:
+          - pkg: "reflect"
+            desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
+      experimental:
+        files:
+          - "**/experimental/**/*.go"
+        allow:
+          - $gostd
+
+          # Approved orgs.
+          - "github.com/slsa-framework"
+
+          # Allowed in experimental.
+          - "github.com/gorilla/mux"
+        deny:
+          - pkg: "reflect"
+            desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
   errcheck:
     check-type-assertions: true
     check-blank: true

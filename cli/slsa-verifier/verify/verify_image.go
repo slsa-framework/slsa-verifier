@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils/container"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils/container"
 )
 
 type ComputeDigestFn func(string) (string, error)
@@ -30,40 +30,34 @@ type ComputeDigestFn func(string) (string, error)
 // Note: nil branch, tag, version-tag and builder-id means we ignore them during verification.
 type VerifyImageCommand struct {
 	// May be nil if supplied alongside in the registry
-	ProvenancePath      *string
-	BuilderID           *string
-	SourceURI           string
-	SourceBranch        *string
-	SourceTag           *string
-	SourceVersionTag    *string
-	BuildWorkflowInputs map[string]string
-	PrintProvenance     bool
-	DigestFn            ComputeDigestFn
+	ProvenancePath       *string
+	ProvenanceRepository *string
+	BuilderID            *string
+	SourceURI            string
+	SourceBranch         *string
+	SourceTag            *string
+	SourceVersionTag     *string
+	BuildWorkflowInputs  map[string]string
+	PrintProvenance      bool
 }
 
 func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*utils.TrustedBuilderID, error) {
 	artifactImage := artifacts[0]
-	// Retrieve the image digest.
-	if c.DigestFn == nil {
-		c.DigestFn = container.GetImageDigest
-	}
-	digest, err := c.DigestFn(artifactImage)
+
+	// Verify that the reference is immutable.
+	digest, err := container.GetDigestFromImmutableReference(artifactImage)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify that the reference is immutable.
-	if err := container.ValidateArtifactReference(artifactImage, digest); err != nil {
-		return nil, err
-	}
-
 	provenanceOpts := &options.ProvenanceOpts{
-		ExpectedSourceURI:      c.SourceURI,
-		ExpectedBranch:         c.SourceBranch,
-		ExpectedDigest:         digest,
-		ExpectedVersionedTag:   c.SourceVersionTag,
-		ExpectedTag:            c.SourceTag,
-		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
+		ExpectedSourceURI:            c.SourceURI,
+		ExpectedBranch:               c.SourceBranch,
+		ExpectedDigest:               digest,
+		ExpectedVersionedTag:         c.SourceVersionTag,
+		ExpectedTag:                  c.SourceTag,
+		ExpectedProvenanceRepository: c.ProvenanceRepository,
+		ExpectedWorkflowInputs:       c.BuildWorkflowInputs,
 	}
 
 	builderOpts := &options.BuilderOpts{
@@ -79,6 +73,7 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	}
 
 	verifiedProvenance, outBuilderID, err := verifiers.VerifyImage(ctx, artifacts[0], provenance, provenanceOpts, builderOpts)
+
 	if err != nil {
 		return nil, err
 	}

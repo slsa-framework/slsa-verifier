@@ -3,8 +3,8 @@ package register
 import (
 	"context"
 
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 var SLSAVerifiers = make(map[string]SLSAVerifier)
@@ -25,6 +25,12 @@ type SLSAVerifier interface {
 	// VerifyImage verifies a provenance for a supplied OCI image.
 	VerifyImage(ctx context.Context,
 		provenance []byte, artifactImage string,
+		provenanceOpts *options.ProvenanceOpts,
+		builderOpts *options.BuilderOpts,
+	) ([]byte, *utils.TrustedBuilderID, error)
+
+	VerifyNpmPackage(ctx context.Context,
+		attestations []byte, tarballHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
 	) ([]byte, *utils.TrustedBuilderID, error)

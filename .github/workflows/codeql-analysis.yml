@@ -34,17 +34,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["go"]
+        language: ["go", "javascript"]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # tag=v3.1.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      # TODO(#740): Workaround for go1.21 compatibility. Remove when GHA runners have Go 1.21+.
+      - name: setup-go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: "go.mod"
+          # not needed but gets rid of warnings
+          cache: false
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@4238421316c33d73aeea2801274dd286f157c2bb # v2.1.32
+        uses: github/codeql-action/init@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
         with:
           languages: ${{ matrix.language }}
           # If you wish to specify custom queries, you can do so here or in a config file.
@@ -55,7 +63,7 @@ jobs:
       # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
       # If this step fails, then you should remove it and run the build manually (see below)
       - name: Autobuild
-        uses: github/codeql-action/autobuild@4238421316c33d73aeea2801274dd286f157c2bb # v2.1.32
+        uses: github/codeql-action/autobuild@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
       # Command-line programs to run using the OS shell.
       # 📚 https://git.io/JvXDl
 
@@ -68,4 +76,4 @@ jobs:
       #     make release
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@4238421316c33d73aeea2801274dd286f157c2bb # v2.1.32
+        uses: github/codeql-action/analyze@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9

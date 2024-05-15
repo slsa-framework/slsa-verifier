@@ -29,8 +29,8 @@ describe("Test validVersion", function () {
   it("Rejects commit hashes", function () {
     expect(
       index.validVersion(
-        "1326430d044e8a9522c51e5f721e237b5f75acb6b4e518d129f669403cf7a79a"
-      )
+        "1326430d044e8a9522c51e5f721e237b5f75acb6b4e518d129f669403cf7a79a",
+      ),
     ).toBe(false);
   });
 });
@@ -55,15 +55,15 @@ describe("Test fileHasExpectedSha256Hash", function () {
 
     it("Returns false when the computed and expected hashes don't match", function () {
       expect(index.fileHasExpectedSha256Hash(this.testFile, "foobar")).toBe(
-        false
+        false,
       );
     });
     it("Returns true when the computed and expected hashes don't match", function () {
       expect(
         index.fileHasExpectedSha256Hash(
           this.testFile,
-          "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9"
-        )
+          "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9",
+        ),
       ).toBe(true);
     });
   });

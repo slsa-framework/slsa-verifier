@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
@@ -14,32 +15,34 @@ import (
 
 	cjson "github.com/docker/go/canonical/json"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
-	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
-	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/entries"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
 	"github.com/sigstore/rekor/pkg/generated/models"
 	"github.com/sigstore/rekor/pkg/sharding"
 	"github.com/sigstore/rekor/pkg/types"
-	intotod "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
+	"github.com/sigstore/rekor/pkg/types/dsse"
+	dsse_v001 "github.com/sigstore/rekor/pkg/types/dsse/v0.0.1"
+	"github.com/sigstore/rekor/pkg/types/intoto"
+	intoto_v001 "github.com/sigstore/rekor/pkg/types/intoto/v0.0.1"
 	rverify "github.com/sigstore/rekor/pkg/verify"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
-	"github.com/sigstore/sigstore/pkg/signature/dsse"
+	dsseverifier "github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
 const (
 	defaultRekorAddr = "https://rekor.sigstore.dev"
 )
 
-func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, entryUUID string) (
-	*models.LogEntryAnon, error) {
+func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor,
+	entryUUID string, trustedRoot *TrustedRoot) (
+	*models.LogEntryAnon, error,
+) {
 	params := entries.NewGetLogEntryByUUIDParamsWithContext(ctx)
 	params.EntryUUID = entryUUID
 
@@ -67,29 +70,37 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor, entry
 			return nil, errors.New("expected matching UUID")
 		}
 		// Validate the entry response.
-		return verifyTlogEntry(ctx, rekorClient, entry)
+		return verifyTlogEntry(ctx, entry, true, trustedRoot.RekorPubKeys)
 	}
 
 	return nil, serrors.ErrorRekorSearch
 }
 
-func verifyTlogEntry(ctx context.Context, rekorClient *client.Rekor, e models.LogEntryAnon) (
-	*models.LogEntryAnon, error) {
+// verifyTlogEntry verifies a Rekor entry content against a trusted Rekor key.
+// Verification includes verifying the SignedEntryTimestamp and, if verifyInclusion
+// is true, the inclusion proof along with the signed tree head.
+func verifyTlogEntry(ctx context.Context, e models.LogEntryAnon,
+	verifyInclusion bool, rekorKeys *cosign.TrustedTransparencyLogPubKeys) (
+	*models.LogEntryAnon, error,
+) {
 	// Verify the root hash against the current Signed Entry Tree Head
-	pubs, err := cosign.GetRekorPubs(ctx, nil)
+	verifier, err := signature.LoadECDSAVerifier(rekorKeys.Keys[*e.LogID].PubKey.(*ecdsa.PublicKey),
+		crypto.SHA256)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", err, "unable to fetch Rekor public keys from TUF repository")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, err)
 	}
 
-	verifier, err := signature.LoadECDSAVerifier(pubs[*e.LogID].PubKey, crypto.SHA256)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", err, "unable to load a ECDSA verifier")
+	if verifyInclusion {
+		// This function verifies the inclusion proof, the signature on the root hash of the
+		// inclusion proof, and the SignedEntryTimestamp.
+		err = rverify.VerifyLogEntry(ctx, &e, verifier)
+	} else {
+		// This function verifies the SignedEntryTimestamp
+		err = rverify.VerifySignedEntryTimestamp(ctx, &e, verifier)
 	}
 
-	// This function verifies the inclusion proof, the signature on the root hash of the
-	// inclusion proof, and the SignedEntryTimestamp.
-	if err := rverify.VerifyLogEntry(ctx, &e, verifier); err != nil {
-		return nil, fmt.Errorf("%w: %s", err, "unable to verify a log entry")
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidRekorEntry, err)
 	}
 
 	return &e, nil
@@ -113,13 +124,18 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 
 	var publicKeyB64 []byte
 	switch e := eimpl.(type) {
-	case *intotod.V001Entry:
+	case *intoto_v001.V001Entry:
 		publicKeyB64, err = e.IntotoObj.PublicKey.MarshalText()
-		if err != nil {
-			return nil, err
+	case *dsse_v001.V001Entry:
+		if len(e.DSSEObj.Signatures) > 1 {
+			return nil, errors.New("multiple signatures on DSSE envelopes are not currently supported")
 		}
+		publicKeyB64, err = e.DSSEObj.Signatures[0].Verifier.MarshalText()
 	default:
 		return nil, errors.New("unexpected tlog entry type")
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	publicKey, err := base64.StdEncoding.DecodeString(string(publicKeyB64))
@@ -139,19 +155,31 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 	return certs[0], err
 }
 
-func intotoEntry(certPem []byte, provenance []byte) (*intotod.V001Entry, error) {
+func intotoEntry(certPem, provenance []byte) (models.ProposedEntry, error) {
 	if len(certPem) == 0 {
 		return nil, fmt.Errorf("no signing certificate found in intoto envelope")
 	}
-	cert := strfmt.Base64(certPem)
-	return &intotod.V001Entry{
-		IntotoObj: models.IntotoV001Schema{
-			Content: &models.IntotoV001SchemaContent{
-				Envelope: string(provenance),
-			},
-			PublicKey: &cert,
-		},
-	}, nil
+	var pubKeyBytes [][]byte
+	pubKeyBytes = append(pubKeyBytes, certPem)
+
+	return types.NewProposedEntry(context.Background(), intoto.KIND, intoto_v001.APIVERSION, types.ArtifactProperties{
+		ArtifactBytes:  provenance,
+		PublicKeyBytes: pubKeyBytes,
+	})
+}
+
+func dsseEntry(certPem, provenance []byte) (models.ProposedEntry, error) {
+	if len(certPem) == 0 {
+		return nil, fmt.Errorf("no signing certificate found in intoto envelope")
+	}
+
+	var pubKeyBytes [][]byte
+	pubKeyBytes = append(pubKeyBytes, certPem)
+
+	return types.NewProposedEntry(context.Background(), dsse.KIND, dsse_v001.APIVERSION, types.ArtifactProperties{
+		ArtifactBytes:  provenance,
+		PublicKeyBytes: pubKeyBytes,
+	})
 }
 
 // getUUIDsByArtifactDigest finds all entry UUIDs by the digest of the artifact binary.
@@ -174,7 +202,9 @@ func getUUIDsByArtifactDigest(rClient *client.Rekor, artifactHash string) ([]str
 // GetValidSignedAttestationWithCert finds and validates the matching entry UUIDs with
 // the full intoto attestation.
 // The attestation generated by the slsa-github-generator libraries contain a signing certificate.
-func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte) (*SignedAttestation, error) {
+func GetValidSignedAttestationWithCert(rClient *client.Rekor,
+	provenance []byte, trustedRoot *TrustedRoot,
+) (*SignedAttestation, error) {
 	// Use intoto attestation to find rekor entry UUIDs.
 	params := entries.NewSearchLogQueryParams()
 	searchLogQuery := models.SearchLogQuery{}
@@ -183,16 +213,15 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte)
 		return nil, fmt.Errorf("error getting certificate from provenance: %w", err)
 	}
 
-	e, err := intotoEntry(certPem, provenance)
+	intotoEntry, err := intotoEntry(certPem, provenance)
 	if err != nil {
 		return nil, fmt.Errorf("error creating intoto entry: %w", err)
 	}
-	entry := models.Intoto{
-		APIVersion: swag.String(e.APIVersion()),
-		Spec:       e.IntotoObj,
+	dsseEntry, err := dsseEntry(certPem, provenance)
+	if err != nil {
+		return nil, err
 	}
-	entries := []models.ProposedEntry{&entry}
-	searchLogQuery.SetEntries(entries)
+	searchLogQuery.SetEntries([]models.ProposedEntry{intotoEntry, dsseEntry})
 
 	params.SetEntry(&searchLogQuery)
 	resp, err := rClient.Entries.SearchLogQuery(params)
@@ -207,7 +236,8 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte)
 	logEntry := resp.Payload[0]
 	var rekorEntry models.LogEntryAnon
 	for uuid, e := range logEntry {
-		if _, err := verifyTlogEntry(context.Background(), rClient, e); err != nil {
+		if _, err := verifyTlogEntry(context.Background(), e, true,
+			trustedRoot.RekorPubKeys); err != nil {
 			return nil, fmt.Errorf("error verifying tlog entry: %w", err)
 		}
 		rekorEntry = e
@@ -234,7 +264,7 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte)
 		RekorEntry:  &rekorEntry,
 	}
 
-	if err := verifySignedAttestation(proposedSignedAtt); err != nil {
+	if err := verifySignedAttestation(proposedSignedAtt, trustedRoot); err != nil {
 		return nil, err
 	}
 
@@ -244,7 +274,8 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor, provenance []byte)
 // SearchValidSignedAttestation searches for a valid signing certificate using the Rekor
 // Redis search index by using the artifact digest.
 func SearchValidSignedAttestation(ctx context.Context, artifactHash string, provenance []byte,
-	rClient *client.Rekor) (*SignedAttestation, error) {
+	rClient *client.Rekor, trustedRoot *TrustedRoot,
+) (*SignedAttestation, error) {
 	// Get Rekor UUIDs by artifact digest.
 	uuids, err := getUUIDsByArtifactDigest(rClient, artifactHash)
 	if err != nil {
@@ -264,7 +295,7 @@ func SearchValidSignedAttestation(ctx context.Context, artifactHash string, prov
 	//   * If all succeed, return the signing certificate.
 	var errs []string
 	for _, uuid := range uuids {
-		entry, err := verifyTlogEntryByUUID(ctx, rClient, uuid)
+		entry, err := verifyTlogEntryByUUID(ctx, rClient, uuid, trustedRoot)
 		if err != nil {
 			// this is unexpected, hold on to this error.
 			errs = append(errs, fmt.Sprintf("%s: verifying tlog entry %s", err, uuid))
@@ -284,7 +315,7 @@ func SearchValidSignedAttestation(ctx context.Context, artifactHash string, prov
 			RekorEntry:  entry,
 		}
 
-		err = verifySignedAttestation(proposedSignedAtt)
+		err = verifySignedAttestation(proposedSignedAtt, trustedRoot)
 		if errors.Is(err, serrors.ErrorInternal) {
 			// Return on an internal error
 			return nil, err
@@ -303,11 +334,12 @@ func SearchValidSignedAttestation(ctx context.Context, artifactHash string, prov
 }
 
 // verifyAttestationSignature validates the signature on the attestation
-// given a certificate and a validated signature time.
+// given a certificate and a validated signature time from a verified
+// Rekor entry.
 // The certificate is verified up to Fulcio, the signature is validated
 // using the certificate, and the signature generation time is checked
 // to be within the certificate validity period.
-func verifySignedAttestation(signedAtt *SignedAttestation) error {
+func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *TrustedRoot) error {
 	cert := signedAtt.SigningCert
 	attBytes, err := cjson.MarshalCanonical(signedAtt.Envelope)
 	if err != nil {
@@ -316,20 +348,16 @@ func verifySignedAttestation(signedAtt *SignedAttestation) error {
 	signatureTimestamp := time.Unix(*signedAtt.RekorEntry.IntegratedTime, 0)
 
 	// 1. Verify certificate chain.
-	roots, err := fulcio.GetRoots()
-	if err != nil {
-		// this is unexpected, hold on to this error.
-		return fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
-	}
-	intermediates, err := fulcio.GetIntermediates()
-	if err != nil {
-		// this is unexpected, hold on to this error.
-		return fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
-	}
 	co := &cosign.CheckOpts{
-		RootCerts:         roots,
-		IntermediateCerts: intermediates,
-		CertOidcIssuer:    certOidcIssuer,
+		RootCerts:         trustedRoot.FulcioRoot,
+		IntermediateCerts: trustedRoot.FulcioIntermediates,
+		Identities: []cosign.Identity{
+			{
+				Issuer:        certOidcIssuer,
+				SubjectRegExp: certSubjectRegexp,
+			},
+		},
+		CTLogPubKeys: trustedRoot.CTPubKeys,
 	}
 	verifier, err := cosign.ValidateAndUnpackCert(signedAtt.SigningCert, co)
 	if err != nil {
@@ -337,7 +365,7 @@ func verifySignedAttestation(signedAtt *SignedAttestation) error {
 	}
 
 	// 2. Verify signature using validated certificate.
-	verifier = dsse.WrapVerifier(verifier)
+	verifier = dsseverifier.WrapVerifier(verifier)
 	if err := verifier.VerifySignature(bytes.NewReader(attBytes), bytes.NewReader(attBytes)); err != nil {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}

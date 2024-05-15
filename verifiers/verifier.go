@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	serrors "github.com/slsa-framework/slsa-verifier/errors"
-	"github.com/slsa-framework/slsa-verifier/options"
-	"github.com/slsa-framework/slsa-verifier/register"
-	_ "github.com/slsa-framework/slsa-verifier/verifiers/internal/gcb"
-	"github.com/slsa-framework/slsa-verifier/verifiers/internal/gha"
-	"github.com/slsa-framework/slsa-verifier/verifiers/utils"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+	"github.com/slsa-framework/slsa-verifier/v2/register"
+	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 func getVerifier(builderOpts *options.BuilderOpts) (register.SLSAVerifier, error) {
@@ -44,7 +44,6 @@ func VerifyImage(ctx context.Context, artifactImage string,
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return verifier.VerifyImage(ctx, provenance, artifactImage, provenanceOpts, builderOpts)
 }
 
@@ -59,5 +58,19 @@ func VerifyArtifact(ctx context.Context,
 	}
 
 	return verifier.VerifyArtifact(ctx, provenance, artifactHash,
+		provenanceOpts, builderOpts)
+}
+
+func VerifyNpmPackage(ctx context.Context,
+	attestations []byte, tarballHash string,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	verifier, err := getVerifier(builderOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
 		provenanceOpts, builderOpts)
 }

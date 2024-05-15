@@ -1,0 +1,17 @@
+# Used for pre-submit tests.
+version: 1
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+
+flags:
+  - -trimpath
+  - -tags=netgo
+
+goos: windows
+goarch: arm64
+binary: slsa-verifier-{{ .Os }}-{{ .Arch }}.exe
+dir: ./cli/slsa-verifier
+
+ldflags:
+  - "-X sigs.k8s.io/release-utils/version.gitVersion={{ .Env.VERSION }}"

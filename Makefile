@@ -26,11 +26,45 @@ node_modules/.installed: package.json package-lock.json
 
 .PHONY: unit-test
 unit-test: ## Runs all unit tests.
-	# Run unit tests for the detect-workflow action.
-	make -C .github/actions/detect-workflow/ unit-test
-	go mod vendor
-	go test -mod=vendor -v ./...
+	@ # NOTE: go test builds packages even if there are no tests.
+	@set -e;\
+		go mod vendor; \
+		extraargs=""; \
+		if [ "$(OUTPUT_FORMAT)" == "github" ]; then \
+			extraargs="-v"; \
+		fi; \
+		go test -mod=vendor $$extraeargs ./...
 
+.PHONY: regression-test
+regression-test: ## Runs all regression and unit tests.
+	@ # NOTE: go test builds packages even if there are no tests.
+	@set -e;\
+		go mod vendor; \
+		extraargs=""; \
+		if [ "$(OUTPUT_FORMAT)" == "github" ]; then \
+			extraargs="-v"; \
+		fi; \
+		go test -mod=vendor -tags=regression $$extraeargs -timeout=25m ./...
+
+## Tools
+#####################################################################
+
+.PHONY: markdown-toc
+markdown-toc: node_modules/.installed ## Runs markdown-toc on markdown files.
+	@# NOTE: Do not include issue templates since they contain Front Matter.
+	@# markdown-toc will update Front Matter even if there is no TOC in the file.
+	@# See: https://github.com/jonschlinkert/markdown-toc/issues/151
+	@set -euo pipefail; \
+		md_files=$$( \
+			find . -name '*.md' -type f \
+				-not -iwholename '*/.git/*' \
+				-not -iwholename '*/vendor/*' \
+				-not -iwholename '*/node_modules/*' \
+				-not -iwholename '*/.github/ISSUE_TEMPLATE/*' \
+		); \
+		for filename in $${md_files}; do \
+			npm run markdown-toc "$${filename}"; \
+		done;
 
 ## Linters
 #####################################################################

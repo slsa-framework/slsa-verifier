@@ -1,0 +1,108 @@
+{
+    "image_summary": {
+      "digest": "sha256:7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3",
+      "fully_qualified_digest": "us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/prod-prov-image@sha256:7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3",
+      "registry": "us-central1-docker.pkg.dev",
+      "repository": "khalk-docker-ar",
+      "slsa_build_level": 0
+    },
+    "provenance_summary": {
+      "provenance": [
+        {
+          "build": {
+            "inTotoSlsaProvenanceV1": {
+              "_type": "https://in-toto.io/Statement/v1",
+              "predicate": {
+                "buildDefinition": {
+                  "buildType": "https://cloud.google.com/build/gcb-buildtypes/google-worker/v1",
+                  "externalParameters": {
+                    "buildConfigSource": {
+                      "path": "cloudbuild.yaml",
+                      "ref": "refs/heads/main",
+                      "repository": "git+https://github.com/khalkie/gcb-prod-prov"
+                    },
+                    "substitutions": {}
+                  },
+                  "internalParameters": {
+                    "systemSubstitutions": {
+                      "BRANCH_NAME": "main",
+                      "BUILD_ID": "9c11d255-0469-4a6a-b7d0-d510c6697c54",
+                      "COMMIT_SHA": "2ce3f90facdb51aeb950d5bc641e981be61fdf48",
+                      "LOCATION": "us-west2",
+                      "PROJECT_NUMBER": "265426041527",
+                      "REF_NAME": "main",
+                      "REPO_FULL_NAME": "khalkie/gcb-prod-prov",
+                      "REPO_NAME": "gcb-prod-prov",
+                      "REVISION_ID": "2ce3f90facdb51aeb950d5bc641e981be61fdf48",
+                      "SHORT_SHA": "2ce3f90",
+                      "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml",
+                      "TRIGGER_NAME": "sample-trigger-1"
+                    },
+                    "triggerUri": "projects/0/locations//triggers/15e57958-19b3-4a52-a052-6906244088ce"
+                  },
+                  "resolvedDependencies": [
+                    {
+                      "digest": {
+                        "gitCommit": "2ce3f90facdb51aeb950d5bc641e981be61fdf48"
+                      },
+                      "uri": "git+https://github.com/khalkie/gcb-prod-prov@refs/heads/main"
+                    },
+                    {
+                      "digest": {
+                        "sha256": "d048af25a6f8945fa77e3aa679e49a8f8a8011f0050aab0364034e58f445a434"
+                      },
+                      "uri": "gcr.io/cloud-builders/docker@sha256:d048af25a6f8945fa77e3aa679e49a8f8a8011f0050aab0364034e58f445a434"
+                    }
+                  ]
+                },
+                "runDetails": {
+                  "builder": {
+                    "id": "https://cloudbuild.googleapis.com/GoogleHostedWorker"
+                  },
+                  "byproducts": [
+                    {}
+                  ],
+                  "metadata": {
+                    "finishedOn": "2023-08-08T18:40:29.055034Z",
+                    "invocationId": "https://cloudbuild.googleapis.com/v1/projects/argo-local-khalk/locations/us-west2/builds/9c11d255-0469-4a6a-b7d0-d510c6697c54",
+                    "startedOn": "2023-08-08T18:40:21.016140505Z"
+                  }
+                }
+              },
+              "predicateType": "https://slsa.dev/provenance/v1",
+              "subject": [
+                {
+                  "digest": {
+                    "sha256": "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3"
+                  },
+                  "name": "https://us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/prod-prov-image"
+                },
+                {
+                  "digest": {
+                    "sha256": "7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3"
+                  },
+                  "name": "https://us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/prod-prov-image:latest"
+                }
+              ]
+            }
+          },
+          "createTime": "2023-08-08T18:40:33.411662Z",
+          "envelope": {
+            "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJzdWJqZWN0IjpbeyJuYW1lIjoiaHR0cHM6Ly91cy1jZW50cmFsMS1kb2NrZXIucGtnLmRldi9hcmdvLWxvY2FsLWtoYWxrL2toYWxrLWRvY2tlci1hci9wcm9kLXByb3YtaW1hZ2UiLCJkaWdlc3QiOnsic2hhMjU2IjoiN2U5YjZlN2JhMjg0MmM5MWNmNDlmM2UyMTRkMDRhN2E0OTZmODIxNDM1NmY0MWQ4MWE2ZTZkY2FkMTFmMTFlMyJ9fSx7Im5hbWUiOiJodHRwczovL3VzLWNlbnRyYWwxLWRvY2tlci5wa2cuZGV2L2FyZ28tbG9jYWwta2hhbGsva2hhbGstZG9ja2VyLWFyL3Byb2QtcHJvdi1pbWFnZTpsYXRlc3QiLCJkaWdlc3QiOnsic2hhMjU2IjoiN2U5YjZlN2JhMjg0MmM5MWNmNDlmM2UyMTRkMDRhN2E0OTZmODIxNDM1NmY0MWQ4MWE2ZTZkY2FkMTFmMTFlMyJ9fV0sInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjEiLCJwcmVkaWNhdGUiOnsiYnVpbGREZWZpbml0aW9uIjp7ImJ1aWxkVHlwZSI6Imh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9idWlsZC9nY2ItYnVpbGR0eXBlcy9nb29nbGUtd29ya2VyL3YxIiwiZXh0ZXJuYWxQYXJhbWV0ZXJzIjp7ImJ1aWxkQ29uZmlnU291cmNlIjp7InBhdGgiOiJjbG91ZGJ1aWxkLnlhbWwiLCJyZWYiOiJyZWZzL2hlYWRzL21haW4iLCJyZXBvc2l0b3J5IjoiZ2l0K2h0dHBzOi8vZ2l0aHViLmNvbS9raGFsa2llL2djYi1wcm9kLXByb3YifSwic3Vic3RpdHV0aW9ucyI6e319LCJpbnRlcm5hbFBhcmFtZXRlcnMiOnsic3lzdGVtU3Vic3RpdHV0aW9ucyI6eyJCUkFOQ0hfTkFNRSI6Im1haW4iLCJCVUlMRF9JRCI6IjljMTFkMjU1LTA0NjktNGE2YS1iN2QwLWQ1MTBjNjY5N2M1NCIsIkNPTU1JVF9TSEEiOiIyY2UzZjkwZmFjZGI1MWFlYjk1MGQ1YmM2NDFlOTgxYmU2MWZkZjQ4IiwiTE9DQVRJT04iOiJ1cy13ZXN0MiIsIlBST0pFQ1RfTlVNQkVSIjoiMjY1NDI2MDQxNTI3IiwiUkVGX05BTUUiOiJtYWluIiwiUkVQT19GVUxMX05BTUUiOiJraGFsa2llL2djYi1wcm9kLXByb3YiLCJSRVBPX05BTUUiOiJnY2ItcHJvZC1wcm92IiwiUkVWSVNJT05fSUQiOiIyY2UzZjkwZmFjZGI1MWFlYjk1MGQ1YmM2NDFlOTgxYmU2MWZkZjQ4IiwiU0hPUlRfU0hBIjoiMmNlM2Y5MCIsIlRSSUdHRVJfQlVJTERfQ09ORklHX1BBVEgiOiJjbG91ZGJ1aWxkLnlhbWwiLCJUUklHR0VSX05BTUUiOiJzYW1wbGUtdHJpZ2dlci0xIn0sInRyaWdnZXJVcmkiOiJwcm9qZWN0cy8wL2xvY2F0aW9ucy8vdHJpZ2dlcnMvMTVlNTc5NTgtMTliMy00YTUyLWEwNTItNjkwNjI0NDA4OGNlIn0sInJlc29sdmVkRGVwZW5kZW5jaWVzIjpbeyJ1cmkiOiJnaXQraHR0cHM6Ly9naXRodWIuY29tL2toYWxraWUvZ2NiLXByb2QtcHJvdkByZWZzL2hlYWRzL21haW4iLCJkaWdlc3QiOnsiZ2l0Q29tbWl0IjoiMmNlM2Y5MGZhY2RiNTFhZWI5NTBkNWJjNjQxZTk4MWJlNjFmZGY0OCJ9fSx7InVyaSI6Imdjci5pby9jbG91ZC1idWlsZGVycy9kb2NrZXJAc2hhMjU2OmQwNDhhZjI1YTZmODk0NWZhNzdlM2FhNjc5ZTQ5YThmOGE4MDExZjAwNTBhYWIwMzY0MDM0ZTU4ZjQ0NWE0MzQiLCJkaWdlc3QiOnsic2hhMjU2IjoiZDA0OGFmMjVhNmY4OTQ1ZmE3N2UzYWE2NzllNDlhOGY4YTgwMTFmMDA1MGFhYjAzNjQwMzRlNThmNDQ1YTQzNCJ9fV19LCJydW5EZXRhaWxzIjp7ImJ1aWxkZXIiOnsiaWQiOiJodHRwczovL2Nsb3VkYnVpbGQuZ29vZ2xlYXBpcy5jb20vR29vZ2xlSG9zdGVkV29ya2VyIn0sIm1ldGFkYXRhIjp7Imludm9jYXRpb25JZCI6Imh0dHBzOi8vY2xvdWRidWlsZC5nb29nbGVhcGlzLmNvbS92MS9wcm9qZWN0cy9hcmdvLWxvY2FsLWtoYWxrL2xvY2F0aW9ucy91cy13ZXN0Mi9idWlsZHMvOWMxMWQyNTUtMDQ2OS00YTZhLWI3ZDAtZDUxMGM2Njk3YzU0Iiwic3RhcnRlZE9uIjoiMjAyMy0wOC0wOFQxODo0MDoyMS4wMTYxNDA1MDVaIiwiZmluaXNoZWRPbiI6IjIwMjMtMDgtMDhUMTg6NDA6MjkuMDU1MDM0WiJ9LCJieXByb2R1Y3RzIjpbe31dfX18",
+            "payloadType": "application/vnd.in-toto+json",
+            "signatures": [
+              {
+                "keyid": "projects/verified-builder/locations/global/keyRings/attestor/cryptoKeys/google-hosted-worker/cryptoKeyVersions/1",
+                "sig": "MEUCIE1xMZShL8GXSotP5pyb4iHptikuEkfu28EPKGvlGsCIAiEAiruAeMD2ijQOCAYzhF5EQL7vgkmFKBCMxxJ0Md_Mhmc="
+              }
+            ]
+          },
+          "kind": "BUILD",
+          "name": "projects/argo-local-khalk/occurrences/8f992d9a-2914-411e-bf58-aa96e429a7ac",
+          "noteName": "projects/verified-builder/notes/intoto_slsa_v1_9c11d255-0469-4a6a-b7d0-d510c6697c54",
+          "resourceUri": "https://us-central1-docker.pkg.dev/argo-local-khalk/khalk-docker-ar/prod-prov-image@sha256:7e9b6e7ba2842c91cf49f3e214d04a7a496f8214356f41d81a6e6dcad11f11e3",
+          "updateTime": "2023-08-08T18:40:33.411662Z"
+        }
+      ]
+    }
+  }
