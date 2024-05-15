@@ -70,7 +70,7 @@ markdown-toc: node_modules/.installed ## Runs markdown-toc on markdown files.
 #####################################################################
 
 .PHONY: lint
-lint: golangci-lint eslint yamllint ## Run all linters.
+lint: golangci-lint eslint yamllint renovate-config-validator ## Run all linters.
 
 .PHONY: golangci-lint
 golangci-lint: ## Runs the golangci-lint linter.
@@ -93,3 +93,7 @@ yamllint: ## Runs the yamllint linter.
 			extraargs="-f github"; \
 		fi; \
 		yamllint -c .yamllint.yaml . $$extraargs
+
+.PHONY: renovate-config-validator
+renovate-config-validator: node_modules/.installed ## Runs renovate-config-validator
+	@npm run renovate-config-validator
