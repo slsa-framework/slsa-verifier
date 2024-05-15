@@ -17,6 +17,10 @@ help: ## Shows all targets and help from the Makefile (this message).
 			} \
 		}'
 
+node_modules/.installed: package.json package-lock.json
+	npm ci
+	touch node_modules/.installed
+
 ## Testing
 #####################################################################
 
@@ -32,7 +36,7 @@ unit-test: ## Runs all unit tests.
 #####################################################################
 
 .PHONY: lint
-lint: golangci-lint eslint yamllint ## Run all linters.
+lint: golangci-lint eslint yamllint renovate-config-validator ## Run all linters.
 
 .PHONY: golangci-lint
 golangci-lint: ## Runs the golangci-lint linter.
@@ -55,3 +59,7 @@ yamllint: ## Runs the yamllint linter.
 			extraargs="-f github"; \
 		fi; \
 		yamllint -c .yamllint.yaml . $$extraargs
+
+.PHONY: renovate-config-validator
+renovate-config-validator: node_modules/.installed ## Runs renovate-config-validator
+	@npm run renovate-config-validator
