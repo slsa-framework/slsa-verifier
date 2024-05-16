@@ -1,8 +1,10 @@
 {
   "scripts": {
-    "markdown-toc": "markdown-toc --bullets='-' -i"
+    "markdown-toc": "markdown-toc --bullets='-' -i",
+    "renovate-config-validator": "renovate-config-validator --strict"
   },
   "devDependencies": {
-    "markdown-toc": "^1.2.0"
+    "markdown-toc": "^1.2.0",
+    "renovate": "37.363.4"
   }
 }
