@@ -348,7 +348,8 @@ func (v *GHAVerifier) VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
 	builderOpts *options.BuilderOpts,
 	sigstoreTufClient utils.SigstoreTufClient,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	atts, err := io.ReadAll(attestations)
+	var atts []byte
+	_, err := attestations.Read(atts)
 	if err != nil {
 		return nil, nil, err
 	}
