@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"os"
+	"log/slog"
 	"reflect"
 	"strings"
 
@@ -452,10 +452,10 @@ func (p *Provenance) VerifySourceURI(expectedSourceURI string, builderID utils.T
 
 	// The build was not configured with a GitHub trigger. Warn.
 	if strings.HasPrefix(uri, "gs://") {
-		fmt.Fprintf(os.Stderr, `This build was not configured with a GitHub trigger `+
-			`and will not match on an expected, version controlled source URI. `+
-			`See Cloud Build's documentation on building repositories from GitHub: `+
-			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`)
+		slog.Warn(fmt.Sprintf(`This build was not configured with a GitHub trigger ` +
+			`and will not match on an expected, version controlled source URI. ` +
+			`See Cloud Build's documentation on building repositories from GitHub: ` +
+			`https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github`))
 	}
 
 	predicateType, err := statement.PredicateType()
@@ -607,7 +607,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 
 		p.verifiedStatement = stmt
 		p.verifiedProvenance = prov
-		fmt.Fprintf(os.Stderr, "Verification succeeded with key %q\n", keyName)
+		slog.Info(fmt.Sprintf("Verification succeeded with key %q\n", keyName))
 		return nil
 	}
 

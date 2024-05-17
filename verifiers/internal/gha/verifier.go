@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
+	"log/slog"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -86,9 +86,9 @@ func verifyEnvAndCert(env *dsse.Envelope,
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "Verified build using builder %q at commit %s\n",
+	slog.Info(fmt.Sprintf("Verified build using builder %q at commit %s\n",
 		verifiedBuilderID.String(),
-		workflowInfo.SourceSha1)
+		workflowInfo.SourceSha1))
 
 	// Return verified provenance.
 	r, err := base64.StdEncoding.DecodeString(env.Payload)
@@ -201,9 +201,9 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 		return nil, err
 	}
 
-	fmt.Fprintf(os.Stderr, "Verified build using builder %s at commit %s\n",
+	slog.Info(fmt.Sprintf("Verified build using builder %s at commit %s\n",
 		trustedBuilderID.String(),
-		workflowInfo.SourceSha1)
+		workflowInfo.SourceSha1))
 
 	return trustedBuilderID, nil
 }
@@ -293,17 +293,17 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	for _, att := range atts {
 		pyld, err := att.Payload()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unexpected error getting payload from OCI registry %s", err)
+			slog.Error(fmt.Sprintf("unexpected error getting payload from OCI registry %s", err))
 			continue
 		}
 		env, err := EnvelopeFromBytes(pyld)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unexpected error parsing envelope from OCI registry %s", err)
+			slog.Error(fmt.Sprintf("unexpected error parsing envelope from OCI registry %s", err))
 			continue
 		}
 		cert, err := att.Cert()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
+			slog.Error(fmt.Sprintf("unexpected error getting certificate from OCI registry %s", err))
 			continue
 		}
 		verifiedProvenance, builderID, err = verifyEnvAndCert(env,

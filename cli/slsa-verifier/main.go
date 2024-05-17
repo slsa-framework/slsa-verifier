@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -12,14 +13,14 @@ import (
 
 func check(err error) {
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
 	}
 }
 
 func envWarnings() {
 	if options.TestingEnabled() {
-		fmt.Fprintf(os.Stderr, "WARNING: Insecure SLSA_VERIFIER_TESTING is enabled.\n")
+		slog.Warn(fmt.Sprintf("WARNING: Insecure SLSA_VERIFIER_TESTING is enabled.\n"))
 	}
 }
 
