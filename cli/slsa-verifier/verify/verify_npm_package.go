@@ -55,7 +55,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 		}
 
 		if c.AttestationsPath == "" {
-			slog.Error(fmt.Sprintf("--attestations-path is required.\n\n"))
+			slog.Error("--attestations-path is required.\n\n")
 			return nil, err
 		}
 		provenanceOpts := &options.ProvenanceOpts{

@@ -222,7 +222,7 @@ func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
 	}
 
 	// Fallback on using the redis search index to get matching UUIDs.
-	slog.Warn(fmt.Sprintf("No certificate provided, trying Redis search index to find entries by subject digest\n"))
+	slog.Warn("No certificate provided, trying Redis search index to find entries by subject digest\n")
 
 	// Verify the provenance and return the signing certificate.
 	return SearchValidSignedAttestation(ctx, artifactHash,

@@ -20,7 +20,7 @@ func check(err error) {
 
 func envWarnings() {
 	if options.TestingEnabled() {
-		slog.Warn(fmt.Sprintf("WARNING: Insecure SLSA_VERIFIER_TESTING is enabled.\n"))
+		slog.Warn("WARNING: Insecure SLSA_VERIFIER_TESTING is enabled.\n")
 	}
 }
 
