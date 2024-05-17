@@ -33,7 +33,7 @@ func main() {
 func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	packageVersion := "0.1.127"
 	packageName := "@ianlewis/actions-test"
-	builderId := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
+	builderID := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
 	attestations := []byte(`{"attestations":[{"predicateType":"https://giEntries":[{"logIndex":"2035" ... `)
 	tarballHash := "ab786dbef723164a605e55ff0ebe83f8e879159bd411980d4423c9b1646b858a537b4bc4d494fc8f71195db715e5c5e9ab4b8809f8b1b399cd30ac053d180ba7"
 	provenanceOpts := &options.ProvenanceOpts{
@@ -43,7 +43,7 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 		ExpectedPackageVersion: &packageVersion,
 	}
 	builderOpts := &options.BuilderOpts{
-		ExpectedID: &builderId,
+		ExpectedID: &builderID,
 	}
 	// example: force using the embedded root, without going online for a refresh
 	// opts := sigstoreTuf.DefaultOptions().WithForceCache()
@@ -60,7 +60,7 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 		fmt.Printf("Verifying npm package: FAILED: %v", err)
 		return nil, err
 	}
-	fmt.Printf("builderId: %s\n", outBuilderID.Name())
+	fmt.Printf("builderID: %s\n", outBuilderID.Name())
 	fmt.Println("Verifying npm package: PASSED")
 	return outBuilderID, nil
 }
