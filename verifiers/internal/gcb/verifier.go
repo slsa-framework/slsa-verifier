@@ -2,7 +2,6 @@ package gcb
 
 import (
 	"context"
-	"io"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -51,7 +50,7 @@ func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 
 // VerifyNpmPackage verifies an npm package tarball.
 func (v *GCBVerifier) VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
-	attestations io.Reader, tarballHash string,
+	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	sigstoreTufClient utils.SigstoreTufClient,

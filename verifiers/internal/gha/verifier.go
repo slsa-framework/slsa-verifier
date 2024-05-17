@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -333,33 +332,26 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	atts := strings.NewReader(string(attestations))
 	sigstoreTufClient, err := utils.NewSigstoreTufClient()
 	if err != nil {
 		return nil, nil, err
 	}
-	return v.VerifyNpmPackageWithSigstoreTufClient(ctx, atts, tarballHash, provenanceOpts, builderOpts, sigstoreTufClient)
+	return v.VerifyNpmPackageWithSigstoreTufClient(ctx, attestations, tarballHash, provenanceOpts, builderOpts, sigstoreTufClient)
 }
 
 // VerifyNpmPackage verifies an npm package tarball.
 func (v *GHAVerifier) VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
-	attestations io.Reader, tarballHash string,
+	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	sigstoreTufClient utils.SigstoreTufClient,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	var atts []byte
-	_, err := attestations.Read(atts)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	npm, err := NpmNew(ctx, trustedRoot, atts)
+	npm, err := NpmNew(ctx, trustedRoot, attestations)
 	if err != nil {
 		return nil, nil, err
 	}

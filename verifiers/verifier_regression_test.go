@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -94,11 +95,10 @@ func Test_VerifyNpmPackage(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			attestationsReader, err := os.Open(attestationsPath)
+			attestaions, err := ioutil.ReadFile(attestationsPath)
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer attestationsReader.Close()
 			provenanceOpts := &options.ProvenanceOpts{
 				ExpectedSourceURI:      tt.source,
 				ExpectedDigest:         artifactHash,
@@ -113,7 +113,7 @@ func Test_VerifyNpmPackage(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			VerifyNpmPackageWithSigstoreTufClient(context.Background(), attestationsReader, artifactHash, provenanceOpts, builderOpts, sigastoreTufClient)
+			VerifyNpmPackageWithSigstoreTufClient(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, sigastoreTufClient)
 		})
 	}
 }

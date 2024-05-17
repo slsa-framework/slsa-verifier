@@ -3,7 +3,6 @@ package verifiers
 import (
 	"context"
 	"fmt"
-	"io"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -77,7 +76,7 @@ func VerifyNpmPackage(ctx context.Context,
 }
 
 func VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
-	attestations io.Reader, tarballHash string,
+	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	sigstoreTufClient utils.SigstoreTufClient,
