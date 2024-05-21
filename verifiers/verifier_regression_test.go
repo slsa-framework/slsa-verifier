@@ -109,11 +109,11 @@ func Test_VerifyNpmPackage(t *testing.T) {
 				ExpectedID: &tt.builderID,
 			}
 			opts := sigstoreTUF.DefaultOptions().WithForceCache() // offline tests
-			sigastoreTUFClient, err := sigstoreTUF.New(opts)
+			sigstoreTUFClient, err := sigstoreTUF.New(opts)
 			if err != nil {
 				t.Fatal(err)
 			}
-			VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, sigastoreTUFClient)
+			VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, sigstoreTUFClient)
 		})
 	}
 }
