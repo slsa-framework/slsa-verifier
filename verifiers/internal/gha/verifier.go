@@ -339,7 +339,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	return v.VerifyNpmPackageWithSigstoreTufClient(ctx, attestations, tarballHash, provenanceOpts, builderOpts, sigstoreTufClient)
 }
 
-// VerifyNpmPackage verifies an npm package tarball.
+// VerifyNpmPackageWithSigstoreTufClient verifies an npm package tarball.
 func (v *GHAVerifier) VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
