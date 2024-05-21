@@ -33,15 +33,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Verifying npm package: FAILED: %w", err)
 	}
-	fmt.Printf("builderID: %s\n", builderID.Name())
-	fmt.Println("Verifying npm package: PASSED")
+	fmt.Printf("builderID: %s\nVerifying npm package: PASSED", builderID.Name())
 }
 
 func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	packageVersion := "0.1.127"
 	packageName := "@ianlewis/actions-test"
 	builderID := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
-	attestations, err := os.ReadFile("../stuff/attestations.json")
+	attestations, err := os.ReadFile("attestations.json")
 	if err != nil {
 		return nil, fmt.Errorf("reading attestations file: %w", err)
 	}
