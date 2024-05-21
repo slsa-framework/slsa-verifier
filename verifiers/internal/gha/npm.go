@@ -111,12 +111,12 @@ func extractAttestations(attestations []attestation) (*attestation, *attestation
 }
 
 // getAttestationKey retrieves the attestation key and holds it in memory.
-func getAttestationKey(sigstoreTufClient utils.SigstoreTufClient, npmRegistryPublicKeyID string) (string, error) {
+func getAttestationKey(sigstoreTUFClient utils.SigstoreTUFClient, npmRegistryPublicKeyID string) (string, error) {
 	value := attestationKeyAtomicValue.Load()
 	if value != nil {
 		return value.(string), nil
 	}
-	npmRegistryPublicKey, err := getKeyDataFromSigstoreTuf(sigstoreTufClient, npmRegistryPublicKeyID, attestationKeyUsage)
+	npmRegistryPublicKey, err := getKeyDataFromSigstoreTUF(sigstoreTUFClient, npmRegistryPublicKeyID, attestationKeyUsage)
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +134,7 @@ func (n *Npm) verifyProvenanceAttestationSignature() error {
 	return nil
 }
 
-func (n *Npm) verifyPublishAttestationSignature(sigstoreTufClient utils.SigstoreTufClient) error {
+func (n *Npm) verifyPublishAttestationSignature(sigstoreTUFClient utils.SigstoreTUFClient) error {
 	// First verify the bundle and its rekor entry.
 	signedPublish, err := verifyBundleAndEntryFromBytes(n.ctx, n.publishAttestation.BundleBytes, n.root, false)
 	if err != nil {
@@ -147,7 +147,7 @@ func (n *Npm) verifyPublishAttestationSignature(sigstoreTufClient utils.Sigstore
 
 	// Retrieve the key material.
 	// We found the associated public key in the TUF root, so now we can trust this KeyID.
-	npmRegistryPublicKey, err := getAttestationKey(sigstoreTufClient, npmRegistryPublicKeyID)
+	npmRegistryPublicKey, err := getAttestationKey(sigstoreTUFClient, npmRegistryPublicKeyID)
 	if err != nil {
 		return err
 	}

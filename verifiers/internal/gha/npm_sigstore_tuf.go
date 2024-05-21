@@ -41,7 +41,7 @@ type validFor struct {
 // getNpmjsKeysTarget will fetch and parse the keys.json file in Sigstore's root for npmjs
 // The inner TUF client will verify this "blob" is signed with correct delegate TUF roles
 // https://github.com/sigstore/root-signing/blob/5fd11f7ec0a993b0f20c335b33e53cfffb986b2e/repository/repository/targets/registry.npmjs.org/7a8ec9678ad824cdccaa7a6dc0961caf8f8df61bc7274189122c123446248426.keys.json#L4
-func getNpmjsKeysTarget(client utils.SigstoreTufClient, targetPath string) (*npmjsKeysTarget, error) {
+func getNpmjsKeysTarget(client utils.SigstoreTUFClient, targetPath string) (*npmjsKeysTarget, error) {
 	blob, err := client.GetTarget(targetPath)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", serrors.ErrorCouldNotFindTarget, err)
@@ -65,15 +65,15 @@ func getKeyDataWithNpmjsKeysTarget(keys *npmjsKeysTarget, keyID, keyUsage string
 	return "", fmt.Errorf("%w: 'keyId': %q, 'keyUsage':%q", errorMissingNpmjsKeyIDKeyUsage, keyID, keyUsage)
 }
 
-// getKeyDataFromSigstoreTuf retrieves the keyfile from sigstore's TUF root, parses the file and returns the target key's material.
+// getKeyDataFromSigstoreTUF retrieves the keyfile from sigstore's TUF root, parses the file and returns the target key's material.
 // See documentation for getNpmjsKeysTarget
 //
 // example params:
 //
-//	 client: sigstoreTufClient
+//	 client: sigstoreTUFClient
 //		keyID: "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
 //		keyUsage: "npm:attestations"
-func getKeyDataFromSigstoreTuf(client utils.SigstoreTufClient, keyID, keyUsage string) (string, error) {
+func getKeyDataFromSigstoreTUF(client utils.SigstoreTUFClient, keyID, keyUsage string) (string, error) {
 	keys, err := getNpmjsKeysTarget(client, targetPath)
 	if err != nil {
 		return "", err

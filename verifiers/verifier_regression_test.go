@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	sigstoreTuf "github.com/sigstore/sigstore-go/pkg/tuf"
+	sigstoreTUF "github.com/sigstore/sigstore-go/pkg/tuf"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 )
@@ -88,7 +88,7 @@ func Test_VerifyNpmPackage(t *testing.T) {
 			VerifyNpmPackage(context.Background(), attestations, artifactHash, provenanceOpts, builderOpts)
 		})
 
-		t.Run(tt.name+" - with sigstoreTufClient", func(t *testing.T) {
+		t.Run(tt.name+" - with sigstoreTUFClient", func(t *testing.T) {
 			artifactPath := filepath.Clean(filepath.Join(testDir, "npm", "gha", tt.artifact))
 			attestationsPath := fmt.Sprintf("%s.json", artifactPath)
 			artifactHash, err := computeFileHash(artifactPath, sha256.New())
@@ -108,12 +108,12 @@ func Test_VerifyNpmPackage(t *testing.T) {
 			builderOpts := &options.BuilderOpts{
 				ExpectedID: &tt.builderID,
 			}
-			opts := sigstoreTuf.DefaultOptions().WithForceCache() // offline tests
-			sigastoreTufClient, err := sigstoreTuf.New(opts)
+			opts := sigstoreTUF.DefaultOptions().WithForceCache() // offline tests
+			sigastoreTUFClient, err := sigstoreTUF.New(opts)
 			if err != nil {
 				t.Fatal(err)
 			}
-			VerifyNpmPackageWithSigstoreTufClient(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, sigastoreTufClient)
+			VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, sigastoreTUFClient)
 		})
 	}
 }

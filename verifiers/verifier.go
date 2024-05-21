@@ -75,17 +75,17 @@ func VerifyNpmPackage(ctx context.Context,
 		provenanceOpts, builderOpts)
 }
 
-func VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
+func VerifyNpmPackageWithSigstoreTUFClient(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-	sigstoreTufClient utils.SigstoreTufClient,
+	sigstoreTUFClient utils.SigstoreTUFClient,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return verifier.VerifyNpmPackageWithSigstoreTufClient(ctx, attestations, tarballHash,
-		provenanceOpts, builderOpts, sigstoreTufClient)
+	return verifier.VerifyNpmPackageWithSigstoreTUFClient(ctx, attestations, tarballHash,
+		provenanceOpts, builderOpts, sigstoreTUFClient)
 }

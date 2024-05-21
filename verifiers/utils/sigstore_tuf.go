@@ -3,19 +3,19 @@ package utils
 import (
 	"fmt"
 
-	sigstoreTuf "github.com/sigstore/sigstore-go/pkg/tuf"
+	sigstoreTUF "github.com/sigstore/sigstore-go/pkg/tuf"
 )
 
-type SigstoreTufClient interface {
+type SigstoreTUFClient interface {
 	GetTarget(target string) ([]byte, error)
 }
 
-// NewSigstoreTufClient gets a Sigstore TUF client, which itself is a wrapper around the official TUF client.
-func NewSigstoreTufClient() (*sigstoreTuf.Client, error) {
-	opts := sigstoreTuf.DefaultOptions()
-	client, err := sigstoreTuf.New(opts)
+// NewSigstoreTUFClient gets a Sigstore TUF client, which itself is a wrapper around the official TUF client.
+func NewSigstoreTUFClient() (*sigstoreTUF.Client, error) {
+	opts := sigstoreTUF.DefaultOptions()
+	client, err := sigstoreTUF.New(opts)
 	if err != nil {
-		return nil, fmt.Errorf("creating SigstoreTuf client: %w", err)
+		return nil, fmt.Errorf("creating SigstoreTUF client: %w", err)
 	}
 	return client, nil
 }

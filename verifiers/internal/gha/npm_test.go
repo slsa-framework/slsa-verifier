@@ -1233,7 +1233,7 @@ func Test_verifyPublishAttestationSignature(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: \n%s", err)
 			}
-			err = npm.verifyPublishAttestationSignature(newMockSigstoreTufClient())
+			err = npm.verifyPublishAttestationSignature(newMockSigstoreTUFClient())
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}

@@ -8,8 +8,8 @@ We have exported functions for using slsa-verifier within your own golang packag
 
 ### Npmjs
 
-With `VerifyNpmPackageWithSigstoreTufClient`, you can pass in your own Tuf client with custom options.
-For example, use the embedded Tuf root with `sigstoreTuf.DefaultOptions().WithForceCache()`.
+With `VerifyNpmPackageWithSigstoreTUFClient`, you can pass in your own TUF client with custom options.
+For example, use the embedded TUF root with `sigstoreTUF.DefaultOptions().WithForceCache()`.
 
 Example:
 
@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	sigstoreTuf "github.com/sigstore/sigstore-go/pkg/tuf"
+	sigstoreTUF "github.com/sigstore/sigstore-go/pkg/tuf"
 	options "github.com/slsa-framework/slsa-verifier/v2/options"
 	apiVerify "github.com/slsa-framework/slsa-verifier/v2/verifiers"
 	apiUtils "github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -55,15 +55,15 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 		ExpectedID: &builderID,
 	}
 	// example: force using the embedded root, without going online for a refresh
-	// opts := sigstoreTuf.DefaultOptions().WithForceCache()
+	// opts := sigstoreTUF.DefaultOptions().WithForceCache()
 	// example: supply your own root
-	// opts := sigstoreTuf.DefaultOptions().WithRoot([]byte(`{"signed":{"_type":"root","spec_version":"1.0","version":9,"expires":"2024-09-12T06:53:10Z","keys":{"1e1d65ce98b10 ...`)).WithForceCache()
-	opts := sigstoreTuf.DefaultOptions()
-	client, err := sigstoreTuf.New(opts)
+	// opts := sigstoreTUF.DefaultOptions().WithRoot([]byte(`{"signed":{"_type":"root","spec_version":"1.0","version":9,"expires":"2024-09-12T06:53:10Z","keys":{"1e1d65ce98b10 ...`)).WithForceCache()
+	opts := sigstoreTUF.DefaultOptions()
+	client, err := sigstoreTUF.New(opts)
 	if err != nil {
-		return nil, fmt.Errorf("creating SigstoreTuf client: %w", err)
+		return nil, fmt.Errorf("creating SigstoreTUF client: %w", err)
 	}
-	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTufClient(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, client)
+	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, client)
 	if err != nil {
 		return nil, fmt.Errorf("Verifying npm package: FAILED: %w", err)
 	}

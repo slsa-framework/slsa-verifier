@@ -35,10 +35,10 @@ type SLSAVerifier interface {
 		builderOpts *options.BuilderOpts,
 	) ([]byte, *utils.TrustedBuilderID, error)
 
-	VerifyNpmPackageWithSigstoreTufClient(ctx context.Context,
+	VerifyNpmPackageWithSigstoreTUFClient(ctx context.Context,
 		attestations []byte, tarballHash string,
 		provenanceOpts *options.ProvenanceOpts,
-		builderOpts *options.BuilderOpts, sigstoreTufClient utils.SigstoreTufClient,
+		builderOpts *options.BuilderOpts, sigstoreTUFClient utils.SigstoreTUFClient,
 	) ([]byte, *utils.TrustedBuilderID, error)
 }
 
