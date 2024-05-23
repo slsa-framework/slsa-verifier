@@ -17,6 +17,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier/verify"
@@ -61,10 +62,10 @@ func verifyArtifactCmd() *cobra.Command {
 			}
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				slog.Error(fmt.Sprintf("%s: %v\n", FAILURE, err))
 				os.Exit(1)
 			} else {
-				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+				slog.Error(fmt.Sprintf("%s\n", SUCCESS))
 			}
 		},
 	}
@@ -113,10 +114,10 @@ func verifyImageCmd() *cobra.Command {
 			}
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				slog.Error(fmt.Sprintf("%s: %v\n", FAILURE, err))
 				os.Exit(1)
 			} else {
-				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+				slog.Info(fmt.Sprintf("%s\n", SUCCESS))
 			}
 		},
 	}
@@ -153,19 +154,19 @@ func verifyNpmPackageCmd() *cobra.Command {
 				v.PackageVersion = &o.PackageVersion
 			}
 			if cmd.Flags().Changed("source-branch") {
-				fmt.Fprintf(os.Stderr, "%s: --source-branch not supported\n", FAILURE)
+				slog.Error(fmt.Sprintf("%s: --source-branch not supported\n", FAILURE))
 				os.Exit(1)
 			}
 			if cmd.Flags().Changed("source-tag") {
-				fmt.Fprintf(os.Stderr, "%s: --source-tag not supported\n", FAILURE)
+				slog.Error(fmt.Sprintf("%s: --source-tag not supported\n", FAILURE))
 				os.Exit(1)
 			}
 			if cmd.Flags().Changed("source-versioned-tag") {
-				fmt.Fprintf(os.Stderr, "%s: --source-versioned-tag not supported\n", FAILURE)
+				slog.Error(fmt.Sprintf("%s: --source-versioned-tag not supported\n", FAILURE))
 				os.Exit(1)
 			}
 			if cmd.Flags().Changed("print-provenance") {
-				fmt.Fprintf(os.Stderr, "%s: --print-provenance not supported\n", FAILURE)
+				slog.Error(fmt.Sprintf("%s: --print-provenance not supported\n", FAILURE))
 				os.Exit(1)
 			}
 			if cmd.Flags().Changed("builder-id") {
@@ -173,10 +174,10 @@ func verifyNpmPackageCmd() *cobra.Command {
 			}
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				slog.Error(fmt.Sprintf("%s: %v\n", FAILURE, err))
 				os.Exit(1)
 			} else {
-				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+				slog.Info(fmt.Sprintf("%s\n", SUCCESS))
 			}
 		},
 	}
