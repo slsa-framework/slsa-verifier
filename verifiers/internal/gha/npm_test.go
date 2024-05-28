@@ -18,6 +18,14 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
+var mismatchProvenancePredicates = map[string]bool{
+	common.ProvenanceV02Type + "a": true,
+	common.ProvenanceV1Type + "a":  true,
+}
+var mismatchPublishPredicates = map[string]bool{
+	publishAttestationV01 + "a": true,
+}
+
 func Test_verifyName(t *testing.T) {
 	t.Parallel()
 
@@ -963,17 +971,18 @@ func Test_verifyIntotoTypes(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name          string
-		att           *SignedAttestation
-		predicateType string
-		payloadType   string
-		prefix        bool
-		err           error
+		name           string
+		att            *SignedAttestation
+		predicateType  string
+		predicateTypes map[string]bool
+		payloadType    string
+		prefix         bool
+		err            error
 	}{
 		{
-			name:          "prov correct",
-			predicateType: common.ProvenanceV02Type,
-			payloadType:   intoto.PayloadType,
+			name:           "prov correct",
+			predicateTypes: provenancePredicates,
+			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
@@ -982,9 +991,9 @@ func Test_verifyIntotoTypes(t *testing.T) {
 			},
 		},
 		{
-			name:          "prov mismatch payload type",
-			predicateType: common.ProvenanceV02Type,
-			payloadType:   intoto.PayloadType,
+			name:           "prov mismatch payload type",
+			predicateTypes: provenancePredicates,
+			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+jso",
@@ -994,9 +1003,9 @@ func Test_verifyIntotoTypes(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name:          "prov mismatch predicate type",
-			predicateType: common.ProvenanceV02Type + "a",
-			payloadType:   intoto.PayloadType,
+			name:           "prov mismatch predicate type",
+			predicateTypes: mismatchProvenancePredicates,
+			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
@@ -1006,10 +1015,10 @@ func Test_verifyIntotoTypes(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name:          "publish correct",
-			predicateType: publishAttestationV01,
-			prefix:        true,
-			payloadType:   intoto.PayloadType,
+			name:           "publish correct",
+			predicateTypes: publishPredicates,
+			prefix:         true,
+			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
@@ -1018,10 +1027,10 @@ func Test_verifyIntotoTypes(t *testing.T) {
 			},
 		},
 		{
-			name:          "publish mismatch payload type",
-			predicateType: publishAttestationV01,
-			prefix:        true,
-			payloadType:   intoto.PayloadType,
+			name:           "publish mismatch payload type",
+			predicateTypes: publishPredicates,
+			prefix:         true,
+			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+jso",
@@ -1031,10 +1040,10 @@ func Test_verifyIntotoTypes(t *testing.T) {
 			err: serrors.ErrorInvalidDssePayload,
 		},
 		{
-			name:          "publish mismatch predicate type",
-			predicateType: publishAttestationV01 + "a",
-			prefix:        true,
-			payloadType:   intoto.PayloadType,
+			name:           "publish mismatch predicate type",
+			predicateTypes: mismatchPublishPredicates,
+			prefix:         true,
+			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
@@ -1049,7 +1058,7 @@ func Test_verifyIntotoTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := verifyIntotoTypes(tt.att, tt.predicateType, tt.payloadType, tt.prefix)
+			err := verifyIntotoTypes(tt.att, tt.predicateTypes, tt.payloadType, tt.prefix)
 			if !errCmp(err, tt.err) {
 				t.Errorf(cmp.Diff(err, tt.err))
 			}
