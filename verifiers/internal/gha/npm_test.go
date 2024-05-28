@@ -980,13 +980,24 @@ func Test_verifyIntotoTypes(t *testing.T) {
 		err            error
 	}{
 		{
-			name:           "prov correct",
+			name:           "prov correct v0.2",
 			predicateTypes: provenancePredicates,
 			payloadType:    intoto.PayloadType,
 			att: &SignedAttestation{
 				Envelope: &dsselib.Envelope{
 					PayloadType: "application/vnd.in-toto+json",
 					Payload:     "ewogICJfdHlwZSI6ICJodHRwczovL2luLXRvdG8uaW8vU3RhdGVtZW50L3YwLjEiLAogICJzdWJqZWN0IjogWwogICAgewogICAgICAibmFtZSI6ICJwa2c6bnBtLyU0MGxhdXJlbnRzaW1vbi9wcm92ZW5hbmNlLW5wbS10ZXN0QDEuMC4wIiwKICAgICAgImRpZ2VzdCI6IHsKICAgICAgICAic2hhNTEyIjogIjI5ZDE5ZjI2MjMzZjQ0NDEzMjg0MTJiMzRmZDczZWQxMDRlY2ZlZjYyZjE0MDk3ODkwY2NjZjc0NTViNTIxYjY1YzVhY2ZmODUxODQ5ZmFhODVjODUzOTVhYTIyZDQwMTQzNmYwMWYzYWZiNjFiMTljNzgwZTkwNmM4OGM3ZjIwIgogICAgICB9CiAgICB9CiAgXSwKICAicHJlZGljYXRlVHlwZSI6ICJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsCiAgInByZWRpY2F0ZSI6IHsKICAgICJidWlsZFR5cGUiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGkvZ2hhQHYxIiwKICAgICJidWlsZGVyIjogewogICAgICAiaWQiOiAiaHR0cHM6Ly9naXRodWIuY29tL25wbS9jbGlAOS41LjAiCiAgICB9CiAgfQp9Cg==",
+				},
+			},
+		},
+		{
+			name:           "prov correct v1",
+			predicateTypes: provenancePredicates,
+			payloadType:    intoto.PayloadType,
+			att: &SignedAttestation{
+				Envelope: &dsselib.Envelope{
+					PayloadType: "application/vnd.in-toto+json",
+					Payload:     "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJzdWJqZWN0IjpbeyJuYW1lIjoicGtnOm5wbS9zaWdzdG9yZUAyLjMuMSIsImRpZ2VzdCI6eyJzaGE1MTIiOiJmMDZmYmY1YzM1M2NjMGRiMDkzOTA0YjljYWMwZDUzYjQxMmQ4M2RmZjZiODBlNjA0N2Q5Nzg2NzA4YTM4ZTVjMzEwNWNhZDRlOTEzZGZjMjJkYmU4Yzk5OWIzZmUwMjlkNDc5NjlmZTc1NDA2ODQzYjgxNjNkYjZmZDIyZjY4MSJ9fV0sInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjEiLCJwcmVkaWNhdGUiOnsiYnVpbGREZWZpbml0aW9uIjp7ImJ1aWxkVHlwZSI6Imh0dHBzOi8vc2xzYS1mcmFtZXdvcmsuZ2l0aHViLmlvL2dpdGh1Yi1hY3Rpb25zLWJ1aWxkdHlwZXMvd29ya2Zsb3cvdjEiLCJleHRlcm5hbFBhcmFtZXRlcnMiOnsid29ya2Zsb3ciOnsicmVmIjoicmVmcy9oZWFkcy9tYWluIiwicmVwb3NpdG9yeSI6Imh0dHBzOi8vZ2l0aHViLmNvbS9zaWdzdG9yZS9zaWdzdG9yZS1qcyIsInBhdGgiOiIuZ2l0aHViL3dvcmtmbG93cy9yZWxlYXNlLnltbCJ9fSwiaW50ZXJuYWxQYXJhbWV0ZXJzIjp7ImdpdGh1YiI6eyJldmVudF9uYW1lIjoicHVzaCIsInJlcG9zaXRvcnlfaWQiOiI0OTU1NzQ1NTUiLCJyZXBvc2l0b3J5X293bmVyX2lkIjoiNzEwOTYzNTMifX0sInJlc29sdmVkRGVwZW5kZW5jaWVzIjpbeyJ1cmkiOiJnaXQraHR0cHM6Ly9naXRodWIuY29tL3NpZ3N0b3JlL3NpZ3N0b3JlLWpzQHJlZnMvaGVhZHMvbWFpbiIsImRpZ2VzdCI6eyJnaXRDb21taXQiOiI0NmU3MDU2ZmY5OTEyZWJmZWU1Mjk4ZDk0MDI0ODk1YTlmZWE3NmMwIn19XX0sInJ1bkRldGFpbHMiOnsiYnVpbGRlciI6eyJpZCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9hY3Rpb25zL3J1bm5lci9naXRodWItaG9zdGVkIn0sIm1ldGFkYXRhIjp7Imludm9jYXRpb25JZCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9zaWdzdG9yZS9zaWdzdG9yZS1qcy9hY3Rpb25zL3J1bnMvOTExNjQwNTc2Ni9hdHRlbXB0cy8xIn19fX0=",
 				},
 			},
 		},
