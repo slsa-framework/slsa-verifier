@@ -147,7 +147,22 @@ func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 
 	wMap, ok := w.(map[string]string)
 	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
+		// If `w` is not already a `map[string]string`, try to convert it, to preserve compatibility.
+		// It may originally have been meant to be a `map[string]interface{}`, but there is not enough test coverage to confirm.
+		// See https://github.com/slsa-framework/slsa-verifier/pull/641/files#diff-8a6f19cc5906bcab1f16457810caf0806567ad7db6cb125d1b41a971ab525c39L78.
+		wMapTemp, ok := w.(map[string]interface{})
+		if ok {
+			wMap = make(map[string]string)
+			for key, value := range wMapTemp {
+				strValue, ok := value.(string)
+				if !ok {
+					return "", fmt.Errorf("value for key %s is not a string", key)
+				}
+				wMap[key] = strValue
+			}
+		} else {
+			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
+		}
 	}
 
 	v, ok := wMap["path"]

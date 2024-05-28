@@ -2,6 +2,8 @@ package v1
 
 import (
 	"fmt"
+	"path"
+	"strings"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
@@ -31,4 +33,54 @@ func (p *NpmCLIGithubActionsProvenance) TriggerURI() (string, error) {
 	}
 	uri := fmt.Sprintf("git+%s@%s", repository, ref)
 	return uri, nil
+}
+
+// GetBuildInvocationID implements Provenance.GetBuildInvocationID.
+func (p *NpmCLIGithubActionsProvenance) GetBuildInvocationID() (string, error) {
+	url := p.prov.Predicate.RunDetails.BuildMetadata.InvocationID
+	attempt := path.Base(url)
+	runID := path.Base(path.Dir(path.Dir(url)))
+	invocationID := fmt.Sprintf("%s-%s", runID, attempt)
+	return invocationID, nil
+}
+
+// GetSystemParameters implements Provenance.GetSystemParameters.
+// Definitions are in https://github.com/slsa-framework/github-actions-buildtypes/tree/5f855ef0106dad3ee0e0f1046dc31b3b65152956/workflow/v1
+func (p *NpmCLIGithubActionsProvenance) GetSystemParameters() (map[string]any, error) {
+	internalParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
+	}
+	github, ok := internalParams["github"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "github parameters")
+	}
+	externalParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	}
+	workflow, ok := externalParams["workflow"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "workflow parameters")
+	}
+	// example: "https://github.com/sigstore/sigstore-js/actions/runs/9116405766/attempts/1"
+	invocationID, err := p.GetBuildInvocationID()
+	if err != nil {
+		return nil, err
+	}
+	invocationParts := strings.Split(invocationID, "-")
+	repo := strings.TrimPrefix(workflow["repository"].(string), "https://github.com/")
+	workflowRef := fmt.Sprintf("%s/%s@%s", repo, workflow["path"], workflow["ref"])
+	sysParams := make(map[string]any)
+	sysParams["GITHUB_EVENT_NAME"] = github["event_name"]
+	sysParams["GITHUB_REF"] = workflow["ref"]
+	sysParams["GITHUB_REPOSITORY"] = repo
+	sysParams["GITHUB_REPOSITORY_ID"] = github["repository_id"]
+	sysParams["GITHUB_REPOSITORY_OWNER_ID"] = github["repository_owner_id"]
+	sysParams["GITHUB_RUN_ATTEMPT"] = invocationParts[1]
+	sysParams["GITHUB_RUN_ID"] = invocationParts[0]
+	// not supporting GITHUB_SHA
+	// sigstore/sigstore-js/.github/workflows/release.yml@refs/heads/main
+	sysParams["GITHUB_WORKFLOW_REF"] = workflowRef
+	return sysParams, nil
 }
