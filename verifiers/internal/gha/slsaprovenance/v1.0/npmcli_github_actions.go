@@ -46,6 +46,7 @@ func (p *NpmCLIGithubActionsProvenance) GetBuildInvocationID() (string, error) {
 
 // GetSystemParameters implements Provenance.GetSystemParameters.
 // Definitions are in https://github.com/slsa-framework/github-actions-buildtypes/tree/5f855ef0106dad3ee0e0f1046dc31b3b65152956/workflow/v1
+// See also https://github.com/slsa-framework/slsa/blob/main/docs/spec/v1.0/provenance.md#migrating-from-02.
 func (p *NpmCLIGithubActionsProvenance) GetSystemParameters() (map[string]any, error) {
 	internalParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 	if !ok {
@@ -63,7 +64,6 @@ func (p *NpmCLIGithubActionsProvenance) GetSystemParameters() (map[string]any, e
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "workflow parameters")
 	}
-	// example: "https://github.com/sigstore/sigstore-js/actions/runs/9116405766/attempts/1"
 	invocationID, err := p.GetBuildInvocationID()
 	if err != nil {
 		return nil, err
@@ -79,8 +79,8 @@ func (p *NpmCLIGithubActionsProvenance) GetSystemParameters() (map[string]any, e
 	sysParams["GITHUB_REPOSITORY_OWNER_ID"] = github["repository_owner_id"]
 	sysParams["GITHUB_RUN_ATTEMPT"] = invocationParts[1]
 	sysParams["GITHUB_RUN_ID"] = invocationParts[0]
-	// not supporting GITHUB_SHA
-	// sigstore/sigstore-js/.github/workflows/release.yml@refs/heads/main
+	// not supporting GITHUB_SHA, though according to spec, it should be the same as GITHUB_WORKFLOW_SHA
 	sysParams["GITHUB_WORKFLOW_REF"] = workflowRef
+	sysParams["GITHUB_WORKFLOW_SHA"] = p.prov.Predicate.BuildDefinition.ResolvedDependencies[0].Digest["gitCommit"]
 	return sysParams, nil
 }
