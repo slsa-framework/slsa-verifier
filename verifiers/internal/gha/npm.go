@@ -106,7 +106,7 @@ func extractAttestations(attestations []attestation) (*attestation, *attestation
 	for i := range attestations {
 		att := attestations[i]
 		// Provenance type verification.
-		if att.PredicateType == common.ProvenanceV02Type || att.PredicateType == common.ProvenanceV1Type {
+		if _, ok := provenancePredicates[att.PredicateType]; ok {
 			provenanceAttestation = &att
 		}
 		// Publish type verification.
