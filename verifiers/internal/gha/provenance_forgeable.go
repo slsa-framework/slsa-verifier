@@ -284,7 +284,7 @@ func verifyNpmCLIGithubActionsV1SystemParameters(prov iface.Provenance, workflow
 	if err != nil {
 		return err
 	}
-	githubParams, ok := sysParams["github"].(map[string]any)
+	githubParams, ok := sysParams["github"].(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "github parameters")
 	}
