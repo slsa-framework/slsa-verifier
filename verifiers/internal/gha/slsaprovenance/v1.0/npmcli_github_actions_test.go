@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa1 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v1"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
@@ -30,8 +29,7 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
-						StatementHeader: intoto.StatementHeader{},
-						Predicate:       slsa1.ProvenancePredicate{},
+						Predicate: slsa1.ProvenancePredicate{},
 					},
 				},
 			},
@@ -43,7 +41,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
-						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
 								ResolvedDependencies: []slsa1.ResourceDescriptor{
@@ -65,7 +62,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
-						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
 								ResolvedDependencies: []slsa1.ResourceDescriptor{
@@ -89,7 +85,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
-						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
 								ResolvedDependencies: []slsa1.ResourceDescriptor{
@@ -115,7 +110,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
-						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
 								ResolvedDependencies: []slsa1.ResourceDescriptor{
@@ -141,7 +135,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{
 					prov: &Attestation{
-						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
 								ResolvedDependencies: []slsa1.ResourceDescriptor{
