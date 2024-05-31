@@ -25,18 +25,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 		err        error
 	}{
 		{
-			name: "empty provenance",
-			prov: NpmCLIGithubActionsProvenance{
-				provenanceV1: &provenanceV1{
-					prov: &Attestation{
-						Predicate: slsa1.ProvenancePredicate{},
-					},
-				},
-			},
-			triggerURI: "",
-			err:        serrors.ErrorInvalidDssePayload,
-		},
-		{
 			name: "empty external parameters",
 			prov: NpmCLIGithubActionsProvenance{
 				provenanceV1: &provenanceV1{

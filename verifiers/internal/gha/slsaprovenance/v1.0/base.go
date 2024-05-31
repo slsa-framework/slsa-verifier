@@ -135,9 +135,9 @@ func (p *provenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 // GetBuildTriggerPath implements Provenance.GetBuildTriggerPath.
 func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 	// TODO(#566): verify the ref and repo as well.
-	sysParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	sysParams, err := p.GetExternalParameters()
+	if err != nil {
+		return "", err
 	}
 
 	w, ok := sysParams["workflow"]
@@ -192,4 +192,13 @@ func (p *provenanceV1) GetSystemParameters() (map[string]any, error) {
 	}
 
 	return sysParams, nil
+}
+
+// GetExternalParameters() implements Provenance.GetExternalParameters.
+func (p *provenanceV1) GetExternalParameters() (map[string]interface{}, error) {
+	externalParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	}
+	return externalParams, nil
 }

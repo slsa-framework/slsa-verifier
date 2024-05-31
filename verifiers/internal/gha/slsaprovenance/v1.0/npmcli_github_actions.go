@@ -13,9 +13,9 @@ type NpmCLIGithubActionsProvenance struct {
 
 // TriggerURI implements Provenance.TriggerURI.
 func (p *NpmCLIGithubActionsProvenance) TriggerURI() (string, error) {
-	externalParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	externalParams, err := p.GetExternalParameters()
+	if err != nil {
+		return "", err
 	}
 	workflow, ok := externalParams["workflow"].(map[string]interface{})
 	if !ok {
