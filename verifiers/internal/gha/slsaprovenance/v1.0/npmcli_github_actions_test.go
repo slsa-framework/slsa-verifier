@@ -43,11 +43,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ResolvedDependencies: []slsa1.ResourceDescriptor{
-									{
-										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
-									},
-								},
 								ExternalParameters: map[string]interface{}{},
 							},
 						},
@@ -64,11 +59,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ResolvedDependencies: []slsa1.ResourceDescriptor{
-									{
-										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
-									},
-								},
 								ExternalParameters: map[string]interface{}{
 									"workflow": map[string]interface{}{},
 								},
@@ -87,11 +77,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ResolvedDependencies: []slsa1.ResourceDescriptor{
-									{
-										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
-									},
-								},
 								ExternalParameters: map[string]interface{}{
 									"workflow": map[string]interface{}{
 										"ref": testProvRef,
@@ -112,11 +97,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ResolvedDependencies: []slsa1.ResourceDescriptor{
-									{
-										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
-									},
-								},
 								ExternalParameters: map[string]interface{}{
 									"workflow": map[string]interface{}{
 										"repository": testProvRef,
@@ -137,11 +117,6 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ResolvedDependencies: []slsa1.ResourceDescriptor{
-									{
-										URI: "git+https://github.com/kubernetes/kubernetes@refs/heads/main",
-									},
-								},
 								ExternalParameters: map[string]interface{}{
 									"workflow": map[string]interface{}{
 										"repository": testProvRepository,
