@@ -39,7 +39,8 @@ jobs:
             - name: checkout-pr
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: gh pr checkout ${{ inputs.pr_number }}
+                  PR_NUMBER: ${{ inputs.pr_number }}
+              run: gh pr checkout "$PR_NUMBER"
             - name: run-command
               run: |
                 (
@@ -75,7 +76,8 @@ jobs:
             - name: checkout-pr
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: gh pr checkout ${{ inputs.pr_number }}
+                  PR_NUMBER: ${{ inputs.pr_number }}
+              run: gh pr checkout "$PR_NUMBER"
             - name: download-patch
               uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
               with:
@@ -92,5 +94,5 @@ jobs:
                   git config user.email github-actions@github.com
                   git add .
                   git status
-                  git commit -m "update actions dist"
+                  git commit -s -m "update actions dist"
                   git push
