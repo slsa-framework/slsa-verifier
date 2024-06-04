@@ -1,4 +1,4 @@
-//go:build regression
+//// go:build regression
 
 package main
 
@@ -1609,6 +1609,14 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
 		},
 		{
+			name:       "valid npm CLI builder v1",
+			artifact:   "provenance-npm-test-cli-v1-prega.tgz",
+			source:     "github.com/sigstore/sigstore-js",
+			pkgVersion: PointerTo("2.3.1"),
+			pkgName:    PointerTo("sigstore"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
 			name:       "valid npm CLI builder short runner name",
 			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
 			source:     "github.com/laurentsimon/provenance-npm-test",
@@ -1617,11 +1625,30 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			builderID:  PointerTo("https://github.com/actions/runner"),
 		},
 		{
+			// The builderID for v1 should never be the "shortname".
+			// https://github.com/npm/cli/blob/93883bb6459208a916584cad8c6c72a315cf32af/workspaces/libnpmpublish/lib/provenance.js#L58.
+			name:       "valid npm CLI builder v1 short runner name",
+			artifact:   "provenance-npm-test-cli-v1-prega.tgz",
+			source:     "github.com/sigstore/sigstore-js",
+			pkgVersion: PointerTo("2.3.1"),
+			pkgName:    PointerTo("sigstore"),
+			builderID:  PointerTo("https://github.com/actions/runner"),
+			err:        serrors.ErrorInvalidBuilderID,
+		},
+		{
 			name:       "valid npm CLI builder no builder",
 			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
 			source:     "github.com/laurentsimon/provenance-npm-test",
 			pkgVersion: PointerTo("1.0.3"),
 			pkgName:    PointerTo("@laurentsimon/provenance-npm-test"),
+			err:        serrors.ErrorInvalidBuilderID,
+		},
+		{
+			name:       "valid npm CLI builder v1 no builder",
+			artifact:   "provenance-npm-test-cli-v1-prega.tgz",
+			source:     "github.com/sigstore/sigstore-js",
+			pkgVersion: PointerTo("2.3.1"),
+			pkgName:    PointerTo("sigstore"),
 			err:        serrors.ErrorInvalidBuilderID,
 		},
 		{
@@ -1634,10 +1661,26 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			err:        serrors.ErrorNotSupported,
 		},
 		{
+			name:       "valid npm CLI builder v1 mismatch builder",
+			artifact:   "provenance-npm-test-cli-v1-prega.tgz",
+			source:     "github.com/sigstore/sigstore-js",
+			pkgVersion: PointerTo("2.3.1"),
+			pkgName:    PointerTo("sigstore"),
+			builderID:  PointerTo("https://github.com/actions/runner2"),
+			err:        serrors.ErrorNotSupported,
+		},
+		{
 			name:       "valid npm CLI builder no package name",
 			artifact:   "provenance-npm-test-cli-v02-prega.tgz",
 			pkgVersion: PointerTo("1.0.3"),
 			source:     "github.com/laurentsimon/provenance-npm-test",
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
+			name:       "valid npm CLI builder v1 no package name",
+			artifact:   "provenance-npm-test-cli-v1-prega.tgz",
+			pkgVersion: PointerTo("2.3.1"),
+			source:     "github.com/sigstore/sigstore-js",
 			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
 		},
 		{
@@ -1648,9 +1691,24 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
 		},
 		{
+			name:      "valid npm CLI builder v1 no package version",
+			artifact:  "provenance-npm-test-cli-v1-prega.tgz",
+			source:    "github.com/sigstore/sigstore-js",
+			pkgName:   PointerTo("sigstore"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+		},
+		{
 			name:      "valid npm CLI builder mismatch source",
 			artifact:  "provenance-npm-test-cli-v02-prega.tgz",
 			source:    "github.com/laurentsimon/provenance-npm-test2",
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorMismatchSource,
+		},
+		{
+			name:      "valid npm CLI builder v1 mismatch source",
+			artifact:  "provenance-npm-test-cli-v1-prega.tgz",
+			source:    "github.com/sigstore/sigstore-js2",
+			pkgName:   PointerTo("sigstore"),
 			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
 			err:       serrors.ErrorMismatchSource,
 		},
@@ -1663,10 +1721,26 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			err:        serrors.ErrorMismatchPackageVersion,
 		},
 		{
+			name:       "valid npm CLI builder v1 mismatch package version",
+			artifact:   "provenance-npm-test-cli-v1-prega.tgz",
+			source:     "github.com/sigstore/sigstore-js",
+			pkgVersion: PointerTo("2.3.2"),
+			builderID:  PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:        serrors.ErrorMismatchPackageVersion,
+		},
+		{
 			name:      "valid npm CLI builder mismatch package name",
 			artifact:  "provenance-npm-test-cli-v02-prega.tgz",
 			source:    "github.com/laurentsimon/provenance-npm-test",
 			pkgName:   PointerTo("@laurentsimon/provenance-npm-test2"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorMismatchPackageName,
+		},
+		{
+			name:      "valid npm CLI builder v1 mismatch package name",
+			artifact:  "provenance-npm-test-cli-v1-prega.tgz",
+			source:    "github.com/sigstore/sigstore-js",
+			pkgName:   PointerTo("sigstore2"),
 			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
 			err:       serrors.ErrorMismatchPackageName,
 		},
@@ -1679,10 +1753,26 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 			err:       serrors.ErrorInvalidSignature,
 		},
 		{
+			name:      "invalid signature provenance npm CLI v1",
+			artifact:  "provenance-npm-test-cli-v1-prega-invalidsigprov.tgz",
+			source:    "github.com/sigstore/sigstore-js",
+			pkgName:   PointerTo("sigstore"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorInvalidSignature,
+		},
+		{
 			name:      "invalid signature publish npm CLI",
 			artifact:  "provenance-npm-test-cli-v02-prega-invalidsigpub.tgz",
 			source:    "github.com/laurentsimon/provenance-npm-test",
 			pkgName:   PointerTo("@laurentsimon/provenance-npm-test"),
+			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
+			err:       serrors.ErrorInvalidSignature,
+		},
+		{
+			name:      "invalid signature publish npm CLI v1",
+			artifact:  "provenance-npm-test-cli-v1-prega-invalidsigpub.tgz",
+			source:    "github.com/sigstore/sigstore-js",
+			pkgName:   PointerTo("sigstore"),
 			builderID: PointerTo("https://github.com/actions/runner/github-hosted"),
 			err:       serrors.ErrorInvalidSignature,
 		},
