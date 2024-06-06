@@ -13,6 +13,7 @@ import (
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
+	sigstoreTUF "github.com/sigstore/sigstore-go/pkg/tuf"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
@@ -56,6 +57,7 @@ type Npm struct {
 	verifiedPublishAtt    *SignedAttestation
 	provenanceAttestation *attestation
 	publishAttestation    *attestation
+	verifierOpts          *options.VerifierOpts
 }
 
 func (n *Npm) ProvenanceEnvelope() *dsse.Envelope {
@@ -66,7 +68,13 @@ func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
 	return n.verifiedProvenanceAtt.SigningCert
 }
 
+// NpmNew creates a new Npm verifier.
 func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*Npm, error) {
+	return NpmNewWithVerifierOpts(ctx, root, attestationBytes, nil)
+}
+
+// NpmNewWithVerifierOpts creates a new Npm verifier with the provided verifier options.
+func NpmNewWithVerifierOpts(ctx context.Context, root *TrustedRoot, attestationBytes []byte, verifierOpts *options.VerifierOpts) (*Npm, error) {
 	var aSet attestationSet
 	if err := json.Unmarshal(attestationBytes, &aSet); err != nil {
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)
@@ -76,13 +84,33 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*N
 	if err != nil {
 		return nil, err
 	}
+	verifierOpts, err = ensureCompleteVerifierOpts(verifierOpts)
+	if err != nil {
+		return nil, err
+	}
 	return &Npm{
 		ctx:  ctx,
 		root: root,
 
 		provenanceAttestation: prov,
 		publishAttestation:    pub,
+		verifierOpts:          verifierOpts,
 	}, nil
+}
+
+// ensureCompleteVerifierOpts adds default values to any missing fields in the verifierOpts.
+func ensureCompleteVerifierOpts(verifierOpts *options.VerifierOpts) (*options.VerifierOpts, error) {
+	if verifierOpts == nil {
+		verifierOpts = &options.VerifierOpts{}
+	}
+	if verifierOpts.SigstoreTUFClient == nil {
+		sigstoreTUFClient, err := sigstoreTUF.DefaultClient()
+		if err != nil {
+			return nil, err
+		}
+		verifierOpts.SigstoreTUFClient = sigstoreTUFClient
+	}
+	return verifierOpts, nil
 }
 
 func extractAttestations(attestations []attestation) (*attestation, *attestation, error) {

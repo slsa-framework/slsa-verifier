@@ -1,5 +1,9 @@
 package options
 
+import (
+	apiUtils "github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+)
+
 // ProvenanceOpts are the options for checking provenance information.
 type ProvenanceOpts struct {
 	// ExpectedBranch is the expected branch (github_ref or github_base_ref) in
@@ -36,4 +40,14 @@ type ProvenanceOpts struct {
 type BuilderOpts struct {
 	// ExpectedBuilderID is the builderID passed in from the user to be verified
 	ExpectedID *string
+	// VerifierOpts are the options for the verifier, including needed clients.
+	// In the future this can be its own standalone argument to the verifier functions
+	VerifierOpts *VerifierOpts
+}
+
+// VerifierOpts are the options for the verifier.
+// In the future, this can include a logger and a rekor client
+type VerifierOpts struct {
+	// SigstoreTufClient is the Sigstore TUF client, used for retrieving the Npmjs public keys
+	SigstoreTUFClient apiUtils.SigstoreTUFClient
 }

@@ -337,7 +337,8 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		return nil, nil, err
 	}
 
-	npm, err := NpmNew(ctx, trustedRoot, attestations)
+	verifierOpts := builderOpts.VerifierOpts
+	npm, err := NpmNewWithVerifierOpts(ctx, trustedRoot, attestations, verifierOpts)
 	if err != nil {
 		return nil, nil, err
 	}
