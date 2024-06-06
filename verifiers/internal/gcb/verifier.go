@@ -48,16 +48,6 @@ func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 	return nil, nil, serrors.ErrorNotSupported
 }
 
-// VerifyNpmPackageWithSigstoreTUFClient verifies an npm package tarball.
-func (v *GCBVerifier) VerifyNpmPackageWithSigstoreTUFClient(ctx context.Context,
-	attestations []byte, tarballHash string,
-	provenanceOpts *options.ProvenanceOpts,
-	builderOpts *options.BuilderOpts,
-	sigstoreTUFClient utils.SigstoreTUFClient,
-) ([]byte, *utils.TrustedBuilderID, error) {
-	return nil, nil, serrors.ErrorNotSupported
-}
-
 // VerifyImage verifies provenance for an OCI image.
 func (v *GCBVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string,

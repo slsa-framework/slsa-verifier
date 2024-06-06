@@ -332,20 +332,6 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	sigstoreTUFClient, err := utils.NewSigstoreTUFClient()
-	if err != nil {
-		return nil, nil, err
-	}
-	return v.VerifyNpmPackageWithSigstoreTUFClient(ctx, attestations, tarballHash, provenanceOpts, builderOpts, sigstoreTUFClient)
-}
-
-// VerifyNpmPackageWithSigstoreTUFClient verifies an npm package tarball.
-func (v *GHAVerifier) VerifyNpmPackageWithSigstoreTUFClient(ctx context.Context,
-	attestations []byte, tarballHash string,
-	provenanceOpts *options.ProvenanceOpts,
-	builderOpts *options.BuilderOpts,
-	sigstoreTUFClient utils.SigstoreTUFClient,
-) ([]byte, *utils.TrustedBuilderID, error) {
 	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -370,7 +356,7 @@ func (v *GHAVerifier) VerifyNpmPackageWithSigstoreTUFClient(ctx context.Context,
 	}
 
 	// Verify publish attesttation signature.
-	if err := npm.verifyPublishAttestationSignature(sigstoreTUFClient); err != nil {
+	if err := npm.verifyPublishAttestationSignature(); err != nil {
 		return nil, nil, err
 	}
 
