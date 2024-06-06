@@ -33,6 +33,9 @@ const (
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
 var attestationKeyAtomicValue atomic.Value
 
+// Cache the TUF roots to reduce traffic and read contention on the cached file.
+var verifierOptsAtomicValue atomic.Value
+
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
 }
@@ -101,7 +104,13 @@ func NpmNewWithVerifierOpts(ctx context.Context, root *TrustedRoot, attestationB
 // ensureCompleteVerifierOpts adds default values to any missing fields in the verifierOpts.
 func ensureCompleteVerifierOpts(verifierOpts *options.VerifierOpts) (*options.VerifierOpts, error) {
 	if verifierOpts == nil {
-		verifierOpts = &options.VerifierOpts{}
+		savedOpts := verifierOptsAtomicValue.Load()
+		if savedOpts != nil {
+			verifierOpts = savedOpts.(*options.VerifierOpts)
+		} else {
+			verifierOpts = &options.VerifierOpts{}
+			verifierOptsAtomicValue.Store(verifierOpts)
+		}
 	}
 	if verifierOpts.SigstoreTUFClient == nil {
 		sigstoreTUFClient, err := sigstoreTUF.DefaultClient()
@@ -162,7 +171,7 @@ func (n *Npm) verifyProvenanceAttestationSignature() error {
 	return nil
 }
 
-func (n *Npm) verifyPublishAttestationSignature(sigstoreTUFClient utils.SigstoreTUFClient) error {
+func (n *Npm) verifyPublishAttestationSignature() error {
 	// First verify the bundle and its rekor entry.
 	signedPublish, err := verifyBundleAndEntryFromBytes(n.ctx, n.publishAttestation.BundleBytes, n.root, false)
 	if err != nil {
@@ -175,7 +184,7 @@ func (n *Npm) verifyPublishAttestationSignature(sigstoreTUFClient utils.Sigstore
 
 	// Retrieve the key material.
 	// We found the associated public key in the TUF root, so now we can trust this KeyID.
-	npmRegistryPublicKey, err := getAttestationKey(sigstoreTUFClient, npmRegistryPublicKeyID)
+	npmRegistryPublicKey, err := getAttestationKey(n.verifierOpts.SigstoreTUFClient, npmRegistryPublicKeyID)
 	if err != nil {
 		return err
 	}
