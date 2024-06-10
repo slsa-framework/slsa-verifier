@@ -33,8 +33,8 @@ const (
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
 var attestationKeyAtomicValue atomic.Value
 
-// Cache the TUF roots to reduce traffic and read contention on the cached file.
-var verifierOptsAtomicValue atomic.Value
+// cache the default Sigstore TUF client.
+var defaultSigstoreTUFClientAtomicValue atomic.Value
 
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
@@ -72,22 +72,16 @@ func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
 }
 
 // NpmNew creates a new Npm verifier.
-func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*Npm, error) {
-	return NpmNewWithVerifierOpts(ctx, root, attestationBytes, nil)
-}
-
-// NpmNewWithVerifierOpts creates a new Npm verifier with the provided verifier options.
-func NpmNewWithVerifierOpts(ctx context.Context, root *TrustedRoot, attestationBytes []byte, verifierOpts *options.VerifierOpts) (*Npm, error) {
+func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte, verifierOptioners ...options.VerifierOptioner) (*Npm, error) {
 	var aSet attestationSet
 	if err := json.Unmarshal(attestationBytes, &aSet); err != nil {
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)
 	}
-
 	prov, pub, err := extractAttestations(aSet.Attestations)
 	if err != nil {
 		return nil, err
 	}
-	verifierOpts, err = ensureCompleteVerifierOpts(verifierOpts)
+	verifierOpts, err := getVerifierOpts(verifierOptioners...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,19 +95,31 @@ func NpmNewWithVerifierOpts(ctx context.Context, root *TrustedRoot, attestationB
 	}, nil
 }
 
-// ensureCompleteVerifierOpts adds default values to any missing fields in the verifierOpts.
-func ensureCompleteVerifierOpts(verifierOpts *options.VerifierOpts) (*options.VerifierOpts, error) {
-	if verifierOpts == nil {
-		savedOpts := verifierOptsAtomicValue.Load()
-		if savedOpts != nil {
-			verifierOpts = savedOpts.(*options.VerifierOpts)
-		} else {
-			verifierOpts = &options.VerifierOpts{}
-			verifierOptsAtomicValue.Store(verifierOpts)
-		}
+// getDefaultSigstoreTUFClient returns the default Sigstore TUF client.
+func getDefaultSigstoreTUFClient() (utils.SigstoreTUFClient, error) {
+	value := defaultSigstoreTUFClientAtomicValue.Load()
+	if value != nil {
+		return value.(utils.SigstoreTUFClient), nil
 	}
+	sigstoreTUFClient, err := sigstoreTUF.DefaultClient()
+	if err != nil {
+		return nil, err
+	}
+	defaultSigstoreTUFClientAtomicValue.Store(sigstoreTUFClient)
+	return sigstoreTUFClient, nil
+}
+
+// getVerifierOpts returns the verifier options, adding missing options with default values.
+func getVerifierOpts(verifierOptioners ...options.VerifierOptioner) (*options.VerifierOpts, error) {
+	// Set the verifier options.
+	verifierOpts := &options.VerifierOpts{}
+	for _, optioner := range verifierOptioners {
+		optioner(verifierOpts)
+	}
+
+	// Set the Sigstore TUF client, if not set.
 	if verifierOpts.SigstoreTUFClient == nil {
-		sigstoreTUFClient, err := sigstoreTUF.DefaultClient()
+		sigstoreTUFClient, err := getDefaultSigstoreTUFClient()
 		if err != nil {
 			return nil, err
 		}

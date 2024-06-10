@@ -331,14 +331,14 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	verifierOptioners ...options.VerifierOptioner,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	trustedRoot, err := TrustedRootSingleton(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	verifierOpts := builderOpts.VerifierOpts
-	npm, err := NpmNewWithVerifierOpts(ctx, trustedRoot, attestations, verifierOpts)
+	npm, err := NpmNew(ctx, trustedRoot, attestations, verifierOptioners...)
 	if err != nil {
 		return nil, nil, err
 	}

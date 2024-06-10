@@ -18,6 +18,14 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
+func init() {
+	// preload the default sigstore TUF client so that it is available and cached for the parallel tests
+	_, err := getDefaultSigstoreTUFClient()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func Test_verifyName(t *testing.T) {
 	t.Parallel()
 

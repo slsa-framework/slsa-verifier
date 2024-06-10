@@ -24,15 +24,13 @@ const testDir = "./testdata"
 // Test_VerifyNpmPackage ensures that verifiers.VerifyNpmPackage works,
 // borrowing only a few examples from the larger set of cases in main.Test_runVerifyGHAArtifactPath
 func Test_VerifyNpmPackage(t *testing.T) {
-	// We cannot use t.Setenv due to parallelized tests.
-	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
-	t.Parallel()
-
-	opts := sigstoreTUF.DefaultOptions().WithForceCache() // fewer TUF refreshes for faster tests
-	sigstoreTUFClient, err := sigstoreTUF.New(opts)
+	// client for the VerifierOptioners
+	sigstoreTUFClient, err := sigstoreTUF.New(sigstoreTUF.DefaultOptions().WithForceCache()) // fewer TUF refreshes for faster tests
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	t.Parallel()
 
 	tests := []struct {
 		name       string
@@ -118,10 +116,10 @@ func Test_VerifyNpmPackage(t *testing.T) {
 			builderOpts := &options.BuilderOpts{
 				ExpectedID: &tt.builderID,
 			}
-			builderOpts.VerifierOpts = &options.VerifierOpts{
-				SigstoreTUFClient: sigstoreTUFClient,
+			verifierOptioners := []options.VerifierOptioner{
+				options.WithSigstoreTUFClient(sigstoreTUFClient),
 			}
-			VerifyNpmPackage(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts)
+			VerifyNpmPackage(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, verifierOptioners...)
 		})
 	}
 }

@@ -40,14 +40,22 @@ type ProvenanceOpts struct {
 type BuilderOpts struct {
 	// ExpectedBuilderID is the builderID passed in from the user to be verified
 	ExpectedID *string
-	// VerifierOpts are the options for the verifier, including needed clients.
-	// In the future this can be its own standalone argument to the verifier functions
-	VerifierOpts *VerifierOpts
 }
 
 // VerifierOpts are the options for the verifier.
-// In the future, this can include a logger and a rekor client
+// In the future, this can include a logger and a rekor client,
+// or be a standalone argument to the verifier functions
 type VerifierOpts struct {
 	// SigstoreTufClient is the Sigstore TUF client, used for retrieving the Npmjs public keys
 	SigstoreTUFClient apiUtils.SigstoreTUFClient
+}
+
+// VerifierOptioner is a function that sets options for the verifier.
+type VerifierOptioner func(opt *VerifierOpts)
+
+// WithSigstoreTUFClient sets the Sigstore TUF client for the verifier.
+func WithSigstoreTUFClient(sigstoreTUFClient apiUtils.SigstoreTUFClient) VerifierOptioner {
+	return func(opt *VerifierOpts) {
+		opt.SigstoreTUFClient = sigstoreTUFClient
+	}
 }

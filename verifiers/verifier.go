@@ -65,6 +65,7 @@ func VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	verifierOptioners ...options.VerifierOptioner,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
@@ -72,5 +73,5 @@ func VerifyNpmPackage(ctx context.Context,
 	}
 
 	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
-		provenanceOpts, builderOpts)
+		provenanceOpts, builderOpts, verifierOptioners...)
 }

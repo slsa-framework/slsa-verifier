@@ -33,6 +33,7 @@ type SLSAVerifier interface {
 		attestations []byte, tarballHash string,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
+		verifierOptioners ...options.VerifierOptioner,
 	) ([]byte, *utils.TrustedBuilderID, error)
 }
 
