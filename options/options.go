@@ -42,7 +42,7 @@ type BuilderOpts struct {
 	ExpectedID *string
 }
 
-// VerifierOpts are the options for the verifier.
+// VerifierOpts are the options for the verifier, created with the VerifierOptioner functions.
 // In the future, this can include a logger and a rekor client,
 // or be a standalone argument to the verifier functions
 type VerifierOpts struct {
