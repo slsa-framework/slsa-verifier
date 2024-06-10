@@ -116,7 +116,6 @@ func getVerifierOpts(verifierOptioners ...options.VerifierOptioner) (*options.Ve
 	for _, optioner := range verifierOptioners {
 		optioner(verifierOpts)
 	}
-
 	// Set the Sigstore TUF client, if not set.
 	if verifierOpts.SigstoreTUFClient == nil {
 		sigstoreTUFClient, err := getDefaultSigstoreTUFClient()

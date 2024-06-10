@@ -65,7 +65,10 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating SigstoreTUF client: %w", err)
 	}
-	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, client)
+	verifierOptioners := []options.VerifierOptioner{
+		options.WithSigstoreTUFClient(client),
+	}
+	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, verifierOptioners...)
 	if err != nil {
 		return nil, fmt.Errorf("Verifying npm package: FAILED: %w", err)
 	}
