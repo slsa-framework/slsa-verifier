@@ -21,7 +21,7 @@ import (
 // TestMain intercepts the test runner to run some setup code before running the tests.
 func TestMain(m *testing.M) {
 	// Initialize the default sigstore TUF client for parallel tests
-	_, err := getDefaultSigstoreTUFClient()
+	_, err := utils.GetDefaultSigstoreTUFClient()
 	if err != nil {
 		panic(err)
 	}

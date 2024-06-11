@@ -54,12 +54,17 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	builderOpts := &options.BuilderOpts{
 		ExpectedID: &builderID,
 	}
+
+	// example: get the default client that the library caches
+	// client, err := apiUtils.GetDefaultSigstoreTUFClient()
+
 	// example: force using the embedded root, without going online for a refresh
 	// opts := sigstoreTUF.DefaultOptions().WithForceCache()
+
 	// example: supply your own root
 	// opts := sigstoreTUF.DefaultOptions().WithRoot([]byte(`{"signed":{"_type":"root","spec_version":"1.0","version":9,"expires":"2024-09-12T06:53:10Z","keys":{"1e1d65ce98b10 ...`)).WithForceCache()
-	// example: use our uility method for making a client
-	// client, err := apiUtils.NewSigstoreTUFClient()
+
+	// example: supply your own default client
 	opts := sigstoreTUF.DefaultOptions()
 	client, err := sigstoreTUF.New(opts)
 	if err != nil {

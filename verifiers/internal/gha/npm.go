@@ -13,7 +13,6 @@ import (
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
-	sigstoreTUF "github.com/sigstore/sigstore-go/pkg/tuf"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
@@ -32,9 +31,6 @@ const (
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
 var attestationKeyAtomicValue atomic.Value
-
-// cache the default Sigstore TUF client.
-var defaultSigstoreTUFClientAtomicValue atomic.Value
 
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
@@ -95,20 +91,6 @@ func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte, ver
 	}, nil
 }
 
-// getDefaultSigstoreTUFClient returns the default Sigstore TUF client.
-func getDefaultSigstoreTUFClient() (utils.SigstoreTUFClient, error) {
-	value := defaultSigstoreTUFClientAtomicValue.Load()
-	if value != nil {
-		return value.(utils.SigstoreTUFClient), nil
-	}
-	sigstoreTUFClient, err := sigstoreTUF.DefaultClient()
-	if err != nil {
-		return nil, err
-	}
-	defaultSigstoreTUFClientAtomicValue.Store(sigstoreTUFClient)
-	return sigstoreTUFClient, nil
-}
-
 // getVerifierOpts returns the verifier options, adding missing options with default values.
 func getVerifierOpts(verifierOptioners ...options.VerifierOptioner) (*options.VerifierOpts, error) {
 	// Set the verifier options.
@@ -118,7 +100,7 @@ func getVerifierOpts(verifierOptioners ...options.VerifierOptioner) (*options.Ve
 	}
 	// Set the Sigstore TUF client, if not set.
 	if verifierOpts.SigstoreTUFClient == nil {
-		sigstoreTUFClient, err := getDefaultSigstoreTUFClient()
+		sigstoreTUFClient, err := utils.GetDefaultSigstoreTUFClient()
 		if err != nil {
 			return nil, err
 		}
