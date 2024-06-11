@@ -45,11 +45,9 @@ var (
 			}
 		]
 	}`
-	normalTargetPath          = "registry.npmjs.org/keys.json"
 	testTargetPath            = "my-registry.npmjs.org/keys.json"
 	testTargetInvalidJSONPath = "my-registry.npmjs.org/keys-invalid-json.json"
 	mockFileContentMap        = map[string]string{
-		normalTargetPath:          testTargetKeysFileContent,
 		testTargetPath:            testTargetKeysFileContent,
 		testTargetInvalidJSONPath: testTargetInvalidJSONFileContent,
 	}
