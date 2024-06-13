@@ -481,6 +481,22 @@ The verified in-toto statement may be written to stdout with the
 
 Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You _may_ match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
 
+### Verification Summary Attestations (VSA)
+
+TODO: explain more, better sample invocation
+
+To verify VSAs, invoke like this
+
+```shell
+ SLSA_VERIFIER_EXPERIMENTAL=1 go run ./cli/slsa-verifier/ verify-vsa \
+  gce_image_id:4391049316694036388 \
+  --attestations-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
+  --verifier-id "https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1" \
+  --resource-uri "gce_image://gke-node-images:gke-12714-gke1076000-cos-arm64-105-17412-370-44-c-gvisor" \
+  --verified-levels "SLSA_BUILD_LEVEL3, BCID_LEVEL_4" \
+  --print-attestations
+```
+
 ## Known Issues
 
 ### tuf: invalid key
