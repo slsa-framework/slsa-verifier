@@ -127,6 +127,40 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
+// VerifyVSAOptions is the top-level options for the `verifyVSA` command.
+type VerifyVSAOptions struct {
+	AttestationsPath  string
+	VerifierID        string
+	ResourceUri       string
+	VerifiedLevels    []string
+	PrintAttestations bool
+}
+
+var _ Interface = (*VerifyVSAOptions)(nil)
+
+// AddFlags implements Interface.
+func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
+		"path to a file containing the attestations")
+
+	cmd.Flags().StringVar(&o.VerifierID, "verifier-id", "",
+		"the unique verifier ID who created the attestations")
+
+	cmd.Flags().StringVar(&o.ResourceUri, "resource-uri", "",
+		"the resource URI to be verified")
+
+	cmd.Flags().StringSliceVar(&o.VerifiedLevels, "verified-levels", []string{},
+		"the levels of verification to be performed")
+
+	cmd.Flags().BoolVar(&o.PrintAttestations, "print-attestations", false,
+		"[optional] print the verified attestations to stdout")
+
+	cmd.MarkFlagRequired("attestations-path")
+	cmd.MarkFlagRequired("verifier-id")
+	cmd.MarkFlagRequired("resource-uri")
+	cmd.MarkFlagRequired("verified-levels")
+}
+
 type workflowInputs struct {
 	kv map[string]string
 }

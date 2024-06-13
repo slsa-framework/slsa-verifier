@@ -37,3 +37,18 @@ type BuilderOpts struct {
 	// ExpectedBuilderID is the builderID passed in from the user to be verified
 	ExpectedID *string
 }
+
+// VSAOpts are the options for checking the VSA.
+type VSAOpts struct {
+	//ExpectedDigests are the digests expected to be in the VSA
+	ExpectedDigests []string
+
+	// ExpectedVerifierID is the verifier ID that is passed from user and not verified
+	ExpectedVerifierID string
+
+	// ExpectedResourceURI is the resource URI that is passed from user and not verified
+	ExpectedResourceURI string
+
+	// ExpectedVerifiedLevels is the levels of verification that are passed from user and not verified
+	ExpectedVerifiedLevels []string
+}

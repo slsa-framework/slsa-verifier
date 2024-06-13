@@ -74,3 +74,12 @@ func VerifyNpmPackage(ctx context.Context,
 	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
 		provenanceOpts, builderOpts)
 }
+
+// VerifyVSA verifies the VSA attestations.
+func VerifyVSA(ctx context.Context,
+	attestations []byte,
+	vsaOpts *options.VSAOpts,
+) ([]byte, *utils.TrustedAttestationProducerID, error) {
+	// TODO: Implement this function.
+	return nil, nil, nil
+}

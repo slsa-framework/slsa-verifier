@@ -184,3 +184,31 @@ func verifyNpmPackageCmd() *cobra.Command {
 	o.AddFlags(cmd)
 	return cmd
 }
+
+func verifyVSACmd() *cobra.Command {
+	o := &verify.VerifyVSAOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "verify-vsa [flags] subject-digest [subject-digest...]",
+		Args:  cobra.MinimumNArgs(1),
+		Short: "Verifies SLSA VSAs for the given subject-digests [experimental]",
+		Run: func(cmd *cobra.Command, args []string) {
+			v := verify.VerifyVSACommand{
+				AttestationsPath:  &o.AttestationsPath,
+				VerifierID:        &o.VerifierID,
+				ResourceUri:       &o.ResourceUri,
+				VerifiedLevels:    &o.VerifiedLevels,
+				PrintAttestations: &o.PrintAttestations,
+			}
+			if _, err := v.Exec(cmd.Context(), &args); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				os.Exit(1)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+			}
+		},
+	}
+
+	o.AddFlags(cmd)
+	return cmd
+}
