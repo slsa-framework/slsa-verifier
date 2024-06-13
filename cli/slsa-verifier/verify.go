@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	SUCCESS = "PASSED: Verified SLSA provenance"
+	SUCCESS = "PASSED: SLSA verification passed"
 	FAILURE = "FAILED: SLSA verification failed"
 )
 
