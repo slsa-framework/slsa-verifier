@@ -27,6 +27,7 @@ import (
 
 // VerifyVSACommand
 type VerifyVSACommand struct {
+	SubjectDigests    *[]string
 	AttestationsPath  *string
 	VerifierID        *string
 	ResourceUri       *string
@@ -35,14 +36,14 @@ type VerifyVSACommand struct {
 }
 
 // Exec executes the verifiers.VerifyVSA
-func (c *VerifyVSACommand) Exec(ctx context.Context, expectedDigests *[]string) (*utils.TrustedAttestationProducerID, error) {
+func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, error) {
 	if !options.ExperimentalEnabled() {
 		err := errors.New("feature support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
 		printFailed(err)
 		return nil, err
 	}
 	vsaOpts := &options.VSAOpts{
-		ExpectedDigests:        *expectedDigests,
+		ExpectedDigests:        *c.SubjectDigests,
 		ExpectedVerifierID:     *c.VerifierID,
 		ExpectedResourceURI:    *c.ResourceUri,
 		ExpectedVerifiedLevels: *c.VerifiedLevels,
@@ -52,6 +53,8 @@ func (c *VerifyVSACommand) Exec(ctx context.Context, expectedDigests *[]string) 
 		printFailed(err)
 		return nil, err
 	}
+	fmt.Println("Attestations: ", string(attestations))
+	fmt.Println("opts: ", vsaOpts)
 	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestations, vsaOpts)
 	if err != nil {
 		printFailed(err)

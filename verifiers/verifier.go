@@ -79,7 +79,7 @@ func VerifyNpmPackage(ctx context.Context,
 func VerifyVSA(ctx context.Context,
 	attestations []byte,
 	vsaOpts *options.VSAOpts,
-) ([]byte, *utils.TrustedAttestationProducerID, error) {
+) ([]byte, *utils.TrustedAttesterID, error) {
 	// TODO: Implement this function.
 	return nil, nil, nil
 }

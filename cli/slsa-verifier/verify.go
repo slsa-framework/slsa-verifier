@@ -190,17 +190,18 @@ func verifyVSACmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "verify-vsa [flags] subject-digest [subject-digest...]",
-		Args:  cobra.MinimumNArgs(1),
+		Args:  cobra.NoArgs,
 		Short: "Verifies SLSA VSAs for the given subject-digests [experimental]",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyVSACommand{
+				SubjectDigests:    &o.SubjectDigests,
 				AttestationsPath:  &o.AttestationsPath,
 				VerifierID:        &o.VerifierID,
 				ResourceUri:       &o.ResourceUri,
 				VerifiedLevels:    &o.VerifiedLevels,
 				PrintAttestations: &o.PrintAttestations,
 			}
-			if _, err := v.Exec(cmd.Context(), &args); err != nil {
+			if _, err := v.Exec(cmd.Context()); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
 				os.Exit(1)
 			} else {

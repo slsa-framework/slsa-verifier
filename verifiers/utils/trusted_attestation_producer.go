@@ -1,6 +1,6 @@
 package utils
 
-// TrustedAttestationProducer represents an identifer that has been explicitly trusted.
-type TrustedAttestationProducerID struct {
+// TrustedAttesterID represents an identifer that has been explicitly trusted.
+type TrustedAttesterID struct {
 	name, version string
 }
