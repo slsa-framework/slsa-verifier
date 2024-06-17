@@ -9,6 +9,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/register"
 	_ "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gcb"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/vsa"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -80,6 +81,5 @@ func VerifyVSA(ctx context.Context,
 	attestations []byte,
 	vsaOpts *options.VSAOpts,
 ) ([]byte, *utils.TrustedAttesterID, error) {
-	// TODO: Implement this function.
-	return nil, nil, nil
+	return vsa.VerifyVSA(ctx, attestations, vsaOpts)
 }
