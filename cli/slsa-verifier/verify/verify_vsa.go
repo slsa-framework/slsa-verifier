@@ -53,8 +53,6 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		printFailed(err)
 		return nil, err
 	}
-	fmt.Println("Attestations: ", string(attestations))
-	fmt.Println("opts: ", vsaOpts)
 	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestations, vsaOpts)
 	if err != nil {
 		printFailed(err)
