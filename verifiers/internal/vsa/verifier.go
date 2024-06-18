@@ -33,12 +33,10 @@ func VerifyVSA(ctx context.Context,
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println(sigstoreStatement)
 	vsa, err := vsa10.VSAFromStatement(sigstoreStatement)
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println(vsa)
 
 	// verify the envelope. signature
 	err = verifyEnvelopeSignature(ctx, &sigstoreEnvelope)
@@ -48,6 +46,12 @@ func VerifyVSA(ctx context.Context,
 
 	// TODO:
 	// verify the metadata
+	err = matchExpectedValues(vsa, vsaOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// TODO:
 	// print the attestation
 	return nil, nil, nil
 }
@@ -76,5 +80,10 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEeGa6ZCZn0q6WpaUwJrSk+PPYEsca
 	if err != nil {
 		return fmt.Errorf("%w: verifying envelope %w", serrors.ErrorInvalidPublicKey, err)
 	}
+	return nil
+}
+
+func matchExpectedValues(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
+	// TODO: implement this function
 	return nil
 }
