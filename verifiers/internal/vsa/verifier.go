@@ -29,14 +29,6 @@ func VerifyVSA(ctx context.Context,
 	sigstoreEnvelope := sigstoreBundle.Envelope{
 		Envelope: envelope,
 	}
-	sigstoreStatement, err := sigstoreEnvelope.Statement()
-	if err != nil {
-		return nil, nil, err
-	}
-	vsa, err := vsa10.VSAFromStatement(sigstoreStatement)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	// verify the envelope. signature
 	err = verifyEnvelopeSignature(ctx, &sigstoreEnvelope)
@@ -46,6 +38,14 @@ func VerifyVSA(ctx context.Context,
 
 	// TODO:
 	// verify the metadata
+	statement, err := utils.StatementFromEnvelope(envelope)
+	if err != nil {
+		return nil, nil, err
+	}
+	vsa, err := vsa10.VSAFromStatement(statement)
+	if err != nil {
+		return nil, nil, err
+	}
 	err = matchExpectedValues(vsa, vsaOpts)
 	if err != nil {
 		return nil, nil, err
@@ -61,6 +61,7 @@ func verifyEnvelopeSignature(ctx context.Context, sigstoreEnvelope *sigstoreBund
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEeGa6ZCZn0q6WpaUwJrSk+PPYEsca
 3Xkk3UrxvbQtoZzTmq0zIYq+4QQl0YBedSyy+XcwAMaUWTouTrB05WhYtg==
 -----END PUBLIC KEY-----`)
+	keyID := "keystore://76574:prod:vsa_signing_public_key"
 	pubKey, err := sigstoreCryptoUtils.UnmarshalPEMToPublicKey(pubKeyBytes)
 	if err != nil {
 		return fmt.Errorf("%w: %w", serrors.ErrorInvalidPublicKey, err)
@@ -72,6 +73,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEeGa6ZCZn0q6WpaUwJrSk+PPYEsca
 	envelopeVerifier, err := dsse.NewEnvelopeVerifier(&sigstoreDSSE.VerifierAdapter{
 		SignatureVerifier: signatureVerifier,
 		Pub:               pubKey,
+		PubKeyID:          keyID, // "keystore://76574:prod:vsa_signing_public_key"
 	})
 	if err != nil {
 		return fmt.Errorf("%w: creating verifier %w", serrors.ErrorInvalidPublicKey, err)
