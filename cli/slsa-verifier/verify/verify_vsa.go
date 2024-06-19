@@ -35,7 +35,7 @@ type VerifyVSACommand struct {
 	VerifierID        *string
 	ResourceUri       *string
 	VerifiedLevels    *[]string
-	PrintAttestations *bool
+	PrintAttestation  *bool
 	PublicKeyPath     *string
 	PublicKeyID       *string
 	SignatureHashAlgo *string
@@ -93,7 +93,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		printFailed(err)
 		return nil, err
 	}
-	if *c.PrintAttestations {
+	if *c.PrintAttestation {
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 	// verfiers.VerifyVSA already checks if the producerID matches

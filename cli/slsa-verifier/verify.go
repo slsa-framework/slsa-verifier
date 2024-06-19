@@ -199,7 +199,7 @@ func verifyVSACmd() *cobra.Command {
 				VerifierID:        &o.VerifierID,
 				ResourceUri:       &o.ResourceUri,
 				VerifiedLevels:    &o.VerifiedLevels,
-				PrintAttestations: &o.PrintAttestations,
+				PrintAttestation:  &o.PrintAttestation,
 				PublicKeyPath:     &o.PublicKeyPath,
 				PublicKeyID:       &o.PublicKeyID,
 				SignatureHashAlgo: &o.SignatureHashAlgo,

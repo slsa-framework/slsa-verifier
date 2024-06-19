@@ -137,7 +137,7 @@ type VerifyVSAOptions struct {
 	PublicKeyPath     string
 	PublicKeyID       string
 	SignatureHashAlgo string
-	PrintAttestations bool
+	PrintAttestation  bool
 }
 
 var _ Interface = (*VerifyVSAOptions)(nil)
@@ -159,7 +159,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&o.VerifiedLevels, "verified-levels", []string{},
 		"the levels of verification to be performed")
 
-	cmd.Flags().BoolVar(&o.PrintAttestations, "print-attestations", false,
+	cmd.Flags().BoolVar(&o.PrintAttestation, "print-attestation", false,
 		"[optional] print the verified attestations to stdout")
 
 	cmd.Flags().StringVar(&o.PublicKeyPath, "public-key-path", "",
