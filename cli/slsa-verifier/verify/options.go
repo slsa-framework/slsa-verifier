@@ -134,6 +134,9 @@ type VerifyVSAOptions struct {
 	VerifierID        string
 	ResourceUri       string
 	VerifiedLevels    []string
+	PublicKeyPath     string
+	PublicKeyID       string
+	SignatureHashAlgo string
 	PrintAttestations bool
 }
 
@@ -159,11 +162,22 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.PrintAttestations, "print-attestations", false,
 		"[optional] print the verified attestations to stdout")
 
+	cmd.Flags().StringVar(&o.PublicKeyPath, "public-key-path", "",
+		"path to a public key file")
+
+	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
+		"the ID of the public key")
+
+	cmd.Flags().StringVar(&o.SignatureHashAlgo, "public-key-hash-algo", "SHA256",
+		"the hash algorithm used to hash the public key, one of SHA256, SHA384, or SHA512")
+
 	cmd.MarkFlagRequired("subject-digests")
 	cmd.MarkFlagRequired("attestations-path")
 	cmd.MarkFlagRequired("verifier-id")
 	cmd.MarkFlagRequired("resource-uri")
 	cmd.MarkFlagRequired("verified-levels")
+	cmd.MarkFlagRequired("public-key-path")
+	// public-key-id" and "public-key-hash-algo" are optional since they have useful defaults
 }
 
 type workflowInputs struct {

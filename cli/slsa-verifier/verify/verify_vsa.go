@@ -16,10 +16,13 @@ package verify
 
 import (
 	"context"
+	"crypto"
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
@@ -33,6 +36,16 @@ type VerifyVSACommand struct {
 	ResourceUri       *string
 	VerifiedLevels    *[]string
 	PrintAttestations *bool
+	PublicKeyPath     *string
+	PublicKeyID       *string
+	SignatureHashAlgo *string
+}
+
+var hashAlgos = map[string]crypto.Hash{
+	"":       crypto.SHA256, // default to SHA256
+	"SHA256": crypto.SHA256,
+	"SHA384": crypto.SHA384,
+	"SHA512": crypto.SHA512,
 }
 
 // Exec executes the verifiers.VerifyVSA
@@ -48,12 +61,34 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		ExpectedResourceURI:    *c.ResourceUri,
 		ExpectedVerifiedLevels: *c.VerifiedLevels,
 	}
+	pubKeyBytes, err := os.ReadFile(*c.PublicKeyPath)
+	if err != nil {
+		printFailed(err)
+		return nil, err
+	}
+	pubKey, err := cryptoutils.UnmarshalPEMToPublicKey(pubKeyBytes)
+	if err != nil {
+		err = fmt.Errorf("%w: %w", serrors.ErrorInvalidPublicKey, err)
+		printFailed(err)
+		return nil, err
+	}
+	hashHalgo, ok := hashAlgos[*c.SignatureHashAlgo]
+	if !ok {
+		err := fmt.Errorf("%w: %s", serrors.ErrorInvalidHashAlgo, *c.SignatureHashAlgo)
+		printFailed(err)
+		return nil, err
+	}
+	VerificationOpts := &options.VerificationOpts{
+		PublicKey:         pubKey,
+		PublicKeyID:       *c.PublicKeyID,
+		SignatureHashAlgo: hashHalgo,
+	}
 	attestations, err := os.ReadFile(*c.AttestationsPath)
 	if err != nil {
 		printFailed(err)
 		return nil, err
 	}
-	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestations, vsaOpts)
+	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestations, vsaOpts, VerificationOpts)
 	if err != nil {
 		printFailed(err)
 		return nil, err

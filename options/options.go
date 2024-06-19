@@ -1,5 +1,7 @@
 package options
 
+import "crypto"
+
 // ProvenanceOpts are the options for checking provenance information.
 type ProvenanceOpts struct {
 	// ExpectedBranch is the expected branch (github_ref or github_base_ref) in
@@ -51,4 +53,15 @@ type VSAOpts struct {
 
 	// ExpectedVerifiedLevels is the levels of verification that are passed from user and not verified
 	ExpectedVerifiedLevels []string
+}
+
+type VerificationOpts struct {
+	// PublicKey is the public key used to verify the signature on the Envelope
+	PublicKey crypto.PublicKey
+
+	// PublicKeyID is the ID of the public key
+	PublicKeyID string
+
+	// SignatureHashAlgo is the hash algorithm used to hash the signature
+	SignatureHashAlgo crypto.Hash
 }

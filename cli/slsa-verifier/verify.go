@@ -200,6 +200,9 @@ func verifyVSACmd() *cobra.Command {
 				ResourceUri:       &o.ResourceUri,
 				VerifiedLevels:    &o.VerifiedLevels,
 				PrintAttestations: &o.PrintAttestations,
+				PublicKeyPath:     &o.PublicKeyPath,
+				PublicKeyID:       &o.PublicKeyID,
+				SignatureHashAlgo: &o.SignatureHashAlgo,
 			}
 			if _, err := v.Exec(cmd.Context()); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)

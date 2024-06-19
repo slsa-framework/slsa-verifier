@@ -44,4 +44,5 @@ var (
 	ErrorInvalidHash               = errors.New("invalid hash")
 	ErrorNotPresent                = errors.New("not present")
 	ErrorInvalidPublicKey          = errors.New("invalid public key")
+	ErrorInvalidHashAlgo           = errors.New("unsupported hash algorithm")
 )
