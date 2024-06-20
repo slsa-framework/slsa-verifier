@@ -170,7 +170,7 @@ func Test_VerifyVSA(t *testing.T) {
 	}
 }
 
-func mustPublicKey(path string) *crypto.PublicKey {
+func mustPublicKey(path string) crypto.PublicKey {
 	pubKeyBytes, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -179,7 +179,7 @@ func mustPublicKey(path string) *crypto.PublicKey {
 	if err != nil {
 		panic(err)
 	}
-	return &pubKey
+	return pubKey
 }
 
 func PointerTo[K any](object K) *K {

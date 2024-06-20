@@ -57,7 +57,7 @@ type VSAOpts struct {
 
 type VerificationOpts struct {
 	// PublicKey is the public key used to verify the signature on the Envelope
-	PublicKey *crypto.PublicKey
+	PublicKey crypto.PublicKey
 
 	// PublicKeyID is the ID of the public key
 	PublicKeyID *string

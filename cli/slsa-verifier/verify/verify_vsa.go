@@ -79,7 +79,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		return nil, err
 	}
 	VerificationOpts := &options.VerificationOpts{
-		PublicKey:         &pubKey,
+		PublicKey:         pubKey,
 		PublicKeyID:       c.PublicKeyID,
 		PublicKeyHashAlgo: hashHalgo,
 	}
