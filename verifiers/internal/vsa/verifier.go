@@ -118,6 +118,12 @@ func matchExpectedValues(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 
 // matchExepectedSubjectDigests checks if the expected subject digests are present in the VSA.
 func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
+	if len(*vsaOpts.ExpectedDigests) == 0 {
+		return fmt.Errorf("%w: no subject digests provided", serrors.ErrorInvalidSubject)
+	}
+	if len(vsa.Subject) == 0 {
+		return fmt.Errorf("%w: no subject digests found in the VSA", serrors.ErrorInvalidDssePayload)
+	}
 	// collect all digests from the VSA, so we can efficiently search, e.g.:
 	// {
 	// 	"sha256": {
@@ -147,10 +153,10 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 		digestType := parts[0]
 		digestValue := parts[1]
 		if _, ok := allVSASubjectDigests[digestType]; !ok {
-			return fmt.Errorf("%w: expected digest not found: %s", serrors.ErrorInvalidDssePayload, expectedDigest)
+			return fmt.Errorf("%w: expected digest not found: %s", serrors.ErrorMissingSubjectDigest, expectedDigest)
 		}
 		if _, ok := allVSASubjectDigests[digestType][digestValue]; !ok {
-			return fmt.Errorf("%w: expected digest not found: %s", serrors.ErrorInvalidDssePayload, expectedDigest)
+			return fmt.Errorf("%w: expected digest not found: %s", serrors.ErrorMissingSubjectDigest, expectedDigest)
 		}
 	}
 	return nil
@@ -159,7 +165,7 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 // matchVerifierID checks if the verifier ID in the VSA matches the expected value.
 func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	if *vsaOpts.ExpectedVerifierID != vsa.Predicate.Verifier.ID {
-		return fmt.Errorf("%w: verifier ID mismatch: wanted %s, got %s", serrors.ErrorInvalidDssePayload, *vsaOpts.ExpectedVerifierID, vsa.Predicate.Verifier.ID)
+		return fmt.Errorf("%w: verifier ID mismatch: wanted %s, got %s", serrors.ErrorMismatchVerifierID, *vsaOpts.ExpectedVerifierID, vsa.Predicate.Verifier.ID)
 	}
 	return nil
 }
@@ -167,7 +173,7 @@ func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 // matchResourceURI checks if the resource URI in the VSA matches the expected value.
 func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	if *vsaOpts.ExpectedResourceURI != vsa.Predicate.ResourceURI {
-		return fmt.Errorf("%w: resource URI mismatch: wanted %s, got %s", serrors.ErrorInvalidDssePayload, *vsaOpts.ExpectedResourceURI, vsa.Predicate.ResourceURI)
+		return fmt.Errorf("%w: resource URI mismatch: wanted %s, got %s", serrors.ErrorMismatchResourceURI, *vsaOpts.ExpectedResourceURI, vsa.Predicate.ResourceURI)
 	}
 	return nil
 }
@@ -175,7 +181,7 @@ func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 // confirmSLASResult confirms the VSA verification result is PASSED.
 func conirmSLASResult(vsa *vsa10.VSA) error {
 	if normalizeString(vsa.Predicate.VerificationResult) != "PASSED" {
-		return fmt.Errorf("%w: verification result is not Passed: %s", serrors.ErrorInvalidDssePayload, vsa.Predicate.VerificationResult)
+		return fmt.Errorf("%w: verification result is not Passed: %s", serrors.ErrorMismatchSLSAResult, vsa.Predicate.VerificationResult)
 	}
 	return nil
 }
@@ -188,7 +194,7 @@ func matchVerifiedLevels(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	}
 	for _, expectedLevel := range *vsaOpts.ExpectedVerifiedLevels {
 		if _, ok := vsaLevels[normalizeString(expectedLevel)]; !ok {
-			return fmt.Errorf("%w: expected verified level not found: %s", serrors.ErrorInvalidDssePayload, expectedLevel)
+			return fmt.Errorf("%w: expected verified level not found: %s", serrors.ErrorMismatchVerifiedLevels, expectedLevel)
 		}
 	}
 	return nil
