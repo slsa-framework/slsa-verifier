@@ -158,16 +158,16 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 
 // matchVerifierID checks if the verifier ID in the VSA matches the expected value.
 func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
-	if vsa.Predicate.Verifier.ID != *vsaOpts.ExpectedVerifierID {
-		return fmt.Errorf("%w: verifier ID mismatch: expected %s, got %s", serrors.ErrorInvalidDssePayload, vsa.Predicate.Verifier.ID, vsa.Predicate.Verifier.ID)
+	if *vsaOpts.ExpectedVerifierID != vsa.Predicate.Verifier.ID {
+		return fmt.Errorf("%w: verifier ID mismatch: wanted %s, got %s", serrors.ErrorInvalidDssePayload, *vsaOpts.ExpectedVerifierID, vsa.Predicate.Verifier.ID)
 	}
 	return nil
 }
 
 // matchResourceURI checks if the resource URI in the VSA matches the expected value.
 func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
-	if vsa.Predicate.ResourceURI != *vsaOpts.ExpectedResourceURI {
-		return fmt.Errorf("%w: resource URI mismatch: expected %s, got %s", serrors.ErrorInvalidDssePayload, vsa.Predicate.ResourceURI, vsaOpts.ExpectedResourceURI)
+	if *vsaOpts.ExpectedResourceURI != vsa.Predicate.ResourceURI {
+		return fmt.Errorf("%w: resource URI mismatch: wanted %s, got %s", serrors.ErrorInvalidDssePayload, *vsaOpts.ExpectedResourceURI, vsa.Predicate.ResourceURI)
 	}
 	return nil
 }
