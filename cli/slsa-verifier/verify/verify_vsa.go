@@ -96,6 +96,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	if *c.PrintAttestation {
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
+	fmt.Fprintf(os.Stderr, "Verifying VSA: PASSED\n\n")
 	// verfiers.VerifyVSA already checks if the producerID matches
 	return outProducerID, nil
 }
