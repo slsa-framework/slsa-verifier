@@ -86,7 +86,7 @@ func verifyEnvelopeSignature(ctx context.Context, sigstoreEnvelope *sigstoreBund
 	}
 	_, err = envelopeVerifier.Verify(ctx, sigstoreEnvelope.Envelope)
 	if err != nil {
-		return fmt.Errorf("%w: verifying envelope %w", serrors.ErrorInvalidPublicKey, err)
+		return fmt.Errorf("%w: verifying envelope %w", serrors.ErrorNoValidSignature, err)
 	}
 	return nil
 }
