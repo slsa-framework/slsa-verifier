@@ -42,26 +42,26 @@ type BuilderOpts struct {
 
 // VSAOpts are the options for checking the VSA.
 type VSAOpts struct {
-	//ExpectedDigests are the digests expected to be in the VSA
+	// ExpectedDigests are the digests expected to be in the VSA.
 	ExpectedDigests *[]string
 
-	// ExpectedVerifierID is the verifier ID that is passed from user and not verified
+	// ExpectedVerifierID is the verifier ID that is passed from user and not verified.
 	ExpectedVerifierID *string
 
-	// ExpectedResourceURI is the resource URI that is passed from user and not verified
+	// ExpectedResourceURI is the resource URI that is passed from user and not verified.
 	ExpectedResourceURI *string
 
-	// ExpectedVerifiedLevels is the levels of verification that are passed from user and not verified
+	// ExpectedVerifiedLevels is the levels of verification that are passed from user and not verified.
 	ExpectedVerifiedLevels *[]string
 }
 
 type VerificationOpts struct {
-	// PublicKey is the public key used to verify the signature on the Envelope
+	// PublicKey is the public key used to verify the signature on the Envelope.
 	PublicKey crypto.PublicKey
 
-	// PublicKeyID is the ID of the public key
+	// PublicKeyID is the ID of the public key.
 	PublicKeyID *string
 
-	// PublicKeyHashAlgo is the hash algorithm used to hash the signature
+	// PublicKeyHashAlgo is the hash algorithm used to hash the signature.
 	PublicKeyHashAlgo crypto.Hash
 }

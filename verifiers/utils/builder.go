@@ -9,7 +9,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
-// TrustedAttesterID represents an identifer that has been explicitly trusted.
+// TrustedAttesterID represents an identifier that has been explicitly trusted.
 type TrustedAttesterID struct {
 	TrustedBuilderID
 }

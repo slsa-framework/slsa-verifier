@@ -28,7 +28,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// VerifyVSACommand
+// VerifyVSACommand contains the parameters for the verify-vsa command.
 type VerifyVSACommand struct {
 	SubjectDigests    *[]string
 	AttestationsPath  *string
@@ -48,7 +48,7 @@ var hashAlgos = map[string]crypto.Hash{
 	"SHA512": crypto.SHA512,
 }
 
-// Exec executes the verifiers.VerifyVSA
+// Exec executes the verifiers.VerifyVSA.
 func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, error) {
 	if !options.ExperimentalEnabled() {
 		err := errors.New("feature support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
@@ -101,7 +101,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	return outProducerID, nil
 }
 
-// printFailed prints the error message to stderr
+// printFailed prints the error message to stderr.
 func printFailed(err error) {
 	fmt.Fprintf(os.Stderr, "Verifying VSA: FAILED: %v\n\n", err)
 }

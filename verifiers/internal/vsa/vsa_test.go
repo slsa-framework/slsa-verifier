@@ -15,7 +15,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 )
 
-const TEST_DIR = "./testdata"
+const testDir = "./testdata"
 
 func Test_VerifyVSA(t *testing.T) {
 	t.Parallel()
@@ -39,7 +39,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -55,7 +55,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -71,7 +71,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_3"},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -87,7 +87,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -103,7 +103,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -119,7 +119,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -135,7 +135,7 @@ func Test_VerifyVSA(t *testing.T) {
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
-				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(TEST_DIR, "gce/v1/vsa_signing_public_key.pem"))),
+				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
 				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
@@ -147,7 +147,7 @@ func Test_VerifyVSA(t *testing.T) {
 	for _, tt := range tests {
 		// t.Parallel()
 
-		attestationsPath := filepath.Clean(filepath.Join(TEST_DIR, tt.attestationsPath))
+		attestationsPath := filepath.Clean(filepath.Join(testDir, tt.attestationsPath))
 		attestations, err := os.ReadFile(attestationsPath)
 		if err != nil {
 			t.Errorf("failed to read attestations file: %v", err)

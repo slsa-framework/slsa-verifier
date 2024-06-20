@@ -15,12 +15,10 @@ const vsaPredicateType = "https://slsa.dev/verification_summary/v1"
 // VSA is a struct that represents a VSA statement.
 // spec: https://slsa.dev/spec/v1.0/verification_summary.
 // Idealy, we use "github.com/in-toto/attestation/go/predicates/vsa/v1"'s VerfificationSummary,
-// but it currently does not correctly implement some fields according to spec, such as VerifiedLevels
+// but it currently does not correctly implement some fields according to spec, such as VerifiedLevels.
 type VSA struct {
 	intotoGolang.StatementHeader
 	// Predicate is the VSA predicate.
-	// Ideally, we use "github.com/in-toto/attestation/go/predicates/vsa/v1"'s VerfificationSummary,
-	// but it currently does not correctly implement some fields according to spec, such as VerifiedLevels
 	Predicate Predicate `json:"predicate"`
 }
 
