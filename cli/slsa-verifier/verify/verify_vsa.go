@@ -35,7 +35,7 @@ type VerifyVSACommand struct {
 	VerifierID        *string
 	ResourceURI       *string
 	VerifiedLevels    *[]string
-	PrintAttestation  *bool
+	PrintAttestation  bool
 	PublicKeyPath     *string
 	PublicKeyID       *string
 	PublicKeyHashAlgo *string
@@ -93,7 +93,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		printFailed(err)
 		return nil, err
 	}
-	if *c.PrintAttestation {
+	if c.PrintAttestation {
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 	fmt.Fprintf(os.Stderr, "Verifying VSA: PASSED\n\n")
