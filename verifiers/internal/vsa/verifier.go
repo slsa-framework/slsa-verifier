@@ -72,14 +72,14 @@ func VerifyVSA(ctx context.Context,
 
 // verifyEnvelopeSignature verifies the signature of the envelope.
 func verifyEnvelopeSignature(ctx context.Context, sigstoreEnvelope *sigstoreBundle.Envelope, verificationOpts *options.VerificationOpts) error {
-	signatureVerifier, err := sigstoreSignature.LoadVerifier(verificationOpts.PublicKey, verificationOpts.PublicKeyHashAlgo)
+	signatureVerifier, err := sigstoreSignature.LoadVerifier(*verificationOpts.PublicKey, *verificationOpts.PublicKeyHashAlgo)
 	if err != nil {
 		return fmt.Errorf("%w: loading sigstore DSSE envolope verifier %w", serrors.ErrorInvalidPublicKey, err)
 	}
 	envelopeVerifier, err := dsse.NewEnvelopeVerifier(&sigstoreDSSE.VerifierAdapter{
 		SignatureVerifier: signatureVerifier,
 		Pub:               verificationOpts.PublicKey,
-		PubKeyID:          verificationOpts.PublicKeyID,
+		PubKeyID:          *verificationOpts.PublicKeyID,
 	})
 	if err != nil {
 		return fmt.Errorf("%w: creating sigstore DSSE envelope verifier %w", serrors.ErrorInvalidPublicKey, err)
@@ -139,7 +139,7 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 		}
 	}
 	// search for the expected digests in the VSA
-	for _, expectedDigest := range vsaOpts.ExpectedDigests {
+	for _, expectedDigest := range *vsaOpts.ExpectedDigests {
 		parts := strings.SplitN(expectedDigest, ":", 2)
 		if len(parts) != 2 {
 			return fmt.Errorf("%w: expected digest %s is not in the format <digest type>:<digest value>", serrors.ErrorInvalidDssePayload, expectedDigest)
@@ -158,7 +158,7 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 
 // matchVerifierID checks if the verifier ID in the VSA matches the expected value.
 func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
-	if vsa.Predicate.Verifier.ID != vsaOpts.ExpectedVerifierID {
+	if vsa.Predicate.Verifier.ID != *vsaOpts.ExpectedVerifierID {
 		return fmt.Errorf("%w: verifier ID mismatch: expected %s, got %s", serrors.ErrorInvalidDssePayload, vsa.Predicate.Verifier.ID, vsa.Predicate.Verifier.ID)
 	}
 	return nil
@@ -166,7 +166,7 @@ func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 
 // matchResourceURI checks if the resource URI in the VSA matches the expected value.
 func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
-	if vsa.Predicate.ResourceURI != vsaOpts.ExpectedResourceURI {
+	if vsa.Predicate.ResourceURI != *vsaOpts.ExpectedResourceURI {
 		return fmt.Errorf("%w: resource URI mismatch: expected %s, got %s", serrors.ErrorInvalidDssePayload, vsa.Predicate.ResourceURI, vsaOpts.ExpectedResourceURI)
 	}
 	return nil
@@ -186,7 +186,7 @@ func matchVerifiedLevels(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	for _, level := range vsa.Predicate.VerifiedLevels {
 		vsaLevels[level] = true
 	}
-	for _, expectedLevel := range vsaOpts.ExpectedVerifiedLevels {
+	for _, expectedLevel := range *vsaOpts.ExpectedVerifiedLevels {
 		if _, ok := vsaLevels[normalizeString(expectedLevel)]; !ok {
 			return fmt.Errorf("%w: expected verified level not found: %s", serrors.ErrorInvalidDssePayload, expectedLevel)
 		}

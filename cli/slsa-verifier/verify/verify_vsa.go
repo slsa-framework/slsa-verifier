@@ -56,10 +56,10 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		return nil, err
 	}
 	vsaOpts := &options.VSAOpts{
-		ExpectedDigests:        *c.SubjectDigests,
-		ExpectedVerifierID:     *c.VerifierID,
-		ExpectedResourceURI:    *c.ResourceURI,
-		ExpectedVerifiedLevels: *c.VerifiedLevels,
+		ExpectedDigests:        c.SubjectDigests,
+		ExpectedVerifierID:     c.VerifierID,
+		ExpectedResourceURI:    c.ResourceURI,
+		ExpectedVerifiedLevels: c.VerifiedLevels,
 	}
 	pubKeyBytes, err := os.ReadFile(*c.PublicKeyPath)
 	if err != nil {
@@ -79,9 +79,9 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		return nil, err
 	}
 	VerificationOpts := &options.VerificationOpts{
-		PublicKey:         pubKey,
-		PublicKeyID:       *c.PublicKeyID,
-		PublicKeyHashAlgo: hashHalgo,
+		PublicKey:         &pubKey,
+		PublicKeyID:       c.PublicKeyID,
+		PublicKeyHashAlgo: &hashHalgo,
 	}
 	attestations, err := os.ReadFile(*c.AttestationsPath)
 	if err != nil {
