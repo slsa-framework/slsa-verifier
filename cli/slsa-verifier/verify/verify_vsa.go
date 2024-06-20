@@ -81,7 +81,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	VerificationOpts := &options.VerificationOpts{
 		PublicKey:         &pubKey,
 		PublicKeyID:       c.PublicKeyID,
-		PublicKeyHashAlgo: &hashHalgo,
+		PublicKeyHashAlgo: hashHalgo,
 	}
 	attestations, err := os.ReadFile(*c.AttestationsPath)
 	if err != nil {
