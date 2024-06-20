@@ -483,18 +483,36 @@ Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER
 
 ### Verification Summary Attestations (VSA)
 
-TODO: explain more, better sample invocation
+We have experimental support for [verifying](https://slsa.dev/spec/v1.1/verification_summary#how-to-verify) VSAs.
+Rather than passing in filepaths as arguments, we allow passing in mulitple `--subject-digest` cli options, to
+accomodate subjects that are not simple-files.
+
+This experimental support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
+With that, we allow the user to pass in the public key.
+Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a simple hash of the key, then you
+must supply the `--public-key-id` cli option.
 
 To verify VSAs, invoke like this
 
 ```shell
- SLSA_VERIFIER_EXPERIMENTAL=1 go run ./cli/slsa-verifier/ verify-vsa \
-  gce_image_id:4391049316694036388 \
-  --attestations-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
-  --verifier-id "https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1" \
-  --resource-uri "gce_image://gke-node-images:gke-12714-gke1076000-cos-arm64-105-17412-370-44-c-gvisor" \
-  --verified-levels "SLSA_BUILD_LEVEL3, BCID_LEVEL_4" \
-  --print-attestations
+SLSA_VERIFIER_EXPERIMENTAL=1 \
+go run ./cli/slsa-verifier/ verify-vsa \
+--subject-digest gce_image_id:8970095005306000053 \
+--attestations-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
+--verifier-id https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1 \
+--resource-uri gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre \
+--verified-levels "BCID_L1, SLSA_BUILD_LEVEL_2" \
+--public-key-path ./cli/slsa-verifier/testdata/vsa/gce/v1/vsa_signing_public_key.pem \
+--public-key-id keystore://76574:prod:vsa_signing_public_key \
+--public-key-hash-algo SHA256 \
+--print-attestation
+```
+
+For multiple subhects, use:
+
+```
+--subject-digest sha256:abc123
+--subject-digest sha256:xyz456
 ```
 
 ## Known Issues
