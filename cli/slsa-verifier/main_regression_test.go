@@ -1,4 +1,4 @@
-//go:build regression
+// go:build regression
 
 package main
 
@@ -1795,6 +1795,98 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 	}
 }
 
+func Test_runVerifyVSA(t *testing.T) {
+	// We cannot use t.Setenv due to parallelized tests.
+	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
+	t.Parallel()
+
+	tests := []struct {
+		name              string
+		attestationsPath  *string
+		subjectDigests    *[]string
+		verifierID        *string
+		resourceURI       *string
+		verifiedLevels    *[]string
+		publicKeyPath     *string
+		publicKeyID       *string
+		publicKeyHashAlgo *string
+		err               error
+	}{
+		{
+			name:              "success: gke",
+			attestationsPath:  PointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			subjectDigests:    PointerTo([]string{"gce_image_id:8970095005306000053"}),
+			verifierID:        PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+			resourceURI:       PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+			verifiedLevels:    PointerTo([]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"}),
+			publicKeyPath:     PointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+			publicKeyHashAlgo: PointerTo("SHA256"),
+		},
+		{
+			name:              "success: gke, default public key hash algo",
+			attestationsPath:  PointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			subjectDigests:    PointerTo([]string{"gce_image_id:8970095005306000053"}),
+			verifierID:        PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+			resourceURI:       PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+			verifiedLevels:    PointerTo([]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"}),
+			publicKeyPath:     PointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+			publicKeyHashAlgo: PointerTo(""),
+		},
+		{
+			name:              "fail: gke, unsupported public key hash algo",
+			attestationsPath:  PointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			publicKeyPath:     PointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyHashAlgo: PointerTo("SHA123"),
+			err:               serrors.ErrorInvalidHashAlgo,
+		},
+		{
+			name:              "fail: gke, wrong public key hash algo",
+			attestationsPath:  PointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			publicKeyPath:     PointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:       PointerTo(""),
+			publicKeyHashAlgo: PointerTo("SHA512"),
+			err:               serrors.ErrorNoValidSignature,
+		},
+		{
+			name:              "fail: gke, wrong key id",
+			attestationsPath:  PointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			publicKeyPath:     PointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:       PointerTo("my_key_id"),
+			publicKeyHashAlgo: PointerTo("SHA256"),
+			err:               serrors.ErrorNoValidSignature,
+		},
+		// TODO: Add more tests for different scenarios.
+	}
+
+	for _, tt := range tests {
+		tt := tt // Re-initializing variable so it is not changed while executing the closure below
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			attestationsPath := filepath.Clean(filepath.Join(TEST_DIR, "vsa", *tt.attestationsPath))
+			publicKeyPath := filepath.Clean(filepath.Join(TEST_DIR, "vsa", *tt.publicKeyPath))
+
+			cmd := verify.VerifyVSACommand{
+				AttestationsPath:  &attestationsPath,
+				SubjectDigests:    tt.subjectDigests,
+				VerifierID:        tt.verifierID,
+				ResourceURI:       tt.resourceURI,
+				VerifiedLevels:    tt.verifiedLevels,
+				PublicKeyPath:     &publicKeyPath,
+				PublicKeyID:       tt.publicKeyID,
+				PublicKeyHashAlgo: tt.publicKeyHashAlgo,
+			}
+
+			_, err := cmd.Exec(context.Background())
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Fatalf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+
+}
 func PointerTo[K any](object K) *K {
 	return &object
 }

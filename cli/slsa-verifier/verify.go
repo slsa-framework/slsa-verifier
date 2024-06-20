@@ -202,7 +202,7 @@ func verifyVSACmd() *cobra.Command {
 				PrintAttestation:  o.PrintAttestation,
 				PublicKeyPath:     &o.PublicKeyPath,
 				PublicKeyID:       &o.PublicKeyID,
-				PublicKeyHashAlgo: &o.SignatureHashAlgo,
+				PublicKeyHashAlgo: &o.PublicKeyHashAlgo,
 			}
 			if _, err := v.Exec(cmd.Context()); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)

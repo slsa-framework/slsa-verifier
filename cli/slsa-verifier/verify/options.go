@@ -136,7 +136,7 @@ type VerifyVSAOptions struct {
 	VerifiedLevels    []string
 	PublicKeyPath     string
 	PublicKeyID       string
-	SignatureHashAlgo string
+	PublicKeyHashAlgo string
 	PrintAttestation  bool
 }
 
@@ -168,7 +168,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
 		"the ID of the public key")
 
-	cmd.Flags().StringVar(&o.SignatureHashAlgo, "public-key-hash-algo", "SHA256",
+	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-hash-algo", "SHA256",
 		"the hash algorithm used to hash the public key, one of SHA256, SHA384, or SHA512")
 
 	cmd.MarkFlagRequired("subject-digests")
