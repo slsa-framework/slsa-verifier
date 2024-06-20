@@ -21,6 +21,8 @@ func VerifyVSA(ctx context.Context,
 	vsaOpts *options.VSAOpts,
 	verificationOpts *options.VerificationOpts,
 ) ([]byte, *utils.TrustedAttesterID, error) {
+	// following steps in https://slsa.dev/spec/v1.1/verification_summary#how-to-verify
+
 	// parse the envelope
 	envelope, err := utils.EnvelopeFromBytes(attestations)
 	if err != nil {
