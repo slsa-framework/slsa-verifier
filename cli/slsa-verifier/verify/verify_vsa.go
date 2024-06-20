@@ -33,7 +33,7 @@ type VerifyVSACommand struct {
 	SubjectDigests    *[]string
 	AttestationsPath  *string
 	VerifierID        *string
-	ResourceUri       *string
+	ResourceURI       *string
 	VerifiedLevels    *[]string
 	PrintAttestation  *bool
 	PublicKeyPath     *string
@@ -58,7 +58,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	vsaOpts := &options.VSAOpts{
 		ExpectedDigests:        *c.SubjectDigests,
 		ExpectedVerifierID:     *c.VerifierID,
-		ExpectedResourceURI:    *c.ResourceUri,
+		ExpectedResourceURI:    *c.ResourceURI,
 		ExpectedVerifiedLevels: *c.VerifiedLevels,
 	}
 	pubKeyBytes, err := os.ReadFile(*c.PublicKeyPath)

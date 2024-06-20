@@ -132,7 +132,7 @@ type VerifyVSAOptions struct {
 	SubjectDigests    []string
 	AttestationsPath  string
 	VerifierID        string
-	ResourceUri       string
+	ResourceURI       string
 	VerifiedLevels    []string
 	PublicKeyPath     string
 	PublicKeyID       string
@@ -153,7 +153,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.VerifierID, "verifier-id", "",
 		"the unique verifier ID who created the attestations")
 
-	cmd.Flags().StringVar(&o.ResourceUri, "resource-uri", "",
+	cmd.Flags().StringVar(&o.ResourceURI, "resource-uri", "",
 		"the resource URI to be verified")
 
 	cmd.Flags().StringSliceVar(&o.VerifiedLevels, "verified-levels", []string{},
