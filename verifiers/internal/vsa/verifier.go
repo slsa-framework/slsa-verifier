@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
-	sigstoreBundle "github.com/sigstore/sigstore-go/pkg/bundle"
 	sigstoreSignature "github.com/sigstore/sigstore/pkg/signature"
 	sigstoreDSSE "github.com/sigstore/sigstore/pkg/signature/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -23,18 +22,14 @@ func VerifyVSA(ctx context.Context,
 ) ([]byte, *utils.TrustedAttesterID, error) {
 	// following steps in https://slsa.dev/spec/v1.1/verification_summary#how-to-verify
 
-	// parse the envelope
 	envelope, err := utils.EnvelopeFromBytes(attestations)
 	if err != nil {
 		return nil, nil, err
 	}
-	sigstoreEnvelope := sigstoreBundle.Envelope{
-		Envelope: envelope,
-	}
 
 	// 1. verify the envelope signature,
 	// 4. match the verfier with the public key: implicit because we accept a user-provided public key.
-	err = verifyEnvelopeSignature(ctx, &sigstoreEnvelope, verificationOpts)
+	err = verifyEnvelopeSignature(ctx, envelope, verificationOpts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,7 +66,7 @@ func VerifyVSA(ctx context.Context,
 }
 
 // verifyEnvelopeSignature verifies the signature of the envelope.
-func verifyEnvelopeSignature(ctx context.Context, sigstoreEnvelope *sigstoreBundle.Envelope, verificationOpts *options.VerificationOpts) error {
+func verifyEnvelopeSignature(ctx context.Context, envelope *dsse.Envelope, verificationOpts *options.VerificationOpts) error {
 	signatureVerifier, err := sigstoreSignature.LoadVerifier(verificationOpts.PublicKey, verificationOpts.PublicKeyHashAlgo)
 	if err != nil {
 		return fmt.Errorf("%w: loading sigstore DSSE envolope verifier %w", serrors.ErrorInvalidPublicKey, err)
@@ -84,7 +79,7 @@ func verifyEnvelopeSignature(ctx context.Context, sigstoreEnvelope *sigstoreBund
 	if err != nil {
 		return fmt.Errorf("%w: creating sigstore DSSE envelope verifier %w", serrors.ErrorInvalidPublicKey, err)
 	}
-	_, err = envelopeVerifier.Verify(ctx, sigstoreEnvelope.Envelope)
+	_, err = envelopeVerifier.Verify(ctx, envelope)
 	if err != nil {
 		return fmt.Errorf("%w: verifying envelope %w", serrors.ErrorNoValidSignature, err)
 	}
