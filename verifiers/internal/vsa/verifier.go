@@ -72,7 +72,7 @@ func VerifyVSA(ctx context.Context,
 
 // verifyEnvelopeSignature verifies the signature of the envelope.
 func verifyEnvelopeSignature(ctx context.Context, sigstoreEnvelope *sigstoreBundle.Envelope, verificationOpts *options.VerificationOpts) error {
-	signatureVerifier, err := sigstoreSignature.LoadVerifier(verificationOpts.PublicKey, verificationOpts.SignatureHashAlgo)
+	signatureVerifier, err := sigstoreSignature.LoadVerifier(verificationOpts.PublicKey, verificationOpts.PublicKeyHashAlgo)
 	if err != nil {
 		return fmt.Errorf("%w: loading sigstore DSSE envolope verifier %w", serrors.ErrorInvalidPublicKey, err)
 	}

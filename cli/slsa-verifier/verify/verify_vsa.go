@@ -38,7 +38,7 @@ type VerifyVSACommand struct {
 	PrintAttestation  *bool
 	PublicKeyPath     *string
 	PublicKeyID       *string
-	SignatureHashAlgo *string
+	PublicKeyHashAlgo *string
 }
 
 var hashAlgos = map[string]crypto.Hash{
@@ -72,16 +72,16 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		printFailed(err)
 		return nil, err
 	}
-	hashHalgo, ok := hashAlgos[*c.SignatureHashAlgo]
+	hashHalgo, ok := hashAlgos[*c.PublicKeyHashAlgo]
 	if !ok {
-		err := fmt.Errorf("%w: %s", serrors.ErrorInvalidHashAlgo, *c.SignatureHashAlgo)
+		err := fmt.Errorf("%w: %s", serrors.ErrorInvalidHashAlgo, *c.PublicKeyHashAlgo)
 		printFailed(err)
 		return nil, err
 	}
 	VerificationOpts := &options.VerificationOpts{
 		PublicKey:         pubKey,
 		PublicKeyID:       *c.PublicKeyID,
-		SignatureHashAlgo: hashHalgo,
+		PublicKeyHashAlgo: hashHalgo,
 	}
 	attestations, err := os.ReadFile(*c.AttestationsPath)
 	if err != nil {

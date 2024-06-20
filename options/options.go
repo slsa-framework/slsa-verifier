@@ -62,6 +62,6 @@ type VerificationOpts struct {
 	// PublicKeyID is the ID of the public key
 	PublicKeyID string
 
-	// SignatureHashAlgo is the hash algorithm used to hash the signature
-	SignatureHashAlgo crypto.Hash
+	// PublicKeyHashAlgo is the hash algorithm used to hash the signature
+	PublicKeyHashAlgo crypto.Hash
 }
