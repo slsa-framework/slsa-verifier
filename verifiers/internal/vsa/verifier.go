@@ -100,8 +100,8 @@ func matchExpectedValues(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	if err := matchResourceURI(vsa, vsaOpts); err != nil {
 		return err
 	}
-	// 6. confirm the slsaResult is Passed
-	if err := conirmSLASResult(vsa); err != nil {
+	// 6. confirm the verificationResult is Passed
+	if err := confirmVerificationResult(vsa); err != nil {
 		return err
 	}
 	// 7. match the verifiedLevels
@@ -173,8 +173,8 @@ func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	return nil
 }
 
-// confirmSLASResult confirms the VSA verification result is PASSED.
-func conirmSLASResult(vsa *vsa10.VSA) error {
+// confirmVerificationResult checks that the policy verification result is "PASSED".
+func confirmVerificationResult(vsa *vsa10.VSA) error {
 	if normalizeString(vsa.Predicate.VerificationResult) != "PASSED" {
 		return fmt.Errorf("%w: verification result is not Passed: %s", serrors.ErrorMismatchSLSAResult, vsa.Predicate.VerificationResult)
 	}
