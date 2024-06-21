@@ -275,11 +275,7 @@ func verifyV02BuildConfig(prov iface.Provenance) error {
 	return nil
 }
 
-func verifyNpmCLIGithubActionsV1SystemParameters(prov iface.Provenance, workflow *WorkflowIdentity) error {
-	prov, ok := prov.(*slsav1.NpmCLIGithubActionsProvenance)
-	if !ok {
-		return nil
-	}
+func verifyNpmCLIGithubActionsV1SystemParameters(prov *slsav1.NpmCLIGithubActionsProvenance, workflow *WorkflowIdentity) error {
 	sysParams, err := prov.GetSystemParameters()
 	if err != nil {
 		return err
