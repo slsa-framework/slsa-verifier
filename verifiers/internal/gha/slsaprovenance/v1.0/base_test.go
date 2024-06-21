@@ -81,7 +81,7 @@ func Test_GetExternalParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			params, err := tt.prov.GetExternalParameters()
+			params, err := tt.prov.getExternalParameters()
 			if diff := cmp.Diff(tt.expectedError, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error: %v", err)
 			}

@@ -13,7 +13,7 @@ type NpmCLIGithubActionsProvenance struct {
 
 // TriggerURI implements Provenance.TriggerURI.
 func (p *NpmCLIGithubActionsProvenance) TriggerURI() (string, error) {
-	externalParams, err := p.GetExternalParameters()
+	externalParams, err := p.getExternalParameters()
 	if err != nil {
 		return "", err
 	}
