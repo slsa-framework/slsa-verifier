@@ -169,7 +169,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 		"[optional] the ID of the public key")
 
 	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-hash-algo", "SHA256",
-		"[optional] the hash algorithm used to hash the public key, one of SHA256, SHA384, or SHA512")
+		"[optional] the hash algorithm used to hash the public key, one of SHA256 [efault], SHA384, or SHA512")
 
 	cmd.MarkFlagRequired("subject-digests")
 	cmd.MarkFlagRequired("attestations-path")
