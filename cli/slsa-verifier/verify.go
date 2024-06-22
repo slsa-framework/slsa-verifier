@@ -195,7 +195,7 @@ func verifyVSACmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyVSACommand{
 				SubjectDigests:    &o.SubjectDigests,
-				AttestationsPath:  &o.AttestationsPath,
+				AttestationPath:   &o.AttestationPath,
 				VerifierID:        &o.VerifierID,
 				ResourceURI:       &o.ResourceURI,
 				VerifiedLevels:    &o.VerifiedLevels,

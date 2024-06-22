@@ -130,7 +130,7 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 // VerifyVSAOptions is the top-level options for the `verifyVSA` command.
 type VerifyVSAOptions struct {
 	SubjectDigests    []string
-	AttestationsPath  string
+	AttestationPath   string
 	VerifierID        string
 	ResourceURI       string
 	VerifiedLevels    []string
@@ -147,7 +147,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.SubjectDigests, "subject-digest", []string{},
 		"the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>")
 
-	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
+	cmd.Flags().StringVar(&o.AttestationPath, "attestations-path", "",
 		"path to a file containing the attestations")
 
 	cmd.Flags().StringVar(&o.VerifierID, "verifier-id", "",

@@ -24,7 +24,7 @@ func Test_VerifyVSA(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		attestationsPath string
+		AttestationPath  string
 		vsaOpts          *options.VSAOpts
 		verificationOpts *options.VerificationOpts
 		err              error
@@ -147,8 +147,8 @@ func Test_VerifyVSA(t *testing.T) {
 	for _, tt := range tests {
 		// t.Parallel()
 
-		attestationsPath := filepath.Clean(filepath.Join(testDir, tt.attestationsPath))
-		attestations, err := os.ReadFile(attestationsPath)
+		AttestationPath := filepath.Clean(filepath.Join(testDir, tt.AttestationPath))
+		attestations, err := os.ReadFile(AttestationPath)
 		if err != nil {
 			t.Errorf("failed to read attestations file: %v", err)
 		}

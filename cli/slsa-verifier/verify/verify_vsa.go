@@ -31,7 +31,7 @@ import (
 // VerifyVSACommand contains the parameters for the verify-vsa command.
 type VerifyVSACommand struct {
 	SubjectDigests    *[]string
-	AttestationsPath  *string
+	AttestationPath   *string
 	VerifierID        *string
 	ResourceURI       *string
 	VerifiedLevels    *[]string
@@ -83,7 +83,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		PublicKeyID:       c.PublicKeyID,
 		PublicKeyHashAlgo: hashAlgo,
 	}
-	attestations, err := os.ReadFile(*c.AttestationsPath)
+	attestations, err := os.ReadFile(*c.AttestationPath)
 	if err != nil {
 		printFailed(err)
 		return nil, err
