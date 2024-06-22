@@ -10,6 +10,8 @@ import (
 )
 
 // TrustedAttesterID represents an identifier that has been explicitly trusted.
+// TODO: don't embed TrustedBuilderID, use a whole new type that implements the
+// Name, Version, and String, and maybe also MatchesLoose and MatchesFull. (using semver?)
 type TrustedAttesterID struct {
 	TrustedBuilderID
 }

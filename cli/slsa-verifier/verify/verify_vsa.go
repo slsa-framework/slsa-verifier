@@ -72,7 +72,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		printFailed(err)
 		return nil, err
 	}
-	hashHalgo, ok := hashAlgos[*c.PublicKeyHashAlgo]
+	hashAlgo, ok := hashAlgos[*c.PublicKeyHashAlgo]
 	if !ok {
 		err := fmt.Errorf("%w: %s", serrors.ErrorInvalidHashAlgo, *c.PublicKeyHashAlgo)
 		printFailed(err)
@@ -81,7 +81,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	VerificationOpts := &options.VerificationOpts{
 		PublicKey:         pubKey,
 		PublicKeyID:       c.PublicKeyID,
-		PublicKeyHashAlgo: hashHalgo,
+		PublicKeyHashAlgo: hashAlgo,
 	}
 	attestations, err := os.ReadFile(*c.AttestationsPath)
 	if err != nil {

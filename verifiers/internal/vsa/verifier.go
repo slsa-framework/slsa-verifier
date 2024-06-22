@@ -49,7 +49,7 @@ func VerifyVSA(ctx context.Context,
 	// 5. match the expected valuesmatch resourceURI,
 	// 6. confirm the slsaResult is PASSED,
 	// 7. match the verifiedLevels,
-	// no other feields are checked.
+	// no other fields are checked.
 	err = matchExpectedValues(vsa, vsaOpts)
 	if err != nil {
 		return nil, nil, err
