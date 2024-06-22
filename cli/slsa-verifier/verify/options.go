@@ -145,7 +145,7 @@ var _ Interface = (*VerifyVSAOptions)(nil)
 // AddFlags implements Interface.
 func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.SubjectDigests, "subject-digest", []string{},
-		"the digests to be verified. Pass multiple digests by repeating the flag.")
+		"the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>")
 
 	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
 		"path to a file containing the attestations")
@@ -157,7 +157,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 		"the resource URI to be verified")
 
 	cmd.Flags().StringSliceVar(&o.VerifiedLevels, "verified-levels", []string{},
-		"the levels of verification to be performed")
+		"[optional] the levels of verification to be performed, comma-separated. e.g., 'SLSA_BUILD_LEVEL_2,FEDRAMP_LOW'")
 
 	cmd.Flags().BoolVar(&o.PrintAttestation, "print-attestation", false,
 		"[optional] print the verified attestations to stdout")
@@ -166,16 +166,15 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 		"path to a public key file")
 
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
-		"the ID of the public key")
+		"[optional] the ID of the public key")
 
 	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-hash-algo", "SHA256",
-		"the hash algorithm used to hash the public key, one of SHA256, SHA384, or SHA512")
+		"[optional] the hash algorithm used to hash the public key, one of SHA256, SHA384, or SHA512")
 
 	cmd.MarkFlagRequired("subject-digests")
 	cmd.MarkFlagRequired("attestations-path")
 	cmd.MarkFlagRequired("verifier-id")
 	cmd.MarkFlagRequired("resource-uri")
-	cmd.MarkFlagRequired("verified-levels")
 	cmd.MarkFlagRequired("public-key-path")
 	// public-key-id" and "public-key-hash-algo" are optional since they have useful defaults
 }
