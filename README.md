@@ -491,11 +491,34 @@ This experimental support does not work yet with VSAs wrapped in Sigstore bundle
 With that, we allow the user to pass in the public key.
 Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a unpadded base64 encoded sha256 hash the key, like `sha256:abc123...` (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you must supply the `--public-key-id` cli option.
 
+
+The verify-vsa command
+
+```shell
+$ slsa-verifier verify-vsa --help
+Verifies SLSA VSAs for the given subject-digests [experimental]
+
+Usage:
+  slsa-verifier verify-vsa [flags] subject-digest [subject-digest...]
+
+Flags:
+      --attestations-path string      path to a file containing the attestations
+  -h, --help                          help for verify-vsa
+      --print-attestation             [optional] print the verified attestations to stdout
+      --public-key-hash-algo string   [optional] the hash algorithm used to hash the public key, one of SHA256 [efault], SHA384, or SHA512 (default "SHA256")
+      --public-key-id string          [optional] the ID of the public key
+      --public-key-path string        path to a public key file
+      --resource-uri string           the resource URI to be verified
+      --subject-digest stringArray    the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>
+      --verified-levels strings       [optional] the levels of verification to be performed, comma-separated. e.g., 'SLSA_BUILD_LEVEL_2,FEDRAMP_LOW'
+      --verifier-id string            the unique verifier ID who created the attestations
+```
+
 To verify VSAs, invoke like this
 
 ```shell
-SLSA_VERIFIER_EXPERIMENTAL=1 \
-go run ./cli/slsa-verifier/ verify-vsa \
+$ SLSA_VERIFIER_EXPERIMENTAL=1 \
+slsa-verifier verify-vsa \
 --subject-digest gce_image_id:8970095005306000053 \
 --attestations-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
 --verifier-id https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1 \
