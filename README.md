@@ -489,8 +489,7 @@ accomodate subjects that are not simple-files.
 
 This experimental support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
 With that, we allow the user to pass in the public key.
-Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a simple hash of the key (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you
-must supply the `--public-key-id` cli option.
+Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a unpadded base64 encoded sha256 hash the key, like `sha256:abc123...` (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you must supply the `--public-key-id` cli option.
 
 To verify VSAs, invoke like this
 
