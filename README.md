@@ -315,6 +315,8 @@ PASSED: Verified SLSA provenance
 
 Verification of npm packages is currently an experimental feature.
 
+More deetails about npm attestations are in [docs/npm.md](./docs/npm.md)
+
 #### The verify-npm-package command
 
 ```bash
