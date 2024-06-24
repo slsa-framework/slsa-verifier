@@ -194,7 +194,7 @@ func (n *Npm) verifyIntotoHeaders() error {
 	return nil
 }
 
-func verifyIntotoTypes(att *SignedAttestation, pridicateTypes map[string]bool, payloadType string, prefix bool) error {
+func verifyIntotoTypes(att *SignedAttestation, predicateTypes map[string]bool, payloadType string, prefix bool) error {
 	env := att.Envelope
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -219,14 +219,14 @@ func verifyIntotoTypes(att *SignedAttestation, pridicateTypes map[string]bool, p
 	}
 
 	if !prefix {
-		if _, exists := pridicateTypes[statement.PredicateType]; !exists {
-			return fmt.Errorf("%w: expected predicate type one of '%v', got '%s'", serrors.ErrorInvalidDssePayload, pridicateTypes, statement.PredicateType)
+		if _, exists := predicateTypes[statement.PredicateType]; !exists {
+			return fmt.Errorf("%w: expected predicate type one of '%v', got '%s'", serrors.ErrorInvalidDssePayload, predicateTypes, statement.PredicateType)
 		}
 	}
 
 	if prefix {
 		hasPrefix := false
-		for k := range pridicateTypes {
+		for k := range predicateTypes {
 			if strings.HasPrefix(statement.PredicateType, k) {
 				hasPrefix = true
 				break
@@ -234,7 +234,7 @@ func verifyIntotoTypes(att *SignedAttestation, pridicateTypes map[string]bool, p
 		}
 		if !hasPrefix {
 			return fmt.Errorf("%w: expected predicate type with prefix one of '%v', got '%s'",
-				serrors.ErrorInvalidDssePayload, pridicateTypes, statement.PredicateType)
+				serrors.ErrorInvalidDssePayload, predicateTypes, statement.PredicateType)
 		}
 	}
 	return nil
