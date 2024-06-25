@@ -21,7 +21,6 @@ func VerifyVSA(ctx context.Context,
 	verificationOpts *options.VerificationOpts,
 ) ([]byte, *utils.TrustedAttesterID, error) {
 	// following steps in https://slsa.dev/spec/v1.1/verification_summary#how-to-verify
-
 	envelope, err := utils.EnvelopeFromBytes(attestation)
 	if err != nil {
 		return nil, nil, err
@@ -29,17 +28,8 @@ func VerifyVSA(ctx context.Context,
 
 	// 1. verify the envelope signature,
 	// 4. match the verfier with the public key: implicit because we accept a user-provided public key.
-	err = verifyEnvelopeSignature(ctx, envelope, verificationOpts)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	statement, err := utils.StatementFromEnvelope(envelope)
-	if err != nil {
-		return nil, nil, err
-	}
 	// 3. parse the VSA, verifying the predicateType.
-	vsa, err := vsa10.VSAFromStatement(statement)
+	vsa, err := extractSignedVSA(ctx, envelope, verificationOpts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -65,11 +55,31 @@ func VerifyVSA(ctx context.Context,
 	return vsaBytes, trustedAttesterID, nil
 }
 
+// extractSignedVSA verifies the envelope signature and type and extracts the VSA from the envelope.
+func extractSignedVSA(ctx context.Context, envelope *dsse.Envelope, verificationOpts *options.VerificationOpts) (*vsa10.VSA, error) {
+	// 1. verify the envelope signature,
+	// 4. match the verfier with the public key: implicit because we accept a user-provided public key.
+	err := verifyEnvelopeSignature(ctx, envelope, verificationOpts)
+	if err != nil {
+		return nil, err
+	}
+	statement, err := utils.StatementFromEnvelope(envelope)
+	if err != nil {
+		return nil, err
+	}
+	// 3. parse the VSA, verifying the predicateType.
+	vsa, err := vsa10.VSAFromStatement(statement)
+	if err != nil {
+		return nil, err
+	}
+	return vsa, nil
+}
+
 // verifyEnvelopeSignature verifies the signature of the envelope.
 func verifyEnvelopeSignature(ctx context.Context, envelope *dsse.Envelope, verificationOpts *options.VerificationOpts) error {
 	signatureVerifier, err := sigstoreSignature.LoadVerifier(verificationOpts.PublicKey, verificationOpts.PublicKeyHashAlgo)
 	if err != nil {
-		return fmt.Errorf("%w: loading sigstore DSSE envolope verifier %w", serrors.ErrorInvalidPublicKey, err)
+		return fmt.Errorf("%w: loading sigstore DSSE envolope verifier: %w", serrors.ErrorInvalidPublicKey, err)
 	}
 	envelopeVerifier, err := dsse.NewEnvelopeVerifier(&sigstoreDSSE.VerifierAdapter{
 		SignatureVerifier: signatureVerifier,
@@ -77,11 +87,11 @@ func verifyEnvelopeSignature(ctx context.Context, envelope *dsse.Envelope, verif
 		PubKeyID:          *verificationOpts.PublicKeyID,
 	})
 	if err != nil {
-		return fmt.Errorf("%w: creating sigstore DSSE envelope verifier %w", serrors.ErrorInvalidPublicKey, err)
+		return fmt.Errorf("%w: creating sigstore DSSE envelope verifier: %w", serrors.ErrorInvalidPublicKey, err)
 	}
 	_, err = envelopeVerifier.Verify(ctx, envelope)
 	if err != nil {
-		return fmt.Errorf("%w: verifying envelope %w", serrors.ErrorNoValidSignature, err)
+		return fmt.Errorf("%w: verifying envelope: %w", serrors.ErrorNoValidSignature, err)
 	}
 	return nil
 }
@@ -114,10 +124,7 @@ func matchExpectedValues(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 // matchExepectedSubjectDigests checks if the expected subject digests are present in the VSA.
 func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 	if len(*vsaOpts.ExpectedDigests) == 0 {
-		return fmt.Errorf("%w: no subject digests provided", serrors.ErrorInvalidSubject)
-	}
-	if len(vsa.Subject) == 0 {
-		return fmt.Errorf("%w: no subject digests found in the VSA", serrors.ErrorInvalidDssePayload)
+		return fmt.Errorf("%w: no subject digests provided", serrors.ErrorEmptyRequiredField)
 	}
 	// collect all digests from the VSA, so we can efficiently search, e.g.:
 	// {
@@ -139,6 +146,9 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 			allVSASubjectDigests[digestType][digestValue] = true
 		}
 	}
+	if len(allVSASubjectDigests) == 0 {
+		return fmt.Errorf("%w: no subject digests found in the VSA", serrors.ErrorInvalidDssePayload)
+	}
 	// search for the expected digests in the VSA
 	for _, expectedDigest := range *vsaOpts.ExpectedDigests {
 		parts := strings.SplitN(expectedDigest, ":", 2)
@@ -159,6 +169,9 @@ func matchExepectedSubjectDigests(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) erro
 
 // matchVerifierID checks if the verifier ID in the VSA matches the expected value.
 func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
+	if vsa.Predicate.Verifier.ID == "" {
+		return fmt.Errorf("%w: no verifierID found in the VSA", serrors.ErrorEmptyRequiredField)
+	}
 	if *vsaOpts.ExpectedVerifierID != vsa.Predicate.Verifier.ID {
 		return fmt.Errorf("%w: verifier ID mismatch: wanted %s, got %s", serrors.ErrorMismatchVerifierID, *vsaOpts.ExpectedVerifierID, vsa.Predicate.Verifier.ID)
 	}
@@ -167,6 +180,9 @@ func matchVerifierID(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 
 // matchResourceURI checks if the resource URI in the VSA matches the expected value.
 func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
+	if vsa.Predicate.ResourceURI == "" {
+		return fmt.Errorf("%w: no resourceURI provided", serrors.ErrorEmptyRequiredField)
+	}
 	if *vsaOpts.ExpectedResourceURI != vsa.Predicate.ResourceURI {
 		return fmt.Errorf("%w: resource URI mismatch: wanted %s, got %s", serrors.ErrorMismatchResourceURI, *vsaOpts.ExpectedResourceURI, vsa.Predicate.ResourceURI)
 	}
@@ -176,7 +192,7 @@ func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 // confirmVerificationResult checks that the policy verification result is "PASSED".
 func confirmVerificationResult(vsa *vsa10.VSA) error {
 	if normalizeString(vsa.Predicate.VerificationResult) != "PASSED" {
-		return fmt.Errorf("%w: verification result is not Passed: %s", serrors.ErrorMismatchSLSAResult, vsa.Predicate.VerificationResult)
+		return fmt.Errorf("%w: verification result is not Passed: %s", serrors.ErrorInvalidVerificationResult, vsa.Predicate.VerificationResult)
 	}
 	return nil
 }

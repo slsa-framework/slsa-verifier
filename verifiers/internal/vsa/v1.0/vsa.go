@@ -10,7 +10,7 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
-const vsaPredicateType = "https://slsa.dev/verification_summary/v1"
+const PredicateType = "https://slsa.dev/verification_summary/v1"
 
 // VSA is a struct that represents a VSA statement.
 // spec: https://slsa.dev/spec/v1.0/verification_summary.
@@ -43,8 +43,8 @@ type Verifier struct {
 
 // VSAFromStatement creates a VSA from a statement.
 func VSAFromStatement(statement *intotoGolang.Statement) (*VSA, error) {
-	if statement.PredicateType != vsaPredicateType {
-		return nil, fmt.Errorf("%w: expected predicate type %q, got %q", serrors.ErrorInvalidDssePayload, vsaPredicateType, statement.PredicateType)
+	if statement.PredicateType != PredicateType {
+		return nil, fmt.Errorf("%w: expected predicate type %q, got %q", serrors.ErrorInvalidDssePayload, PredicateType, statement.PredicateType)
 	}
 	vsaBytes, err := json.Marshal(statement)
 	if err != nil {

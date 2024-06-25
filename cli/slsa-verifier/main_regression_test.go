@@ -1795,6 +1795,8 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 	}
 }
 
+// Test_runVerifyVSA tests the CLI inputes of verify-vsa. More extensive tests are in
+// slsa-verifier/verifiers/internal/vsa/verifier_test.go
 func Test_runVerifyVSA(t *testing.T) {
 	t.Parallel()
 
@@ -1855,7 +1857,6 @@ func Test_runVerifyVSA(t *testing.T) {
 			publicKeyHashAlgo: PointerTo("SHA256"),
 			err:               serrors.ErrorNoValidSignature,
 		},
-		// TODO: Add more tests for different scenarios.
 	}
 
 	for _, tt := range tests {
