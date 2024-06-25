@@ -27,7 +27,6 @@ func Test_extractSignedVSA(t *testing.T) {
 
 	t.Parallel()
 
-	// goodPayload := base64.StdEncoding.EncodeToString()
 	goodAttestationString := `
 		{
 			"_type": "https://in-toto.io/Statement/v1",
