@@ -37,6 +37,10 @@
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
+- [Verification Summary Attestations (VSA)](#verification-summary-attestations-vsa)
+  - [Caveats](#caveats)
+    - [Sigstore](#sigstore)
+    - [Subject Resource Descriptors](#subject-resource-descriptors)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
@@ -481,15 +485,11 @@ The verified in-toto statement may be written to stdout with the
 
 Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You _may_ match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
 
-### Verification Summary Attestations (VSA)
+## Verification Summary Attestations (VSA)
 
 We have support for [verifying](https://slsa.dev/spec/v1.1/verification_summary#how-to-verify) VSAs.
 Rather than passing in filepaths as arguments, we allow passing in mulitple `--subject-digest` cli options, to
 accomodate subjects that are not simple-files.
-
-This support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
-With that, we allow the user to pass in the public key.
-Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a unpadded base64 encoded sha256 hash the key, like `sha256:abc123...` (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you must supply the `--public-key-id` cli option.
 
 
 The verify-vsa command
@@ -535,6 +535,18 @@ For multiple subhects, use:
 --subject-digest sha256:abc123
 --subject-digest sha256:xyz456
 ```
+
+### Caveats
+
+#### Sigstore
+
+This support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
+With that, we allow the user to pass in the public key.
+Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a unpadded base64 encoded sha256 hash the key, like `sha256:abc123...` (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you must supply the `--public-key-id` cli option.
+
+#### Subject Resource Descriptors
+
+According to slsa.dev's [VSA schema](https://slsa.dev/spec/v1.1/verification_summary#schema), we only support the Subject's `Name` and `Digest`, not the full in_toto [Statement](https://pkg.go.dev/github.com/in-toto/attestation/go/v1#Statement)'s [ResourceDescriptor](https://github.com/in-toto/attestation/blob/main/spec/v1/resource_descriptor.md).
 
 ## Known Issues
 
