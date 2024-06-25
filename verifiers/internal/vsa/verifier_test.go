@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	intotoAttestattions "github.com/in-toto/attestation/go/v1"
+	intotoAttestations "github.com/in-toto/attestation/go/v1"
 	intotoGolang "github.com/in-toto/in-toto-golang/in_toto"
 	intotoCommon "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
@@ -76,7 +76,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEeGa6ZCZn0q6WpaUwJrSk+PPYEsca
 	}
 	goodVSA := &vsa10.VSA{
 		StatementHeader: intotoGolang.StatementHeader{
-			Type:          intotoAttestattions.StatementTypeUri,
+			Type:          intotoAttestations.StatementTypeUri,
 			PredicateType: vsa10.PredicateType,
 			Subject: []intotoGolang.Subject{
 				{

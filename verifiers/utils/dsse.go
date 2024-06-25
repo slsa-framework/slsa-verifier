@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"math/big"
 
-	intotoAttestattions "github.com/in-toto/attestation/go/v1"
+	intotoAttestations "github.com/in-toto/attestation/go/v1"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -53,7 +53,7 @@ func StatementFromBytes(payload []byte) (*intoto.Statement, error) {
 		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	if statement.Type != intoto.StatementInTotoV01 && statement.Type != intotoAttestattions.StatementTypeUri {
+	if statement.Type != intoto.StatementInTotoV01 && statement.Type != intotoAttestations.StatementTypeUri {
 		return nil, fmt.Errorf("%w: invalid statement type: %q", serrors.ErrorInvalidDssePayload, statement.Type)
 	}
 	return &statement, nil
