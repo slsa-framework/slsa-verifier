@@ -14,15 +14,15 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// VerifyVSA verifies the VSA attestations.
+// VerifyVSA verifies the VSA attestation.
 func VerifyVSA(ctx context.Context,
-	attestations []byte,
+	attestation []byte,
 	vsaOpts *options.VSAOpts,
 	verificationOpts *options.VerificationOpts,
 ) ([]byte, *utils.TrustedAttesterID, error) {
 	// following steps in https://slsa.dev/spec/v1.1/verification_summary#how-to-verify
 
-	envelope, err := utils.EnvelopeFromBytes(attestations)
+	envelope, err := utils.EnvelopeFromBytes(attestation)
 	if err != nil {
 		return nil, nil, err
 	}

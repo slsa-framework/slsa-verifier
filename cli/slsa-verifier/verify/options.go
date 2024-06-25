@@ -147,11 +147,11 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.SubjectDigests, "subject-digest", []string{},
 		"the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>")
 
-	cmd.Flags().StringVar(&o.AttestationPath, "attestations-path", "",
-		"path to a file containing the attestations")
+	cmd.Flags().StringVar(&o.AttestationPath, "attestation-path", "",
+		"path to a file containing the attestation")
 
 	cmd.Flags().StringVar(&o.VerifierID, "verifier-id", "",
-		"the unique verifier ID who created the attestations")
+		"the unique verifier ID who created the attestation")
 
 	cmd.Flags().StringVar(&o.ResourceURI, "resource-uri", "",
 		"the resource URI to be verified")
@@ -172,7 +172,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 		"[optional] the hash algorithm used to hash the public key, one of SHA256 [efault], SHA384, or SHA512")
 
 	cmd.MarkFlagRequired("subject-digests")
-	cmd.MarkFlagRequired("attestations-path")
+	cmd.MarkFlagRequired("attestation-path")
 	cmd.MarkFlagRequired("verifier-id")
 	cmd.MarkFlagRequired("resource-uri")
 	cmd.MarkFlagRequired("public-key-path")

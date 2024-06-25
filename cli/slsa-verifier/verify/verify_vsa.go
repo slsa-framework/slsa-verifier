@@ -77,12 +77,12 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 		PublicKeyID:       c.PublicKeyID,
 		PublicKeyHashAlgo: hashAlgo,
 	}
-	attestations, err := os.ReadFile(*c.AttestationPath)
+	attestation, err := os.ReadFile(*c.AttestationPath)
 	if err != nil {
 		printFailed(err)
 		return nil, err
 	}
-	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestations, vsaOpts, VerificationOpts)
+	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestation, vsaOpts, VerificationOpts)
 	if err != nil {
 		printFailed(err)
 		return nil, err
