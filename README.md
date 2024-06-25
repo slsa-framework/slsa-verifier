@@ -505,7 +505,7 @@ Flags:
       --attestations-path string      path to a file containing the attestations
   -h, --help                          help for verify-vsa
       --print-attestation             [optional] print the contents of attestation to stdout
-      --public-key-hash-algo string   [optional] the hash algorithm used to compute the digest to be signed, one of SHA256 [default], SHA384, or SHA512
+      --public-key-signing-hash-algo string   [optional] the hash algorithm used to compute the digest to be signed, one of SHA256 [default], SHA384, or SHA512
       --public-key-id string          [optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key
       --public-key-path string        path to a public key file
       --resource-uri string           the resource URI to be verified
@@ -525,7 +525,7 @@ $ slsa-verifier verify-vsa \
 --verified-levels "BCID_L1, SLSA_BUILD_LEVEL_2" \
 --public-key-path ./cli/slsa-verifier/testdata/vsa/gce/v1/vsa_signing_public_key.pem \
 --public-key-id keystore://76574:prod:vsa_signing_public_key \
---public-key-hash-algo SHA256 \
+--public-key-signing-hash-algo SHA256 \
 --print-attestation
 ```
 

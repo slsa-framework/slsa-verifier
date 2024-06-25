@@ -168,7 +168,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
 		"[optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key")
 
-	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-hash-algo", "SHA256",
+	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-signing-hash-algo", "SHA256",
 		"[optional] the hash algorithm used to compute the digest to be signed, one of SHA256 [default], SHA384, or SHA512")
 
 	cmd.MarkFlagRequired("subject-digests")
@@ -176,7 +176,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagRequired("verifier-id")
 	cmd.MarkFlagRequired("resource-uri")
 	cmd.MarkFlagRequired("public-key-path")
-	// public-key-id" and "public-key-hash-algo" are optional since they have useful defaults
+	// public-key-id" and "public-key-signing-hash-algo" are optional since they have useful defaults
 }
 
 type workflowInputs struct {
