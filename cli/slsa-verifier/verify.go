@@ -204,7 +204,7 @@ func verifyVSACmd() *cobra.Command {
 				PublicKeyID:       &o.PublicKeyID,
 				PublicKeyHashAlgo: &o.PublicKeyHashAlgo,
 			}
-			if _, err := v.Exec(cmd.Context()); err != nil {
+			if err := v.Exec(cmd.Context()); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
 				os.Exit(1)
 			} else {

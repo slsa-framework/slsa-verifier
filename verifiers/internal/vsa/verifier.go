@@ -15,15 +15,17 @@ import (
 )
 
 // VerifyVSA verifies the VSA attestation. It returns the attestation base64-decoded from the envelope, and the trusted attester ID.
+// We don't return a TrustedBuilderID. Instead, the user can user can parse the builderID separately, perhaps with
+// https://pkg.go.dev/golang.org/x/mod/semver.
 func VerifyVSA(ctx context.Context,
 	attestation []byte,
 	vsaOpts *options.VSAOpts,
 	verificationOpts *options.VerificationOpts,
-) ([]byte, *utils.TrustedAttesterID, error) {
+) ([]byte, error) {
 	// following steps in https://slsa.dev/spec/v1.1/verification_summary#how-to-verify
 	envelope, err := utils.EnvelopeFromBytes(attestation)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// 1. verify the envelope signature,
@@ -31,7 +33,7 @@ func VerifyVSA(ctx context.Context,
 	// 3. parse the VSA, verifying the predicateType.
 	vsa, err := extractSignedVSA(ctx, envelope, verificationOpts)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// 2. match the subject digests,
@@ -42,17 +44,13 @@ func VerifyVSA(ctx context.Context,
 	// no other fields are checked.
 	err = matchExpectedValues(vsa, vsaOpts)
 	if err != nil {
-		return nil, nil, err
-	}
-	trustedAttesterID, err := utils.TrustedAttesterIDNew(vsa.Predicate.Verifier.ID, false)
-	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	vsaBytes, err := envelope.DecodeB64Payload()
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
-	return vsaBytes, trustedAttesterID, nil
+	return vsaBytes, nil
 }
 
 // extractSignedVSA verifies the envelope signature and type and extracts the VSA from the envelope.

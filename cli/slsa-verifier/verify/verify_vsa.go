@@ -24,7 +24,6 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // VerifyVSACommand contains the parameters for the verify-vsa command.
@@ -48,7 +47,7 @@ var hashAlgos = map[string]crypto.Hash{
 }
 
 // Exec executes the verifiers.VerifyVSA.
-func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, error) {
+func (c *VerifyVSACommand) Exec(ctx context.Context) error {
 	vsaOpts := &options.VSAOpts{
 		ExpectedDigests:        c.SubjectDigests,
 		ExpectedVerifierID:     c.VerifierID,
@@ -58,19 +57,19 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	pubKeyBytes, err := os.ReadFile(*c.PublicKeyPath)
 	if err != nil {
 		printFailed(err)
-		return nil, err
+		return err
 	}
 	pubKey, err := cryptoutils.UnmarshalPEMToPublicKey(pubKeyBytes)
 	if err != nil {
 		err = fmt.Errorf("%w: %w", serrors.ErrorInvalidPublicKey, err)
 		printFailed(err)
-		return nil, err
+		return err
 	}
 	hashAlgo, ok := hashAlgos[*c.PublicKeyHashAlgo]
 	if !ok {
 		err := fmt.Errorf("%w: %s", serrors.ErrorInvalidHashAlgo, *c.PublicKeyHashAlgo)
 		printFailed(err)
-		return nil, err
+		return err
 	}
 	VerificationOpts := &options.VerificationOpts{
 		PublicKey:         pubKey,
@@ -80,19 +79,19 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, 
 	attestation, err := os.ReadFile(*c.AttestationPath)
 	if err != nil {
 		printFailed(err)
-		return nil, err
+		return err
 	}
-	verifiedProvenance, outProducerID, err := verifiers.VerifyVSA(ctx, attestation, vsaOpts, VerificationOpts)
+	verifiedProvenance, err := verifiers.VerifyVSA(ctx, attestation, vsaOpts, VerificationOpts)
 	if err != nil {
 		printFailed(err)
-		return nil, err
+		return err
 	}
 	if c.PrintAttestation {
 		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
 	}
 	fmt.Fprintf(os.Stderr, "Verifying VSA: PASSED\n\n")
 	// verfiers.VerifyVSA already checks if the producerID matches
-	return outProducerID, nil
+	return nil
 }
 
 // printFailed prints the error message to stderr.

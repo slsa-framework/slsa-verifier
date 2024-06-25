@@ -9,25 +9,6 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
-// TrustedAttesterID represents an identifier that has been explicitly trusted.
-// TODO: don't embed TrustedBuilderID, use a whole new type that implements the
-// Name, Version, and String, and maybe also MatchesLoose and MatchesFull. (using semver?)
-type TrustedAttesterID struct {
-	TrustedBuilderID
-}
-
-// TrustedAttesterIDNew creates a new AttesterID structure.
-func TrustedAttesterIDNew(attesterID string, needVersion bool) (*TrustedAttesterID, error) {
-	builderID, err := TrustedBuilderIDNew(attesterID, needVersion)
-	if err != nil {
-		return nil, err
-	}
-	trustedAttesterID := &TrustedAttesterID{
-		TrustedBuilderID: *builderID,
-	}
-	return trustedAttesterID, nil
-}
-
 // TrustedBuilderID represents a builder ID that has been explicitly trusted.
 type TrustedBuilderID struct {
 	name, version string

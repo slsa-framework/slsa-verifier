@@ -1878,7 +1878,7 @@ func Test_runVerifyVSA(t *testing.T) {
 				PublicKeyHashAlgo: tt.publicKeyHashAlgo,
 			}
 
-			_, err := cmd.Exec(context.Background())
+			err := cmd.Exec(context.Background())
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}

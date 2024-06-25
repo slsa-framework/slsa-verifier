@@ -76,11 +76,13 @@ func VerifyNpmPackage(ctx context.Context,
 		provenanceOpts, builderOpts)
 }
 
-// VerifyVSA verifies the VSA attestation. It returns the attestation base64-decoded from the envelope, and the trusted attester ID.
+// VerifyVSA verifies the VSA attestation. It returns the attestation base64-decoded from the envelope.
+// We don't return a TrustedBuilderID. Instead, the user can user can parse the builderID separately, perhaps with
+// https://pkg.go.dev/golang.org/x/mod/semver
 func VerifyVSA(ctx context.Context,
 	attestation []byte,
 	vsaOpts *options.VSAOpts,
 	verificationOpts *options.VerificationOpts,
-) ([]byte, *utils.TrustedAttesterID, error) {
+) ([]byte, error) {
 	return vsa.VerifyVSA(ctx, attestation, vsaOpts, verificationOpts)
 }
