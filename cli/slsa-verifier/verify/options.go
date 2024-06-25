@@ -160,7 +160,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 		"[optional] the levels of verification to be performed, comma-separated. e.g., 'SLSA_BUILD_LEVEL_2,FEDRAMP_LOW'")
 
 	cmd.Flags().BoolVar(&o.PrintAttestation, "print-attestation", false,
-		"[optional] print the verified attestations to stdout")
+		"[optional] print the contents of attestation to stdout")
 
 	cmd.Flags().StringVar(&o.PublicKeyPath, "public-key-path", "",
 		"path to a public key file")
