@@ -76,7 +76,7 @@ func VerifyNpmPackage(ctx context.Context,
 		provenanceOpts, builderOpts)
 }
 
-// VerifyVSA verifies the VSA attestations.
+// VerifyVSA verifies the VSA attestations. It returns the attestation base64-decoded from the envelope, and the trusted attester ID.
 func VerifyVSA(ctx context.Context,
 	attestations []byte,
 	vsaOpts *options.VSAOpts,
