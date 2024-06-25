@@ -166,7 +166,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 		"path to a public key file")
 
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
-		"[optional] the ID of the public key")
+		"[optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key")
 
 	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-hash-algo", "SHA256",
 		"[optional] the hash algorithm used to hash the public key, one of SHA256 [efault], SHA384, or SHA512")

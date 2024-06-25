@@ -506,7 +506,7 @@ Flags:
   -h, --help                          help for verify-vsa
       --print-attestation             [optional] print the verified attestations to stdout
       --public-key-hash-algo string   [optional] the hash algorithm used to hash the public key, one of SHA256 [efault], SHA384, or SHA512 (default "SHA256")
-      --public-key-id string          [optional] the ID of the public key
+      --public-key-id string          [optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key
       --public-key-path string        path to a public key file
       --resource-uri string           the resource URI to be verified
       --subject-digest stringArray    the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>
