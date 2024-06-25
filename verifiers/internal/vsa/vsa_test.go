@@ -34,13 +34,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053"},
-				ExpectedVerifierID:     PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-				ExpectedResourceURI:    PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+				ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+				ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 				ExpectedVerifiedLevels: &[]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			nil,
@@ -50,13 +50,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053"},
-				ExpectedVerifierID:     PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-				ExpectedResourceURI:    PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+				ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+				ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			nil,
@@ -66,13 +66,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053"},
-				ExpectedVerifierID:     PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-				ExpectedResourceURI:    PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+				ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+				ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_3"},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			serrors.ErrorMismatchVerifiedLevels,
@@ -82,13 +82,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{},
-				ExpectedVerifierID:     PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-				ExpectedResourceURI:    PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+				ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+				ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			serrors.ErrorInvalidSubject,
@@ -98,13 +98,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{"my-giest:123"},
-				ExpectedVerifierID:     PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-				ExpectedResourceURI:    PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+				ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+				ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			serrors.ErrorMissingSubjectDigest,
@@ -114,13 +114,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053"},
-				ExpectedVerifierID:     PointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-				ExpectedResourceURI:    PointerTo("my-uri://my/path"),
+				ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+				ExpectedResourceURI:    pointerTo("my-uri://my/path"),
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			serrors.ErrorMismatchResourceURI,
@@ -130,13 +130,13 @@ func Test_VerifyVSA(t *testing.T) {
 			"gce/v1/gke-gce-pre.bcid-vsa.jsonl",
 			&options.VSAOpts{
 				ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053"},
-				ExpectedVerifierID:     PointerTo("https://celestial-being.gn/gundam"),
-				ExpectedResourceURI:    PointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+				ExpectedVerifierID:     pointerTo("https://celestial-being.gn/gundam"),
+				ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 				ExpectedVerifiedLevels: &[]string{},
 			},
 			&options.VerificationOpts{
 				PublicKey:         mustPublicKey(filepath.Clean(filepath.Join(testDir, "gce/v1/vsa_signing_public_key.pem"))),
-				PublicKeyID:       PointerTo("keystore://76574:prod:vsa_signing_public_key"),
+				PublicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 				PublicKeyHashAlgo: crypto.SHA256,
 			},
 			serrors.ErrorMismatchVerifierID,
@@ -148,12 +148,12 @@ func Test_VerifyVSA(t *testing.T) {
 		// t.Parallel()
 
 		attestationPath := filepath.Clean(filepath.Join(testDir, tt.attestationPath))
-		attestations, err := os.ReadFile(attestationPath)
+		attestation, err := os.ReadFile(attestationPath)
 		if err != nil {
 			t.Errorf("failed to read attestations file: %v", err)
 		}
 
-		_, trustedAttesterID, err := VerifyVSA(ctx, attestations, tt.vsaOpts, tt.verificationOpts)
+		_, trustedAttesterID, err := VerifyVSA(ctx, attestation, tt.vsaOpts, tt.verificationOpts)
 		if err != nil && trustedAttesterID != nil {
 			t.Errorf("unexpected trustedAttesterID to be nil: %v", trustedAttesterID)
 		}
@@ -182,6 +182,6 @@ func mustPublicKey(path string) crypto.PublicKey {
 	return pubKey
 }
 
-func PointerTo[K any](object K) *K {
+func pointerTo[K any](object K) *K {
 	return &object
 }
