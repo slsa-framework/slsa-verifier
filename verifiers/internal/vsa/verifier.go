@@ -46,7 +46,7 @@ func VerifyVSA(ctx context.Context,
 
 	// 2. match the subject digests,
 	// 4. match the verifier ID,
-	// 5. match the expected valuesmatch resourceURI,
+	// 5. match the expected resourceURI,
 	// 6. confirm the slsaResult is PASSED,
 	// 7. match the verifiedLevels,
 	// no other fields are checked.
