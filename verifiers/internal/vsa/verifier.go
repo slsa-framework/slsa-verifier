@@ -14,7 +14,7 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-// VerifyVSA verifies the VSA attestation.
+// VerifyVSA verifies the VSA attestation. It returns the attestation base64-decoded from the envelope, and the trusted attester ID.
 func VerifyVSA(ctx context.Context,
 	attestation []byte,
 	vsaOpts *options.VSAOpts,
