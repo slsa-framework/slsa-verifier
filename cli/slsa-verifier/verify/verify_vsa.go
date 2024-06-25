@@ -17,7 +17,6 @@ package verify
 import (
 	"context"
 	"crypto"
-	"errors"
 	"fmt"
 	"os"
 
@@ -50,11 +49,6 @@ var hashAlgos = map[string]crypto.Hash{
 
 // Exec executes the verifiers.VerifyVSA.
 func (c *VerifyVSACommand) Exec(ctx context.Context) (*utils.TrustedAttesterID, error) {
-	if !options.ExperimentalEnabled() {
-		err := errors.New("feature support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
-		printFailed(err)
-		return nil, err
-	}
 	vsaOpts := &options.VSAOpts{
 		ExpectedDigests:        c.SubjectDigests,
 		ExpectedVerifierID:     c.VerifierID,

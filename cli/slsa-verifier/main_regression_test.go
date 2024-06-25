@@ -1796,8 +1796,6 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 }
 
 func Test_runVerifyVSA(t *testing.T) {
-	// We cannot use t.Setenv due to parallelized tests.
-	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
 	t.Parallel()
 
 	tests := []struct {

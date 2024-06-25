@@ -483,11 +483,11 @@ Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER
 
 ### Verification Summary Attestations (VSA)
 
-We have experimental support for [verifying](https://slsa.dev/spec/v1.1/verification_summary#how-to-verify) VSAs.
+We have support for [verifying](https://slsa.dev/spec/v1.1/verification_summary#how-to-verify) VSAs.
 Rather than passing in filepaths as arguments, we allow passing in mulitple `--subject-digest` cli options, to
 accomodate subjects that are not simple-files.
 
-This experimental support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
+This support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
 With that, we allow the user to pass in the public key.
 Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a unpadded base64 encoded sha256 hash the key, like `sha256:abc123...` (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you must supply the `--public-key-id` cli option.
 
@@ -496,7 +496,7 @@ The verify-vsa command
 
 ```shell
 $ slsa-verifier verify-vsa --help
-Verifies SLSA VSAs for the given subject-digests [experimental]
+Verifies SLSA VSAs for the given subject-digests
 
 Usage:
   slsa-verifier verify-vsa [flags] subject-digest [subject-digest...]
@@ -517,8 +517,7 @@ Flags:
 To verify VSAs, invoke like this
 
 ```shell
-$ SLSA_VERIFIER_EXPERIMENTAL=1 \
-slsa-verifier verify-vsa \
+$ slsa-verifier verify-vsa \
 --subject-digest gce_image_id:8970095005306000053 \
 --attestations-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
 --verifier-id https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1 \
