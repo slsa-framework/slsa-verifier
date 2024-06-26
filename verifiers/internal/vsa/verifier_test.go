@@ -214,7 +214,7 @@ func Test_matchExpectedValues(t *testing.T) {
 		},
 	}
 	goodVSAOpts := &options.VSAOpts{
-		ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053"},
+		ExpectedDigests:        &[]string{"gce_image_id:8970095005306000053", "sha256:abc"},
 		ExpectedVerifierID:     pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
 		ExpectedResourceURI:    pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
 		ExpectedVerifiedLevels: &[]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"},
