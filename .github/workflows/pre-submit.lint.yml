@@ -28,13 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - env:
-          YAMLLINT_VERSION: "1.26.3"
-        run: |
+      - run: |
           set -euo pipefail
 
           # Install yamllint
-          pip install "yamllint==${YAMLLINT_VERSION}"
+          pip install -r .github/workflows/requirements-lint.txt --require-hashes
 
           # Run yamllint
           make yamllint
