@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
 
           # Install yamllint
-          pip install -r .github/workflows/requirements-lint.txt --require-hashes
+          pip install -r ./requirements-lint.txt --require-hashes
 
           # Run yamllint
           make yamllint
