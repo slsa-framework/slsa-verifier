@@ -88,6 +88,13 @@ unzip_files() {
         rm -rf "${tmp_dir}"
         ;;
 
+    # catch-all for any zip file
+    # TODO: With the commands at the end of this script, only the needed files will be copied over.
+    # But we should get specific about which files to ignore.
+    ./*.zip)
+        unzip -o "${zip_path}" -d "${output_path}"
+        ;;
+
     *)
         echo "unexpected file path: ${zip_path}"
         exit 1
