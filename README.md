@@ -529,7 +529,7 @@ $ slsa-verifier verify-vsa \
 --print-attestation
 ```
 
-For multiple subhects, use:
+For multiple subjects, use:
 
 ```
 --subject-digest sha256:abc123
