@@ -4,7 +4,7 @@
     "renovate-config-validator": "renovate-config-validator --strict"
   },
   "devDependencies": {
-    "markdown-toc": "^1.2.0",
-    "renovate": "37.363.4"
+    "markdown-toc": "1.2.0",
+    "renovate": "37.374.1"
   }
 }
