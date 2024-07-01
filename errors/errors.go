@@ -44,7 +44,6 @@ var (
 	ErrorInvalidHash               = errors.New("invalid hash")
 	ErrorNotPresent                = errors.New("not present")
 	ErrorInvalidPublicKey          = errors.New("invalid public key")
-	ErrorInvalidHashAlgo           = errors.New("unsupported hash algorithm")
 	ErrorInvalidVerificationResult = errors.New("verificationResult is not PASSED")
 	ErrorMismatchVerifiedLevels    = errors.New("verified levels do not match")
 	ErrorMissingSubjectDigest      = errors.New("missing subject digest")

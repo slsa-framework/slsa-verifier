@@ -502,16 +502,15 @@ Usage:
   slsa-verifier verify-vsa [flags] subject-digest [subject-digest...]
 
 Flags:
-      --attestations-path string      path to a file containing the attestations
-  -h, --help                          help for verify-vsa
-      --print-attestation             [optional] print the contents of attestation to stdout
-      --public-key-signing-hash-algo string   [optional] the hash algorithm used to compute the digest to be signed, one of SHA256 [default], SHA384, or SHA512
-      --public-key-id string          [optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key
-      --public-key-path string        path to a public key file
-      --resource-uri string           the resource URI to be verified
-      --subject-digest stringArray    the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>
-      --verified-levels strings       [optional] the levels of verification to be performed, comma-separated. e.g., 'SLSA_BUILD_LEVEL_2,FEDRAMP_LOW'
-      --verifier-id string            the unique verifier ID who created the attestations
+      --attestation-path string      path to a file containing the attestation
+  -h, --help                         help for verify-vsa
+      --print-attestation            [optional] print the contents of attestation to stdout
+      --public-key-id string         [optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key
+      --public-key-path string       path to a public key file
+      --resource-uri string          the resource URI to be verified
+      --subject-digest stringArray   the digests to be verified. Pass multiple digests by repeating the flag. e.g. --subject-digest <digest type>:<digest value> --subject-digest <digest type>:<digest value>
+      --verified-level stringArray   [optional] the levels of verification to be performed. Pass multiple digests by repeating the flag, e.g., --verified-level SLSA_BUILD_LEVEL_2 --verified-level FEDRAMP_LOW'
+      --verifier-id string           the unique verifier ID who created the attestation
 ```
 
 To verify VSAs, invoke like this

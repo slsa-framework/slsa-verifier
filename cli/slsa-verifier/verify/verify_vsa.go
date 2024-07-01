@@ -17,6 +17,10 @@ package verify
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
+	"crypto/rsa"
 	"fmt"
 	"os"
 
@@ -28,22 +32,14 @@ import (
 
 // VerifyVSACommand contains the parameters for the verify-vsa command.
 type VerifyVSACommand struct {
-	SubjectDigests    *[]string
-	AttestationPath   *string
-	VerifierID        *string
-	ResourceURI       *string
-	VerifiedLevels    *[]string
-	PrintAttestation  bool
-	PublicKeyPath     *string
-	PublicKeyID       *string
-	PublicKeyHashAlgo *string
-}
-
-var hashAlgos = map[string]crypto.Hash{
-	"":       crypto.SHA256, // default to SHA256
-	"SHA256": crypto.SHA256,
-	"SHA384": crypto.SHA384,
-	"SHA512": crypto.SHA512,
+	SubjectDigests   *[]string
+	AttestationPath  *string
+	VerifierID       *string
+	ResourceURI      *string
+	VerifiedLevels   *[]string
+	PrintAttestation bool
+	PublicKeyPath    *string
+	PublicKeyID      *string
 }
 
 // Exec executes the verifiers.VerifyVSA.
@@ -65,12 +61,7 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) error {
 		printFailed(err)
 		return err
 	}
-	hashAlgo, ok := hashAlgos[*c.PublicKeyHashAlgo]
-	if !ok {
-		err := fmt.Errorf("%w: %s", serrors.ErrorInvalidHashAlgo, *c.PublicKeyHashAlgo)
-		printFailed(err)
-		return err
-	}
+	hashAlgo := determineSignatureHashAlgo(pubKey)
 	VerificationOpts := &options.VerificationOpts{
 		PublicKey:         pubKey,
 		PublicKeyID:       c.PublicKeyID,
@@ -97,4 +88,30 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) error {
 // printFailed prints the error message to stderr.
 func printFailed(err error) {
 	fmt.Fprintf(os.Stderr, "Verifying VSA: FAILED: %v\n\n", err)
+}
+
+// determineSignatureHashAlgo determines the hash algorithm used to compute the digest to be signed, based on the public key.
+// some well-known defaults can be determined, otherwise the it returns crypto.SHA256.
+func determineSignatureHashAlgo(pubKey crypto.PublicKey) crypto.Hash {
+	var h crypto.Hash
+	switch pk := pubKey.(type) {
+	case *rsa.PublicKey:
+		h = crypto.SHA256
+	case *ecdsa.PublicKey:
+		switch pk.Curve {
+		case elliptic.P256():
+			h = crypto.SHA256
+		case elliptic.P384():
+			h = crypto.SHA384
+		case elliptic.P521():
+			h = crypto.SHA512
+		default:
+			h = crypto.SHA256
+		}
+	case ed25519.PublicKey:
+		h = crypto.SHA512
+	default:
+		h = crypto.SHA256
+	}
+	return h
 }

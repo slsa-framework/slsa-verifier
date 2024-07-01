@@ -1801,61 +1801,39 @@ func Test_runVerifyVSA(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name              string
-		attestationPath   *string
-		subjectDigests    *[]string
-		verifierID        *string
-		resourceURI       *string
-		verifiedLevels    *[]string
-		publicKeyPath     *string
-		publicKeyID       *string
-		publicKeyHashAlgo *string
-		err               error
+		name            string
+		attestationPath *string
+		subjectDigests  *[]string
+		verifierID      *string
+		resourceURI     *string
+		verifiedLevels  *[]string
+		publicKeyPath   *string
+		publicKeyID     *string
+		err             error
 	}{
 		{
-			name:              "success: gke",
-			attestationPath:   pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
-			subjectDigests:    pointerTo([]string{"gce_image_id:8970095005306000053"}),
-			verifierID:        pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-			resourceURI:       pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
-			verifiedLevels:    pointerTo([]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"}),
-			publicKeyPath:     pointerTo("gce/v1/vsa_signing_public_key.pem"),
-			publicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
-			publicKeyHashAlgo: pointerTo("SHA256"),
+			name:            "success: gke",
+			attestationPath: pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			subjectDigests:  pointerTo([]string{"gce_image_id:8970095005306000053"}),
+			verifierID:      pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
+			resourceURI:     pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
+			verifiedLevels:  pointerTo([]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"}),
+			publicKeyPath:   pointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:     pointerTo("keystore://76574:prod:vsa_signing_public_key"),
 		},
 		{
-			name:              "success: gke, default public key hash algo",
-			attestationPath:   pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
-			subjectDigests:    pointerTo([]string{"gce_image_id:8970095005306000053"}),
-			verifierID:        pointerTo("https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1"),
-			resourceURI:       pointerTo("gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre"),
-			verifiedLevels:    pointerTo([]string{"BCID_L1", "SLSA_BUILD_LEVEL_2"}),
-			publicKeyPath:     pointerTo("gce/v1/vsa_signing_public_key.pem"),
-			publicKeyID:       pointerTo("keystore://76574:prod:vsa_signing_public_key"),
-			publicKeyHashAlgo: pointerTo(""),
+			name:            "fail: gke, empty public key id",
+			attestationPath: pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			publicKeyPath:   pointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:     pointerTo(""),
+			err:             serrors.ErrorNoValidSignature,
 		},
 		{
-			name:              "fail: gke, unsupported public key hash algo",
-			attestationPath:   pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
-			publicKeyPath:     pointerTo("gce/v1/vsa_signing_public_key.pem"),
-			publicKeyHashAlgo: pointerTo("SHA123"),
-			err:               serrors.ErrorInvalidHashAlgo,
-		},
-		{
-			name:              "fail: gke, wrong public key hash algo",
-			attestationPath:   pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
-			publicKeyPath:     pointerTo("gce/v1/vsa_signing_public_key.pem"),
-			publicKeyID:       pointerTo(""),
-			publicKeyHashAlgo: pointerTo("SHA512"),
-			err:               serrors.ErrorNoValidSignature,
-		},
-		{
-			name:              "fail: gke, wrong key id",
-			attestationPath:   pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
-			publicKeyPath:     pointerTo("gce/v1/vsa_signing_public_key.pem"),
-			publicKeyID:       pointerTo("my_key_id"),
-			publicKeyHashAlgo: pointerTo("SHA256"),
-			err:               serrors.ErrorNoValidSignature,
+			name:            "fail: gke, wrong key id",
+			attestationPath: pointerTo("gce/v1/gke-gce-pre.bcid-vsa.jsonl"),
+			publicKeyPath:   pointerTo("gce/v1/vsa_signing_public_key.pem"),
+			publicKeyID:     pointerTo("my_key_id"),
+			err:             serrors.ErrorNoValidSignature,
 		},
 	}
 
@@ -1868,14 +1846,13 @@ func Test_runVerifyVSA(t *testing.T) {
 			publicKeyPath := filepath.Clean(filepath.Join(TEST_DIR, "vsa", *tt.publicKeyPath))
 
 			cmd := verify.VerifyVSACommand{
-				AttestationPath:   &attestationPath,
-				SubjectDigests:    tt.subjectDigests,
-				VerifierID:        tt.verifierID,
-				ResourceURI:       tt.resourceURI,
-				VerifiedLevels:    tt.verifiedLevels,
-				PublicKeyPath:     &publicKeyPath,
-				PublicKeyID:       tt.publicKeyID,
-				PublicKeyHashAlgo: tt.publicKeyHashAlgo,
+				AttestationPath: &attestationPath,
+				SubjectDigests:  tt.subjectDigests,
+				VerifierID:      tt.verifierID,
+				ResourceURI:     tt.resourceURI,
+				VerifiedLevels:  tt.verifiedLevels,
+				PublicKeyPath:   &publicKeyPath,
+				PublicKeyID:     tt.publicKeyID,
 			}
 
 			err := cmd.Exec(context.Background())

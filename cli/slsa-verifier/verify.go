@@ -194,15 +194,14 @@ func verifyVSACmd() *cobra.Command {
 		Short: "Verifies SLSA VSAs for the given subject-digests",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyVSACommand{
-				SubjectDigests:    &o.SubjectDigests,
-				AttestationPath:   &o.AttestationPath,
-				VerifierID:        &o.VerifierID,
-				ResourceURI:       &o.ResourceURI,
-				VerifiedLevels:    &o.VerifiedLevels,
-				PrintAttestation:  o.PrintAttestation,
-				PublicKeyPath:     &o.PublicKeyPath,
-				PublicKeyID:       &o.PublicKeyID,
-				PublicKeyHashAlgo: &o.PublicKeyHashAlgo,
+				SubjectDigests:   &o.SubjectDigests,
+				AttestationPath:  &o.AttestationPath,
+				VerifierID:       &o.VerifierID,
+				ResourceURI:      &o.ResourceURI,
+				VerifiedLevels:   &o.VerifiedLevels,
+				PrintAttestation: o.PrintAttestation,
+				PublicKeyPath:    &o.PublicKeyPath,
+				PublicKeyID:      &o.PublicKeyID,
 			}
 			if err := v.Exec(cmd.Context()); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)

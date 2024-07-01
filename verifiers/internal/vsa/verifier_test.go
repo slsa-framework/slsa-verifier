@@ -115,6 +115,25 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEeGa6ZCZn0q6WpaUwJrSk+PPYEsca
 			expectedVSA: goodVSA,
 		},
 		{
+			name: "success: sha256 key id in envelope",
+			envelope: &dsse.Envelope{
+				PayloadType: goodEnvelope.PayloadType,
+				Payload:     goodEnvelope.Payload,
+				Signatures: []dsse.Signature{
+					{
+						KeyID: "SHA256:Zphi7kubaI7RnOrkqPgkRdVhF5a2JOFB4gor/Zajiiw",
+						Sig:   goodEnvelope.Signatures[0].Sig,
+					},
+				},
+			},
+			opts: &options.VerificationOpts{
+				PublicKey:         goodVSAOpts.PublicKey,
+				PublicKeyID:       pointerTo(""),
+				PublicKeyHashAlgo: crypto.SHA256,
+			},
+			expectedVSA: goodVSA,
+		},
+		{
 			name: "failure: empty signatures",
 			envelope: &dsse.Envelope{
 				PayloadType: goodEnvelope.PayloadType,

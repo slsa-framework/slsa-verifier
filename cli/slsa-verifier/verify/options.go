@@ -129,15 +129,14 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 
 // VerifyVSAOptions is the top-level options for the `verifyVSA` command.
 type VerifyVSAOptions struct {
-	SubjectDigests    []string
-	AttestationPath   string
-	VerifierID        string
-	ResourceURI       string
-	VerifiedLevels    []string
-	PublicKeyPath     string
-	PublicKeyID       string
-	PublicKeyHashAlgo string
-	PrintAttestation  bool
+	SubjectDigests   []string
+	AttestationPath  string
+	VerifierID       string
+	ResourceURI      string
+	VerifiedLevels   []string
+	PublicKeyPath    string
+	PublicKeyID      string
+	PrintAttestation bool
 }
 
 var _ Interface = (*VerifyVSAOptions)(nil)
@@ -145,7 +144,7 @@ var _ Interface = (*VerifyVSAOptions)(nil)
 // AddFlags implements Interface.
 func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.SubjectDigests, "subject-digest", []string{},
-		"the digests to be verified. Pass multiple digests by repeating the flag. e.g. <digest type>:<digest value>")
+		"the digests to be verified. Pass multiple digests by repeating the flag. e.g. --subject-digest <digest type>:<digest value> --subject-digest <digest type>:<digest value>")
 
 	cmd.Flags().StringVar(&o.AttestationPath, "attestation-path", "",
 		"path to a file containing the attestation")
@@ -156,8 +155,8 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.ResourceURI, "resource-uri", "",
 		"the resource URI to be verified")
 
-	cmd.Flags().StringSliceVar(&o.VerifiedLevels, "verified-levels", []string{},
-		"[optional] the levels of verification to be performed, comma-separated. e.g., 'SLSA_BUILD_LEVEL_2,FEDRAMP_LOW'")
+	cmd.Flags().StringArrayVar(&o.VerifiedLevels, "verified-level", []string{},
+		"[optional] the levels of verification to be performed. Pass multiple digests by repeating the flag, e.g., --verified-level SLSA_BUILD_LEVEL_2 --verified-level FEDRAMP_LOW'")
 
 	cmd.Flags().BoolVar(&o.PrintAttestation, "print-attestation", false,
 		"[optional] print the contents of attestation to stdout")
@@ -167,9 +166,6 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
 		"[optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key")
-
-	cmd.Flags().StringVar(&o.PublicKeyHashAlgo, "public-key-signing-hash-algo", "SHA256",
-		"[optional] the hash algorithm used to compute the digest to be signed, one of SHA256 [default], SHA384, or SHA512")
 
 	cmd.MarkFlagRequired("subject-digests")
 	cmd.MarkFlagRequired("attestation-path")
