@@ -73,7 +73,7 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	verifierOptioners := []options.VerifierOptioner{
 		options.WithSigstoreTUFClient(client),
 	}
-	_, outBuilderID, err := apiVerify.VerifyNpmPackageWithSigstoreTUFClient(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, verifierOptioners...)
+	_, outBuilderID, err := apiVerify.VerifyNpmPackage(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, verifierOptioners...)
 	if err != nil {
 		return nil, fmt.Errorf("Verifying npm package: FAILED: %w", err)
 	}
