@@ -1,13 +1,17 @@
 package utils
 
 import (
-	"sync/atomic"
+	"sync"
 
 	sigstoreTUF "github.com/sigstore/sigstore-go/pkg/tuf"
 )
 
-// cache the default Sigstore TUF client.
-var defaultSigstoreTUFClientAtomicValue atomic.Value
+var (
+	// cache the default Sigstore TUF client.
+	defaultSigstoreTUFClient SigstoreTUFClient
+	// defaultSigstoreTUFClientOnce is used for initializing the defaultSigstoreTUFClient.
+	defaultSigstoreTUFClientOnce sync.Once
+)
 
 // SigstoreTUFClient is the interface for the Sigstore TUF client.
 type SigstoreTUFClient interface {
@@ -16,16 +20,14 @@ type SigstoreTUFClient interface {
 }
 
 // GetDefaultSigstoreTUFClient returns the default Sigstore TUF client.
-// The client will be cacehd in memory.
+// The client will be cached in memory.
 func GetDefaultSigstoreTUFClient() (SigstoreTUFClient, error) {
-	value := defaultSigstoreTUFClientAtomicValue.Load()
-	if value != nil {
-		return value.(SigstoreTUFClient), nil
-	}
-	sigstoreTUFClient, err := sigstoreTUF.DefaultClient()
+	var err error
+	defaultSigstoreTUFClientOnce.Do(func() {
+		defaultSigstoreTUFClient, err = sigstoreTUF.DefaultClient()
+	})
 	if err != nil {
 		return nil, err
 	}
-	defaultSigstoreTUFClientAtomicValue.Store(sigstoreTUFClient)
-	return sigstoreTUFClient, nil
+	return defaultSigstoreTUFClient, nil
 }

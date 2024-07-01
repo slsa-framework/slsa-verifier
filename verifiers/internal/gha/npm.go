@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"sync/atomic"
+	"sync"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
@@ -30,7 +30,8 @@ const (
 )
 
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
-var attestationKeyAtomicValue atomic.Value
+var attestationKey string
+var attestationKeyOnce sync.Once
 
 type attestationSet struct {
 	Attestations []attestation `json:"attestations"`
@@ -136,16 +137,14 @@ func extractAttestations(attestations []attestation) (*attestation, *attestation
 
 // getAttestationKey retrieves the attestation key and holds it in memory.
 func getAttestationKey(sigstoreTUFClient utils.SigstoreTUFClient, npmRegistryPublicKeyID string) (string, error) {
-	value := attestationKeyAtomicValue.Load()
-	if value != nil {
-		return value.(string), nil
-	}
-	npmRegistryPublicKey, err := getKeyDataFromSigstoreTUF(sigstoreTUFClient, npmRegistryPublicKeyID, attestationKeyUsage)
+	var err error
+	attestationKeyOnce.Do(func() {
+		attestationKey, err = getKeyDataFromSigstoreTUF(sigstoreTUFClient, npmRegistryPublicKeyID, attestationKeyUsage)
+	})
 	if err != nil {
 		return "", err
 	}
-	attestationKeyAtomicValue.Store(npmRegistryPublicKey)
-	return npmRegistryPublicKey, nil
+	return attestationKey, nil
 }
 
 func (n *Npm) verifyProvenanceAttestationSignature() error {
