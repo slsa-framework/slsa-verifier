@@ -44,6 +44,7 @@ func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	verifierOptioners ...options.VerifierOptioner,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	return nil, nil, serrors.ErrorNotSupported
 }
