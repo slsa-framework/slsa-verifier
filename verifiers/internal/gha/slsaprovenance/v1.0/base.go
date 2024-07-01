@@ -135,9 +135,9 @@ func (p *provenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
 // GetBuildTriggerPath implements Provenance.GetBuildTriggerPath.
 func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 	// TODO(#566): verify the ref and repo as well.
-	sysParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
+	sysParams, err := p.getExternalParameters()
+	if err != nil {
+		return "", err
 	}
 
 	w, ok := sysParams["workflow"]
@@ -145,12 +145,19 @@ func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow parameters type")
 	}
 
-	wMap, ok := w.(map[string]string)
-	if !ok {
+	var v string
+	// In a previous implementation, `w` was asserted to be a `map[string]string`.
+	// `w` may originally have been meant to be a `map[string]interface{}`, but there is not enough test coverage to be sure.
+	// See https://github.com/slsa-framework/slsa-verifier/pull/641/files#diff-8a6f19cc5906bcab1f16457810caf0806567ad7db6cb125d1b41a971ab525c39L78.
+	switch wMap := w.(type) {
+	case map[string]interface{}:
+		v, ok = wMap["path"].(string)
+	case map[string]string:
+		v, ok = wMap["path"]
+	default:
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "workflow not a map")
 	}
 
-	v, ok := wMap["path"]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "no path entry on workflow")
 	}
@@ -185,4 +192,13 @@ func (p *provenanceV1) GetSystemParameters() (map[string]any, error) {
 	}
 
 	return sysParams, nil
+}
+
+// getExternalParameters() implements Provenance.getExternalParameters.
+func (p *provenanceV1) getExternalParameters() (map[string]interface{}, error) {
+	externalParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
+	}
+	return externalParams, nil
 }

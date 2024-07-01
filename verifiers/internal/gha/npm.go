@@ -29,6 +29,17 @@ const (
 	publishAttestationV01 = "https://github.com/npm/attestation/tree/main/specs/publish/"
 )
 
+var intotoStatements = map[string]bool{
+	intoto.StatementInTotoV01:         true,
+	"https://in-toto.io/Statement/v1": true,
+}
+var provenancePredicates = map[string]bool{
+	common.ProvenanceV02Type: true,
+	common.ProvenanceV1Type:  true,
+}
+var publishPredicates = map[string]bool{
+	publishAttestationV01: true,
+}
 var errrorInvalidAttestations = errors.New("invalid npm attestations")
 var attestationKeyAtomicValue atomic.Value
 
@@ -95,7 +106,7 @@ func extractAttestations(attestations []attestation) (*attestation, *attestation
 	for i := range attestations {
 		att := attestations[i]
 		// Provenance type verification.
-		if att.PredicateType == common.ProvenanceV02Type {
+		if _, ok := provenancePredicates[att.PredicateType]; ok {
 			provenanceAttestation = &att
 		}
 		// Publish type verification.
@@ -174,18 +185,16 @@ func (n *Npm) verifyPublishAttestationSignature() error {
 }
 
 func (n *Npm) verifyIntotoHeaders() error {
-	if err := verifyIntotoTypes(n.verifiedProvenanceAtt,
-		common.ProvenanceV02Type, intoto.PayloadType, false); err != nil {
+	if err := verifyIntotoTypes(n.verifiedProvenanceAtt, provenancePredicates, intoto.PayloadType, false); err != nil {
 		return err
 	}
-	if err := verifyIntotoTypes(n.verifiedPublishAtt,
-		publishAttestationV01, intoto.PayloadType, true); err != nil {
+	if err := verifyIntotoTypes(n.verifiedPublishAtt, publishPredicates, intoto.PayloadType, true); err != nil {
 		return err
 	}
 	return nil
 }
 
-func verifyIntotoTypes(att *SignedAttestation, predicateType, payloadType string, prefix bool) error {
+func verifyIntotoTypes(att *SignedAttestation, predicateTypes map[string]bool, payloadType string, prefix bool) error {
 	env := att.Envelope
 	pyld, err := base64.StdEncoding.DecodeString(env.Payload)
 	if err != nil {
@@ -204,20 +213,30 @@ func verifyIntotoTypes(att *SignedAttestation, predicateType, payloadType string
 	}
 
 	// Statement verification.
-	if statement.Type != intoto.StatementInTotoV01 {
-		return fmt.Errorf("%w: expected statement type '%v', got '%s'",
-			serrors.ErrorInvalidDssePayload, intoto.StatementInTotoV01, statement.Type)
+	if _, exists := intotoStatements[statement.Type]; !exists {
+		return fmt.Errorf("%w: expected statement header type one of '%v', got '%s'",
+			serrors.ErrorInvalidDssePayload, intotoStatements, statement.Type)
 	}
 
-	if !prefix && statement.PredicateType != predicateType {
-		return fmt.Errorf("%w: expected predicate type '%v', got '%s'",
-			serrors.ErrorInvalidDssePayload, predicateType, statement.PredicateType)
-	}
-	if prefix && !strings.HasPrefix(statement.PredicateType, predicateType) {
-		return fmt.Errorf("%w: expected predicate type '%v', got '%s'",
-			serrors.ErrorInvalidDssePayload, predicateType, statement.PredicateType)
+	if !prefix {
+		if _, exists := predicateTypes[statement.PredicateType]; !exists {
+			return fmt.Errorf("%w: expected predicate type one of '%v', got '%s'", serrors.ErrorInvalidDssePayload, predicateTypes, statement.PredicateType)
+		}
 	}
 
+	if prefix {
+		hasPrefix := false
+		for k := range predicateTypes {
+			if strings.HasPrefix(statement.PredicateType, k) {
+				hasPrefix = true
+				break
+			}
+		}
+		if !hasPrefix {
+			return fmt.Errorf("%w: expected predicate type with prefix one of '%v', got '%s'",
+				serrors.ErrorInvalidDssePayload, predicateTypes, statement.PredicateType)
+		}
+	}
 	return nil
 }
 
