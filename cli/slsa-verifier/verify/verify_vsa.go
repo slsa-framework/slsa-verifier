@@ -72,13 +72,13 @@ func (c *VerifyVSACommand) Exec(ctx context.Context) error {
 		printFailed(err)
 		return err
 	}
-	verifiedProvenance, err := verifiers.VerifyVSA(ctx, attestation, vsaOpts, VerificationOpts)
+	vsaBytes, err := verifiers.VerifyVSA(ctx, attestation, vsaOpts, VerificationOpts)
 	if err != nil {
 		printFailed(err)
 		return err
 	}
 	if c.PrintAttestation {
-		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
+		fmt.Fprintf(os.Stdout, "%s\n", string(vsaBytes))
 	}
 	fmt.Fprintf(os.Stderr, "Verifying VSA: PASSED\n\n")
 	// verfiers.VerifyVSA already checks if the producerID matches
