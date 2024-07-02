@@ -518,13 +518,13 @@ To verify VSAs, invoke like this
 ```shell
 $ slsa-verifier verify-vsa \
 --subject-digest gce_image_id:8970095005306000053 \
---attestations-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
+--attestation-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
 --verifier-id https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1 \
 --resource-uri gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre \
---verified-levels "BCID_L1, SLSA_BUILD_LEVEL_2" \
+--verified-level BCID_L1 \
+--verified-level SLSA_BUILD_LEVEL_2 \
 --public-key-path ./cli/slsa-verifier/testdata/vsa/gce/v1/vsa_signing_public_key.pem \
 --public-key-id keystore://76574:prod:vsa_signing_public_key \
---public-key-signing-hash-algo SHA256 \
 --print-attestation
 ```
 
