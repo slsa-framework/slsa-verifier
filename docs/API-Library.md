@@ -29,20 +29,22 @@ import (
 )
 
 func main() {
-	builderID, err := doVerify()
+	provBytes, builderID, err := doVerify()
 	if err != nil {
 		log.Fatalf("Verifying npm package: FAILED: %w", err)
 	}
-	fmt.Printf("builderID: %s\nVerifying npm package: PASSED", builderID.Name())
+	fmt.Fprintf(os.Stderr, "builderID: %s\n", builderID.Name())
+	fmt.Fprintf(os.Stderr, "Verifying npm package: PASSED")
+	fmt.Printf("%s", provBytes)
 }
 
-func doVerify() (*apiUtils.TrustedBuilderID, error) {
+func doVerify() ([]byte, *apiUtils.TrustedBuilderID, error) {
 	packageVersion := "0.1.127"
 	packageName := "@ianlewis/actions-test"
 	builderID := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_nodejs_slsa3.yml"
 	attestations, err := os.ReadFile("attestations.json")
 	if err != nil {
-		return nil, fmt.Errorf("reading attestations file: %w", err)
+		return nil, nil, fmt.Errorf("creating sigstoreTUF client: %w", err)
 	}
 	tarballHash := "ab786dbef723164a605e55ff0ebe83f8e879159bd411980d4423c9b1646b858a537b4bc4d494fc8f71195db715e5c5e9ab4b8809f8b1b399cd30ac053d180ba7"
 	provenanceOpts := &options.ProvenanceOpts{
@@ -73,10 +75,10 @@ func doVerify() (*apiUtils.TrustedBuilderID, error) {
 	verifierOptioners := []options.VerifierOptioner{
 		options.WithSigstoreTUFClient(client),
 	}
-	_, outBuilderID, err := apiVerify.VerifyNpmPackage(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, verifierOptioners...)
+	provBytes, outBuilderID, err := apiVerify.VerifyNpmPackage(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, verifierOptioners...)
 	if err != nil {
-		return nil, fmt.Errorf("Verifying npm package: FAILED: %w", err)
+		return nil, nil, fmt.Errorf("Verifying npm package: FAILED: %w", err)
 	}
-	return outBuilderID, nil
+	return provBytes, outBuilderID, nil
 }
 ```

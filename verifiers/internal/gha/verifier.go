@@ -382,10 +382,11 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		}
 	}
 
-	prov, err := npm.verifiedProvenanceBytes()
+	// Extract the payload from the verified provenance.
+	provBytes, err := npm.ProvenanceEnvelope().DecodeB64Payload()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	return prov, builder, nil
+	return provBytes, builder, nil
 }

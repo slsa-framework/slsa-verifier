@@ -244,13 +244,6 @@ func verifyIntotoTypes(att *SignedAttestation, predicateType, payloadType string
 	return nil
 }
 
-func (n *Npm) verifiedProvenanceBytes() ([]byte, error) {
-	// TODO(#493): prune the provenance and return only
-	// verified fields.
-	// NOTE: we currently don't verify the materials' commit sha.
-	return []byte{}, nil
-}
-
 func (n *Npm) verifyPackageName(name *string) error {
 	if name == nil {
 		return nil
