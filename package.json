@@ -8,6 +8,6 @@
     "renovate": "37.374.1"
   },
   "overrides": {
-    "autolinker": ">= 4.0.0 ^4.0.0"
+    "autolinker": "^4.0.0"
   }
 }
