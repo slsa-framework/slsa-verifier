@@ -18,6 +18,7 @@ require (
 require (
 	github.com/google/go-containerregistry v0.19.1
 	github.com/gorilla/mux v1.8.1
+	github.com/in-toto/attestation v1.1.0
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore-go v0.2.0
 	github.com/slsa-framework/slsa-github-generator v1.9.0
@@ -115,7 +116,7 @@ require (
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/grpc v1.62.1 // indirect
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.34.1
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
