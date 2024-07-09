@@ -50,4 +50,5 @@ var (
 	ErrorEmptyRequiredField        = errors.New("empty value in required field")
 	ErrorMismatchResourceURI       = errors.New("resource URI does not match")
 	ErrorMismatchVerifierID        = errors.New("verifier ID does not match")
+	ErrorInvalidSLSALevel          = errors.New("invalid SLSA level")
 )

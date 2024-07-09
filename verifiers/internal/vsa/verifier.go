@@ -3,6 +3,7 @@ package vsa
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
@@ -189,7 +190,7 @@ func matchResourceURI(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
 
 // confirmVerificationResult checks that the policy verification result is "PASSED".
 func confirmVerificationResult(vsa *vsa10.VSA) error {
-	if normalizeString(vsa.Predicate.VerificationResult) != "PASSED" {
+	if vsa.Predicate.VerificationResult != "PASSED" {
 		return fmt.Errorf("%w: verification result is not Passed: %s", serrors.ErrorInvalidVerificationResult, vsa.Predicate.VerificationResult)
 	}
 	return nil
@@ -197,19 +198,79 @@ func confirmVerificationResult(vsa *vsa10.VSA) error {
 
 // matchVerifiedLevels checks if the verified levels in the VSA match the expected values.
 func matchVerifiedLevels(vsa *vsa10.VSA, vsaOpts *options.VSAOpts) error {
-	vsaLevels := make(map[string]bool)
+	// check for SLSA track levels
+	wantedSLSALevels, err := extractSLSALevels(vsaOpts.ExpectedVerifiedLevels)
+	if err != nil {
+		return err
+	}
+	gotSLSALevels, err := extractSLSALevels(&vsa.Predicate.VerifiedLevels)
+	if err != nil {
+		return err
+	}
+	for track, expectedMinLSLSALevel := range wantedSLSALevels {
+		if vsaLevel, exists := gotSLSALevels[track]; !exists {
+			return fmt.Errorf("%w: expected SLSA level not found: %s", serrors.ErrorMismatchVerifiedLevels, track)
+		} else if vsaLevel < expectedMinLSLSALevel {
+			return fmt.Errorf("%w: expected SLSA level %s to be at least %d, got %d", serrors.ErrorMismatchVerifiedLevels, track, expectedMinLSLSALevel, vsaLevel)
+		}
+	}
+
+	// check for non-SLSA track levels
+	nonSLSAVSALevels := make(map[string]bool)
 	for _, level := range vsa.Predicate.VerifiedLevels {
-		vsaLevels[level] = true
+		if isSLSATRACKLevel(level) {
+			continue
+		}
+		nonSLSAVSALevels[level] = true
 	}
 	for _, expectedLevel := range *vsaOpts.ExpectedVerifiedLevels {
-		if _, ok := vsaLevels[normalizeString(expectedLevel)]; !ok {
+		if isSLSATRACKLevel(expectedLevel) {
+			continue
+		}
+		if _, ok := nonSLSAVSALevels[expectedLevel]; !ok {
 			return fmt.Errorf("%w: expected verified level not found: %s", serrors.ErrorMismatchVerifiedLevels, expectedLevel)
 		}
 	}
 	return nil
 }
 
-// normalizeString normalizes a string by trimming whitespace and converting to uppercase.
-func normalizeString(s string) string {
-	return strings.TrimSpace(strings.ToUpper(s))
+// isSLSATRACKLevel checks if the level is an SLSA track level.
+// SLSA track levels are of the form SLSA_<track>_LEVEL_<level>, e.g., SLSA_BUILD_LEVEL_2.
+func isSLSATRACKLevel(level string) bool {
+	return strings.HasPrefix(level, "SLSA_")
+}
+
+// extractSLSALevels extracts the SLSA levels from the verified levels.
+// It returns a map of track to the highest level found, e.g.,
+// SLSA_BUILD_LEVEL_2, SLSA_SOURCE_LEVEL_3 ->
+//
+//	{
+//		"BUILD": 2,
+//		"SOURCE": 3,
+//	}
+func extractSLSALevels(trackLevels *[]string) (map[string]int, error) {
+	vsaSLSATrackLadder := make(map[string]int)
+	for _, trackLevel := range *trackLevels {
+		if !strings.HasPrefix(trackLevel, "SLSA_") {
+			continue
+		}
+		parts := strings.SplitN(trackLevel, "_", 4)
+		if len(parts) != 4 {
+			return nil, fmt.Errorf("%w: invalid SLSA level: %s", serrors.ErrorInvalidSLSALevel, trackLevel)
+		}
+		if parts[2] != "LEVEL" {
+			return nil, fmt.Errorf("%w: invalid SLSA level: %s", serrors.ErrorInvalidSLSALevel, trackLevel)
+		}
+		track := parts[1]
+		level, err := strconv.Atoi(parts[3])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid SLSA level: %s", serrors.ErrorInvalidSLSALevel, trackLevel)
+		}
+		if currentLevel, exists := vsaSLSATrackLadder[track]; exists {
+			vsaSLSATrackLadder[track] = max(currentLevel, level)
+		} else {
+			vsaSLSATrackLadder[track] = level
+		}
+	}
+	return vsaSLSATrackLadder, nil
 }

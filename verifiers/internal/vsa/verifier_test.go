@@ -317,7 +317,28 @@ func Test_matchExpectedValues(t *testing.T) {
 				ExpectedVerifierID:     goodVSAOpts.ExpectedVerifierID,
 			},
 		},
+		{
+			name: "success: expected lower SLSA level",
+			vsa:  goodVSA,
+			opts: &options.VSAOpts{
+				ExpectedDigests:        goodVSAOpts.ExpectedDigests,
+				ExpectedResourceURI:    goodVSAOpts.ExpectedResourceURI,
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_1"},
+				ExpectedVerifierID:     goodVSAOpts.ExpectedVerifierID,
+			},
+		},
 		// failure cases
+		{
+			name: "expected higher SLSA level",
+			vsa:  goodVSA,
+			opts: &options.VSAOpts{
+				ExpectedDigests:        goodVSAOpts.ExpectedDigests,
+				ExpectedResourceURI:    goodVSAOpts.ExpectedResourceURI,
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_3"},
+				ExpectedVerifierID:     goodVSAOpts.ExpectedVerifierID,
+			},
+			err: serrors.ErrorMismatchVerifiedLevels,
+		},
 		{
 			name: "failure empty digests",
 			vsa: &vsa10.VSA{
@@ -453,6 +474,186 @@ func Test_matchExpectedValues(t *testing.T) {
 			t.Parallel()
 
 			err := matchExpectedValues(tc.vsa, tc.opts)
+			if diff := cmp.Diff(tc.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Errorf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_matchVerifiedLevels(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		vsa     *vsa10.VSA
+		vsaOpts *options.VSAOpts
+		err     error
+	}{
+		// success cases
+		{
+			name: "success: equal levels",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"SLSA_BUILD_LEVEL_1", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_1", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+			},
+		},
+		{
+			name: "success: expected lower SLSA level",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"SLSA_BUILD_LEVEL_1", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_0", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+			},
+		},
+		{
+			name: "success: unspecified verifiedLevels",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"SLSA_BUILD_LEVEL_1", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{},
+			},
+		},
+		{
+			name: "success: no SLSA levels",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"BCID_L1"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{},
+			},
+		},
+		// failure cases
+		{
+			name: "failure: expected higher SLSA level",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"SLSA_BUILD_LEVEL_1", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_2", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+			},
+			err: serrors.ErrorMismatchVerifiedLevels,
+		},
+		{
+			name: "failure: missing a expected SLSA track",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"SLSA_BUILD_LEVEL_2", "BCID_L1"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_2", "SLSA_SOURCE_LEVEL_2", "BCID_L1"},
+			},
+			err: serrors.ErrorMismatchVerifiedLevels,
+		},
+		{
+			name: "failure: missing a expected non-SLSA track",
+			vsa: &vsa10.VSA{
+				Predicate: vsa10.Predicate{
+					VerifiedLevels: []string{"SLSA_BUILD_LEVEL_2"},
+				},
+			},
+			vsaOpts: &options.VSAOpts{
+				ExpectedVerifiedLevels: &[]string{"SLSA_BUILD_LEVEL_2", "BCID_L1"},
+			},
+			err: serrors.ErrorMismatchVerifiedLevels,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := matchVerifiedLevels(tc.vsa, tc.vsaOpts)
+
+			if diff := cmp.Diff(tc.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Errorf("unexpected error (-want +got): \n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_extractSLSALevels(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		levels *[]string
+		want   map[string]int
+		err    error
+	}{
+		{
+			name: "success",
+			levels: &[]string{
+				"SLSA_BUILD_LEVEL_1",
+				"SLSA_SOURCE_LEVEL_2",
+			},
+			want: map[string]int{
+				"BUILD":  1,
+				"SOURCE": 2,
+			},
+		},
+		{
+			name:   "success: empty",
+			levels: &[]string{},
+			want:   map[string]int{},
+		},
+		{
+			name: "failure: invalid level number",
+			levels: &[]string{
+				"SLSA_BUILD_LEVEL_X",
+			},
+			err: serrors.ErrorInvalidSLSALevel,
+		},
+		{
+			name: "failure: invalid level text",
+			levels: &[]string{
+				"SLSA_BUILD_L_1",
+			},
+			err: serrors.ErrorInvalidSLSALevel,
+		},
+		{
+			name: "failure: no level number",
+			levels: &[]string{
+				"SLSA_BUILD_LEVEL_",
+			},
+			err: serrors.ErrorInvalidSLSALevel,
+		},
+		{
+			name: "failure: no last underscore",
+			levels: &[]string{
+				"SLSA_BUILD_LEVEL",
+			},
+			err: serrors.ErrorInvalidSLSALevel,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := extractSLSALevels(tc.levels)
+
+			if diff := cmp.Diff(tc.want, got, cmpopts.EquateComparable()); diff != "" {
+				t.Errorf("unexpected VSA (-want +got): \n%s", diff)
+			}
+
 			if diff := cmp.Diff(tc.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Errorf("unexpected error (-want +got): \n%s", diff)
 			}
