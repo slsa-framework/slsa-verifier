@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
-	"github.com/sigstore/rekor/pkg/client"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -214,27 +213,29 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	isSigstoreBundle := IsSigstoreBundle(provenance)
+	// isSigstoreBundle := IsSigstoreBundle(provenance)
 
-	// This includes a default retry count of 3.
-	rClient, err := client.GetRekorClient(defaultRekorAddr)
-	if err != nil {
-		return nil, nil, err
-	}
+	// // This includes a default retry count of 3.
+	// rClient, err := client.GetRekorClient(defaultRekorAddr)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
+	// trustedRoot, err := TrustedRootSingleton(ctx)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
 
-	var signedAtt *SignedAttestation
-	/* Verify signature on the intoto attestation. */
-	if isSigstoreBundle {
-		signedAtt, err = VerifyProvenanceBundle(ctx, provenance, trustedRoot)
-	} else {
-		signedAtt, err = VerifyProvenanceSignature(ctx, trustedRoot, rClient,
-			provenance, artifactHash)
-	}
+	// var signedAtt *SignedAttestation
+	// /* Verify signature on the intoto attestation. */
+	// if isSigstoreBundle {
+	// 	signedAtt, err = VerifyProvenanceBundle(ctx, provenance, trustedRoot)
+	// } else {
+	// 	signedAtt, err = VerifyProvenanceSignature(ctx, trustedRoot, rClient,
+	// 		provenance, artifactHash)
+	// }
+
+	signedAtt, err := verifySigstoreBundle(ctx, provenance)
 	if err != nil {
 		return nil, nil, err
 	}
