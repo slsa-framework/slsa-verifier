@@ -23,7 +23,7 @@ func VerifyVSA(ctx context.Context,
 	vsaOpts *options.VSAOpts,
 	verificationOpts *options.VerificationOpts,
 ) ([]byte, error) {
-	// following steps in https://slsa.dev/spec/draft/verification_summary#how-to-verify
+	// following steps in https://slsa.dev/spec/v1.1/verification_summary#how-to-verify
 	envelope, err := utils.EnvelopeFromBytes(attestation)
 	if err != nil {
 		return nil, err
