@@ -26,17 +26,24 @@ func verifySigstoreBundle(ctx context.Context, provenanceBytes []byte) (*SignedA
 		return nil, err
 	}
 
-	certID, err := verify.NewShortCertificateIdentity(
-		"https://token.actions.githubusercontent.com",
-		"",
-		"",
-		"^https://github.com/sigstore/sigstore-js/",
-	)
-	if err != nil {
-		return nil, err
-	}
+	// certID, err := verify.NewShortCertificateIdentity(
+	// 	"https://token.actions.githubusercontent.com",
+	// 	"",
+	// 	"",
+	// 	"^https://github.com/slsa-framework/example-package/",
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	policy := verify.NewPolicy(verify.WithoutArtifactUnsafe(), verify.WithCertificateIdentity(certID))
+	policy := verify.NewPolicy(
+		verify.WithoutArtifactUnsafe(),
+		// verify.WithCertificateIdentity(certID),
+		// WithCertificateIdentity() checks if the SAN matches with the given identity regex
+		// TODO: I think the SAN in the certificate is verified later on in the code, which allows the SAN
+		// to be any of the trusted builder IDs.
+		verify.WithoutIdentitiesUnsafe(),
+	)
 
 	bundle, err := loadBundleFromBytes(provenanceBytes)
 	if err != nil {
