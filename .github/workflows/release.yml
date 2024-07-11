@@ -49,7 +49,7 @@ jobs:
       actions: read # For the detection of GitHub Actions environment.
       id-token: write # For signing.
       contents: write # For asset uploads.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@c747fe7769adf3656dc7d588b161cb614d7abfee # v1.10.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.0.0 # always use a tag @X.Y.Z for for slsa builders, not SHA!
     with:
       go-version-file: "go.mod"
       config-file: .slsa-goreleaser/${{matrix.os}}-${{matrix.arch}}.yml
