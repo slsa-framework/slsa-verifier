@@ -33,6 +33,7 @@ import (
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 const (
@@ -83,8 +84,23 @@ func verifyTlogEntry(ctx context.Context, e models.LogEntryAnon,
 	verifyInclusion bool, rekorKeys *cosign.TrustedTransparencyLogPubKeys) (
 	*models.LogEntryAnon, error,
 ) {
+	// get the public key from sigstore-go
+	trustedRoot, err := utils.GetTrustedRoot()
+	if err != nil {
+		return nil, err
+	}
+	rekorLogsMap := trustedRoot.RekorLogs()
+	keyID := *e.LogID
+	if _, ok := rekorLogsMap[keyID]; !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, "Rekor log ID not found in trusted root")
+	}
+	pubKey, ok := rekorLogsMap[keyID].PublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, "rekor public key is not an ECDSA key")
+	}
+
 	// Verify the root hash against the current Signed Entry Tree Head
-	verifier, err := signature.LoadECDSAVerifier(rekorKeys.Keys[*e.LogID].PubKey.(*ecdsa.PublicKey),
+	verifier, err := signature.LoadECDSAVerifier(pubKey,
 		crypto.SHA256)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, err)
