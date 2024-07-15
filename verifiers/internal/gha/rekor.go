@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	cjson "github.com/docker/go/canonical/json"
@@ -32,6 +33,8 @@ import (
 	dsseverifier "github.com/sigstore/sigstore/pkg/signature/dsse"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 
+	rekorClient "github.com/sigstore/rekor/pkg/client"
+	sigstoreVerify "github.com/sigstore/sigstore-go/pkg/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
@@ -39,6 +42,22 @@ import (
 const (
 	defaultRekorAddr = "https://rekor.sigstore.dev"
 )
+
+var (
+	defaultRekorClient     *client.Rekor
+	defaultRekorClientOnce sync.Once
+)
+
+func getDefaultRekorClient() (*client.Rekor, error) {
+	var err error
+	defaultRekorClientOnce.Do(func() {
+		defaultRekorClient, err = rekorClient.GetRekorClient(defaultRekorAddr)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return defaultRekorClient, nil
+}
 
 func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor,
 	entryUUID string, trustedRoot *TrustedRoot) (
@@ -362,32 +381,21 @@ func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *TrustedR
 		return err
 	}
 	signatureTimestamp := time.Unix(*signedAtt.RekorEntry.IntegratedTime, 0)
-
-	// 1. Verify certificate chain.
-	co := &cosign.CheckOpts{
-		RootCerts:         trustedRoot.FulcioRoot,
-		IntermediateCerts: trustedRoot.FulcioIntermediates,
-		Identities: []cosign.Identity{
-			{
-				Issuer:        certOidcIssuer,
-				SubjectRegExp: certSubjectRegexp,
-			},
-		},
-		CTLogPubKeys: trustedRoot.CTPubKeys,
-	}
-	verifier, err := cosign.ValidateAndUnpackCert(signedAtt.SigningCert, co)
+	sigstoreGoTrustedRoot, err := utils.GetTrustedRoot()
 	if err != nil {
+		return err
+	}
+
+	// Verify the certificate chain, and that the certificate was valid at the time of signing.
+	if err := sigstoreVerify.VerifyLeafCertificate(signatureTimestamp, *cert, sigstoreGoTrustedRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "error verifying leaf certificate with sisgtore-go: %v\n", err)
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}
 
 	// 2. Verify signature using validated certificate.
+	verifier, err := signature.LoadVerifier(cert.PublicKey, crypto.SHA256)
 	verifier = dsseverifier.WrapVerifier(verifier)
 	if err := verifier.VerifySignature(bytes.NewReader(attBytes), bytes.NewReader(attBytes)); err != nil {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
-	}
-
-	// 3. Verify signature was creating during certificate validity period.
-	if err := cosign.CheckExpiry(cert, signatureTimestamp); err != nil {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}
 	return nil

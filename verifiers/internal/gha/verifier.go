@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
-	"github.com/sigstore/rekor/pkg/client"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -217,7 +216,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	isSigstoreBundle := IsSigstoreBundle(provenance)
 
 	// This includes a default retry count of 3.
-	rClient, err := client.GetRekorClient(defaultRekorAddr)
+	rClient, err := getDefaultRekorClient()
 	if err != nil {
 		return nil, nil, err
 	}

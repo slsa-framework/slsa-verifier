@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/sigstore/sigstore-go/pkg/bundle"
-	"github.com/sigstore/sigstore-go/pkg/root"
 	"github.com/sigstore/sigstore-go/pkg/verify"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 
 	protobundle "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
 )
 
 func verifySigstoreBundle(ctx context.Context, provenanceBytes []byte) (*SignedAttestation, error) {
-	trustedRoot, err := root.FetchTrustedRoot()
+	trustedRoot, err := utils.GetTrustedRoot()
 	if err != nil {
 		return nil, err
 	}
