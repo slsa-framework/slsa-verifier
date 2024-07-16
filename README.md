@@ -102,7 +102,7 @@ You have two options to install the verifier.
 If you want to install the verifier, you can run the following command:
 
 ```bash
-$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.5.1
+$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.6.0
 $ slsa-verifier <options>
 ```
 
@@ -148,7 +148,7 @@ $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
 
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v2.5.1
+$ cd slsa-verifier && git checkout v2.6.0
 $ go run ./cli/slsa-verifier <options>
 ```
 
@@ -158,7 +158,7 @@ If you need to install the verifier to run in a GitHub workflow, use the install
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.5.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.5.1)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.6.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.6.0)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
