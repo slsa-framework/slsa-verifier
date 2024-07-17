@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
-	"github.com/sigstore/cosign/v2/pkg/cosign"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -248,13 +247,8 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string, provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
-	trustedRoot, err := TrustedRootSingleton(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	var provenanceTargetRepository name.Repository
+	var err error
 	// Consume input for --provenance-repository when set
 	if provenanceOpts.ExpectedProvenanceRepository != nil {
 		provenanceTargetRepository, err = name.NewRepository(*provenanceOpts.ExpectedProvenanceRepository)
@@ -271,13 +265,12 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 		registryClientOpts = append(registryClientOpts, ociremote.WithTargetRepository(provenanceTargetRepository))
 	}
 
-	opts := &cosign.CheckOpts{
-		RegistryClientOpts: registryClientOpts,
-		RootCerts:          trustedRoot.FulcioRoot,
-		IntermediateCerts:  trustedRoot.FulcioIntermediates,
-		RekorPubKeys:       trustedRoot.RekorPubKeys,
-		CTLogPubKeys:       trustedRoot.CTPubKeys,
+	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
+	opts, err := getDefaultCosignCheckOpts(ctx)
+	if err != nil {
+		return nil, nil, err
 	}
+	opts.RegistryClientOpts = registryClientOpts
 
 	atts, _, err := container.RunCosignImageVerification(ctx,
 		artifactImage, opts)

@@ -53,7 +53,7 @@ func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyL
 
 	// Verify tlog entry.
 	if _, err := verifyTlogEntry(ctx, *rekorEntry, false,
-		trustedRoot.RekorPubKeys); err != nil {
+		trustedRoot); err != nil {
 		return nil, err
 	}
 

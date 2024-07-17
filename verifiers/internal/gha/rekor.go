@@ -16,7 +16,6 @@ import (
 
 	cjson "github.com/docker/go/canonical/json"
 	"github.com/go-openapi/runtime"
-	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/entries"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
@@ -36,7 +35,6 @@ import (
 	rekorClient "github.com/sigstore/rekor/pkg/client"
 	sigstoreVerify "github.com/sigstore/sigstore-go/pkg/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
-	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 const (
@@ -90,7 +88,7 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor,
 			return nil, errors.New("expected matching UUID")
 		}
 		// Validate the entry response.
-		return verifyTlogEntry(ctx, entry, true, trustedRoot.RekorPubKeys)
+		return verifyTlogEntry(ctx, entry, true, trustedRoot)
 	}
 
 	return nil, serrors.ErrorRekorSearch
@@ -100,14 +98,10 @@ func verifyTlogEntryByUUID(ctx context.Context, rekorClient *client.Rekor,
 // Verification includes verifying the SignedEntryTimestamp and, if verifyInclusion
 // is true, the inclusion proof along with the signed tree head.
 func verifyTlogEntry(ctx context.Context, e models.LogEntryAnon,
-	verifyInclusion bool, rekorKeys *cosign.TrustedTransparencyLogPubKeys) (
+	verifyInclusion bool, trustedRoot *TrustedRoot) (
 	*models.LogEntryAnon, error,
 ) {
 	// get the public key from sigstore-go
-	trustedRoot, err := utils.GetTrustedRoot()
-	if err != nil {
-		return nil, err
-	}
 	rekorLogsMap := trustedRoot.RekorLogs()
 	keyID := *e.LogID
 	rekorLog, ok := rekorLogsMap[keyID]
@@ -273,7 +267,7 @@ func GetValidSignedAttestationWithCert(rClient *client.Rekor,
 	var rekorEntry models.LogEntryAnon
 	for uuid, e := range logEntry {
 		if _, err := verifyTlogEntry(context.Background(), e, true,
-			trustedRoot.RekorPubKeys); err != nil {
+			trustedRoot); err != nil {
 			return nil, fmt.Errorf("error verifying tlog entry: %w", err)
 		}
 		rekorEntry = e
@@ -382,13 +376,9 @@ func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *TrustedR
 		return err
 	}
 	signatureTimestamp := time.Unix(*signedAtt.RekorEntry.IntegratedTime, 0)
-	sigstoreGoTrustedRoot, err := utils.GetTrustedRoot()
-	if err != nil {
-		return err
-	}
 
 	// Verify the certificate chain, and that the certificate was valid at the time of signing.
-	if err := sigstoreVerify.VerifyLeafCertificate(signatureTimestamp, *cert, sigstoreGoTrustedRoot); err != nil {
+	if err := sigstoreVerify.VerifyLeafCertificate(signatureTimestamp, *cert, trustedRoot); err != nil {
 		fmt.Fprintf(os.Stderr, "error verifying leaf certificate with sisgtore-go: %v\n", err)
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}

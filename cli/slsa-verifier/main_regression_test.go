@@ -523,6 +523,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 			noversion: true,
 		},
 	}
+	// tests = tests[:1]
 	for _, tt := range tests {
 		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {

@@ -31,6 +31,10 @@ func GetDefaultSigstoreTUFClient() (*sigstoreTUF.Client, error) {
 	var err error
 	defaultSigstoreTUFClientOnce.Do(func() {
 		defaultSigstoreTUFClient, err = sigstoreTUF.DefaultClient()
+		if err != nil {
+			defaultSigstoreTUFClientOnce = sync.Once{}
+			return
+		}
 	})
 	if err != nil {
 		return nil, err
@@ -38,14 +42,17 @@ func GetDefaultSigstoreTUFClient() (*sigstoreTUF.Client, error) {
 	return defaultSigstoreTUFClient, nil
 }
 
-// GetTrustedRoot returns the trusted root for the Sigstore TUF client.
-func GetTrustedRoot() (*sigstoreRoot.TrustedRoot, error) {
+// GetSigstoreTrustedRoot returns the trusted root for the Sigstore TUF client.
+func GetSigstoreTrustedRoot() (*sigstoreRoot.TrustedRoot, error) {
 	client, err := GetDefaultSigstoreTUFClient()
 	if err != nil {
 		return nil, err
 	}
 	trustedRootOnce.Do(func() {
 		trustedRoot, err = sigstoreRoot.GetTrustedRoot(client)
+		if err != nil {
+			trustedRootOnce = sync.Once{}
+		}
 	})
 	if err != nil {
 		return nil, err

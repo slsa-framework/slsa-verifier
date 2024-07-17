@@ -11,13 +11,13 @@ import (
 )
 
 func verifySigstoreBundle(ctx context.Context, provenanceBytes []byte) (*SignedAttestation, error) {
-	trustedRoot, err := utils.GetTrustedRoot()
+	sigstoreTrustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		return nil, err
 	}
 
 	verifier, err := verify.NewSignedEntityVerifier(
-		trustedRoot,
+		sigstoreTrustedRoot,
 		verify.WithSignedCertificateTimestamps(1),
 		verify.WithTransparencyLog(1),
 		verify.WithObserverTimestamps(1),
