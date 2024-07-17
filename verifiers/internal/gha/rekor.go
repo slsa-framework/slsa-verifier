@@ -110,10 +110,11 @@ func verifyTlogEntry(ctx context.Context, e models.LogEntryAnon,
 	}
 	rekorLogsMap := trustedRoot.RekorLogs()
 	keyID := *e.LogID
-	if _, ok := rekorLogsMap[keyID]; !ok {
+	rekorLog, ok := rekorLogsMap[keyID]
+	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, "Rekor log ID not found in trusted root")
 	}
-	pubKey, ok := rekorLogsMap[keyID].PublicKey.(*ecdsa.PublicKey)
+	pubKey, ok := rekorLog.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, "rekor public key is not an ECDSA key")
 	}
