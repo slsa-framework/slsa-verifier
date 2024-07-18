@@ -389,7 +389,7 @@ func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *sigstore
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}
 
-	// 2. Verify signature using validated certificate.
+	// Verify signature using validated certificate.
 	verifier, err := signature.LoadVerifier(cert.PublicKey, crypto.SHA256)
 	verifier = dsseverifier.WrapVerifier(verifier)
 	if err := verifier.VerifySignature(bytes.NewReader(attBytes), bytes.NewReader(attBytes)); err != nil {
