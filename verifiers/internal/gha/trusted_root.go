@@ -18,7 +18,7 @@ var (
 	defaultCosignCheckOpts *cosign.CheckOpts
 
 	// defaultCosignCheckOptsOnce is used for initializing the defaultCosignCheckOpts.
-	defaultCosignCheckOptsOnce sync.Once
+	defaultCosignCheckOptsOnce = new(sync.Once)
 )
 
 // TrustedRoot struct that holds the verification material necessary
@@ -49,26 +49,26 @@ func getDefaultCosignCheckOpts(ctx context.Context) (*cosign.CheckOpts, error) {
 		rootCerts, err := fulcioroots.Get()
 		if err != nil {
 			err = fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
-			defaultCosignCheckOptsOnce = sync.Once{}
+			defaultCosignCheckOptsOnce = new(sync.Once)
 			return
 		}
 		intermediateCerts, err := fulcioroots.GetIntermediates()
 		if err != nil {
 			err = fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
-			defaultCosignCheckOptsOnce = sync.Once{}
+			defaultCosignCheckOptsOnce = new(sync.Once)
 			return
 		}
 		rekorPubKeys, err := cosign.GetRekorPubs(ctx)
 		if err != nil {
 			err = fmt.Errorf("%w: %s", serrors.ErrorRekorPubKey, err)
-			defaultCosignCheckOptsOnce = sync.Once{}
+			defaultCosignCheckOptsOnce = new(sync.Once)
 			return
 		}
 		ctPubKeys, err := cosign.GetCTLogPubs(ctx)
 		if err != nil {
 			// this is unexpected, hold on to this error.
 			err = fmt.Errorf("%w: %s", serrors.ErrorInternal, err)
-			defaultCosignCheckOptsOnce = sync.Once{}
+			defaultCosignCheckOptsOnce = new(sync.Once)
 			return
 		}
 

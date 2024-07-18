@@ -11,12 +11,12 @@ var (
 	// cache the default Sigstore TUF client.
 	defaultSigstoreTUFClient *sigstoreTUF.Client
 	// defaultSigstoreTUFClientOnce is used for initializing the defaultSigstoreTUFClient.
-	defaultSigstoreTUFClientOnce sync.Once
+	defaultSigstoreTUFClientOnce = new(sync.Once)
 
 	// cache the trusted root.
 	trustedRoot *sigstoreRoot.TrustedRoot
 	// trustedRootOnce is used for initializing the trustedRoot.
-	trustedRootOnce sync.Once
+	trustedRootOnce = new(sync.Once)
 )
 
 // SigstoreTUFClient is the interface for the Sigstore TUF client.
@@ -32,7 +32,7 @@ func GetDefaultSigstoreTUFClient() (*sigstoreTUF.Client, error) {
 	defaultSigstoreTUFClientOnce.Do(func() {
 		defaultSigstoreTUFClient, err = sigstoreTUF.DefaultClient()
 		if err != nil {
-			defaultSigstoreTUFClientOnce = sync.Once{}
+			defaultSigstoreTUFClientOnce = new(sync.Once)
 			return
 		}
 	})
@@ -44,14 +44,17 @@ func GetDefaultSigstoreTUFClient() (*sigstoreTUF.Client, error) {
 
 // GetSigstoreTrustedRoot returns the trusted root for the Sigstore TUF client.
 func GetSigstoreTrustedRoot() (*sigstoreRoot.TrustedRoot, error) {
-	client, err := GetDefaultSigstoreTUFClient()
-	if err != nil {
-		return nil, err
-	}
+	var err error
 	trustedRootOnce.Do(func() {
+		client, err := GetDefaultSigstoreTUFClient()
+		if err != nil {
+			trustedRootOnce = new(sync.Once)
+			return
+		}
 		trustedRoot, err = sigstoreRoot.GetTrustedRoot(client)
 		if err != nil {
-			trustedRootOnce = sync.Once{}
+			trustedRootOnce = new(sync.Once)
+			return
 		}
 	})
 	if err != nil {
