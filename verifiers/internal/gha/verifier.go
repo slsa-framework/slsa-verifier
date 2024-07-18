@@ -220,7 +220,6 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, nil, err
 	}
 
-	// trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		return nil, nil, err
