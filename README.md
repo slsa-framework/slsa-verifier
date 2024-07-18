@@ -37,6 +37,10 @@
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
+- [Verification Summary Attestations (VSA)](#verification-summary-attestations-vsa)
+  - [Caveats](#caveats)
+    - [Sigstore](#sigstore)
+    - [Subject Resource Descriptors](#subject-resource-descriptors)
 - [Known Issues](#known-issues)
   - [tuf: invalid key](#tuf-invalid-key)
   - [panic: assignment to entry in nil map](#panic-assignment-to-entry-in-nil-map)
@@ -98,7 +102,7 @@ You have two options to install the verifier.
 If you want to install the verifier, you can run the following command:
 
 ```bash
-$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.5.1
+$ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@v2.6.0
 $ slsa-verifier <options>
 ```
 
@@ -144,7 +148,7 @@ $ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier
 
 ```bash
 $ git clone git@github.com:slsa-framework/slsa-verifier.git
-$ cd slsa-verifier && git checkout v2.5.1
+$ cd slsa-verifier && git checkout v2.6.0
 $ go run ./cli/slsa-verifier <options>
 ```
 
@@ -154,7 +158,7 @@ If you need to install the verifier to run in a GitHub workflow, use the install
 
 ### Download the binary
 
-Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.5.1](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.5.1)
+Download the binary from the latest release at [https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.6.0](https://github.com/slsa-framework/slsa-verifier/releases/tag/v2.6.0)
 
 Download the [SHA256SUM.md](https://github.com/slsa-framework/slsa-verifier/blob/main/SHA256SUM.md).
 
@@ -480,6 +484,68 @@ The verified in-toto statement may be written to stdout with the
 `--print-provenance` flag to pipe into policy engines.
 
 Note that `--source-uri` supports GitHub repository URIs like `github.com/$OWNER/$REPO` when the build was enabled with a Cloud Build [GitHub trigger](https://cloud.google.com/build/docs/automating-builds/github/build-repos-from-github). Otherwise, the build provenance will contain the name of the Cloud Storage bucket used to host the source files, usually of the form `gs://[PROJECT_ID]_cloudbuild/source` (see [Running build](https://cloud.google.com/build/docs/running-builds/submit-build-via-cli-api#running_builds)). We recommend using GitHub triggers in order to preserve the source provenance and valiate that the source came from an expected, version-controlled repository. You _may_ match on the fully-qualified tar like `gs://[PROJECT_ID]_cloudbuild/source/1665165360.279777-955d1904741e4bbeb3461080299e929a.tgz`.
+
+## Verification Summary Attestations (VSA)
+
+We have support for [verifying](https://slsa.dev/spec/v1.1/verification_summary#how-to-verify) VSAs.
+Rather than passing in filepaths as arguments, we allow passing in mulitple `--subject-digest` cli options, to
+accomodate subjects that are not simple-files.
+
+
+The verify-vsa command
+
+```shell
+$ slsa-verifier verify-vsa --help
+Verifies SLSA VSAs for the given subject-digests
+
+Usage:
+  slsa-verifier verify-vsa [flags] subject-digest [subject-digest...]
+
+Flags:
+      --attestation-path string      path to a file containing the attestation
+  -h, --help                         help for verify-vsa
+      --print-attestation            [optional] print the contents of attestation to stdout
+      --public-key-id string         [optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key
+      --public-key-path string       path to a public key file
+      --resource-uri string          the resource URI to be verified
+      --subject-digest stringArray   the digests to be verified. Pass multiple digests by repeating the flag. e.g. --subject-digest <digest type>:<digest value> --subject-digest <digest type>:<digest value>
+      --verified-level stringArray   [optional] the levels of verification to be performed. Pass multiple digests by repeating the flag, e.g., --verified-level SLSA_BUILD_LEVEL_2 --verified-level FEDRAMP_LOW'
+      --verifier-id string           the unique verifier ID who created the attestation
+```
+
+To verify VSAs, invoke like this
+
+```shell
+$ slsa-verifier verify-vsa \
+--subject-digest gce_image_id:8970095005306000053 \
+--attestation-path ./cli/slsa-verifier/testdata/vsa/gce/v1/gke-gce-pre.bcid-vsa.jsonl \
+--verifier-id https://bcid.corp.google.com/verifier/bcid_package_enforcer/v0.1 \
+--resource-uri gce_image://gke-node-images:gke-12615-gke1418000-cos-101-17162-463-29-c-cgpv1-pre \
+--verified-level BCID_L1 \
+--verified-level SLSA_BUILD_LEVEL_2 \
+--public-key-path ./cli/slsa-verifier/testdata/vsa/gce/v1/vsa_signing_public_key.pem \
+--public-key-id keystore://76574:prod:vsa_signing_public_key \
+--print-attestation
+```
+
+For multiple subjects, use:
+
+```
+--subject-digest sha256:abc123
+--subject-digest sha256:xyz456
+```
+
+### Caveats
+
+#### Sigstore
+
+This support does not work yet with VSAs wrapped in Sigstore bundles, only with simple DSSE envelopes.
+With that, we allow the user to pass in the public key.
+Note that if the DSSE Envelope `signatures` specifies a `keyid` that is not a unpadded base64 encoded sha256 hash the key, like `sha256:abc123...` (not a well-known identifier, e.g, `my-kms:prod-vsa-key`), then you must supply the `--public-key-id` cli option.
+
+#### Subject Resource Descriptors
+
+According to slsa.dev's [VSA schema](https://slsa.dev/spec/v1.1/verification_summary#schema), we only support the Subject's `Name` and `Digest`, not the full in_toto [Statement](https://pkg.go.dev/github.com/in-toto/attestation/go/v1#Statement)'s [ResourceDescriptor](https://github.com/in-toto/attestation/blob/main/spec/v1/resource_descriptor.md).
 
 ## Known Issues
 

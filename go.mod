@@ -18,6 +18,7 @@ require (
 require (
 	github.com/google/go-containerregistry v0.19.1
 	github.com/gorilla/mux v1.8.1
+	github.com/in-toto/attestation v1.1.0
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore-go v0.4.0
 	github.com/slsa-framework/slsa-github-generator v1.9.0
