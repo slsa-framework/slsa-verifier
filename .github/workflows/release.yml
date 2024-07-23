@@ -26,7 +26,7 @@ jobs:
       version: ${{ steps.ldflags.outputs.version }}
     steps:
       - id: checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
       - id: ldflags
@@ -49,7 +49,7 @@ jobs:
       actions: read # For the detection of GitHub Actions environment.
       id-token: write # For signing.
       contents: write # For asset uploads.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v1.10.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.0.0 # always use a tag @X.Y.Z for for slsa builders, not SHA!
     with:
       go-version-file: "go.mod"
       config-file: .slsa-goreleaser/${{matrix.os}}-${{matrix.arch}}.yml
@@ -63,7 +63,7 @@ jobs:
     permissions: read-all
     steps:
       - name: Install the verifier
-        uses: slsa-framework/slsa-verifier/actions/installer@v2.4.1
+        uses: slsa-framework/slsa-verifier/actions/installer@eb7007070baa04976cb9e25a0d8034f8db030a86 # v2.5.1
 
       - name: Download assets
         env:
@@ -98,7 +98,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: slsa-framework/example-package
           ref: main
@@ -112,7 +112,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: slsa-framework/example-package
           ref: main
