@@ -19,6 +19,7 @@ import (
 	"crypto/sha512"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -43,18 +44,18 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 	var builderID *utils.TrustedBuilderID
 	if !options.ExperimentalEnabled() {
 		err := errors.New("feature support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
-		fmt.Fprintf(os.Stderr, "Verifying npm package: FAILED: %v\n\n", err)
+		slog.Error(fmt.Sprintf("Verifying npm package: FAILED: %v\n\n", err))
 		return nil, err
 	}
 	for _, tarball := range tarballs {
 		tarballHash, err := computeFileHash(tarball, sha512.New())
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
+			slog.Error(fmt.Sprintf("Verifying npm package %s: FAILED: %v\n\n", tarball, err))
 			return nil, err
 		}
 
 		if c.AttestationsPath == "" {
-			fmt.Fprintf(os.Stderr, "--attestations-path is required.\n\n")
+			slog.Error("--attestations-path is required.\n\n")
 			return nil, err
 		}
 		provenanceOpts := &options.ProvenanceOpts{
@@ -74,13 +75,13 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 
 		attestations, err := os.ReadFile(c.AttestationsPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
+			slog.Error(fmt.Sprintf("Verifying npm package %s: FAILED: %v\n\n", tarball, err))
 			return nil, err
 		}
 
 		verifiedProvenance, outBuilderID, err := verifiers.VerifyNpmPackage(ctx, attestations, tarballHash, provenanceOpts, builderOpts)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying npm package %s: FAILED: %v\n\n", tarball, err)
+			slog.Error(fmt.Sprintf("Verifying npm package %s: FAILED: %v\n\n", tarball, err))
 			return nil, err
 		}
 
@@ -89,7 +90,7 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 		}
 
 		builderID = outBuilderID
-		fmt.Fprintf(os.Stderr, "Verifying npm package %s: PASSED\n\n", tarball)
+		slog.Info(fmt.Sprintf("Verifying npm package %s: PASSED\n\n", tarball))
 	}
 
 	return builderID, nil
