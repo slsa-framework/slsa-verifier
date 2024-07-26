@@ -385,7 +385,11 @@ func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *sigstore
 
 	// Verify the certificate chain, and that the certificate was valid at the time of signing.
 	if err := sigstoreVerify.VerifyLeafCertificate(signatureTimestamp, cert, trustedRoot); err != nil {
-		fmt.Fprintf(os.Stderr, "error verifying leaf certificate with sisgtore-go: %v\n", err)
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
+	}
+
+	// Verify the Signed Certificate Timestamps.
+	if err := sigstoreVerify.VerifySignedCertificateTimestamp(cert, 1, trustedRoot); err != nil {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
 	}
 
