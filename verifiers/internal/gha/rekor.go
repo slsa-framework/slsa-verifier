@@ -33,6 +33,7 @@ import (
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
 
 	rekorClient "github.com/sigstore/rekor/pkg/client"
+	sigstoreFulcioCertificate "github.com/sigstore/sigstore-go/pkg/fulcio/certificate"
 	sigstoreRoot "github.com/sigstore/sigstore-go/pkg/root"
 	sigstoreVerify "github.com/sigstore/sigstore-go/pkg/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -385,12 +386,25 @@ func verifySignedAttestation(signedAtt *SignedAttestation, trustedRoot *sigstore
 
 	// Verify the certificate chain, and that the certificate was valid at the time of signing.
 	if err := sigstoreVerify.VerifyLeafCertificate(signatureTimestamp, cert, trustedRoot); err != nil {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidCertificate, err)
 	}
 
-	// Verify the Signed Certificate Timestamps.
+	// Verify the Signed Certificate Timestamps (SCTs).
 	if err := sigstoreVerify.VerifySignedCertificateTimestamp(cert, 1, trustedRoot); err != nil {
-		return fmt.Errorf("%w: %s", serrors.ErrorInvalidSignature, err)
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidCertificate, err)
+	}
+
+	// Verify the certificate identity information.
+	summary, err := sigstoreFulcioCertificate.SummarizeCertificate(cert)
+	if err != nil {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidCertificate, err)
+	}
+	certID, err := sigstoreVerify.NewShortCertificateIdentity(certOidcIssuer, "", "", certSubjectRegexp)
+	if err != nil {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidCertificate, err)
+	}
+	if err := certID.Verify(summary); err != nil {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidCertificate, err)
 	}
 
 	// Verify signature using validated certificate.
