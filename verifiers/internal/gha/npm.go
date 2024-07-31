@@ -51,7 +51,7 @@ func (b *BundleBytes) UnmarshalJSON(data []byte) error {
 
 type Npm struct {
 	ctx                   context.Context
-	root                  *sigstoreRoot.TrustedRoot
+	root                  *sigstoreRoot.LiveTrustedRoot
 	verifiedBuilderID     *utils.TrustedBuilderID
 	verifiedProvenanceAtt *SignedAttestation
 	verifiedPublishAtt    *SignedAttestation
@@ -67,7 +67,7 @@ func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
 	return n.verifiedProvenanceAtt.SigningCert
 }
 
-func NpmNew(ctx context.Context, root *sigstoreRoot.TrustedRoot, attestationBytes []byte) (*Npm, error) {
+func NpmNew(ctx context.Context, root *sigstoreRoot.LiveTrustedRoot, attestationBytes []byte) (*Npm, error) {
 	var aSet attestationSet
 	if err := json.Unmarshal(attestationBytes, &aSet); err != nil {
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)

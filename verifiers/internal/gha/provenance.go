@@ -210,7 +210,7 @@ func verifyDigest(prov iface.Provenance, expectedHash string) error {
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
-func VerifyProvenanceSignature(ctx context.Context, trustedRoot *sigstoreRoot.TrustedRoot,
+func VerifyProvenanceSignature(ctx context.Context, trustedRoot *sigstoreRoot.LiveTrustedRoot,
 	rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
 	*SignedAttestation, error,

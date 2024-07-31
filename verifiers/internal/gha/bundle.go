@@ -37,7 +37,7 @@ func IsSigstoreBundle(bytes []byte) bool {
 // verifyRekorEntryFromBundle extracts and verifies the Rekor entry from the Sigstore
 // bundle verification material, validating the SignedEntryTimestamp.
 func verifyRekorEntryFromBundle(ctx context.Context, tlogEntry *v1.TransparencyLogEntry,
-	trustedRoot *sigstoreRoot.TrustedRoot) (
+	trustedRoot *sigstoreRoot.LiveTrustedRoot) (
 	*models.LogEntryAnon, error,
 ) {
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
@@ -160,7 +160,7 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 // returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance.
 func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
-	trustedRoot *sigstoreRoot.TrustedRoot) (
+	trustedRoot *sigstoreRoot.LiveTrustedRoot) (
 	*SignedAttestation, error,
 ) {
 	proposedSignedAtt, err := verifyBundleAndEntryFromBytes(ctx, bundleBytes, trustedRoot, true)
@@ -177,7 +177,7 @@ func VerifyProvenanceBundle(ctx context.Context, bundleBytes []byte,
 // verifyBundleAndEntry validates the rekor entry inn the bundle
 // and that the entry (cert, signatures) matches the data in the bundle.
 func verifyBundleAndEntry(ctx context.Context, bundle *bundle_v1.Bundle,
-	trustedRoot *sigstoreRoot.TrustedRoot, requireCert bool,
+	trustedRoot *sigstoreRoot.LiveTrustedRoot, requireCert bool,
 ) (*SignedAttestation, error) {
 	// We only expect one TLOG entry. If this changes in the future, we must iterate
 	// for a matching one.
@@ -227,7 +227,7 @@ func verifyBundleAndEntry(ctx context.Context, bundle *bundle_v1.Bundle,
 // verifyBundleAndEntryFromBytes validates the rekor entry inn the bundle
 // and that the entry (cert, signatures) matches the data in the bundle.
 func verifyBundleAndEntryFromBytes(ctx context.Context, bundleBytes []byte,
-	trustedRoot *sigstoreRoot.TrustedRoot, requireCert bool,
+	trustedRoot *sigstoreRoot.LiveTrustedRoot, requireCert bool,
 ) (*SignedAttestation, error) {
 	// Extract the SigningCert, Envelope, and RekorEntry from the bundle.
 	var bundle bundle_v1.Bundle
