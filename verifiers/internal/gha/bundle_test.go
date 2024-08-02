@@ -8,13 +8,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 func Test_verifyBundle(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
