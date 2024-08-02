@@ -16,25 +16,23 @@ jobs:
           go-version-file: "go.mod"
           # not needed but gets rid of warnings
           cache: false
-      - uses: golangci/golangci-lint-action@d6238b002a20823d52840fda27e2d4891c5952dc # v4
+      - uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
         name: golangci-lint
         with:
           # Require: The version of golangci-lint to use.
           # When `install-mode` is `binary` (default) the value can be v1.2 or v1.2.3 or `latest` to use the latest version.
           # When `install-mode` is `goinstall` the value can be v1.2.3, `latest`, or the hash of a commit.
-          version: v1.55.2
+          version: v1.59.1
 
   yamllint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - env:
-          YAMLLINT_VERSION: "1.26.3"
-        run: |
+      - run: |
           set -euo pipefail
 
           # Install yamllint
-          pip install "yamllint==${YAMLLINT_VERSION}"
+          pip install -r ./requirements-lint.txt --require-hashes
 
           # Run yamllint
           make yamllint
