@@ -29,6 +29,7 @@
 - [Verification for GitHub builders](#verification-for-github-builders)
   - [Artifacts](#artifacts)
   - [Containers](#containers)
+    - [The verify-image command](#the-verify-image-command)
   - [npm packages](#npm-packages)
     - [The verify-npm-package command](#the-verify-npm-package-command)
     - [npm packages built using the SLSA3 Node.js builder](#npm-packages-built-using-the-slsa3-nodejs-builder)
