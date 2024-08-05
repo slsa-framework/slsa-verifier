@@ -11,8 +11,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
-	"github.com/sigstore/cosign/v2/pkg/cosign"
-	"github.com/sigstore/rekor/pkg/client"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -217,12 +215,12 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 	isSigstoreBundle := IsSigstoreBundle(provenance)
 
 	// This includes a default retry count of 3.
-	rClient, err := client.GetRekorClient(defaultRekorAddr)
+	rClient, err := getDefaultRekorClient()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -249,13 +247,8 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string, provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
-	trustedRoot, err := TrustedRootSingleton(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	var provenanceTargetRepository name.Repository
+	var err error
 	// Consume input for --provenance-repository when set
 	if provenanceOpts.ExpectedProvenanceRepository != nil {
 		provenanceTargetRepository, err = name.NewRepository(*provenanceOpts.ExpectedProvenanceRepository)
@@ -272,13 +265,12 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 		registryClientOpts = append(registryClientOpts, ociremote.WithTargetRepository(provenanceTargetRepository))
 	}
 
-	opts := &cosign.CheckOpts{
-		RegistryClientOpts: registryClientOpts,
-		RootCerts:          trustedRoot.FulcioRoot,
-		IntermediateCerts:  trustedRoot.FulcioIntermediates,
-		RekorPubKeys:       trustedRoot.RekorPubKeys,
-		CTLogPubKeys:       trustedRoot.CTPubKeys,
+	/* Retrieve any valid signed attestations that chain up to Fulcio root CA. */
+	opts, err := getDefaultCosignCheckOpts(ctx)
+	if err != nil {
+		return nil, nil, err
 	}
+	opts.RegistryClientOpts = registryClientOpts
 
 	atts, _, err := container.RunCosignImageVerification(ctx,
 		artifactImage, opts)
@@ -332,7 +324,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		return nil, nil, err
 	}

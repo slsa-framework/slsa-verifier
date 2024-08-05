@@ -727,7 +727,7 @@ func Test_verifyPackageName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -810,7 +810,7 @@ func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -888,7 +888,7 @@ func Test_verifyPackageVersion(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1081,7 +1081,7 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1170,7 +1170,7 @@ func Test_NpmNew(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1218,7 +1218,7 @@ func Test_verifyPublishAttestationSignature(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1265,7 +1265,7 @@ func Test_verifyProvenanceAttestationSignature(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	trustedRoot, err := TrustedRootSingleton(ctx)
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		t.Fatal(err)
 	}

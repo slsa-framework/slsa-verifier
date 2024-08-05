@@ -22,7 +22,7 @@ var (
 	certOidcIssuer            = "https://token.actions.githubusercontent.com"
 	githubCom                 = "github.com/"
 	httpsGithubCom            = "https://" + githubCom
-	// This is used in cosign's CheckOpts for validating the certificate. We
+	// This is used in sigstore-go's NewShortCertificateIdentity for validating the certificate. We
 	// do specific builder verification after this.
 	certSubjectRegexp = httpsGithubCom + "*"
 )

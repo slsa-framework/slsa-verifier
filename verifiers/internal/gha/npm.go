@@ -13,6 +13,7 @@ import (
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/secure-systems-lab/go-securesystemslib/dsse"
+	sigstoreRoot "github.com/sigstore/sigstore-go/pkg/root"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 	"github.com/slsa-framework/slsa-verifier/v2/options"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance"
@@ -61,7 +62,7 @@ func (b *BundleBytes) UnmarshalJSON(data []byte) error {
 
 type Npm struct {
 	ctx                   context.Context
-	root                  *TrustedRoot
+	root                  *sigstoreRoot.LiveTrustedRoot
 	verifiedBuilderID     *utils.TrustedBuilderID
 	verifiedProvenanceAtt *SignedAttestation
 	verifiedPublishAtt    *SignedAttestation
@@ -77,7 +78,7 @@ func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
 	return n.verifiedProvenanceAtt.SigningCert
 }
 
-func NpmNew(ctx context.Context, root *TrustedRoot, attestationBytes []byte) (*Npm, error) {
+func NpmNew(ctx context.Context, root *sigstoreRoot.LiveTrustedRoot, attestationBytes []byte) (*Npm, error) {
 	var aSet attestationSet
 	if err := json.Unmarshal(attestationBytes, &aSet); err != nil {
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)
