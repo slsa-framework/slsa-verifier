@@ -1,6 +1,8 @@
 package options
 
 import (
+	"crypto"
+
 	apiUtils "github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
@@ -32,14 +34,40 @@ type ProvenanceOpts struct {
 
 	ExpectedPackageVersion *string
 
-	// ExpectedProvenanceRepository is the provenance repository that is passed from user and not verified
+	// ExpectedProvenanceRepository is the provenance repository that is passed from user.
 	ExpectedProvenanceRepository *string
 }
 
 // BuildOpts are the options for checking the builder.
 type BuilderOpts struct {
-	// ExpectedBuilderID is the builderID passed in from the user to be verified
+	// ExpectedBuilderID is the builderID passed in from the user.
 	ExpectedID *string
+}
+
+// VSAOpts are the options for checking the VSA.
+type VSAOpts struct {
+	// ExpectedDigests are the digests expected to be in the VSA.
+	ExpectedDigests *[]string
+
+	// ExpectedVerifierID is the verifier ID that is passed from user.
+	ExpectedVerifierID *string
+
+	// ExpectedResourceURI is the resource URI that is passed from user.
+	ExpectedResourceURI *string
+
+	// ExpectedVerifiedLevels is the levels of verification that are passed from user.
+	ExpectedVerifiedLevels *[]string
+}
+
+type VerificationOpts struct {
+	// PublicKey is the public key used to verify the signature on the Envelope.
+	PublicKey crypto.PublicKey
+
+	// PublicKeyID is the ID of the public key.
+	PublicKeyID *string
+
+	// PublicKeyHashAlgo is the hash algorithm used to compute digest that was signed.
+	PublicKeyHashAlgo crypto.Hash
 }
 
 // VerifierOpts are the options for the verifier, created with the VerifierOptioner functions.

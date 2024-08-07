@@ -11,6 +11,7 @@ import (
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/models"
+	sigstoreRoot "github.com/sigstore/sigstore-go/pkg/root"
 
 	proto_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/common/v1"
 	"github.com/slsa-framework/slsa-github-generator/signing/envelope"
@@ -209,7 +210,7 @@ func verifyDigest(prov iface.Provenance, expectedHash string) error {
 
 // VerifyProvenanceSignature returns the verified DSSE envelope containing the provenance
 // and the signing certificate given the provenance and artifact hash.
-func VerifyProvenanceSignature(ctx context.Context, trustedRoot *TrustedRoot,
+func VerifyProvenanceSignature(ctx context.Context, trustedRoot *sigstoreRoot.LiveTrustedRoot,
 	rClient *client.Rekor,
 	provenance []byte, artifactHash string) (
 	*SignedAttestation, error,
