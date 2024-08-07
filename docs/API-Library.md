@@ -2,7 +2,7 @@
 
 ## Verifers
 
-We have exported functions for using slsa-verifier within your own golang packages
+We have exported functions for using slsa-verifier within your own Go packages
 
 - slsa-verifier/verifiers/verifier.go
 
