@@ -18,12 +18,24 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
-var mismatchProvenancePredicates = map[string]bool{
-	common.ProvenanceV02Type + "a": true,
-	common.ProvenanceV1Type + "a":  true,
-}
-var mismatchPublishPredicates = map[string]bool{
-	publishAttestationV01 + "a": true,
+var (
+	mismatchProvenancePredicates = map[string]bool{
+		common.ProvenanceV02Type + "a": true,
+		common.ProvenanceV1Type + "a":  true,
+	}
+	mismatchPublishPredicates = map[string]bool{
+		publishAttestationV01 + "a": true,
+	}
+)
+
+// TestMain intercepts the test runner to run some setup code before running the tests.
+func TestMain(m *testing.M) {
+	// Initialize the default sigstore TUF client for parallel tests
+	_, err := utils.GetDefaultSigstoreTUFClient()
+	if err != nil {
+		panic(err)
+	}
+	os.Exit(m.Run())
 }
 
 func Test_verifyName(t *testing.T) {
