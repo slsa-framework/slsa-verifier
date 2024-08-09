@@ -95,15 +95,58 @@ func getEnvelopeFromBundleBytes(content []byte) (*dsselib.Envelope, error) {
 
 // getLeafCertFromBundle extracts the signing cert from the Sigstore bundle.
 func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
-	certChain := bundle.GetVerificationMaterial().GetX509CertificateChain().GetCertificates()
+	material := bundle.GetVerificationMaterial()
+
+	// First try the newer method.
+	if bundleCert := material.GetCertificate(); bundleCert != nil {
+		certBytes := bundleCert.GetRawBytes()
+		return x509.ParseCertificate(certBytes)
+	}
+
+	// Otherwise, try the original method.
+	certChain := material.GetX509CertificateChain().GetCertificates()
 	if len(certChain) == 0 {
 		return nil, ErrorMissingCertInBundle
 	}
-
 	// The first certificate is the leaf cert: see
 	// https://github.com/sigstore/protobuf-specs/blob/16541696de137c6281d66d075a4924d9bbd181ff/protos/sigstore_common.proto#L170
 	certBytes := certChain[0].GetRawBytes()
 	return x509.ParseCertificate(certBytes)
+}
+
+func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
+	canonicalBody := tlogEntry.GetCanonicalizedBody()
+	var dsseObj models.DSSE
+	if err := json.Unmarshal(canonicalBody, &dsseObj); err != nil {
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+	}
+	var dsseSchemaObj models.DSSEV001Schema
+	specMarshal, err := json.Marshal(dsseObj.Spec)
+	fmt.Println(fmt.Sprintf("%s", specMarshal))
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+	}
+	if err := json.Unmarshal(specMarshal, &dsseSchemaObj); err != nil {
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+	}
+	if len(env.Signatures) != len(dsseSchemaObj.Signatures) {
+		return fmt.Errorf("expected %d sigs in canonical body, got %d",
+			len(env.Signatures),
+			len(dsseSchemaObj.Signatures))
+	}
+	// TODO(#487): verify the certs match.
+	for _, sig := range env.Signatures {
+		var matchCanonical bool
+		for _, canonicalSig := range dsseSchemaObj.Signatures {
+			if *canonicalSig.Signature == sig.Sig {
+				matchCanonical = true
+			}
+		}
+		if !matchCanonical {
+			return ErrorMismatchSignature
+		}
+	}
+	return nil
 }
 
 // matchRekorEntryWithEnvelope ensures that the log entry references the given
@@ -111,6 +154,11 @@ func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) 
 // tlog timestamp attests to the signature creation time.
 func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
 	kindVersion := tlogEntry.GetKindVersion()
+
+	if kindVersion.Kind == "dsse" && kindVersion.Version == "0.0.1" {
+		return matchRekorEntryWithEnvelopeDSSEv001(tlogEntry, env)
+	}
+
 	if kindVersion.Kind != "intoto" &&
 		kindVersion.Version != "0.0.2" {
 		return fmt.Errorf("%w: expected intoto:0.0.2, got %s:%s", ErrorUnexpectedEntryType,
