@@ -176,7 +176,7 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 		id.SourceRepository == e2eTestRepository) &&
 		options.TestingEnabled() {
 		// // Allow verification on the main branch to support e2e tests.
-		if ref == "refs/heads/main" || ref == "refs/heads/ramonpetgrave64-internal-builder-sigstore-bundle" {
+		if ref == "refs/heads/main" || strings.HasPrefix(ref, "refs/heads/ramonpetgrave64") {
 			return nil
 		}
 
