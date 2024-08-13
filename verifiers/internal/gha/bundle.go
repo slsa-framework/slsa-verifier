@@ -111,12 +111,20 @@ func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) 
 // tlog timestamp attests to the signature creation time.
 func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
 	kindVersion := tlogEntry.GetKindVersion()
-	if kindVersion.Kind != "intoto" &&
-		kindVersion.Version != "0.0.2" {
-		return fmt.Errorf("%w: expected intoto:0.0.2, got %s:%s", ErrorUnexpectedEntryType,
-			kindVersion.Kind, kindVersion.Version)
+
+	if kindVersion.Kind == "intoto" && kindVersion.Version == "0.0.2" {
+		return matchRekorEntryWithEnvelopeIntotov002(tlogEntry, env)
 	}
 
+	if kindVersion.Kind == "dsse" && kindVersion.Version == "0.0.1" {
+		return matchRekorEntryWithEnvelopeDSSEv001(tlogEntry, env)
+	}
+
+	return fmt.Errorf("%w: %s: %s", ErrorUnexpectedEntryType, kindVersion.Kind, kindVersion.Version)
+}
+
+// matchRekorEntryWithEnvelopeDSSEv001 handles matchRekorEntryWithEnvelope for the intoto v0.0.1 type version.
+func matchRekorEntryWithEnvelopeIntotov002(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
 	var toto models.Intoto
 	var intotoObj models.IntotoV002Schema
@@ -153,6 +161,42 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 		}
 	}
 
+	return nil
+}
+
+// matchRekorEntryWithEnvelopeDSSEv001 handles matchRekorEntryWithEnvelope for the dsse v0.0.1 type version.
+func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
+	canonicalBody := tlogEntry.GetCanonicalizedBody()
+	var dsseObj models.DSSE
+	if err := json.Unmarshal(canonicalBody, &dsseObj); err != nil {
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+	}
+	var dsseSchemaObj models.DSSEV001Schema
+	specMarshal, err := json.Marshal(dsseObj.Spec)
+	fmt.Println(fmt.Sprintf("%s", specMarshal))
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+	}
+	if err := json.Unmarshal(specMarshal, &dsseSchemaObj); err != nil {
+		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+	}
+	if len(env.Signatures) != len(dsseSchemaObj.Signatures) {
+		return fmt.Errorf("expected %d sigs in canonical body, got %d",
+			len(env.Signatures),
+			len(dsseSchemaObj.Signatures))
+	}
+	// TODO(#487): verify the certs match.
+	for _, sig := range env.Signatures {
+		var matchCanonical bool
+		for _, canonicalSig := range dsseSchemaObj.Signatures {
+			if *canonicalSig.Signature == sig.Sig {
+				matchCanonical = true
+			}
+		}
+		if !matchCanonical {
+			return ErrorMismatchSignature
+		}
+	}
 	return nil
 }
 
