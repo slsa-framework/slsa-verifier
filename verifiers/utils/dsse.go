@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 
+	intotoAttestations "github.com/in-toto/attestation/go/v1"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
@@ -42,13 +43,17 @@ func PayloadFromEnvelope(env *dsselib.Envelope) ([]byte, error) {
 	return payload, nil
 }
 
+// StatementFromBytes parses the provided byte slice as a JSON payload and returns an intoto.Statement.
+// Ideally, we use the "V1" Statement in https://pkg.go.dev/github.com/in-toto/attestation/go/v1#pkg-constants,
+// but it parses json fields in snake case, while the official spec uses camel case
+// https://github.com/in-toto/attestation/blob/v1.0/spec/v1.0/statement.md.
 func StatementFromBytes(payload []byte) (*intoto.Statement, error) {
 	var statement intoto.Statement
 	if err := json.Unmarshal(payload, &statement); err != nil {
 		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	if statement.Type != intoto.StatementInTotoV01 {
+	if statement.Type != intoto.StatementInTotoV01 && statement.Type != intotoAttestations.StatementTypeUri {
 		return nil, fmt.Errorf("%w: invalid statement type: %q", serrors.ErrorInvalidDssePayload, statement.Type)
 	}
 	return &statement, nil

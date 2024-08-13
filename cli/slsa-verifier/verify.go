@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	SUCCESS = "PASSED: Verified SLSA provenance"
+	SUCCESS = "PASSED: SLSA verification passed"
 	FAILURE = "FAILED: SLSA verification failed"
 )
 
@@ -173,6 +173,37 @@ func verifyNpmPackageCmd() *cobra.Command {
 			}
 
 			if _, err := v.Exec(cmd.Context(), args); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				os.Exit(1)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+			}
+		},
+	}
+
+	o.AddFlags(cmd)
+	return cmd
+}
+
+func verifyVSACmd() *cobra.Command {
+	o := &verify.VerifyVSAOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "verify-vsa [flags] subject-digest [subject-digest...]",
+		Args:  cobra.NoArgs,
+		Short: "Verifies SLSA VSAs for the given subject-digests",
+		Run: func(cmd *cobra.Command, args []string) {
+			v := verify.VerifyVSACommand{
+				SubjectDigests:   &o.SubjectDigests,
+				AttestationPath:  &o.AttestationPath,
+				VerifierID:       &o.VerifierID,
+				ResourceURI:      &o.ResourceURI,
+				VerifiedLevels:   &o.VerifiedLevels,
+				PrintAttestation: o.PrintAttestation,
+				PublicKeyPath:    &o.PublicKeyPath,
+				PublicKeyID:      &o.PublicKeyID,
+			}
+			if err := v.Exec(cmd.Context()); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
 				os.Exit(1)
 			} else {

@@ -9,13 +9,21 @@ import (
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/common"
 	"github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/iface"
 	slsav02 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v0.2"
+	slsav1 "github.com/slsa-framework/slsa-verifier/v2/verifiers/internal/gha/slsaprovenance/v1.0"
 )
 
 func verifyProvenanceMatchesCertificate(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	// See the generation at https://github.com/npm/cli/blob/latest/workspaces/libnpmpublish/lib/provenance.js.
 	// Verify systemParameters.
-	if err := verifySystemParameters(prov, workflow); err != nil {
-		return err
+	switch typedProv := prov.(type) {
+	case *slsav1.NpmCLIGithubActionsProvenance:
+		if err := verifyNpmCLIGithubActionsV1SystemParameters(typedProv, workflow); err != nil {
+			return err
+		}
+	default:
+		if err := verifySystemParameters(typedProv, workflow); err != nil {
+			return err
+		}
 	}
 
 	// Verify v0.2 parameters.
@@ -125,23 +133,45 @@ func verifyMetadata(prov iface.Provenance, workflow *WorkflowIdentity) error {
 
 func verifyCommonMetadata(prov iface.Provenance, workflow *WorkflowIdentity) error {
 	// Verify build invocation ID.
-	invocationID, err := prov.GetBuildInvocationID()
+	provInvocationID, err := prov.GetBuildInvocationID()
 	if err != nil {
 		return err
 	}
 
-	runID, runAttempt, err := getRunIDs(workflow)
-	if err != nil {
-		return err
-	}
+	if provInvocationID != "" {
+		// Verify runID and runAttempt.
+		var provRunID string
+		var provRunAttempt string
+		switch prov.(type) {
+		case *slsav1.NpmCLIGithubActionsProvenance:
+			provenanceInvocationIDParts := strings.Split(strings.TrimPrefix(provInvocationID, "https://github.com/"), "/")
+			lenParts := len(provenanceInvocationIDParts)
+			if lenParts != 7 {
+				return fmt.Errorf("%w: invalid invocation ID: %v", serrors.ErrorInvalidFormat, provInvocationID)
+			}
+			provRunID = provenanceInvocationIDParts[lenParts-3]
+			provRunAttempt = provenanceInvocationIDParts[lenParts-1]
+		default:
+			provenanceInvocationIDParts := strings.Split(provInvocationID, "-")
+			if len(provenanceInvocationIDParts) != 2 {
+				return fmt.Errorf("%w: invalid invocation ID: %v", serrors.ErrorInvalidFormat, provInvocationID)
+			}
+			provRunID = provenanceInvocationIDParts[0]
+			provRunAttempt = provenanceInvocationIDParts[1]
+		}
 
-	// Only verify a non-empty buildID claim.
-	if invocationID != "" {
-		expectedID := fmt.Sprintf("%v-%v", runID, runAttempt)
-		if invocationID != expectedID {
-			return fmt.Errorf("%w: invocation ID: '%v' != '%v'",
-				serrors.ErrorMismatchCertificate, invocationID,
-				expectedID)
+		certRunID, certRunAttempt, err := getRunIDs(workflow)
+		if err != nil {
+			return err
+		}
+
+		if provRunID != certRunID {
+			return fmt.Errorf("%w: run ID: '%v' != '%v'",
+				serrors.ErrorMismatchCertificate, provRunID, certRunID)
+		}
+		if provRunAttempt != certRunAttempt {
+			return fmt.Errorf("%w: run ID: '%v' != '%v'",
+				serrors.ErrorMismatchCertificate, provRunAttempt, certRunAttempt)
 		}
 	}
 
@@ -242,6 +272,34 @@ func verifyV02BuildConfig(prov iface.Provenance) error {
 			serrors.ErrorNonVerifiableClaim, predicate.BuildConfig)
 	}
 
+	return nil
+}
+
+func verifyNpmCLIGithubActionsV1SystemParameters(prov *slsav1.NpmCLIGithubActionsProvenance, workflow *WorkflowIdentity) error {
+	sysParams, err := prov.GetSystemParameters()
+	if err != nil {
+		return err
+	}
+	githubParams, ok := sysParams["github"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "github parameters")
+	}
+	// Verify that the parameters contain only fields we are able to verify
+	// and that the values match the certificate.
+	supportedNames := map[string]*string{
+		"event_name":          &workflow.BuildTrigger,
+		"repository_id":       workflow.SourceID,
+		"repository_owner_id": workflow.SourceOwnerID,
+	}
+	for k := range githubParams {
+		certValue, ok := supportedNames[k]
+		if !ok {
+			return fmt.Errorf("%w: unknown '%s' parameter", serrors.ErrorMismatchCertificate, k)
+		}
+		if err := verifySystemParameter(githubParams, k, certValue); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

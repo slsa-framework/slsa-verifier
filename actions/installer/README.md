@@ -11,7 +11,7 @@ For more information about SLSA in general, see [https://slsa.dev](https://slsa.
 To install a specific version of `slsa-verifier`, use:
 
 ```yaml
-uses: slsa-framework/slsa-verifier/actions/installer@v2.5.1
+uses: slsa-framework/slsa-verifier/actions/installer@v2.6.0
 ```
 
 See https://github.com/slsa-framework/slsa-verifier/releases for the list of available `slsa-verifier` releases. Only versions greater or equal to 2.0.1 are supported.
