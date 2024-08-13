@@ -173,7 +173,6 @@ func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env
 	}
 	var dsseSchemaObj models.DSSEV001Schema
 	specMarshal, err := json.Marshal(dsseObj.Spec)
-	fmt.Println(fmt.Sprintf("%s", specMarshal))
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
 	}
