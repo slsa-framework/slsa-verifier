@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -279,7 +279,7 @@ func GetValidSignedAttestationWithCert(rClient *rekorGenClient.Rekor,
 		}
 		rekorEntry = e
 		url := fmt.Sprintf("%v/%v/%v", defaultRekorAddr, "api/v1/log/entries", uuid)
-		fmt.Fprintf(os.Stderr, "Verified signature against tlog entry index %d at URL: %s\n", *e.LogIndex, url)
+		slog.Info(fmt.Sprintf("Verified signature against tlog entry index %d at URL: %s\n", *e.LogIndex, url))
 	}
 
 	certs, err := cryptoutils.UnmarshalCertificatesFromPEM(certPem)
@@ -363,7 +363,7 @@ func SearchValidSignedAttestation(ctx context.Context, artifactHash string, prov
 
 		// success!
 		url := fmt.Sprintf("%v/%v/%v", defaultRekorAddr, "api/v1/log/entries", uuid)
-		fmt.Fprintf(os.Stderr, "Verified signature against tlog entry index %d at URL: %s\n", *entry.LogIndex, url)
+		slog.Info(fmt.Sprintf("Verified signature against tlog entry index %d at URL: %s\n", *entry.LogIndex, url))
 		return proposedSignedAtt, nil
 	}
 

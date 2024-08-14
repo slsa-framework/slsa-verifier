@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/slsa-framework/slsa-verifier/v2/options"
@@ -43,7 +44,7 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 	for _, artifact := range artifacts {
 		artifactHash, err := computeFileHash(artifact, sha256.New())
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			slog.Error(fmt.Sprintf("Verifying artifact %s: FAILED: %v\n\n", artifact, err))
 			return nil, err
 		}
 
@@ -62,13 +63,13 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 
 		provenance, err := os.ReadFile(c.ProvenancePath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			slog.Error(fmt.Sprintf("Verifying artifact %s: FAILED: %v\n\n", artifact, err))
 			return nil, err
 		}
 
 		verifiedProvenance, outBuilderID, err := verifiers.VerifyArtifact(ctx, provenance, artifactHash, provenanceOpts, builderOpts)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			slog.Error(fmt.Sprintf("Verifying artifact %s: FAILED: %v\n\n", artifact, err))
 			return nil, err
 		}
 
@@ -80,10 +81,10 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 			builderID = outBuilderID
 		} else if *builderID != *outBuilderID {
 			err := fmt.Errorf("encountered different builderIDs %v %v", builderID, outBuilderID)
-			fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
+			slog.Error(fmt.Sprintf("Verifying artifact %s: FAILED: %v\n\n", artifact, err))
 			return nil, err
 		}
-		fmt.Fprintf(os.Stderr, "Verifying artifact %s: PASSED\n\n", artifact)
+		slog.Error(fmt.Sprintf("Verifying artifact %s: PASSED\n\n", artifact))
 	}
 
 	return builderID, nil

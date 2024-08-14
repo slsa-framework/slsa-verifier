@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -19,7 +20,7 @@ func main() {
 	http.Handle("/", r)
 
 	address := ":8000"
-	fmt.Printf("Starting HTTP server on %v ...\n", address)
+	slog.Info(fmt.Sprintf("Starting HTTP server on %v ...\n", address))
 	srv := &http.Server{
 		Handler: r,
 		Addr:    address,
