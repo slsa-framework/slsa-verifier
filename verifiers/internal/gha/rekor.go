@@ -267,7 +267,7 @@ func GetValidSignedAttestationWithCert(rClient *rekorGenClient.Rekor,
 	}
 
 	if len(resp.GetPayload()) != 1 {
-		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorSearch, "no matching rekor entries")
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorRekorSearch, "f")
 	}
 
 	logEntry := resp.Payload[0]
