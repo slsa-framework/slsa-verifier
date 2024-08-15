@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	bundle_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
@@ -150,13 +151,12 @@ func matchRekorEntryWithEnvelopeIntotov002(tlogEntry *v1.TransparencyLogEntry, e
 		// The signature in the canonical body is double base64-encoded.
 		encodedEnvSig := base64.StdEncoding.EncodeToString(
 			[]byte(sig.Sig))
-		var matchCanonical bool
-		for _, canonicalSig := range intotoObj.Content.Envelope.Signatures {
-			if canonicalSig.Sig.String() == encodedEnvSig {
-				matchCanonical = true
-			}
-		}
-		if !matchCanonical {
+		if !slices.ContainsFunc(
+			intotoObj.Content.Envelope.Signatures,
+			func(canonicalSig *models.IntotoV002SchemaContentEnvelopeSignaturesItems0) bool {
+				return canonicalSig.Sig.String() == encodedEnvSig
+			},
+		) {
 			return ErrorMismatchSignature
 		}
 	}
@@ -172,6 +172,7 @@ func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env
 		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
 	}
 	var dsseSchemaObj models.DSSEV001Schema
+
 	specMarshal, err := json.Marshal(dsseObj.Spec)
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
@@ -179,6 +180,7 @@ func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env
 	if err := json.Unmarshal(specMarshal, &dsseSchemaObj); err != nil {
 		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
 	}
+
 	if len(env.Signatures) != len(dsseSchemaObj.Signatures) {
 		return fmt.Errorf("expected %d sigs in canonical body, got %d",
 			len(env.Signatures),
@@ -186,13 +188,12 @@ func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env
 	}
 	// TODO(#487): verify the certs match.
 	for _, sig := range env.Signatures {
-		var matchCanonical bool
-		for _, canonicalSig := range dsseSchemaObj.Signatures {
-			if *canonicalSig.Signature == sig.Sig {
-				matchCanonical = true
-			}
-		}
-		if !matchCanonical {
+		if !slices.ContainsFunc(
+			dsseSchemaObj.Signatures,
+			func(canonicalSig *models.DSSEV001SchemaSignaturesItems0) bool {
+				return *canonicalSig.Signature == sig.Sig
+			},
+		) {
 			return ErrorMismatchSignature
 		}
 	}
