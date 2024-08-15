@@ -302,7 +302,7 @@ func Test_matchRekorEntryWithEnvelope(t *testing.T) {
 					},
 				},
 			},
-			err: ErorrParsingEntryBody,
+			err: ErrorParsingEntryBody,
 		},
 		{
 			name: "failure: parse error: intoto kind, dsse body",
@@ -320,7 +320,7 @@ func Test_matchRekorEntryWithEnvelope(t *testing.T) {
 					},
 				},
 			},
-			err: ErorrParsingEntryBody,
+			err: ErrorParsingEntryBody,
 		},
 	}
 	for _, tt := range tests {

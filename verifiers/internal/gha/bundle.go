@@ -24,7 +24,7 @@ var (
 	ErrorUnequalSignatures       = errors.New("bundle tlog entry and envelope have an unequal number of signatures")
 	ErrorNoSignatures            = errors.New("envolope has no signatures")
 	ErrorUnexpectedEntryType     = errors.New("unexpected tlog entry type")
-	ErorrParsingEntryBody        = errors.New("unexpected layout of the bundle tlog entry body")
+	ErrorParsingEntryBody        = errors.New("unexpected layout of the bundle tlog entry body")
 	ErrorMissingCertInBundle     = errors.New("missing signing certificate in bundle")
 	ErrorUnexpectedBundleContent = errors.New("expected DSSE bundle content")
 )
@@ -137,14 +137,14 @@ func matchRekorEntryWithEnvelopeIntotov002(tlogEntry *v1.TransparencyLogEntry, e
 	var toto models.Intoto
 	var intotoObj models.IntotoV002Schema
 	if err := json.Unmarshal(canonicalBody, &toto); err != nil {
-		return fmt.Errorf("%w: %s", ErorrParsingEntryBody, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 	specMarshal, err := json.Marshal(toto.Spec)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErorrParsingEntryBody, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 	if err := json.Unmarshal(specMarshal, &intotoObj); err != nil {
-		return fmt.Errorf("%w: %s", ErorrParsingEntryBody, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 
 	if len(env.Signatures) != len(intotoObj.Content.Envelope.Signatures) {
@@ -176,16 +176,16 @@ func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
 	var dsseObj models.DSSE
 	if err := json.Unmarshal(canonicalBody, &dsseObj); err != nil {
-		return fmt.Errorf("%w: %s", ErorrParsingEntryBody, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 	var dsseSchemaObj models.DSSEV001Schema
 
 	specMarshal, err := json.Marshal(dsseObj.Spec)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErorrParsingEntryBody, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 	if err := json.Unmarshal(specMarshal, &dsseSchemaObj); err != nil {
-		return fmt.Errorf("%w: %s", ErorrParsingEntryBody, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 
 	if len(env.Signatures) != len(dsseSchemaObj.Signatures) {
