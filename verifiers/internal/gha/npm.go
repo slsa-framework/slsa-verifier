@@ -69,7 +69,7 @@ type Npm struct {
 	verifiedPublishAtt    *SignedAttestation
 	provenanceAttestation *attestation
 	publishAttestation    *attestation
-	verifierOpts          *options.VerifierOpts
+	clientOpts            *options.ClientOpts
 }
 
 func (n *Npm) ProvenanceEnvelope() *dsse.Envelope {
@@ -81,16 +81,12 @@ func (n *Npm) ProvenanceLeafCertificate() *x509.Certificate {
 }
 
 // NpmNew creates a new Npm verifier.
-func NpmNew(ctx context.Context, root *sigstoreRoot.LiveTrustedRoot, attestationBytes []byte, verifierOptioners ...options.VerifierOptioner) (*Npm, error) {
+func NpmNew(ctx context.Context, root *sigstoreRoot.LiveTrustedRoot, attestationBytes []byte, clientOpts *options.ClientOpts) (*Npm, error) {
 	var aSet attestationSet
 	if err := json.Unmarshal(attestationBytes, &aSet); err != nil {
 		return nil, fmt.Errorf("%w: json.Unmarshal: %v", errrorInvalidAttestations, err)
 	}
 	prov, pub, err := extractAttestations(aSet.Attestations)
-	if err != nil {
-		return nil, err
-	}
-	verifierOpts, err := getVerifierOpts(verifierOptioners...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,26 +96,8 @@ func NpmNew(ctx context.Context, root *sigstoreRoot.LiveTrustedRoot, attestation
 
 		provenanceAttestation: prov,
 		publishAttestation:    pub,
-		verifierOpts:          verifierOpts,
+		clientOpts:            clientOpts,
 	}, nil
-}
-
-// getVerifierOpts returns the verifier options, adding missing options with default values.
-func getVerifierOpts(verifierOptioners ...options.VerifierOptioner) (*options.VerifierOpts, error) {
-	// Set the verifier options.
-	verifierOpts := &options.VerifierOpts{}
-	for _, optioner := range verifierOptioners {
-		optioner(verifierOpts)
-	}
-	// Set the Sigstore TUF client, if not set.
-	if verifierOpts.SigstoreTUFClient == nil {
-		sigstoreTUFClient, err := utils.GetDefaultSigstoreTUFClient()
-		if err != nil {
-			return nil, err
-		}
-		verifierOpts.SigstoreTUFClient = sigstoreTUFClient
-	}
-	return verifierOpts, nil
 }
 
 func extractAttestations(attestations []attestation) (*attestation, *attestation, error) {
@@ -182,7 +160,7 @@ func (n *Npm) verifyPublishAttestationSignature() error {
 
 	// Retrieve the key material.
 	// We found the associated public key in the TUF root, so now we can trust this KeyID.
-	npmRegistryPublicKey, err := getAttestationKey(n.verifierOpts.SigstoreTUFClient, npmRegistryPublicKeyID)
+	npmRegistryPublicKey, err := getAttestationKey(n.clientOpts.SigstoreTUFClient, npmRegistryPublicKeyID)
 	if err != nil {
 		return err
 	}

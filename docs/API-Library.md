@@ -57,7 +57,10 @@ func doVerify() ([]byte, *apiUtils.TrustedBuilderID, error) {
         ExpectedID: &builderID,
     }
 
-    // example: get the default client that the library caches
+    // example: all the default ClientOpts
+    // clientOpts, err := options.NewDefaultClientOpts()
+
+    // example: get the default Sigstore TUF client that the library caches
     // client, err := apiUtils.GetDefaultSigstoreTUFClient()
 
     // example: force using the embedded root, without going online for a refresh
@@ -66,16 +69,16 @@ func doVerify() ([]byte, *apiUtils.TrustedBuilderID, error) {
     // example: supply your own root
     // opts := sigstoreTUF.DefaultOptions().WithRoot([]byte(`{"signed":{"_type":"root","spec_version":"1.0","version":9,"expires":"2024-09-12T06:53:10Z","keys":{"1e1d65ce98b10 ...`)).WithForceCache()
 
-    // example: supply your own default client
+    // example: supply your own default Sigstore TUF client
     opts := sigstoreTUF.DefaultOptions()
     client, err := sigstoreTUF.New(opts)
     if err != nil {
         return nil, fmt.Errorf("creating SigstoreTUF client: %w", err)
     }
-    verifierOptioners := []options.VerifierOptioner{
-        options.WithSigstoreTUFClient(client),
+    clientOpts := options.ClientOpts{
+        SigstoreTUFClient: client,
     }
-    provBytes, outBuilderID, err := apiVerify.VerifyNpmPackage(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, verifierOptioners...)
+    provBytes, outBuilderID, err := apiVerify.VerifyNpmPackage(context.Background(), attestations, tarballHash, provenanceOpts, builderOpts, clientOpts)
     if err != nil {
         return nil, nil, fmt.Errorf("Verifying npm package: FAILED: %w", err)
     }

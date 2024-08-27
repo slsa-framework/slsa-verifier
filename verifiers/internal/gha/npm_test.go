@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/slsa-framework/slsa-verifier/v2/options"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
@@ -26,12 +28,14 @@ var (
 	mismatchPublishPredicates = map[string]bool{
 		publishAttestationV01 + "a": true,
 	}
+	clientOpts *options.ClientOpts
 )
 
 // TestMain intercepts the test runner to run some setup code before running the tests.
 func TestMain(m *testing.M) {
-	// Initialize the default sigstore TUF client for parallel tests
-	_, err := utils.GetDefaultSigstoreTUFClient()
+	// Initialize the default ClientOpts for parallel tests
+	var err error
+	clientOpts, err = options.NewDefaultClientOpts()
 	if err != nil {
 		panic(err)
 	}
@@ -784,7 +788,7 @@ func Test_verifyPackageName(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			npm, err := NpmNew(ctx, trustedRoot, content)
+			npm, err := NpmNew(ctx, trustedRoot, content, clientOpts)
 			if err != nil {
 				panic(fmt.Errorf("NpmNew: %w", err))
 			}
@@ -867,7 +871,7 @@ func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			npm, err := NpmNew(ctx, trustedRoot, content)
+			npm, err := NpmNew(ctx, trustedRoot, content, clientOpts)
 			if err != nil {
 				panic(fmt.Errorf("NpmNew: %w", err))
 			}
@@ -945,7 +949,7 @@ func Test_verifyPackageVersion(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			npm, err := NpmNew(ctx, trustedRoot, content)
+			npm, err := NpmNew(ctx, trustedRoot, content, clientOpts)
 			if err != nil {
 				panic(fmt.Errorf("NpmNew: %w", err))
 			}
@@ -1149,7 +1153,7 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			npm, err := NpmNew(ctx, trustedRoot, content)
+			npm, err := NpmNew(ctx, trustedRoot, content, clientOpts)
 			if err != nil {
 				panic(fmt.Errorf("NpmNew: %w", err))
 			}
@@ -1218,7 +1222,7 @@ func Test_NpmNew(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			_, err = NpmNew(ctx, trustedRoot, content)
+			_, err = NpmNew(ctx, trustedRoot, content, clientOpts)
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got): \n%s", diff)
 			}
@@ -1261,7 +1265,7 @@ func Test_verifyPublishAttestationSignature(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			npm, err := NpmNew(ctx, trustedRoot, content)
+			npm, err := NpmNew(ctx, trustedRoot, content, clientOpts)
 			if err != nil {
 				t.Fatalf("unexpected error: \n%s", err)
 			}
@@ -1308,7 +1312,7 @@ func Test_verifyProvenanceAttestationSignature(t *testing.T) {
 				panic(fmt.Errorf("os.ReadFile: %w", err))
 			}
 
-			npm, err := NpmNew(ctx, trustedRoot, content)
+			npm, err := NpmNew(ctx, trustedRoot, content, clientOpts)
 			if err != nil {
 				t.Fatalf("unexpected error: \n%s", err)
 			}

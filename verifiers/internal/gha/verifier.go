@@ -323,14 +323,14 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
-	verifierOptioners ...options.VerifierOptioner,
+	clientOpts *options.ClientOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	npm, err := NpmNew(ctx, trustedRoot, attestations, verifierOptioners...)
+	npm, err := NpmNew(ctx, trustedRoot, attestations, clientOpts)
 	if err != nil {
 		return nil, nil, err
 	}

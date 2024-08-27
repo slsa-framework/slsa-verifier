@@ -3,7 +3,7 @@ package options
 import (
 	"crypto"
 
-	apiUtils "github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // ProvenanceOpts are the options for checking provenance information.
@@ -70,20 +70,21 @@ type VerificationOpts struct {
 	PublicKeyHashAlgo crypto.Hash
 }
 
-// VerifierOpts are the options for the verifier, created with the VerifierOptioner functions.
-// In the future, this can include a logger and a rekor client,
-// or be a standalone argument to the verifier functions.
-type VerifierOpts struct {
+// ClientOpts contain clinets to be used by slsa-verifier.
+// In the future, this can include a logger and a rekor client.
+type ClientOpts struct {
 	// SigstoreTufClient is the Sigstore TUF client, used for retrieving the Npmjs public keys
-	SigstoreTUFClient apiUtils.SigstoreTUFClient
+	SigstoreTUFClient utils.SigstoreTUFClient
 }
 
-// VerifierOptioner is a function that sets options for the verifier.
-type VerifierOptioner func(opt *VerifierOpts)
-
-// WithSigstoreTUFClient sets the Sigstore TUF client for the verifier.
-func WithSigstoreTUFClient(sigstoreTUFClient apiUtils.SigstoreTUFClient) VerifierOptioner {
-	return func(opt *VerifierOpts) {
-		opt.SigstoreTUFClient = sigstoreTUFClient
+// NewDefaultClientOpts returns default clients to be used by slsa-verifier.
+func NewDefaultClientOpts() (*ClientOpts, error) {
+	sigstoreTUFClient, err := utils.GetDefaultSigstoreTUFClient()
+	if err != nil {
+		return nil, err
 	}
+	opts := &ClientOpts{
+		SigstoreTUFClient: sigstoreTUFClient,
+	}
+	return opts, nil
 }

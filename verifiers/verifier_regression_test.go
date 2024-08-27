@@ -24,7 +24,6 @@ const testDir = "./testdata"
 // Test_VerifyNpmPackage ensures that verifiers.VerifyNpmPackage works,
 // borrowing only a few examples from the larger set of cases in main.Test_runVerifyGHAArtifactPath
 func Test_VerifyNpmPackage(t *testing.T) {
-	// client for the VerifierOptioners
 	sigstoreTUFClient, err := sigstoreTUF.New(sigstoreTUF.DefaultOptions().WithForceCache()) // fewer TUF refreshes for faster tests
 	if err != nil {
 		t.Fatal(err)
@@ -116,10 +115,10 @@ func Test_VerifyNpmPackage(t *testing.T) {
 			builderOpts := &options.BuilderOpts{
 				ExpectedID: &tt.builderID,
 			}
-			verifierOptioners := []options.VerifierOptioner{
-				options.WithSigstoreTUFClient(sigstoreTUFClient),
+			clientOpts := options.ClientOpts{
+				SigstoreTUFClient: sigstoreTUFClient,
 			}
-			VerifyNpmPackage(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, verifierOptioners...)
+			VerifyNpmPackage(context.Background(), attestaions, artifactHash, provenanceOpts, builderOpts, clientOpts)
 		})
 	}
 }

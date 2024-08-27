@@ -52,4 +52,5 @@ var (
 	ErrorMismatchResourceURI       = errors.New("resource URI does not match")
 	ErrorMismatchVerifierID        = errors.New("verifier ID does not match")
 	ErrorInvalidSLSALevel          = errors.New("invalid SLSA level")
+	ErrorInvalidClientOpts         = errors.New("no more than one of options.ClientOpts should be provided")
 )
