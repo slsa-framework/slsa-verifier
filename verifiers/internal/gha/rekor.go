@@ -10,12 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	cjson "github.com/docker/go/canonical/json"
-	"github.com/go-openapi/runtime"
+	goapiruntime "github.com/go-openapi/runtime"
 	rekorGenClient "github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/rekor/pkg/generated/client/entries"
 	"github.com/sigstore/rekor/pkg/generated/client/index"
@@ -37,6 +38,8 @@ import (
 	sigstoreRoot "github.com/sigstore/sigstore-go/pkg/root"
 	sigstoreVerify "github.com/sigstore/sigstore-go/pkg/verify"
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+
+	"sigs.k8s.io/release-utils/version"
 )
 
 const (
@@ -52,7 +55,8 @@ var (
 func getDefaultRekorClient() (*rekorGenClient.Rekor, error) {
 	var err error
 	defaultRekorClientOnce.Do(func() {
-		defaultRekorClient, err = rekorClient.GetRekorClient(defaultRekorAddr)
+		userAgent := fmt.Sprintf("slsa-verifier/%s (%s; %s)", version.GetVersionInfo().GitVersion, runtime.GOOS, runtime.GOARCH)
+		defaultRekorClient, err = rekorClient.GetRekorClient(defaultRekorAddr, rekorClient.WithUserAgent(userAgent))
 		if err != nil {
 			defaultRekorClientOnce = new(sync.Once)
 			return
@@ -149,7 +153,7 @@ func extractCert(e *models.LogEntryAnon) (*x509.Certificate, error) {
 		return nil, err
 	}
 
-	pe, err := models.UnmarshalProposedEntry(bytes.NewReader(b), runtime.JSONConsumer())
+	pe, err := models.UnmarshalProposedEntry(bytes.NewReader(b), goapiruntime.JSONConsumer())
 	if err != nil {
 		return nil, err
 	}

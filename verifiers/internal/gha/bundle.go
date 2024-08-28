@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
 	bundle_v1 "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
@@ -20,7 +21,10 @@ import (
 // Bundle specific errors.
 var (
 	ErrorMismatchSignature       = errors.New("bundle tlog entry does not match signature")
+	ErrorUnequalSignatures       = errors.New("bundle tlog entry and envelope have an unequal number of signatures")
+	ErrorNoSignatures            = errors.New("envolope has no signatures")
 	ErrorUnexpectedEntryType     = errors.New("unexpected tlog entry type")
+	ErrorParsingEntryBody        = errors.New("unexpected layout of the bundle tlog entry body")
 	ErrorMissingCertInBundle     = errors.New("missing signing certificate in bundle")
 	ErrorUnexpectedBundleContent = errors.New("expected DSSE bundle content")
 )
@@ -110,29 +114,41 @@ func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) 
 // DSSE envelope. It MUST verify that the signatures match to ensure that the
 // tlog timestamp attests to the signature creation time.
 func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
-	kindVersion := tlogEntry.GetKindVersion()
-	if kindVersion.Kind != "intoto" &&
-		kindVersion.Version != "0.0.2" {
-		return fmt.Errorf("%w: expected intoto:0.0.2, got %s:%s", ErrorUnexpectedEntryType,
-			kindVersion.Kind, kindVersion.Version)
+	if len(env.Signatures) == 0 {
+		return ErrorNoSignatures
 	}
 
+	kindVersion := tlogEntry.GetKindVersion()
+
+	if kindVersion.Kind == "intoto" && kindVersion.Version == "0.0.2" {
+		return matchRekorEntryWithEnvelopeIntotov002(tlogEntry, env)
+	}
+
+	if kindVersion.Kind == "dsse" && kindVersion.Version == "0.0.1" {
+		return matchRekorEntryWithEnvelopeDSSEv001(tlogEntry, env)
+	}
+
+	return fmt.Errorf("%w: wanted either intoto v0.0.2 or dsse v0.0.1, got: %s %s", ErrorUnexpectedEntryType, kindVersion.Kind, kindVersion.Version)
+}
+
+// matchRekorEntryWithEnvelopeDSSEv001 handles matchRekorEntryWithEnvelope for the intoto v0.0.1 type version.
+func matchRekorEntryWithEnvelopeIntotov002(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
 	canonicalBody := tlogEntry.GetCanonicalizedBody()
 	var toto models.Intoto
 	var intotoObj models.IntotoV002Schema
 	if err := json.Unmarshal(canonicalBody, &toto); err != nil {
-		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 	specMarshal, err := json.Marshal(toto.Spec)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 	if err := json.Unmarshal(specMarshal, &intotoObj); err != nil {
-		return fmt.Errorf("%w: %s", ErrorUnexpectedEntryType, err)
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
 	}
 
 	if len(env.Signatures) != len(intotoObj.Content.Envelope.Signatures) {
-		return fmt.Errorf("expected %d sigs in canonical body, got %d",
+		return fmt.Errorf("%w: wanted %d, got %d", ErrorUnequalSignatures,
 			len(env.Signatures),
 			len(intotoObj.Content.Envelope.Signatures))
 	}
@@ -142,17 +158,52 @@ func matchRekorEntryWithEnvelope(tlogEntry *v1.TransparencyLogEntry, env *dsseli
 		// The signature in the canonical body is double base64-encoded.
 		encodedEnvSig := base64.StdEncoding.EncodeToString(
 			[]byte(sig.Sig))
-		var matchCanonical bool
-		for _, canonicalSig := range intotoObj.Content.Envelope.Signatures {
-			if canonicalSig.Sig.String() == encodedEnvSig {
-				matchCanonical = true
-			}
-		}
-		if !matchCanonical {
+		if !slices.ContainsFunc(
+			intotoObj.Content.Envelope.Signatures,
+			func(canonicalSig *models.IntotoV002SchemaContentEnvelopeSignaturesItems0) bool {
+				return canonicalSig.Sig.String() == encodedEnvSig
+			},
+		) {
 			return ErrorMismatchSignature
 		}
 	}
 
+	return nil
+}
+
+// matchRekorEntryWithEnvelopeDSSEv001 handles matchRekorEntryWithEnvelope for the dsse v0.0.1 type version.
+func matchRekorEntryWithEnvelopeDSSEv001(tlogEntry *v1.TransparencyLogEntry, env *dsselib.Envelope) error {
+	canonicalBody := tlogEntry.GetCanonicalizedBody()
+	var dsseObj models.DSSE
+	if err := json.Unmarshal(canonicalBody, &dsseObj); err != nil {
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
+	}
+	var dsseSchemaObj models.DSSEV001Schema
+
+	specMarshal, err := json.Marshal(dsseObj.Spec)
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
+	}
+	if err := json.Unmarshal(specMarshal, &dsseSchemaObj); err != nil {
+		return fmt.Errorf("%w: %s", ErrorParsingEntryBody, err)
+	}
+
+	if len(env.Signatures) != len(dsseSchemaObj.Signatures) {
+		return fmt.Errorf("%w: wanted %d, got %d", ErrorUnequalSignatures,
+			len(env.Signatures),
+			len(dsseSchemaObj.Signatures))
+	}
+	// TODO(#487): verify the certs match.
+	for _, sig := range env.Signatures {
+		if !slices.ContainsFunc(
+			dsseSchemaObj.Signatures,
+			func(canonicalSig *models.DSSEV001SchemaSignaturesItems0) bool {
+				return *canonicalSig.Signature == sig.Sig
+			},
+		) {
+			return ErrorMismatchSignature
+		}
+	}
 	return nil
 }
 
