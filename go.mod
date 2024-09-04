@@ -1,7 +1,6 @@
 module github.com/slsa-framework/slsa-verifier/v2
 
 go 1.22.0
-
 require (
 	github.com/docker/go v1.5.1-1
 	github.com/go-openapi/runtime v0.28.0
@@ -10,18 +9,18 @@ require (
 	github.com/in-toto/in-toto-golang v0.9.0
 	github.com/secure-systems-lab/go-securesystemslib v0.8.0
 	github.com/sigstore/rekor v1.3.6
-	github.com/sigstore/sigstore v1.8.7
+	github.com/sigstore/sigstore v1.8.9
 )
 
 require (
-	github.com/google/go-containerregistry v0.20.0
+	github.com/google/go-containerregistry v0.20.2
 	github.com/gorilla/mux v1.8.1
 	github.com/in-toto/attestation v1.1.0
 	github.com/sigstore/cosign/v2 v2.2.4
-	github.com/sigstore/sigstore-go v0.5.1
+	github.com/sigstore/sigstore-go v0.6.1
 	github.com/slsa-framework/slsa-github-generator v1.9.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/mod v0.19.0
+	golang.org/x/mod v0.20.0
 	sigs.k8s.io/release-utils v0.8.4
 )
 
@@ -51,9 +50,8 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20231011164504-785e29786b46 // indirect
-	github.com/docker/cli v24.0.7+incompatible // indirect
+	github.com/docker/cli v27.1.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v26.1.5+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
@@ -105,13 +103,13 @@ require (
 	go.opentelemetry.io/otel/trace v1.27.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.25.0 // indirect
+	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
-	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
-	golang.org/x/term v0.22.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/net v0.27.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/term v0.23.0 // indirect
+	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/grpc v1.64.1 // indirect
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/ini.v1 v1.67.0 // indirect
