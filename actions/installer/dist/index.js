@@ -1,219 +1,6 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 4822:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-// Copyright 2022 SLSA Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fileHasExpectedSha256Hash = exports.getVerifierVersion = exports.validVersion = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
-const github = __importStar(__nccwpck_require__(5438));
-const io = __importStar(__nccwpck_require__(7436));
-const tc = __importStar(__nccwpck_require__(7784));
-const crypto = __importStar(__nccwpck_require__(6113));
-const fs = __importStar(__nccwpck_require__(7147));
-const os = __importStar(__nccwpck_require__(2037));
-const path = __importStar(__nccwpck_require__(1017));
-const BOOTSTRAP_VERSION = "v2.5.1-rc.0";
-const BOOTSTRAP_VERIFIER_SHA256 = "ccd1edf540ceb9283688745069c041907e5f4cda9dd07a344e601cafb4d11dd2";
-const BINARY_NAME = "slsa-verifier";
-const PROVENANCE_NAME = "slsa-verifier-linux-amd64.intoto.jsonl";
-// If true, the input string conforms to slsa-verifier's versioning system.
-function validVersion(version) {
-    const re = /(v[0-9]+\.[0-9]+\.[0-9]+)/;
-    return re.test(version);
-}
-exports.validVersion = validVersion;
-// Resolve command line argument to a version number
-function getVerifierVersion(actionRef) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (validVersion(actionRef)) {
-            return actionRef;
-        }
-        // If actionRef is a commit SHA, then find the associated version number.
-        const shaRe = /^[a-f\d]{40}$/;
-        if (shaRe.test(actionRef)) {
-            const octokit = github.getOctokit(core.getInput("github-token"));
-            const { data: tags } = yield octokit.request("GET /repos/{owner}/{repository}/tags", {
-                owner: "slsa-framework",
-                repository: "slsa-verifier",
-            });
-            for (const tag of tags) {
-                const commitSha = tag.commit.sha;
-                if (commitSha === actionRef) {
-                    return tag.name;
-                }
-            }
-        }
-        throw new Error(`Invalid version provided: ${actionRef}. For the set of valid versions, see https://github.com/slsa-framework/slsa-verifier/releases.`);
-    });
-}
-exports.getVerifierVersion = getVerifierVersion;
-// If true, then the file in `path` has the same SHA256 hash as `expectedSha256Hash``.
-function fileHasExpectedSha256Hash(filePath, expectedSha256Hash) {
-    if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${filePath}`);
-    }
-    const untrustedFile = fs.readFileSync(filePath);
-    const computedSha256Hash = crypto
-        .createHash("sha256")
-        .update(untrustedFile)
-        .digest("hex");
-    return computedSha256Hash === expectedSha256Hash;
-}
-exports.fileHasExpectedSha256Hash = fileHasExpectedSha256Hash;
-let tmpDir;
-// Delete bootstrap version and maybe installed version
-function cleanup() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield io.rmRF(`${tmpDir}`);
-    });
-}
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        // Get requested verifier version and validate
-        // SLSA_VERIFIER_CI_ACTION_REF is a utility env variable to help us test
-        // the Action in CI.
-        const actionRef = process.env.GITHUB_ACTION_REF ||
-            process.env.SLSA_VERIFIER_CI_ACTION_REF ||
-            "";
-        let version;
-        try {
-            version = yield getVerifierVersion(actionRef);
-        }
-        catch (error) {
-            const errMsg = error instanceof Error ? error.message : String(error);
-            core.setFailed(`Invalid version provided. For the set of valid versions, see https://github.com/slsa-framework/slsa-verifier/releases. ${errMsg}`);
-            cleanup();
-            return;
-        }
-        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "slsa-verifier_"));
-        const bootstrapDir = `${tmpDir}/bootstrap`;
-        const installDir = `${tmpDir}/${version}`;
-        let bootstrapVerifierPath;
-        try {
-            // Download bootstrap version and validate SHA256 checksum
-            bootstrapVerifierPath = yield tc.downloadTool(`https://github.com/slsa-framework/slsa-verifier/releases/download/${BOOTSTRAP_VERSION}/slsa-verifier-linux-amd64`, `${bootstrapDir}/${BINARY_NAME}`);
-        }
-        catch (error) {
-            const errMsg = error instanceof Error ? error.message : String(error);
-            core.setFailed(`Error downloading bootstrap slsa-verifier: ${errMsg}`);
-            cleanup();
-            return;
-        }
-        if (!fileHasExpectedSha256Hash(bootstrapVerifierPath, BOOTSTRAP_VERIFIER_SHA256)) {
-            core.setFailed(`Unable to verify slsa-verifier checksum. Aborting installation.`);
-            cleanup();
-            return;
-        }
-        fs.chmodSync(bootstrapVerifierPath, 0o100);
-        let downloadedBinaryPath;
-        try {
-            // Download requested version binary and provenance
-            downloadedBinaryPath = yield tc.downloadTool(`https://github.com/slsa-framework/slsa-verifier/releases/download/${version}/slsa-verifier-linux-amd64`, `${installDir}/${BINARY_NAME}`);
-        }
-        catch (error) {
-            const errMsg = error instanceof Error ? error.message : String(error);
-            core.setFailed(`Error downloading slsa-verifier: ${errMsg}`);
-            cleanup();
-            return;
-        }
-        let downloadedProvenancePath;
-        try {
-            downloadedProvenancePath = yield tc.downloadTool(`https://github.com/slsa-framework/slsa-verifier/releases/download/${version}/slsa-verifier-linux-amd64.intoto.jsonl`, `${installDir}/${PROVENANCE_NAME}`);
-        }
-        catch (error) {
-            const errMsg = error instanceof Error ? error.message : String(error);
-            core.setFailed(`Error downloading binary provenance: ${errMsg}`);
-            cleanup();
-            return;
-        }
-        // Validate binary provenance
-        try {
-            const { exitCode, stdout, stderr } = yield exec.getExecOutput(`${bootstrapVerifierPath}`, [
-                "verify-artifact",
-                downloadedBinaryPath,
-                "--provenance-path",
-                downloadedProvenancePath,
-                "--source-uri",
-                "github.com/slsa-framework/slsa-verifier",
-                "--source-tag",
-                version,
-            ]);
-            if (exitCode !== 0) {
-                throw new Error(`Unable to verify binary provenance. Aborting installation. stdout: ${stdout}; stderr: ${stderr}`);
-            }
-        }
-        catch (error) {
-            const errMsg = error instanceof Error ? error.message : String(error);
-            core.setFailed(`Error executing slsa-verifier: ${errMsg}`);
-            cleanup();
-            return;
-        }
-        // Copy requested version to HOME directory.
-        const finalDir = `${os.homedir()}/.slsa/bin/${version}`;
-        const finalPath = `${finalDir}/${BINARY_NAME}`;
-        fs.mkdirSync(finalDir, { recursive: true });
-        fs.copyFileSync(downloadedBinaryPath, finalPath);
-        fs.chmodSync(finalPath, 0o100);
-        core.addPath(finalDir);
-        core.setOutput("verifier-path", finalDir);
-        cleanup();
-    });
-}
-run();
-
-
-/***/ }),
-
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -2850,7 +2637,7 @@ class HttpClient {
         }
         const usingSsl = parsedUrl.protocol === 'https:';
         proxyAgent = new undici_1.ProxyAgent(Object.assign({ uri: proxyUrl.href, pipelining: !this._keepAlive ? 0 : 1 }, ((proxyUrl.username || proxyUrl.password) && {
-            token: `${proxyUrl.username}:${proxyUrl.password}`
+            token: `Basic ${Buffer.from(`${proxyUrl.username}:${proxyUrl.password}`).toString('base64')}`
         })));
         this._proxyAgentDispatcher = proxyAgent;
         if (usingSsl && this._ignoreSslError) {
@@ -2964,11 +2751,11 @@ function getProxyUrl(reqUrl) {
     })();
     if (proxyVar) {
         try {
-            return new URL(proxyVar);
+            return new DecodedURL(proxyVar);
         }
         catch (_a) {
             if (!proxyVar.startsWith('http://') && !proxyVar.startsWith('https://'))
-                return new URL(`http://${proxyVar}`);
+                return new DecodedURL(`http://${proxyVar}`);
         }
     }
     else {
@@ -3026,6 +2813,19 @@ function isLoopbackAddress(host) {
         hostLower.startsWith('127.') ||
         hostLower.startsWith('[::1]') ||
         hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
+}
+class DecodedURL extends URL {
+    constructor(url, base) {
+        super(url, base);
+        this._decodedUsername = decodeURIComponent(super.username);
+        this._decodedPassword = decodeURIComponent(super.password);
+    }
+    get username() {
+        return this._decodedUsername;
+    }
+    get password() {
+        return this._decodedPassword;
+    }
 }
 //# sourceMappingURL=proxy.js.map
 
@@ -4629,7 +4429,7 @@ var import_graphql = __nccwpck_require__(8467);
 var import_auth_token = __nccwpck_require__(334);
 
 // pkg/dist-src/version.js
-var VERSION = "5.1.0";
+var VERSION = "5.2.0";
 
 // pkg/dist-src/index.js
 var noop = () => {
@@ -4796,7 +4596,7 @@ module.exports = __toCommonJS(dist_src_exports);
 var import_universal_user_agent = __nccwpck_require__(5030);
 
 // pkg/dist-src/version.js
-var VERSION = "9.0.4";
+var VERSION = "9.0.5";
 
 // pkg/dist-src/defaults.js
 var userAgent = `octokit-endpoint.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`;
@@ -5181,7 +4981,7 @@ var import_request3 = __nccwpck_require__(6234);
 var import_universal_user_agent = __nccwpck_require__(5030);
 
 // pkg/dist-src/version.js
-var VERSION = "7.0.2";
+var VERSION = "7.1.0";
 
 // pkg/dist-src/with-defaults.js
 var import_request2 = __nccwpck_require__(6234);
@@ -8006,7 +7806,7 @@ var import_endpoint = __nccwpck_require__(9440);
 var import_universal_user_agent = __nccwpck_require__(5030);
 
 // pkg/dist-src/version.js
-var VERSION = "8.2.0";
+var VERSION = "8.4.0";
 
 // pkg/dist-src/is-plain-object.js
 function isPlainObject(value) {
@@ -8031,7 +7831,7 @@ function getBufferResponse(response) {
 
 // pkg/dist-src/fetch-wrapper.js
 function fetchWrapper(requestOptions) {
-  var _a, _b, _c;
+  var _a, _b, _c, _d;
   const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
   const parseSuccessResponseBody = ((_a = requestOptions.request) == null ? void 0 : _a.parseSuccessResponseBody) !== false;
   if (isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
@@ -8052,8 +7852,9 @@ function fetchWrapper(requestOptions) {
   return fetch(requestOptions.url, {
     method: requestOptions.method,
     body: requestOptions.body,
+    redirect: (_c = requestOptions.request) == null ? void 0 : _c.redirect,
     headers: requestOptions.headers,
-    signal: (_c = requestOptions.request) == null ? void 0 : _c.signal,
+    signal: (_d = requestOptions.request) == null ? void 0 : _d.signal,
     // duplex must be set if request.body is ReadableStream or Async Iterables.
     // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
     ...requestOptions.body && { duplex: "half" }
@@ -33262,6 +33063,417 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 9996:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2022 SLSA Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.BOOTSTRAP_DIGEST = exports.BOOTSTRAP_VERSION = void 0;
+exports.BOOTSTRAP_VERSION = 'v2.6.0';
+exports.BOOTSTRAP_DIGEST = {
+    darwin: {
+        amd64: 'f838adf01bbe62b883e7967167fa827bbf7373f83e2d7727ec18e53f725fee93',
+        arm64: '8740e66832fd48bbaa479acd5310986b876ff545460add0cb4a087aec056189c'
+    },
+    linux: {
+        amd64: '1c9c0d6a272063f3def6d233fa3372adbaff1f5a3480611a07c744e73246b62d',
+        arm64: '92b28eb2db998f9a6a048336928b29a38cb100076cd587e443ca0a2543d7c93d'
+    },
+    windows: {
+        amd64: '37ca29ad748e8ea7be76d3ae766e8fa505362240431f6ea7f0648c727e2f2507',
+        arm64: '6235daec8037a2e8f6aa11c583eed6b09b2cd36b61b43b9e5898281b39416d2f'
+    }
+};
+
+
+/***/ }),
+
+/***/ 399:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * Copyright 2022 SLSA Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SLSA_REPO = void 0;
+exports.run = run;
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
+const github = __importStar(__nccwpck_require__(5438));
+const tc = __importStar(__nccwpck_require__(7784));
+const fs = __importStar(__nccwpck_require__(7147));
+const os = __importStar(__nccwpck_require__(2037));
+const path = __importStar(__nccwpck_require__(1017));
+const bootstrap_1 = __nccwpck_require__(9996);
+const utils = __importStar(__nccwpck_require__(1314));
+exports.SLSA_REPO = 'https://github.com/slsa-framework/slsa-verifier';
+async function run() {
+    let tmpDir;
+    try {
+        // System information
+        const OS = utils.getOS(process.platform);
+        const ARCH = utils.getArch(process.arch);
+        const EXE = OS === 'windows' ? '.exe' : '';
+        const BIN_NAME = `slsa-verifier${EXE}`;
+        const ARTIFACT_NAME = `slsa-verifier-${OS}-${ARCH}${EXE}`;
+        // Authenticate with GitHub
+        const octokit = github.getOctokit(core.getInput('token'));
+        // Validate requested version
+        let version = core.getInput('version') ||
+            process.env.GITHUB_ACTION_REF ||
+            process.env.SLSA_VERIFIER_CI_ACTION_REF;
+        try {
+            core.debug(`version => ${version}`);
+            if (utils.isSha(version)) {
+                version = await utils.getVersionReleaseBySha(version, octokit);
+            }
+            else if (utils.validVersion(version)) {
+                version = await utils.getVersionRelease(version, octokit);
+            }
+            else if (version === 'latest') {
+                version = await utils.getLatestVersion(octokit);
+            }
+            else
+                throw Error;
+        }
+        catch (error) {
+            // If we get an error message, then something when wrong with a valid
+            // version. If we get a blank error, that means we got an invalid version.
+            const message = error instanceof Error ? error.message : '';
+            if (message) {
+                throw Error(`${message} - For a list of valid versions, see ${exports.SLSA_REPO}/releases`);
+            }
+            else {
+                throw Error(`Invalid version ${version} - For a list of valid versions, see ${exports.SLSA_REPO}/releases`);
+            }
+        }
+        core.info(`🏗️ Setting up slsa-verifier ${version}`);
+        core.setOutput('version', version);
+        // Create temp directory for downloading non-cached versions
+        const cache = core.getInput('cache');
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'slsa-verifier_'));
+        core.debug(`Created ${tmpDir}`);
+        // Check if the bootstrap slsa-verifier is already in the tool-cache
+        core.debug('Checking bootstrap slsa-verifier cache');
+        let bootstrapPath = tc.find('slsa-verifier', bootstrap_1.BOOTSTRAP_VERSION.substring(1));
+        // Load from cache if available, otherwise download it
+        let bootstrapBin;
+        if (cache && bootstrapPath) {
+            core.info('📥 Loaded bootstrap from runner cache');
+            bootstrapBin = path.join(bootstrapPath, BIN_NAME);
+        }
+        else {
+            // Download bootstrap slsa-verifier if not in cache or if cache is disabled
+            core.info('⏬ Downloading bootstrap slsa-verifier');
+            bootstrapBin = await utils.downloadReleaseArtifact(bootstrap_1.BOOTSTRAP_VERSION, ARTIFACT_NAME, path.join(path.join(tmpDir, 'bootstrap'), BIN_NAME));
+            fs.chmodSync(bootstrapBin, 0o755); // chmod +x
+        }
+        // Compare the SHA256 of the binary to the known expected value
+        core.info('🔍 Verifying bootstrap slsa-verifier');
+        const bootstrapDigest = utils.sha256File(bootstrapBin);
+        core.debug(`bootstrapDigest => ${bootstrapDigest}`);
+        if (bootstrap_1.BOOTSTRAP_DIGEST[OS][ARCH] !== bootstrapDigest) {
+            throw Error('bootstrap slsa-verifier SHA256 verification failed');
+        }
+        core.info('✅ Verified bootstrap slsa-verifier');
+        // Cache the bootstrap slsa-verifier download, but don't add it to PATH
+        // In cases where cache=false, we still use this as the final location
+        // but overwrite it each time. If we loaded from cache, don't re-cache it
+        if (!cache || !bootstrapPath) {
+            bootstrapPath = await tc.cacheFile(bootstrapBin, BIN_NAME, 'slsa-verifier', bootstrap_1.BOOTSTRAP_VERSION.substring(1) // remove leading 'v'
+            );
+            // Manually update bootstrapBin because we don't add it to PATH
+            bootstrapBin = path.join(bootstrapPath, BIN_NAME);
+        }
+        // If requested version is same as bootstrap then we can just use that
+        // directly after verifying it's digest
+        let mainPath;
+        if (version === bootstrap_1.BOOTSTRAP_VERSION) {
+            core.info('📥 Loaded from bootstrap cache due to same version');
+            mainPath = bootstrapPath;
+            core.setOutput('cache-hit', true);
+        }
+        else {
+            // Check if the slsa-verifier is already in the tool-cache
+            core.debug('Checking slsa-verifier cache');
+            mainPath = tc.find('slsa-verifier', version.substring(1));
+            core.setOutput('cache-hit', cache && !!mainPath);
+            // Load from cache if available, otherwise download it
+            let mainBin;
+            if (cache && mainPath) {
+                core.info('📥 Loaded from runner cache');
+                mainBin = path.join(mainPath, BIN_NAME);
+            }
+            else {
+                // Download slsa-verifier if not in cache or if cache is disabled
+                core.info('⏬ Downloading slsa-verifier');
+                mainBin = await utils.downloadReleaseArtifact(version, ARTIFACT_NAME, path.join(path.join(tmpDir, version), BIN_NAME));
+                fs.chmodSync(mainBin, 0o755); // chmod +x
+            }
+            // Download slsa-verifier attestation next to main tool
+            core.info('🔏 Downloading slsa-verifier attestation');
+            const attestation = await utils.downloadReleaseArtifact(version, `${ARTIFACT_NAME}.intoto.jsonl`, `${mainBin}.intoto.jsonl`);
+            // Run the bootstrap slsa-verifier against the version we wanted
+            core.info('🔍 Verifying slsa-verifier');
+            try {
+                // This will exit 1 on error and display stdout and stderr automatically
+                await exec.getExecOutput(bootstrapBin, [
+                    'verify-artifact',
+                    mainBin,
+                    '--provenance-path',
+                    attestation,
+                    '--source-uri',
+                    'github.com/slsa-framework/slsa-verifier',
+                    '--source-tag',
+                    version
+                ]);
+            }
+            catch (error) {
+                core.debug(error instanceof Error ? error.message : error);
+                throw Error('slsa-verifier signature verification failed');
+            }
+            core.info('✅ Verified slsa-verifier');
+            // Cache the slsa-verifier download
+            // In cases where cache=false, we still use this as the final location
+            // but overwrite it each time. If we loaded from cache, don't re-cache it
+            if (!cache || !mainPath) {
+                mainPath = await tc.cacheFile(mainBin, BIN_NAME, 'slsa-verifier', version.substring(1) // remove leading 'v'
+                );
+            }
+        }
+        // Add the final slsa-verifier to our PATH
+        core.addPath(mainPath);
+        core.info('🎉 slsa-verifier is ready');
+    }
+    catch (error) {
+        if (error instanceof Error)
+            core.setFailed(error.message);
+        else
+            core.setFailed(error);
+    }
+    // Cleanup tmpDir if it was created at any point
+    if (tmpDir) {
+        core.debug(`Deleting ${tmpDir}`);
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+}
+
+
+/***/ }),
+
+/***/ 1314:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * Copyright 2022 SLSA Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getArch = getArch;
+exports.getOS = getOS;
+exports.validVersion = validVersion;
+exports.isSha = isSha;
+exports.getLatestVersion = getLatestVersion;
+exports.getVersionRelease = getVersionRelease;
+exports.getVersionReleaseBySha = getVersionReleaseBySha;
+exports.downloadReleaseArtifact = downloadReleaseArtifact;
+exports.sha256File = sha256File;
+const core = __importStar(__nccwpck_require__(2186));
+const tc = __importStar(__nccwpck_require__(7784));
+const fs = __importStar(__nccwpck_require__(7147));
+const crypto = __importStar(__nccwpck_require__(6113));
+const main_1 = __nccwpck_require__(399);
+function getArch(arch) {
+    switch (arch) {
+        case 'x64':
+            return 'amd64';
+        case 'arm64':
+            return arch;
+        default:
+            throw Error(`Unsupported architecture ${arch}`);
+    }
+}
+function getOS(os) {
+    switch (os) {
+        case 'win32':
+            return 'windows';
+        case 'linux':
+        case 'darwin':
+            return os;
+        default:
+            throw Error(`Unsupported OS ${os}`);
+    }
+}
+function validVersion(version) {
+    const re = /^(v[0-9]+\.[0-9]+\.[0-9]+)$/;
+    if (re.test(version)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+function isSha(sha) {
+    const re = /^[a-f\d]{40}$/;
+    if (re.test(sha)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+async function getLatestVersion(octokit) {
+    try {
+        return (await octokit.rest.repos.getLatestRelease({
+            owner: 'slsa-framework',
+            repo: 'slsa-verifier'
+        })).data.tag_name;
+    }
+    catch (error) {
+        core.debug(error instanceof Error ? error.message : error);
+        throw Error('Could not find latest release');
+    }
+}
+async function getVersionRelease(version, octokit) {
+    try {
+        return (await octokit.rest.repos.getReleaseByTag({
+            owner: 'slsa-framework',
+            repo: 'slsa-verifier',
+            tag: version
+        })).data.tag_name;
+    }
+    catch (error) {
+        core.debug(error instanceof Error ? error.message : error);
+        throw Error(`Could not find release ${version}`);
+    }
+}
+async function getVersionReleaseBySha(sha, octokit) {
+    // Use pagination to loop over tags in chunks
+    for await (const page of octokit.paginate.iterator(octokit.rest.repos.listTags, { owner: 'slsa-framework', repo: 'slsa-verifier' })) {
+        // Loop over tags in page
+        for (const tag of page.data) {
+            if (!validVersion(tag.name))
+                continue; // Skip non semver tags
+            core.debug(`${tag.name} => ${tag.commit.sha}`);
+            if (tag.commit.sha === sha) {
+                try {
+                    // Multiple tags can exist for the same commit so we should check
+                    // them until we get a valid match or exhausted all options
+                    return getVersionRelease(tag.name, octokit);
+                }
+                catch (error) {
+                    core.debug(error instanceof Error ? error.message : error);
+                }
+            }
+        }
+    }
+    throw Error(`Could not find tag or release associated with commit ${sha}`);
+}
+async function downloadReleaseArtifact(version, artifact, output) {
+    try {
+        return await tc.downloadTool(`${main_1.SLSA_REPO}/releases/download/${version}/${artifact}`, output);
+    }
+    catch (error) {
+        core.debug(error instanceof Error ? error.message : error);
+        throw Error(`Failed to download artifact ${artifact} ${version}`);
+    }
+}
+function sha256File(file) {
+    return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+}
+
+
+/***/ }),
+
 /***/ 9491:
 /***/ ((module) => {
 
@@ -35165,13 +35377,34 @@ module.exports = parseParams
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(4822);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+/*
+ * Copyright 2022 SLSA Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const main_1 = __nccwpck_require__(399);
+(0, main_1.run)();
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

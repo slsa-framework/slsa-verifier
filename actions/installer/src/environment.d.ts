@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
-import { run } from './main'
+// This tells TypeScript about available Environment variables
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      // This is used when the Action is ran "for real"
+      GITHUB_ACTION_REF: string
 
-run()
+      // This used as part of our CI process
+      SLSA_VERIFIER_CI_ACTION_REF: string
+    }
+  }
+}
+
+export {}

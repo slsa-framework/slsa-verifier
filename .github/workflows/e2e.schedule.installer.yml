@@ -1,217 +1,444 @@
-name: verifier action
+name: Installer Action CI
+
 on:
-  # Daily run.
-  schedule:
-    - cron: "0 4 * * *"
   workflow_dispatch:
-    inputs:
-      version:
-        type: string
-        description: The version to to test for pre-release.
-        required: false
+  schedule:
+    - cron: "0 4 * * *" # Daily run
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/e2e.installer.yml
+      - actions/installer/**
 
-permissions: read-all
-
-env:
-  GH_TOKEN: ${{ github.token }}
-  ISSUE_REPOSITORY: ${{ github.repository }}
-  MINIMUM_INSTALLER_VERSION: v2.0.1
+# Grant no permissions by default
+permissions: {}
 
 jobs:
-  list-verifiers:
+  test-typescript:
+    name: TypeScript Tests
     runs-on: ubuntu-latest
-    outputs:
-      # NOTE: version output is a JSON list of version numbers.
-      # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/#new-fromjson-method-in-expressions
-      # https://docs.github.com/en/actions/learn-github-actions/expressions#fromjson
-      version: ${{ steps.generate-versions.outputs.version }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: actions/installer
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          # NOTE: the example-package needs to be checked out in the default workspace.
-          repository: slsa-framework/example-package
-          ref: main
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/
 
-      - name: Checkout
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version-file: actions/installer/.node-version
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm run ci-test
+
+  format:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: actions/installer
+    steps:
+      - name: Checkout repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          path: __THIS_REPO__
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/
 
-      - name: Generate verifier list
-        if: inputs.version == ''
-        id: generate-list
-        run: ./__THIS_REPO__/.github/workflows/scripts/schedule.actions/verifier-installer.sh
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version-file: actions/installer/.node-version
+          cache: npm
 
-      - name: Generate pre-release list
-        if: inputs.version != ''
-        id: generate-prerelease
-        env:
-          PRE_RELEASE_VERSION: ${{ inputs.version }}
-        run: echo "version=[\"$PRE_RELEASE_VERSION\"]" >> "$GITHUB_OUTPUT"
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Generate pre-release list
-        id: generate-versions
-        env:
-          PRE_RELEASE_VERSION: ${{ steps.generate-prerelease.outputs.version }}
-          LIST_VERSION: ${{ steps.generate-list.outputs.version }}
+      - name: Check Format
+        run: npm run format:check
+
+  lint:
+    name: Lint codebase
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: actions/installer
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version-file: actions/installer/.node-version
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+  check-dist:
+    name: Check dist/
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: actions/installer
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version-file: actions/installer/.node-version
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build dist/ Directory
+        run: npm run package
+
+      - name: Compare Directories
+        id: compare
+        shell: bash
         run: |
-          if [[ -n $PRE_RELEASE_VERSION ]]; then
-            echo "version=$PRE_RELEASE_VERSION" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=$LIST_VERSION" >> "$GITHUB_OUTPUT"
+          if [ ! -d dist/ ]; then
+            echo "::error::Expected dist/ directory does not exist"
+            exit 1
           fi
 
-  verifier-run:
-    needs: list-verifiers
+          [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -eq 0 ] && DIFF=false || DIFF=true
+          echo "diff=$DIFF" | tee -a "$GITHUB_OUTPUT"
+          if [ "$DIFF" == "true" ]; then
+            echo "::error::Detected uncommitted changes after build"
+            exit 1
+          fi
+
+      - name: Upload dist/
+        if: (!cancelled()) && steps.compare.outputs.diff == 'true'
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: dist
+          path: actions/installer/dist/
+
+  test-ref-version:
+    name: Test ref version
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        version: ${{ fromJson(needs.list-verifiers.outputs.version) }}
+        version: [v2.6.0]
+    permissions:
+      contents: read
     steps:
-      - name: Debug
-        env:
-          VERSION: ${{ matrix.version }}
-        run: echo "version is '$VERSION'"
-
-      - name: Checkout this repository
-        # Skip release candidates unless specified explicitly.
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
+      - name: Checkout repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          ref: ${{ matrix.version }}
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/dist/
 
-      # Install at tag.
-      # ==============
-      - name: Run the Action at tag
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
+      - name: Setup slsa-verifier
+        id: slsa
+        uses: ./actions/installer
         env:
           SLSA_VERIFIER_CI_ACTION_REF: ${{ matrix.version }}
-        uses: ./actions/installer
+        with:
+          cache: false
 
-      - name: Verify the version
+      - name: Test slsa-verifier
+        shell: bash
         env:
-          VERSION: ${{ matrix.version }}
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
+          MATRIX_VERSION: ${{ matrix.version }}
+          VERSION: ${{ steps.slsa.outputs.version }}
         run: |
-          version=$(slsa-verifier version 2>&1 | grep GitVersion | cut -d ':' -f2 | tr -d "[:space:]")
-          slsa-verifier version
-          echo "version: $version"
-          echo "VERSION: $VERSION"
-          # NOTE: the version reported by the slsa-verifier does not contain the leading `v`.
-          [ "$version" == "${VERSION:1}" ]
+          if ! which slsa-verifier ; then
+            echo "::error::slsa-verifier not found in PATH"
+            exit 1
+          fi
 
-      - name: Delete the binary
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        run: |
-          binary_path=$(which slsa-verifier)
-          echo "binary_path: $binary_path"
-          rm -rf "$binary_path"
+          if which bootstrap-slsa-verifier ; then
+            echo "::error::bootstrap-slsa-verifier was found in PATH"
+            exit 1
+          fi
 
-      # Install at commit sha.
-      # =====================
-      - name: Get sha1
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        id: commit
-        env:
-          VERSION: ${{ matrix.version }}
-        run: |
-          commit_sha=$(gh api -H "Accept: application/vnd.github+json" "/repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" | jq -r '.object.sha')
-          echo "commit_sha=$commit_sha" >> "$GITHUB_OUTPUT"
+          [ "$MATRIX_VERSION" != "latest" ] && VERSION=$MATRIX_VERSION
+          if ! slsa-verifier version | grep "${VERSION/v/}" ; then
+            echo "::error::slsa-verifier $VERSION does not appear to be installed"
+            exit 1
+          fi
 
-      - name: Run the Action at commit
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        env:
-          SLSA_VERIFIER_CI_ACTION_REF: ${{ steps.commit.outputs.commit_sha }}
-        uses: ./actions/installer
-
-      - name: Verify the version
-        env:
-          VERSION: ${{ matrix.version }}
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        run: |
-          version=$(slsa-verifier version 2>&1 | grep GitVersion | cut -d ':' -f2 | tr -d "[:space:]")
-          slsa-verifier version
-          echo "version: $version"
-          echo "VERSION: $VERSION"
-          # NOTE: the version reported by the slsa-verifier does not contain the leading `v`.
-          [ "$version" == "${VERSION:1}" ]
-
-      - name: Delete the binary
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        run: |
-          binary_path=$(which slsa-verifier)
-          echo "binary_path: $binary_path"
-          rm -rf "$binary_path"
-
-      # Install at invalid commit.
-      # =========================
-      - name: Install invalid commit
-        id: invalid-commit
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        continue-on-error: true
-        env:
-          SLSA_VERIFIER_CI_ACTION_REF: 55ca6286e3e4f4fba5d0448333fa99fc5a404a73
-        uses: ./actions/installer
-      - env:
-          SUCCESS: ${{ steps.invalid-commit.outcome == 'failure' }}
-        run: |
-          [ "$SUCCESS" == "true" ]
-
-      # Install at non-existent tag.
-      # =========================
-      - name: Install non-existent tag
-        id: nonexistent-tag
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        continue-on-error: true
-        env:
-          # NOTE: actions/installer checks for valid semantic version numbers.
-          SLSA_VERIFIER_CI_ACTION_REF: v100.3.5
-        uses: ./actions/installer
-      - env:
-          SUCCESS: ${{ steps.nonexistent-tag.outcome == 'failure' }}
-        run: |
-          [ "$SUCCESS" == "true" ]
-
-      # Install at empty tag.
-      # =====================
-      - name: Install empty tag
-        id: empty-tag
-        if: ${{ inputs.version != '' || ! contains(matrix.version, '-rc' ) }}
-        continue-on-error: true
-        env:
-          SLSA_VERIFIER_CI_ACTION_REF:
-        uses: ./actions/installer
-      - env:
-          SUCCESS: ${{ steps.empty-tag.outcome == 'failure' }}
-        run: |
-          [ "$SUCCESS" == "true" ]
-
-  if-succeed:
-    needs: [verifier-run, list-verifiers]
-    runs-on: ubuntu-latest
-    # We use `== 'failure'` instead of ` != 'success'` because we want to ignore skipped jobs, if there are any.
-    if: inputs.version == '' && needs.verifier-run.result != 'failure' && needs.list-verifiers.result != 'failure'
+  test-version:
+    name: Test version
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, ubuntu, windows]
+        version: [latest, v2.5.1, 7e1e47d7d793930ab0082c15c2b971fdb53a3c95]
     permissions:
       contents: read
-      issues: write
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          repository: slsa-framework/example-package
-          ref: main
-      - run: ./.github/workflows/scripts/e2e-report-success.sh
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/dist/
 
-  if-failed:
-    needs: [verifier-run, list-verifiers]
+      - name: Setup slsa-verifier
+        id: slsa
+        uses: ./actions/installer
+        with:
+          version: ${{ matrix.version }}
+          cache: false
+
+      - name: Test slsa-verifier
+        shell: bash
+        env:
+          MATRIX_VERSION: ${{ matrix.version }}
+          VERSION: ${{ steps.slsa.outputs.version }}
+        run: |
+          if ! which slsa-verifier ; then
+            echo "::error::slsa-verifier not found in PATH"
+            exit 1
+          fi
+
+          if which bootstrap-slsa-verifier ; then
+            echo "::error::bootstrap-slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          [ "$MATRIX_VERSION" != "latest" ] && VERSION=$MATRIX_VERSION
+          if ! slsa-verifier version | grep "${VERSION/v/}" ; then
+            echo "::error::slsa-verifier $VERSION does not appear to be installed"
+            exit 1
+          fi
+
+  test-bad-version:
+    name: Test bad version
     runs-on: ubuntu-latest
-    if: always() && inputs.version == '' && (needs.verifier-run.result == 'failure' || needs.list-verifiers.result == 'failure')
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - v0.0.0
+          - v0.0.1
+          - foobar
+          - 7e1e47d
+          - ffffffffffffffffffffffffffffffffffffffff
     permissions:
       contents: read
-      issues: write
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          repository: slsa-framework/example-package
-          ref: main
-      - run: ./.github/workflows/scripts/e2e-report-failure.sh
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/dist/
+
+      - name: Setup slsa-verifier
+        id: slsa
+        uses: ./actions/installer
+        continue-on-error: true
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Test slsa-verifier
+        shell: bash
+        env:
+          FAILURE: ${{ steps.slsa.outcome  == 'failure' }}
+        run: |
+          if which slsa-verifier ; then
+            echo "::error::slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          if which bootstrap-slsa-verifier ; then
+            echo "::error::bootstrap-slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          if [ "$FAILURE" != "true" ]; then
+            echo "::error::Expected Action to fail but didn't"
+            exit 1
+          fi
+
+  test-invalid-version:
+    name: Test invalid version
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, windows]
+        version:
+          - v2.0.1
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/dist/
+
+      - name: Setup slsa-verifier
+        id: slsa
+        uses: ./actions/installer
+        continue-on-error: true
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Test slsa-verifier
+        shell: bash
+        env:
+          FAILURE: ${{ steps.slsa.outcome  == 'failure' }}
+        run: |
+          if which slsa-verifier ; then
+            echo "::error::slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          if which bootstrap-slsa-verifier ; then
+            echo "::error::bootstrap-slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          if [ "$FAILURE" != "true" ]; then
+            echo "::error::Expected Action to fail but didn't"
+            exit 1
+          fi
+
+  test-cache:
+    name: Test cache
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, ubuntu, windows]
+        cache: [true, false]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/dist/
+
+      - name: Setup slsa-verifier (cache)
+        if: matrix.cache == true
+        uses: ./actions/installer
+        with:
+          version: v2.5.1 # don't match bootstrap
+          cache: ${{ matrix.cache }}
+
+      - name: Setup slsa-verifier
+        id: slsa
+        uses: ./actions/installer
+        with:
+          version: v2.5.1 # don't match bootstrap
+          cache: ${{ matrix.cache }}
+
+      - name: Test slsa-verifier
+        shell: bash
+        env:
+          CACHE_HIT: ${{ steps.slsa.outputs.cache-hit }}
+          MATRIX_CACHE: ${{ matrix.cache }}
+        run: |
+          if ! which slsa-verifier ; then
+            echo "::error::slsa-verifier not found in PATH"
+            exit 1
+          fi
+
+          if which bootstrap-slsa-verifier ; then
+            echo "::error::bootstrap-slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          if [ "$MATRIX_CACHE" != "$CACHE_HIT" ]; then
+            echo "::error::Cache hit is not what was expected"
+            exit 1
+          fi
+
+  test-bootstrap-cache:
+    name: Test bootstrap cache
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos, ubuntu, windows]
+        version: [v2.6.0, v2.5.1]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            actions/installer/dist/
+
+      - name: Setup slsa-verifier
+        id: slsa
+        uses: ./actions/installer
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Test slsa-verifier
+        shell: bash
+        env:
+          MATRIX_VERSION: ${{ matrix.version }}
+          CACHE_HIT: ${{ steps.slsa.outputs.cache-hit }}
+        run: |
+          if ! which slsa-verifier ; then
+            echo "::error::slsa-verifier not found in PATH"
+            exit 1
+          fi
+
+          if which bootstrap-slsa-verifier ; then
+            echo "::error::bootstrap-slsa-verifier was found in PATH"
+            exit 1
+          fi
+
+          if [ "$MATRIX_VERSION" == "v2.6.0" ]; then
+            if [ "$CACHE_HIT" != "true" ]; then
+              echo "::error::Cache hit is not what was expected"
+              exit 1
+            fi
+          else
+            if [ "$CACHE_HIT" != "false" ]; then
+              echo "::error::Cache hit is not what was expected"
+              exit 1
+            fi
+          fi

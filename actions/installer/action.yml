@@ -12,16 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'Install slsa-verifier'
-description: 'Installs SLSA verifier and adds it to your PATH'
+name: Install slsa-verifier
+description: Installs SLSA verifier and adds it to your PATH
+
 branding:
-  icon: 'package'
-  color: 'blue'
+  icon: package
+  color: blue
+
 inputs:
-  github-token:
-    description: 'GitHub token'
+  version:
+    description: |
+      slsa-verifier release version to be installed. Will default to the
+      GITHUB_ACTION_REF if not specified.
+    required: false
+  cache:
+    description: Whether to utilize cache with slsa-verifier
+    required: false
+    default: 'true'
+  token:
+    description: GitHub token for REST API access
     required: false
     default: ${{ github.token }}
+
+outputs:
+  version:
+    description: The version of slsa-verifier that was installed
+
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: node20
+  main: dist/index.js
