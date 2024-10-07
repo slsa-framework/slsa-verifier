@@ -21,7 +21,7 @@ require (
 	github.com/sigstore/sigstore-go v0.5.1
 	github.com/slsa-framework/slsa-github-generator v1.9.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/mod v0.19.0
+	golang.org/x/mod v0.21.0
 	sigs.k8s.io/release-utils v0.8.4
 )
 
@@ -106,9 +106,9 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
+	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
