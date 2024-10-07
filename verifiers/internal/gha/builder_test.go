@@ -376,7 +376,7 @@ func Test_isTrustedDelegatorBuilder(t *testing.T) {
 
 			res := isTrustedDelegatorBuilder(trustedBuilderID, tt.trustedBuilderIDs)
 			if res != tt.result {
-				t.Errorf(cmp.Diff(res, tt.result))
+				t.Error(cmp.Diff(res, tt.result))
 			}
 		})
 	}
@@ -442,7 +442,7 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 			t.Parallel()
 			err := VerifyCertficateSourceRepository(tt.workflow, tt.source)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -611,7 +611,7 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 			t.Parallel()
 			id, byob, err := verifyTrustedBuilderID(httpsGithubCom+tt.path, tt.tag, tt.id, tt.defaults)
 			if byob != tt.byob {
-				t.Errorf(cmp.Diff(byob, tt.byob))
+				t.Error(cmp.Diff(byob, tt.byob))
 			}
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got):\n%s", diff)
@@ -817,7 +817,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
 			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -1267,14 +1267,14 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 			t.Parallel()
 			workflow, err := GetWorkflowInfoFromCertificate(&tt.cert)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 			if err != nil {
 				return
 			}
 
 			if !cmp.Equal(*workflow, tt.workflow) {
-				t.Errorf(cmp.Diff(*workflow, tt.workflow))
+				t.Error(cmp.Diff(*workflow, tt.workflow))
 			}
 		})
 	}

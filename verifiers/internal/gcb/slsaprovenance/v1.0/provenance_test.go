@@ -57,10 +57,10 @@ func Test_getSubstitutionsField(t *testing.T) {
 
 			value, err := getSubstitutionsField(internalParemeters, tt.field)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 			if err == nil && !cmp.Equal(value, tt.value) {
-				t.Errorf(cmp.Diff(value, tt.value))
+				t.Error(cmp.Diff(value, tt.value))
 			}
 		})
 	}

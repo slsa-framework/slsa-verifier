@@ -75,7 +75,7 @@ func Test_verifyBundle(t *testing.T) {
 			_, err = VerifyProvenanceBundle(ctx, content, trustedRoot)
 
 			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}

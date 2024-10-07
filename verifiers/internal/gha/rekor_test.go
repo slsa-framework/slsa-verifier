@@ -82,7 +82,7 @@ func Test_GetRekorEntries(t *testing.T) {
 
 			_, err := getUUIDsByArtifactDigest(&mClient, tt.artifactHash)
 			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}

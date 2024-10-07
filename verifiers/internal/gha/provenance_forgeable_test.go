@@ -66,7 +66,7 @@ func Test_verifyPublishAttestationSubjectDigestName(t *testing.T) {
 				subjects: tt.subject,
 			}
 			if err := verifyPublishAttestationSubjectDigestName(prov, tt.digestName); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -109,7 +109,7 @@ func Test_verifyBuildConfig(t *testing.T) {
 				buildTriggerPath: tt.path,
 			}
 			if err := verifyBuildConfig(prov, &tt.workflow); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -146,7 +146,7 @@ func Test_verifyResolvedDependencies(t *testing.T) {
 				noResolvedDeps: tt.n,
 			}
 			if err := verifyResolvedDependencies(prov); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -245,7 +245,7 @@ func Test_verifyCommonMetadata(t *testing.T) {
 			}
 
 			if err := verifyCommonMetadata(prov, &tt.workflow); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -306,7 +306,7 @@ func Test_verifyV02Metadata(t *testing.T) {
 				}
 			}
 			if err := verifyV02Metadata(prov02); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -351,7 +351,7 @@ func Test_verifyV02Parameters(t *testing.T) {
 			}
 			err := verifyV02Parameters(prov02)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -396,7 +396,7 @@ func Test_verifyV02BuildConfig(t *testing.T) {
 			}
 			err := verifyV02BuildConfig(prov02)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -535,7 +535,7 @@ func Test_verifyMetadata(t *testing.T) {
 			}
 
 			if err := verifyMetadata(prov02, &tt.workflow); !errCmp(err, tt.errV02) {
-				t.Errorf(cmp.Diff(err, tt.errV02))
+				t.Error(cmp.Diff(err, tt.errV02))
 			}
 
 			prov1 := &testProvenanceV1{}
@@ -550,7 +550,7 @@ func Test_verifyMetadata(t *testing.T) {
 			}
 
 			if err := verifyMetadata(prov1, &tt.workflow); !errCmp(err, tt.errV01) {
-				t.Errorf(cmp.Diff(err, tt.errV01))
+				t.Error(cmp.Diff(err, tt.errV01))
 			}
 		})
 	}
@@ -932,7 +932,7 @@ func Test_verifySystemParameters(t *testing.T) {
 			}
 
 			if err := verifySystemParameters(prov, &tt.workflow); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -1084,7 +1084,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			}
 
 			if err := verifyProvenanceMatchesCertificate(prov, &tt.certificateIdentity); !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}

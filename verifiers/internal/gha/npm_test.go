@@ -71,7 +71,7 @@ func Test_verifyName(t *testing.T) {
 			err := verifyName(tt.actual, tt.expected)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -425,7 +425,7 @@ func Test_verifyPublishSubjectName(t *testing.T) {
 			err := verifyPublishSubjectName(tt.att, tt.subject)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -491,7 +491,7 @@ func Test_verifyPublishPredicateName(t *testing.T) {
 			err := verifyPublishPredicateName(tt.att, tt.subject)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -568,7 +568,7 @@ func Test_verifyPublishPredicateVersion(t *testing.T) {
 			err := verifyPublishPredicateVersion(tt.att, tt.version)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -792,7 +792,7 @@ func Test_verifyPackageName(t *testing.T) {
 
 			err = npm.verifyPackageName(&tt.subject)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -869,7 +869,7 @@ func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
 
 			err = npm.verifyPublishAttestationSubjectDigest(tt.hash)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -951,7 +951,7 @@ func Test_verifyPackageVersion(t *testing.T) {
 
 			err = npm.verifyPackageVersion(&tt.version)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -1060,7 +1060,7 @@ func Test_verifyIntotoTypes(t *testing.T) {
 
 			err := verifyIntotoTypes(tt.att, tt.predicateTypes, tt.payloadType, tt.prefix)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -1148,7 +1148,7 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 
 			err = npm.verifyIntotoHeaders()
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}

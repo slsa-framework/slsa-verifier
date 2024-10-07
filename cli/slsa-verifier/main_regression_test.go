@@ -864,7 +864,7 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 
 					outBuilderID, err := cmd.Exec(context.Background(), []string{image})
 					if !errCmp(err, tt.err) {
-						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+						t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
 
 					if err != nil {
@@ -1332,7 +1332,7 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 					outBuilderID, err := cmd.Exec(context.Background(), []string{image})
 
 					if !errCmp(err, tt.err) {
-						t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+						t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 					}
 
 					if err != nil {
