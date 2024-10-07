@@ -310,7 +310,6 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			opts := tt.buildOpts
@@ -367,7 +366,6 @@ func Test_isTrustedDelegatorBuilder(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -440,7 +438,6 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := VerifyCertficateSourceRepository(tt.workflow, tt.source)
@@ -610,7 +607,6 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			id, byob, err := verifyTrustedBuilderID(httpsGithubCom+tt.path, tt.tag, tt.id, tt.defaults)
@@ -807,7 +803,6 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			wf := WorkflowIdentity{
 				SourceRepository: tt.callerRepo,
@@ -1268,7 +1263,6 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			workflow, err := GetWorkflowInfoFromCertificate(&tt.cert)
@@ -1326,7 +1320,6 @@ func TestWorkflowIdentity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			if got, want := tt.workflow.SubjectWorkflowName(), tt.workflowName; got != want {
 				t.Errorf("unexpected subject workflow name, got %q, want %q", got, want)

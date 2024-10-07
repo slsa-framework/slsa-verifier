@@ -67,7 +67,6 @@ func Test_ParseBuilderID(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -166,7 +165,6 @@ func Test_BuilderIDNew(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -415,7 +413,6 @@ func Test_MatchesLoose(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -632,7 +629,6 @@ func Test_MatchesFull(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -754,8 +750,6 @@ func Test_IsValidBuilderTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := IsValidBuilderTag(tt.ref, tt.testing)
@@ -814,8 +808,6 @@ func Test_IsValidJreleaserBuilderTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := IsValidJreleaserBuilderTag(tt.ref)
