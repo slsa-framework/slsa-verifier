@@ -65,14 +65,13 @@ func Test_verifyName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			err := verifyName(tt.actual, tt.expected)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -183,7 +182,6 @@ func Test_verifyPublishSubjectVersion(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -352,7 +350,6 @@ func Test_verifyProvenanceSubjectVersion(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			builderID, err := utils.TrustedBuilderIDNew(tt.builderID, false)
@@ -422,14 +419,13 @@ func Test_verifyPublishSubjectName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			err := verifyPublishSubjectName(tt.att, tt.subject)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -489,14 +485,13 @@ func Test_verifyPublishPredicateName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			err := verifyPublishPredicateName(tt.att, tt.subject)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -567,14 +562,13 @@ func Test_verifyPublishPredicateVersion(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			err := verifyPublishPredicateVersion(tt.att, tt.version)
 
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -707,7 +701,6 @@ func Test_verifyProvenanceSubjectName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			builderID, err := utils.TrustedBuilderIDNew(tt.builderID, false)
@@ -763,7 +756,6 @@ func Test_verifyPackageName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -800,7 +792,7 @@ func Test_verifyPackageName(t *testing.T) {
 
 			err = npm.verifyPackageName(&tt.subject)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -846,7 +838,6 @@ func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -878,7 +869,7 @@ func Test_verifyPublishAttestationSubjectDigest(t *testing.T) {
 
 			err = npm.verifyPublishAttestationSubjectDigest(tt.hash)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -924,7 +915,6 @@ func Test_verifyPackageVersion(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -961,7 +951,7 @@ func Test_verifyPackageVersion(t *testing.T) {
 
 			err = npm.verifyPackageVersion(&tt.version)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -1065,13 +1055,12 @@ func Test_verifyIntotoTypes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			err := verifyIntotoTypes(tt.att, tt.predicateTypes, tt.payloadType, tt.prefix)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -1128,7 +1117,6 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1160,7 +1148,7 @@ func Test_verifyIntotoHeaders(t *testing.T) {
 
 			err = npm.verifyIntotoHeaders()
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -1197,7 +1185,6 @@ func Test_NpmNew(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1240,7 +1227,6 @@ func Test_verifyPublishAttestationSignature(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1287,7 +1273,6 @@ func Test_verifyProvenanceAttestationSignature(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

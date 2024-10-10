@@ -214,12 +214,11 @@ func Test_VerifyDigest(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			if err := verifyDigest(tt.prov, tt.artifactHash); !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -403,7 +402,6 @@ func Test_verifySourceURI(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -415,7 +413,7 @@ func Test_verifySourceURI(t *testing.T) {
 
 			err := verifySourceURI(prov02, tt.expectedSourceURI)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -480,7 +478,6 @@ func Test_isValidDelegatorBuilderID(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			prov := &testProvenance{
 				builderID: tt.builderID,
@@ -496,7 +493,7 @@ func Test_isValidDelegatorBuilderID(t *testing.T) {
 
 			err := isValidDelegatorBuilderID(prov)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -547,7 +544,6 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -557,7 +553,7 @@ func Test_verifyBuilderIDExactMatch(t *testing.T) {
 
 			err := verifyBuilderIDExactMatch(prov, tt.expectedID)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -619,12 +615,11 @@ func Test_VerifyBranch(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			if err := VerifyBranch(tt.prov, tt.branch); !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -741,12 +736,11 @@ func Test_VerifyWorkflowInputs(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			if err := VerifyWorkflowInputs(tt.prov, tt.inputs); !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -808,12 +802,11 @@ func Test_VerifyTag(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			if err := VerifyTag(tt.prov, tt.tag); !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -1226,12 +1219,11 @@ func Test_VerifyVersionedTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			if err := VerifyVersionedTag(tt.prov, tt.tag); !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -1299,7 +1291,6 @@ func Test_VerifyProvenance(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			trustedBuilderID, tErr := utils.TrustedBuilderIDNew(tt.trustedBuilderIDName, true)
@@ -1318,7 +1309,7 @@ func Test_VerifyProvenance(t *testing.T) {
 			}
 
 			if err := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID); !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}
@@ -1353,7 +1344,6 @@ func Test_VerifyUntrustedProvenance(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			trustedBuilderID, tErr := utils.TrustedBuilderIDNew(tt.trustedBuilderIDName, true)
@@ -1372,7 +1362,7 @@ func Test_VerifyUntrustedProvenance(t *testing.T) {
 			}
 
 			if err := VerifyProvenance(env, tt.provenanceOpts, trustedBuilderID, tt.byob, tt.expectedID); errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected))
+				t.Error(cmp.Diff(err, tt.expected))
 			}
 		})
 	}

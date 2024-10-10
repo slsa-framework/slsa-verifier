@@ -35,20 +35,19 @@ func Test_DecodeSignature(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			c, err := DecodeSignature(tt.encoded)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 			if err != nil {
 				return
 			}
 			cs := string(c)
 			if cs != tt.decoded {
-				t.Errorf(cmp.Diff(cs, tt.decoded))
+				t.Error(cmp.Diff(cs, tt.decoded))
 			}
 		})
 	}
