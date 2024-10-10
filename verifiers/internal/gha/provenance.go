@@ -330,6 +330,13 @@ func isValidDelegatorBuilderID(prov iface.Provenance) error {
 		}
 	}
 
+	// Exception for slsa-framework/slsa-github-generator branches during testing mode
+	// to allow provenance from non-main to be verified, such as during development.
+	normalizedSLSAGithubGeneratorRepoURI := utils.NormalizeGitURI(httpsGithubCom + trustedBuilderRepository)
+	if options.TestingEnabled() && normalizedURI == utils.NormalizeGitURI(normalizedSLSAGithubGeneratorRepoURI) {
+		return nil
+	}
+
 	return utils.IsValidBuilderTag(builderRef, false)
 }
 

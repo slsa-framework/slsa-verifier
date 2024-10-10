@@ -470,6 +470,18 @@ func Test_isValidDelegatorBuilderID(t *testing.T) {
 			testingEnabled: true,
 		},
 		{
+			name:           "invalid builder: ref slsa-github-generator repo: testing enabled",
+			sourceURI:      gitPrefix + httpsGithubCom + "slsa-framework/slsa-github-generator",
+			builderID:      "some/builderID@refs/heads/anybranch",
+			testingEnabled: true,
+		},
+		{
+			name:      "invalid builder: ref slsa-github-generator repo: testing disabled",
+			sourceURI: gitPrefix + httpsGithubCom + "slsa-framework/slsa-github-generator",
+			builderID: "some/builderID@refs/heads/anybranch",
+			err:       serrors.ErrorInvalidRef,
+		},
+		{
 			name:      "invalid builder ref e2e repo",
 			sourceURI: gitPrefix + httpsGithubCom + e2eTestRepository,
 			builderID: "some/builderID@refs/heads/main",
