@@ -189,7 +189,6 @@ func Test_VerifyBuilder(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -216,7 +215,7 @@ func Test_VerifyBuilder(t *testing.T) {
 			}
 			outBuilderID, err := prov.VerifyBuilder(&builderOpts)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 
 			if err != nil {
@@ -228,7 +227,7 @@ func Test_VerifyBuilder(t *testing.T) {
 			}
 
 			if err := outBuilderID.MatchesLoose(tt.builderID, false); err != nil {
-				t.Errorf(fmt.Sprintf("matches failed: %v", err))
+				t.Errorf("matches failed: %v", err)
 			}
 		})
 	}
@@ -304,7 +303,6 @@ func Test_validateBuildType(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -315,7 +313,7 @@ func Test_validateBuildType(t *testing.T) {
 			}
 			err = validateBuildType(*builderID, tt.buildType)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -554,7 +552,6 @@ func Test_VerifySourceURI(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -582,7 +579,7 @@ func Test_VerifySourceURI(t *testing.T) {
 			}
 			err = prov.VerifySourceURI(tt.source, *builderID)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -692,7 +689,6 @@ func Test_VerifySignature(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -708,7 +704,7 @@ func Test_VerifySignature(t *testing.T) {
 
 			err = prov.VerifySignature()
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -739,7 +735,6 @@ func Test_ProvenanceFromBytes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -750,7 +745,7 @@ func Test_ProvenanceFromBytes(t *testing.T) {
 
 			_, err = ProvenanceFromBytes(content)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -793,7 +788,6 @@ func Test_VerifySubjectDigest(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -816,7 +810,7 @@ func Test_VerifySubjectDigest(t *testing.T) {
 
 			err = prov.VerifySubjectDigest(tt.hash)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -870,7 +864,6 @@ func Test_VerifySummary(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -896,7 +889,7 @@ func Test_VerifySummary(t *testing.T) {
 			}
 			err = prov.VerifySummary(&provenanceOpts)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -952,7 +945,6 @@ func Test_VerifyMetadata(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -978,7 +970,7 @@ func Test_VerifyMetadata(t *testing.T) {
 			}
 			err = prov.VerifyMetadata(&provenanceOpts)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -1023,7 +1015,6 @@ func Test_VerifyTextProvenance(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1047,7 +1038,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 			if !tt.alter {
 				err = prov.VerifyTextProvenance()
 				if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-					t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+					t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 				}
 				return
 			}
@@ -1119,7 +1110,7 @@ func Test_VerifyTextProvenance(t *testing.T) {
 
 				err = prov.VerifyTextProvenance()
 				if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-					t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+					t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 				}
 				// Start with the original string value.
 				patch = []byte(strings.Clone(string(cpy)))
@@ -1171,7 +1162,6 @@ func Test_VerifyBranch(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1194,7 +1184,7 @@ func Test_VerifyBranch(t *testing.T) {
 
 			err = prov.VerifyBranch(tt.branch)
 			if !cmp.Equal(err, tt.expected, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -1285,7 +1275,6 @@ func Test_VerifyTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1308,7 +1297,7 @@ func Test_VerifyTag(t *testing.T) {
 
 			err = prov.VerifyTag(tt.tag)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -1485,7 +1474,6 @@ func Test_VerifyVersionedTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1508,7 +1496,7 @@ func Test_VerifyVersionedTag(t *testing.T) {
 
 			err = prov.VerifyVersionedTag(tt.tag)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}

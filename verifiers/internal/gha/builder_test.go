@@ -310,7 +310,6 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			opts := tt.buildOpts
@@ -367,18 +366,17 @@ func Test_isTrustedDelegatorBuilder(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			trustedBuilderID, err := utils.TrustedBuilderIDNew(tt.certBuilderID, true)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 
 			res := isTrustedDelegatorBuilder(trustedBuilderID, tt.trustedBuilderIDs)
 			if res != tt.result {
-				t.Errorf(cmp.Diff(res, tt.result))
+				t.Error(cmp.Diff(res, tt.result))
 			}
 		})
 	}
@@ -440,12 +438,11 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := VerifyCertficateSourceRepository(tt.workflow, tt.source)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -610,12 +607,11 @@ func Test_verifyTrustedBuilderID(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			id, byob, err := verifyTrustedBuilderID(httpsGithubCom+tt.path, tt.tag, tt.id, tt.defaults)
 			if byob != tt.byob {
-				t.Errorf(cmp.Diff(byob, tt.byob))
+				t.Error(cmp.Diff(byob, tt.byob))
 			}
 			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
 				t.Fatalf("unexpected error (-want +got):\n%s", diff)
@@ -807,7 +803,6 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			wf := WorkflowIdentity{
 				SourceRepository: tt.callerRepo,
@@ -822,7 +817,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 
 			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
 			if !errCmp(err, tt.expected) {
-				t.Errorf(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}
 		})
 	}
@@ -834,64 +829,64 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 	trigger := "workflow_dispatch"
 	encodedTrigger, err := asn1.MarshalWithParams(trigger, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	repo := "org/repo"
 	encodedRepoURI, err := asn1.MarshalWithParams(httpsGithubCom+repo, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	issuer := "the-issuer"
 	encodedIssuer, err := asn1.MarshalWithParams(issuer, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	digest := "abcdef"
 	encodedDigest, err := asn1.MarshalWithParams(digest, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	encodedHosted, err := asn1.MarshalWithParams("github-hosted", "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	hosted := HostedGitHub
 	ref := "refs/tags/v1.2.3"
 	encodedRef, err := asn1.MarshalWithParams(ref, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	sourceID := "12345"
 	encodedSourceID, err := asn1.MarshalWithParams(sourceID, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	sourceOwnerID := "12345"
 	encodedSourceOwnerID, err := asn1.MarshalWithParams(sourceOwnerID, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	buildConfigSha1 := "abcdef"
 	encodedBuildConfigSha1, err := asn1.MarshalWithParams(buildConfigSha1, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	buildConfigPath := "path/to/workflow"
 	encodedBuildConfigURI, err := asn1.MarshalWithParams(httpsGithubCom+repo+"/"+buildConfigPath+"@"+ref, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	invocationID := "9207262"
 	encodedInvocationURI, err := asn1.MarshalWithParams(httpsGithubCom+repo+"/actions/runs/"+invocationID, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	subjectSha1 := "subjectSha1"
 	encodedSubjectSha1, err := asn1.MarshalWithParams(subjectSha1, "utf8")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	tests := []struct {
@@ -1268,19 +1263,18 @@ func Test_GetWorkflowInfoFromCertificate(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			workflow, err := GetWorkflowInfoFromCertificate(&tt.cert)
 			if !errCmp(err, tt.err) {
-				t.Errorf(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+				t.Error(cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
 			}
 			if err != nil {
 				return
 			}
 
 			if !cmp.Equal(*workflow, tt.workflow) {
-				t.Errorf(cmp.Diff(*workflow, tt.workflow))
+				t.Error(cmp.Diff(*workflow, tt.workflow))
 			}
 		})
 	}
@@ -1326,7 +1320,6 @@ func TestWorkflowIdentity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			if got, want := tt.workflow.SubjectWorkflowName(), tt.workflowName; got != want {
 				t.Errorf("unexpected subject workflow name, got %q, want %q", got, want)
