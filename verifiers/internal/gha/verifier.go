@@ -323,13 +323,14 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	clientOpts *options.ClientOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	trustedRoot, err := utils.GetSigstoreTrustedRoot()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	npm, err := NpmNew(ctx, trustedRoot, attestations)
+	npm, err := NpmNew(ctx, trustedRoot, attestations, clientOpts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -373,10 +374,11 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 		}
 	}
 
-	prov, err := npm.verifiedProvenanceBytes()
+	// Extract the payload from the verified provenance.
+	provBytes, err := npm.ProvenanceEnvelope().DecodeB64Payload()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	return prov, builder, nil
+	return provBytes, builder, nil
 }
