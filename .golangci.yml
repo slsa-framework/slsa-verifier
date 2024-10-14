@@ -3,7 +3,6 @@ run:
   concurrency: 2
   deadline: 5m
   # For generics.
-  go: 1.18
 issues:
   include:
     - EXC0012
@@ -32,7 +31,7 @@ linters:
     # - errcheck
     - errorlint
     - exhaustive
-    - exportloopref
+    - copyloopvar
     # TODO(https://github.com/slsa-framework/slsa-verifier/issues/363): Restore linter
     # - gci
     - gochecknoinits

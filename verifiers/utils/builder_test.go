@@ -67,13 +67,12 @@ func Test_ParseBuilderID(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			name, version, err := ParseBuilderID(tt.builderID, tt.needVersion)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 
 			if err != nil {
@@ -81,11 +80,11 @@ func Test_ParseBuilderID(t *testing.T) {
 			}
 
 			if name != tt.builderName {
-				t.Errorf(cmp.Diff(name, tt.builderName))
+				t.Error(cmp.Diff(name, tt.builderName))
 			}
 
 			if version != tt.builderVersion {
-				t.Errorf(cmp.Diff(version, tt.builderVersion))
+				t.Error(cmp.Diff(version, tt.builderVersion))
 			}
 		})
 	}
@@ -166,13 +165,12 @@ func Test_BuilderIDNew(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			trustedBuilderID, err := TrustedBuilderIDNew(tt.trustedBuilderID, tt.needVersion)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 
 			if err != nil {
@@ -184,13 +182,13 @@ func Test_BuilderIDNew(t *testing.T) {
 			full := trustedBuilderID.String()
 
 			if name != tt.builderName {
-				t.Errorf(cmp.Diff(tt.builderName, name))
+				t.Error(cmp.Diff(tt.builderName, name))
 			}
 			if version != tt.builderVersion {
-				t.Errorf(cmp.Diff(tt.builderVersion, version))
+				t.Error(cmp.Diff(tt.builderVersion, version))
 			}
 			if full != tt.trustedBuilderID {
-				t.Errorf(cmp.Diff(tt.trustedBuilderID, full))
+				t.Error(cmp.Diff(tt.trustedBuilderID, full))
 			}
 		})
 	}
@@ -415,7 +413,6 @@ func Test_MatchesLoose(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -426,7 +423,7 @@ func Test_MatchesLoose(t *testing.T) {
 
 			err = trustedBuilderID.MatchesLoose(tt.match, tt.allowRef)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -632,7 +629,6 @@ func Test_MatchesFull(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -643,7 +639,7 @@ func Test_MatchesFull(t *testing.T) {
 
 			err = trustedBuilderID.MatchesFull(tt.match, tt.allowRef)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -754,13 +750,11 @@ func Test_IsValidBuilderTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := IsValidBuilderTag(tt.ref, tt.testing)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
@@ -814,13 +808,11 @@ func Test_IsValidJreleaserBuilderTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt // Re-initializing variable so it is not changed while executing the closure below
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			err := IsValidJreleaserBuilderTag(tt.ref)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
-				t.Errorf(cmp.Diff(err, tt.err))
+				t.Error(cmp.Diff(err, tt.err))
 			}
 		})
 	}
