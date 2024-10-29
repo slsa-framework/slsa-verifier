@@ -30,8 +30,12 @@ func Test_verifyBundle(t *testing.T) {
 		expected error
 	}{
 		{
-			name: "valid bundle",
+			name: "valid bundle: v0.1",
 			path: "./testdata/bundle/valid.intoto.sigstore",
+		},
+		{
+			name: "valid bundle: v0.3",
+			path: "./testdata/bundle/valid-v0.3.intoto.sigstore",
 		},
 		{
 			name:     "mismatch rekor entry",
