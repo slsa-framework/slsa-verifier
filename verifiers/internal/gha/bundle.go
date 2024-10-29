@@ -99,11 +99,23 @@ func getEnvelopeFromBundleBytes(content []byte) (*dsselib.Envelope, error) {
 
 // getLeafCertFromBundle extracts the signing cert from the Sigstore bundle.
 func getLeafCertFromBundle(bundle *bundle_v1.Bundle) (*x509.Certificate, error) {
+	// Originally, there could be multiple certificates, accessed by `.GetX509CertificateChain().GetCertificates()`.
+	// As of v0.3 of the protos, only a single certificate is in the Bundle's VerificationMaterial,
+	// and it's access by the auto-generated `GetCertificate()`
+	// We keep both methods for backwards compatibility with older bundles.
+	// See: https://github.com/sigstore/protobuf-specs/pull/191.
+
+	// First try the newer method.
+	if bundleCert := bundle.GetVerificationMaterial().GetCertificate(); bundleCert != nil {
+		certBytes := bundleCert.GetRawBytes()
+		return x509.ParseCertificate(certBytes)
+	}
+
+	// Otherwise, try the original method.
 	certChain := bundle.GetVerificationMaterial().GetX509CertificateChain().GetCertificates()
 	if len(certChain) == 0 {
 		return nil, ErrorMissingCertInBundle
 	}
-
 	// The first certificate is the leaf cert: see
 	// https://github.com/sigstore/protobuf-specs/blob/16541696de137c6281d66d075a4924d9bbd181ff/protos/sigstore_common.proto#L170
 	certBytes := certChain[0].GetRawBytes()
