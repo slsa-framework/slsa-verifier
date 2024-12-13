@@ -66,14 +66,37 @@ func VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
+	clientOpts ...options.ClientOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
+	completeClientOpts, err := ensureCompleteClientOpts(clientOpts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	verifier, err := getVerifier(builderOpts)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return verifier.VerifyNpmPackage(ctx, attestations, tarballHash,
-		provenanceOpts, builderOpts)
+		provenanceOpts, builderOpts, completeClientOpts)
+}
+
+// ensureCompleteClientOpts returns a single options.ClientOpts, using the original if exactly one
+// was provided from the variadic input, or creating a new one.
+func ensureCompleteClientOpts(clientOpts ...options.ClientOpts) (*options.ClientOpts, error) {
+	switch len(clientOpts) {
+	case 0:
+		opts, err := options.NewDefaultClientOpts()
+		if err != nil {
+			return nil, err
+		}
+		return opts, nil
+	case 1:
+		opts := clientOpts[0]
+		return &opts, nil
+	}
+	return nil, serrors.ErrorInvalidClientOpts
 }
 
 // VerifyVSA verifies the VSA attestation. It returns the attestation base64-decoded from the envelope.
