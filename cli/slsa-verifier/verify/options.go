@@ -50,19 +50,25 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	/* Builder options */
 	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
 		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions).")
+	cmd.RegisterFlagCompletionFunc("build-workflow-input", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "[optional] the unique builder ID who created the provenance")
+	cmd.RegisterFlagCompletionFunc("builder-id", cobra.NoFileCompletions)
 
 	/* Source options */
 	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
+	cmd.RegisterFlagCompletionFunc("source-uri", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.SourceBranch, "source-branch", "", "[optional] expected branch the binary was compiled from")
+	cmd.RegisterFlagCompletionFunc("source-branch", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
+	cmd.RegisterFlagCompletionFunc("source-tag", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+	cmd.RegisterFlagCompletionFunc("source-versioned-tag", cobra.NoFileCompletions)
 
 	/* Other options */
 	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
@@ -70,6 +76,7 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.ProvenanceRepository, "provenance-repository", "",
 		"image repository for provenance with format: <registry>/<repository>")
+	cmd.RegisterFlagCompletionFunc("provenance-repository", cobra.NoFileCompletions)
 
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"[optional] print the verified provenance to stdout")
@@ -94,28 +101,36 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 	/* Builder options */
 	cmd.Flags().Var(&o.BuildWorkflowInputs, "build-workflow-input",
 		"[optional] a workflow input provided by a user at trigger time in the format 'key=value'. (Only for 'workflow_dispatch' events on GitHub Actions).")
+	cmd.RegisterFlagCompletionFunc("build-workflow-input", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "[optional] the unique builder ID who created the provenance")
+	cmd.RegisterFlagCompletionFunc("builder-id", cobra.NoFileCompletions)
 
 	/* Source options */
 	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
+	cmd.RegisterFlagCompletionFunc("source-uri", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.SourceBranch, "source-branch", "", "[optional] expected branch the binary was compiled from")
+	cmd.RegisterFlagCompletionFunc("source-branch", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
+	cmd.RegisterFlagCompletionFunc("source-tag", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
+	cmd.RegisterFlagCompletionFunc("source-versioned-tag", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
 		"path to a file containing the attestations")
 
 	cmd.Flags().StringVar(&o.PackageName, "package-name", "",
 		"the package name")
+	cmd.RegisterFlagCompletionFunc("package-name", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.PackageVersion, "package-version", "",
 		"the package version")
+	cmd.RegisterFlagCompletionFunc("package-version", cobra.NoFileCompletions)
 
 	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
 		"[optional] print the verified provenance to stdout")
@@ -145,18 +160,22 @@ var _ Interface = (*VerifyVSAOptions)(nil)
 func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.SubjectDigests, "subject-digest", []string{},
 		"the digests to be verified. Pass multiple digests by repeating the flag. e.g. --subject-digest <digest type>:<digest value> --subject-digest <digest type>:<digest value>")
+	cmd.RegisterFlagCompletionFunc("subject-digest", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.AttestationPath, "attestation-path", "",
 		"path to a file containing the attestation")
 
 	cmd.Flags().StringVar(&o.VerifierID, "verifier-id", "",
 		"the unique verifier ID who created the attestation")
+	cmd.RegisterFlagCompletionFunc("verfier-id", cobra.NoFileCompletions)
 
 	cmd.Flags().StringVar(&o.ResourceURI, "resource-uri", "",
 		"the resource URI to be verified")
+	cmd.RegisterFlagCompletionFunc("resource-uri", cobra.NoFileCompletions)
 
 	cmd.Flags().StringArrayVar(&o.VerifiedLevels, "verified-level", []string{},
 		"[optional] the levels of verification to be performed. Pass multiple digests by repeating the flag, e.g., --verified-level SLSA_BUILD_LEVEL_2 --verified-level FEDRAMP_LOW'")
+	cmd.RegisterFlagCompletionFunc("verified-level", cobra.NoFileCompletions)
 
 	cmd.Flags().BoolVar(&o.PrintAttestation, "print-attestation", false,
 		"[optional] print the contents of attestation to stdout")
@@ -166,6 +185,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
 		"[optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key")
+	cmd.RegisterFlagCompletionFunc("public-key-id", cobra.NoFileCompletions)
 
 	cmd.MarkFlagRequired("subject-digests")
 	cmd.MarkFlagRequired("attestation-path")

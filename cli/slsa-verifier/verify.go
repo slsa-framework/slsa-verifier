@@ -86,7 +86,8 @@ func verifyImageCmd() *cobra.Command {
 			}
 			return nil
 		},
-		Short: "Verifies SLSA provenance on a container image",
+		ValidArgsFunction: cobra.NoFileCompletions,
+		Short:             "Verifies SLSA provenance on a container image",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyImageCommand{
 				SourceURI:           o.SourceURI,
@@ -189,9 +190,10 @@ func verifyVSACmd() *cobra.Command {
 	o := &verify.VerifyVSAOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "verify-vsa [flags]",
-		Args:  cobra.NoArgs,
-		Short: "Verifies SLSA VSAs for the given subject-digests",
+		Use:               "verify-vsa [flags]",
+		Args:              cobra.NoArgs,
+		ValidArgsFunction: cobra.NoFileCompletions,
+		Short:             "Verifies SLSA VSAs for the given subject-digests",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyVSACommand{
 				SubjectDigests:   &o.SubjectDigests,
