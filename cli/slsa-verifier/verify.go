@@ -189,7 +189,7 @@ func verifyVSACmd() *cobra.Command {
 	o := &verify.VerifyVSAOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "verify-vsa [flags] subject-digest [subject-digest...]",
+		Use:   "verify-vsa [flags]",
 		Args:  cobra.NoArgs,
 		Short: "Verifies SLSA VSAs for the given subject-digests",
 		Run: func(cmd *cobra.Command, args []string) {
