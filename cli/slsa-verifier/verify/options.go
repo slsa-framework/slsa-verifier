@@ -45,6 +45,8 @@ type VerifyOptions struct {
 
 var _ Interface = (*VerifyOptions)(nil)
 
+var CommonAttestationFilenameExtensions = []string{"sigstore", "intoto", "intoto.jsonl", "json"}
+
 // AddFlags implements Interface.
 func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	/* Builder options */
@@ -73,6 +75,7 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 	/* Other options */
 	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
 		"path to a provenance file")
+	cmd.MarkFlagFilename("provenance-path", CommonAttestationFilenameExtensions...)
 
 	cmd.Flags().StringVar(&o.ProvenanceRepository, "provenance-repository", "",
 		"image repository for provenance with format: <registry>/<repository>")
@@ -123,6 +126,7 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
 		"path to a file containing the attestations")
+	cmd.MarkFlagFilename("attestations-path", CommonAttestationFilenameExtensions...)
 
 	cmd.Flags().StringVar(&o.PackageName, "package-name", "",
 		"the package name")
@@ -164,6 +168,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.AttestationPath, "attestation-path", "",
 		"path to a file containing the attestation")
+	cmd.MarkFlagFilename("attestation-path", CommonAttestationFilenameExtensions...)
 
 	cmd.Flags().StringVar(&o.VerifierID, "verifier-id", "",
 		"the unique verifier ID who created the attestation")
@@ -182,6 +187,7 @@ func (o *VerifyVSAOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.PublicKeyPath, "public-key-path", "",
 		"path to a public key file")
+	cmd.MarkFlagFilename("public-key-path", "pem")
 
 	cmd.Flags().StringVar(&o.PublicKeyID, "public-key-id", "",
 		"[optional] the ID of the public key, defaults to the SHA256 digest of the base64-encoded public key")
