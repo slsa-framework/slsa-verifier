@@ -5,6 +5,7 @@ import (
 	"encoding/asn1"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	fulcio "github.com/sigstore/fulcio/pkg/certificate"
@@ -175,6 +176,10 @@ func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
 	if (id.SourceRepository == trustedBuilderRepository ||
 		id.SourceRepository == e2eTestRepository) &&
 		options.TestingEnabled() {
+		// Allow verification on slsa-github-generator PRs
+		if testBuilderBranch := os.Getenv("TEST_SLSA_GITHUB_GENERATOR_BRANCH"); strings.Contains(ref, testBuilderBranch) {
+			return nil
+		}
 		// Allow verification on the main branch to support e2e tests.
 		if ref == "refs/heads/main" {
 			return nil
