@@ -59,7 +59,7 @@ $ curl -Ss $(npm view gundam-visor@1.0.1 --json | jq -r '.dist.attestations.url'
 }
 ```
 
-exmaple publish attestation
+example publish attestation
 
 ```json
 $ curl -Ss $(npm view gundam-visor@1.0.1 --json | jq -r '.dist.attestations.url') | jq '.attestations[0].bundle.dsseEnvelope.payload' -r | base64 -d | jq
