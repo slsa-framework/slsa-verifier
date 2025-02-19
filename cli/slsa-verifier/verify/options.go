@@ -61,7 +61,7 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
 
-	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
+	cmd.Flags().StringVar(&o.SourceVersionTag, "source-semver-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 
 	/* Other options */
@@ -75,7 +75,7 @@ func (o *VerifyOptions) AddFlags(cmd *cobra.Command) {
 		"[optional] print the verified provenance to stdout")
 
 	cmd.MarkFlagRequired("source-uri")
-	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
+	cmd.MarkFlagsMutuallyExclusive("source-semver-tag", "source-tag")
 }
 
 // VerifyNpmOptions is the top-level options for the `verifyNpmPackage` command.
@@ -105,7 +105,7 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.SourceTag, "source-tag", "", "[optional] expected tag the binary was compiled from")
 
-	cmd.Flags().StringVar(&o.SourceVersionTag, "source-versioned-tag", "",
+	cmd.Flags().StringVar(&o.SourceVersionTag, "source-semver-tag", "",
 		"[optional] expected version the binary was compiled from. Uses semantic version to match the tag")
 
 	cmd.Flags().StringVar(&o.AttestationsPath, "attestations-path", "",
@@ -124,7 +124,7 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagRequired("builder-id")
 	cmd.MarkFlagRequired("package-name")
 	cmd.MarkFlagRequired("package-version")
-	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
+	cmd.MarkFlagsMutuallyExclusive("source-semver-tag", "source-tag")
 }
 
 // VerifyVSAOptions is the top-level options for the `verifyVSA` command.
