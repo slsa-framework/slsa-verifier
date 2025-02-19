@@ -658,7 +658,7 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 						args = append(args, "--source-tag", *tt.ptag)
 					}
 					if tt.pversiontag != nil {
-						args = append(args, "--source-versioned-tag", *tt.pversiontag)
+						args = append(args, "--source-semver-tag", *tt.pversiontag)
 					}
 					if tt.inputs != nil {
 						for k, v := range tt.inputs {
