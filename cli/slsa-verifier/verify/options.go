@@ -127,6 +127,36 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
+// VerifyGithubAttestationOptions is the top-level options for the `verifyGithubAttestation` command.
+type VerifyGithubAttestationOptions struct {
+	SourceURI       string
+	BuilderID       string
+	ProvenancePath  string
+	PrintProvenance bool
+}
+
+var _ Interface = (*VerifyGithubAttestationOptions)(nil)
+
+// AddFlags implements Interface.
+func (o *VerifyGithubAttestationOptions) AddFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&o.BuilderID, "builder-id", "", "the unique builder ID who created the provenance")
+
+	/* Source options */
+	cmd.Flags().StringVar(&o.SourceURI, "source-uri", "",
+		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
+
+	/* Other options */
+	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
+		"path to an provenance file")
+
+	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
+		"[optional] print the verified provenance to stdout")
+
+	cmd.MarkFlagRequired("source-uri")
+	cmd.MarkFlagRequired("provenance-path")
+	cmd.MarkFlagRequired("builder-id")
+}
+
 // VerifyVSAOptions is the top-level options for the `verifyVSA` command.
 type VerifyVSAOptions struct {
 	SubjectDigests   []string

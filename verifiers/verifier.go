@@ -62,6 +62,20 @@ func VerifyArtifact(ctx context.Context,
 		provenanceOpts, builderOpts)
 }
 
+func VerifyGithubAttestation(ctx context.Context,
+	provenance []byte,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	verifier, err := getVerifier(builderOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return verifier.VerifyGithubAttestation(ctx, provenance,
+		provenanceOpts, builderOpts)
+}
+
 func VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
 	provenanceOpts *options.ProvenanceOpts,

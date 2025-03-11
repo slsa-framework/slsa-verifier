@@ -35,6 +35,7 @@ For more information on SLSA, visit https://slsa.dev`,
 	}
 	c.AddCommand(version.Version())
 	c.AddCommand(verifyArtifactCmd())
+	c.AddCommand(verifyGithubAttestation())
 	c.AddCommand(verifyImageCmd())
 	c.AddCommand(verifyNpmPackageCmd())
 	c.AddCommand(verifyVSACmd())
