@@ -127,7 +127,7 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 	cmd.MarkFlagsMutuallyExclusive("source-versioned-tag", "source-tag")
 }
 
-// VerifyGithubAttestationOptions is the top-level options for the `verifyGithubAttestation` command.
+// VerifyGithubAttestationOptions is the top-level options for the `verify-github-attestation` command.
 type VerifyGithubAttestationOptions struct {
 	SourceURI       string
 	BuilderID       string
