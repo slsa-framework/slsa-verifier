@@ -41,7 +41,7 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 
 // VerifyGithubAttestation verifies provenance for a Github Attestations.
 func (v *GCBVerifier) VerifyGithubAttestation(ctx context.Context,
-	provenance []byte,
+	attestation []byte,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {

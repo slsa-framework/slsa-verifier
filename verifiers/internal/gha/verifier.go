@@ -244,11 +244,11 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 
 // VerifyGithubAttestation verifies provenance for a Github Attestations.
 func (v *GHAVerifier) VerifyGithubAttestation(ctx context.Context,
-	provenance []byte,
+	attestation []byte,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 ) ([]byte, *utils.TrustedBuilderID, error) {
-	if !IsSigstoreBundle(provenance) {
+	if !IsSigstoreBundle(attestation) {
 		return nil, nil, errors.New("github attestations must be signed by Sigstore")
 	}
 
@@ -258,7 +258,7 @@ func (v *GHAVerifier) VerifyGithubAttestation(ctx context.Context,
 	}
 
 	/* Verify signature on the intoto attestation. */
-	signedAtt, err := VerifyProvenanceBundle(ctx, provenance, trustedRoot)
+	signedAtt, err := VerifyProvenanceBundle(ctx, attestation, trustedRoot)
 	if err != nil {
 		return nil, nil, err
 	}

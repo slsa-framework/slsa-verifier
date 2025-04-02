@@ -199,10 +199,10 @@ func verifyGithubAttestation() *cobra.Command {
 		Short: "Verifies SLSA provenance for a github attestation [experimental]",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyGithubAttestationCommand{
-				ProvenancePath:  o.ProvenancePath,
-				SourceURI:       o.SourceURI,
-				PrintProvenance: o.PrintProvenance,
-				BuilderID:       &o.BuilderID,
+				AttestationPath:  o.AttestationPath,
+				SourceURI:        o.SourceURI,
+				PrintAttestation: o.PrintAttestation,
+				BuilderID:        &o.BuilderID,
 			}
 			if _, err := v.Exec(cmd.Context(), args[0]); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)

@@ -27,11 +27,11 @@ import (
 )
 
 type VerifyGithubAttestationCommand struct {
-	ProvenancePath      string
+	AttestationPath     string
 	BuilderID           *string
 	SourceURI           string
 	BuildWorkflowInputs map[string]string
-	PrintProvenance     bool
+	PrintAttestation    bool
 }
 
 func (c *VerifyGithubAttestationCommand) Exec(ctx context.Context, artifact string) (*utils.TrustedBuilderID, error) {
@@ -57,20 +57,20 @@ func (c *VerifyGithubAttestationCommand) Exec(ctx context.Context, artifact stri
 		ExpectedID: c.BuilderID,
 	}
 
-	provenance, err := os.ReadFile(c.ProvenancePath)
+	attestation, err := os.ReadFile(c.AttestationPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
 		return nil, err
 	}
 
-	verifiedProvenance, outBuilderID, err := verifiers.VerifyGithubAttestation(ctx, provenance, provenanceOpts, builderOpts)
+	verifiedAttestation, outBuilderID, err := verifiers.VerifyGithubAttestation(ctx, attestation, provenanceOpts, builderOpts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)
 		return nil, err
 	}
 
-	if c.PrintProvenance {
-		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedProvenance))
+	if c.PrintAttestation {
+		fmt.Fprintf(os.Stdout, "%s\n", string(verifiedAttestation))
 	}
 
 	fmt.Fprintf(os.Stderr, "Verifying artifact %s: PASSED\n\n", artifact)

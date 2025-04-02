@@ -129,10 +129,10 @@ func (o *VerifyNpmOptions) AddFlags(cmd *cobra.Command) {
 
 // VerifyGithubAttestationOptions is the top-level options for the `verify-github-attestation` command.
 type VerifyGithubAttestationOptions struct {
-	SourceURI       string
-	BuilderID       string
-	ProvenancePath  string
-	PrintProvenance bool
+	SourceURI        string
+	BuilderID        string
+	AttestationPath  string
+	PrintAttestation bool
 }
 
 var _ Interface = (*VerifyGithubAttestationOptions)(nil)
@@ -146,14 +146,14 @@ func (o *VerifyGithubAttestationOptions) AddFlags(cmd *cobra.Command) {
 		"expected source repository that should have produced the binary, e.g. github.com/some/repo")
 
 	/* Other options */
-	cmd.Flags().StringVar(&o.ProvenancePath, "provenance-path", "",
-		"path to an provenance file")
+	cmd.Flags().StringVar(&o.AttestationPath, "attestation-path", "",
+		"path to an attestation file")
 
-	cmd.Flags().BoolVar(&o.PrintProvenance, "print-provenance", false,
-		"[optional] print the verified provenance to stdout")
+	cmd.Flags().BoolVar(&o.PrintAttestation, "print-attestation", false,
+		"[optional] print the verified attestation to stdout")
 
 	cmd.MarkFlagRequired("source-uri")
-	cmd.MarkFlagRequired("provenance-path")
+	cmd.MarkFlagRequired("attestation-path")
 	cmd.MarkFlagRequired("builder-id")
 }
 

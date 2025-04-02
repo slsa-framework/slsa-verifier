@@ -31,7 +31,7 @@ type SLSAVerifier interface {
 
 	// VerifyGithubAttestation verifies provenance for a Github Attestations.
 	VerifyGithubAttestation(ctx context.Context,
-		provenance []byte,
+		attestation []byte,
 		provenanceOpts *options.ProvenanceOpts,
 		builderOpts *options.BuilderOpts,
 	) ([]byte, *utils.TrustedBuilderID, error)

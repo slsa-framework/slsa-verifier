@@ -1563,11 +1563,11 @@ func Test_runVerifyGithubAttestation(t *testing.T) {
 
 			artifactPath := filepath.Clean(filepath.Join(TEST_DIR, "bcr", tt.artifact))
 			// we treat these single entry *.intoto.jsonl bundles as single attestations
-			provenancePath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
+			attestationPath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 			cmd := verify.VerifyGithubAttestationCommand{
-				ProvenancePath: provenancePath,
-				BuilderID:      &tt.builderID,
-				SourceURI:      tt.source,
+				AttestationPath: attestationPath,
+				BuilderID:       &tt.builderID,
+				SourceURI:       tt.source,
 			}
 
 			_, err := cmd.Exec(context.Background(), artifactPath)
