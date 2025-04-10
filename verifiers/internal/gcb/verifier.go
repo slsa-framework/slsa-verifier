@@ -39,6 +39,15 @@ func (v *GCBVerifier) VerifyArtifact(ctx context.Context,
 	return nil, nil, serrors.ErrorNotSupported
 }
 
+// VerifyGithubAttestation verifies provenance for a Github Attestations.
+func (v *GCBVerifier) VerifyGithubAttestation(ctx context.Context,
+	attestation []byte,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	return nil, nil, serrors.ErrorNotSupported
+}
+
 // VerifyNpmPackage verifies an npm package tarball.
 func (v *GCBVerifier) VerifyNpmPackage(ctx context.Context,
 	attestations []byte, tarballHash string,
