@@ -72,6 +72,7 @@ func verifyArtifactCmd() *cobra.Command {
 	o.AddFlags(cmd)
 	// --provenance-path must be supplied when verifying an artifact.
 	cmd.MarkFlagRequired("provenance-path")
+	cmd.MarkFlagFilename("provenance-path", verify.CommonAttestationFilenameExtensions...)
 	return cmd
 }
 
@@ -86,7 +87,8 @@ func verifyImageCmd() *cobra.Command {
 			}
 			return nil
 		},
-		Short: "Verifies SLSA provenance on a container image",
+		ValidArgsFunction: cobra.NoFileCompletions,
+		Short:             "Verifies SLSA provenance on a container image",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyImageCommand{
 				SourceURI:           o.SourceURI,
@@ -135,6 +137,12 @@ func verifyNpmPackageCmd() *cobra.Command {
 				return errors.New("expects a single path to an image")
 			}
 			return nil
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return []string{"tgz"}, cobra.ShellCompDirectiveFilterFileExt
 		},
 		Short: "Verifies SLSA provenance for an npm package tarball [experimental]",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -221,9 +229,10 @@ func verifyVSACmd() *cobra.Command {
 	o := &verify.VerifyVSAOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "verify-vsa [flags] subject-digest [subject-digest...]",
-		Args:  cobra.NoArgs,
-		Short: "Verifies SLSA VSAs for the given subject-digests",
+		Use:               "verify-vsa [flags]",
+		Args:              cobra.NoArgs,
+		ValidArgsFunction: cobra.NoFileCompletions,
+		Short:             "Verifies SLSA VSAs for the given subject-digests",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyVSACommand{
 				SubjectDigests:   &o.SubjectDigests,
