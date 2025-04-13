@@ -53,7 +53,7 @@ func verifyArtifactCmd() *cobra.Command {
 			if cmd.Flags().Changed("source-tag") {
 				v.SourceTag = &o.SourceTag
 			}
-			if cmd.Flags().Changed("source-versioned-tag") {
+			if cmd.Flags().Changed("source-semver-tag") {
 				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
@@ -105,7 +105,7 @@ func verifyImageCmd() *cobra.Command {
 			if cmd.Flags().Changed("source-tag") {
 				v.SourceTag = &o.SourceTag
 			}
-			if cmd.Flags().Changed("source-versioned-tag") {
+			if cmd.Flags().Changed("source-semver-tag") {
 				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if cmd.Flags().Changed("builder-id") {
@@ -160,8 +160,8 @@ func verifyNpmPackageCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "%s: --source-tag not supported\n", FAILURE)
 				os.Exit(1)
 			}
-			if cmd.Flags().Changed("source-versioned-tag") {
-				fmt.Fprintf(os.Stderr, "%s: --source-versioned-tag not supported\n", FAILURE)
+			if cmd.Flags().Changed("source-semver-tag") {
+				fmt.Fprintf(os.Stderr, "%s: --source-semver-tag not supported\n", FAILURE)
 				os.Exit(1)
 			}
 			if cmd.Flags().Changed("print-provenance") {
