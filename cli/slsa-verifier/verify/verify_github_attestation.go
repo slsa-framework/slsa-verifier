@@ -17,7 +17,6 @@ package verify
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"os"
 
@@ -35,12 +34,6 @@ type VerifyGithubAttestationCommand struct {
 }
 
 func (c *VerifyGithubAttestationCommand) Exec(ctx context.Context, artifact string) (*utils.TrustedBuilderID, error) {
-	if !options.ExperimentalEnabled() {
-		err := errors.New("feature support is only provided in SLSA_VERIFIER_EXPERIMENTAL mode")
-		fmt.Fprintf(os.Stderr, "Verifying github attestation: FAILED: %v\n\n", err)
-		return nil, err
-	}
-
 	artifactHash, err := computeFileHash(artifact, sha256.New())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Verifying artifact %s: FAILED: %v\n\n", artifact, err)

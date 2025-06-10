@@ -1512,7 +1512,6 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 
 func Test_runVerifyGithubAttestation(t *testing.T) {
 	t.Parallel()
-	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
 
 	bcrReleaserBuilderID := "https://github.com/bazel-contrib/.github/.github/workflows/release_ruleset.yaml"
 	bcrPublisherBuilderID := "https://github.com/bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml"
