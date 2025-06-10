@@ -17,7 +17,6 @@ package verify
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"os"
 
