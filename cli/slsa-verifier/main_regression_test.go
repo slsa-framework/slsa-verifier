@@ -1448,7 +1448,8 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			// Avoid rate limiting by not running the tests in parallel.
+			// t.Parallel()
 
 			checkVersions := getBuildersAndVersions(t, "", nil, GHA_ARTIFACT_CONTAINER_BUILDERS)
 
