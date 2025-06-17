@@ -50,12 +50,22 @@ func newNpmCLIGithubActions(a *Attestation) iface.Provenance {
 	}
 }
 
+func newGithubAttest(a *Attestation) iface.Provenance {
+	return &GithubAttestProvenance{
+		provenanceV1: &provenanceV1{
+			prov: a,
+		},
+	}
+}
+
 // buildTypeMap is a map of builder IDs to supported buildTypes.
 var buildTypeMap = map[string]map[string]provFunc{
 	common.GenericDelegatorBuilderID:         {common.BYOBBuildTypeV0: newBYOB},
 	common.GenericLowPermsDelegatorBuilderID: {common.BYOBBuildTypeV0: newBYOB},
 	common.ContainerBasedBuilderID:           {common.ContainerBasedBuildTypeV01Draft: newContainerBased},
 	common.NpmCLIHostedBuilderID:             {common.NpmCLIGithubActionsBuildTypeV1: newNpmCLIGithubActions},
+	common.BCRReleaserBuilderID:              {common.GithubActionsBuildTypeV1: newGithubAttest},
+	common.BCRPublisherBuilderID:             {common.GithubActionsBuildTypeV1: newGithubAttest},
 }
 
 // New returns a new Provenance object based on the payload.

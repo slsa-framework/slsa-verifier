@@ -24,6 +24,8 @@ var (
 
 	// NpmCLIGithubActionsBuildTypeV1 is the buildType for provenance by the npm cli from GitHub Actions.
 	NpmCLIGithubActionsBuildTypeV1 = "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1"
+
+	GithubActionsBuildTypeV1 = "https://actions.github.io/buildtypes/workflow/v1"
 )
 
 // Legacy buildTypes.

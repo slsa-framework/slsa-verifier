@@ -242,6 +242,31 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		utils.MergeMaps(defaultArtifactTrustedReusableWorkflows, defaultBYOBReusableWorkflows))
 }
 
+// VerifyGithubAttestation verifies provenance for a Github Attestations.
+func (v *GHAVerifier) VerifyGithubAttestation(ctx context.Context,
+	attestation []byte,
+	provenanceOpts *options.ProvenanceOpts,
+	builderOpts *options.BuilderOpts,
+) ([]byte, *utils.TrustedBuilderID, error) {
+	if !IsSigstoreBundle(attestation) {
+		return nil, nil, errors.New("github attestations must be signed by Sigstore")
+	}
+
+	trustedRoot, err := utils.GetSigstoreTrustedRoot()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	/* Verify signature on the intoto attestation. */
+	signedAtt, err := VerifyProvenanceBundle(ctx, attestation, trustedRoot)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
+		provenanceOpts, builderOpts, map[string]bool{})
+}
+
 // VerifyImage verifies provenance for an OCI image.
 func (v *GHAVerifier) VerifyImage(ctx context.Context,
 	provenance []byte, artifactImage string, provenanceOpts *options.ProvenanceOpts,

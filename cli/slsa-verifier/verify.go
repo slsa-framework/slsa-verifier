@@ -185,6 +185,38 @@ func verifyNpmPackageCmd() *cobra.Command {
 	return cmd
 }
 
+func verifyGithubAttestation() *cobra.Command {
+	o := &verify.VerifyGithubAttestationOptions{}
+
+	cmd := &cobra.Command{
+		Use: "verify-github-attestation [flags] module-file",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errors.New("expects a single path to an module file")
+			}
+			return nil
+		},
+		Short: "Verifies SLSA provenance for a github attestation [experimental]",
+		Run: func(cmd *cobra.Command, args []string) {
+			v := verify.VerifyGithubAttestationCommand{
+				AttestationPath:  o.AttestationPath,
+				SourceURI:        o.SourceURI,
+				PrintAttestation: o.PrintAttestation,
+				BuilderID:        &o.BuilderID,
+			}
+			if _, err := v.Exec(cmd.Context(), args[0]); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
+				os.Exit(1)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", SUCCESS)
+			}
+		},
+	}
+
+	o.AddFlags(cmd)
+	return cmd
+}
+
 func verifyVSACmd() *cobra.Command {
 	o := &verify.VerifyVSAOptions{}
 

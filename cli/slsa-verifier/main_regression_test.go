@@ -787,20 +787,38 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 			err:         serrors.ErrorInvalidRef,
 		},
 		{
-			name:       "tag no match empty tag workflow_dispatch > v1.9.0",
+			name:       "tag no match empty tag workflow_dispatch > v1.9.0, <= v2.0.0",
 			artifact:   "container_workflow_dispatch",
 			source:     "github.com/slsa-framework/example-package",
 			ptag:       pString("v1.2.3"),
 			minversion: "v1.9.0",
+			maxversion: "v2.0.0",
 			err:        serrors.ErrorMismatchTag,
 		},
 		{
-			name:        "versioned tag no match empty tag workflow_dispatch > v1.9.0",
+			name:       "tag no match empty tag workflow_dispatch > v2.0.0",
+			artifact:   "container_workflow_dispatch",
+			source:     "github.com/slsa-framework/example-package",
+			ptag:       pString("v1.2.3"),
+			minversion: "v2.0.0",
+			err:        serrors.ErrorInvalidRef,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch > v1.9.0, <= v2.0.0",
 			artifact:    "container_workflow_dispatch",
 			source:      "github.com/slsa-framework/example-package",
 			pversiontag: pString("v1"),
 			minversion:  "v1.9.0",
+			maxversion:  "v2.0.0",
 			err:         serrors.ErrorMismatchVersionedTag,
+		},
+		{
+			name:        "versioned tag no match empty tag workflow_dispatch > v2.0.0",
+			artifact:    "container_workflow_dispatch",
+			source:      "github.com/slsa-framework/example-package",
+			pversiontag: pString("v1"),
+			minversion:  "v2.0.0",
+			err:         serrors.ErrorInvalidRef,
 		},
 	}
 	for _, tt := range tests {
@@ -1492,6 +1510,75 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 	}
 }
 
+func Test_runVerifyGithubAttestation(t *testing.T) {
+	t.Parallel()
+	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
+
+	bcrReleaserBuilderID := "https://github.com/bazel-contrib/.github/.github/workflows/release_ruleset.yaml"
+	bcrPublisherBuilderID := "https://github.com/bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml"
+
+	tests := []struct {
+		name      string
+		artifact  string
+		source    string
+		builderID string
+		err       error
+	}{
+		{
+			name:      "module.bazel using publishing builder",
+			artifact:  "MODULE.bazel",
+			source:    "github.com/aspect-build/rules_lint",
+			builderID: bcrPublisherBuilderID,
+		},
+		{
+			name:      "source archive using release builder",
+			artifact:  "rules_lint-v1.3.1.tar.gz",
+			source:    "github.com/aspect-build/rules_lint",
+			builderID: bcrReleaserBuilderID,
+		},
+		{
+			name:      "module.bazel wrong signer",
+			artifact:  "MODULE-wrong-signer.bazel",
+			source:    "github.com/aspect-build/rules_lint",
+			builderID: bcrPublisherBuilderID,
+			err:       serrors.ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "module.bazel no builder id",
+			artifact: "MODULE.bazel",
+			source:   "github.com/aspect-build/rules_lint",
+			err:      serrors.ErrorUntrustedReusableWorkflow,
+		},
+		{
+			name:     "source archive no builder id",
+			artifact: "rules_lint-v1.3.1.tar.gz",
+			source:   "github.com/aspect-build/rules_lint",
+			err:      serrors.ErrorUntrustedReusableWorkflow,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			artifactPath := filepath.Clean(filepath.Join(TEST_DIR, "bcr", tt.artifact))
+			// we treat these single entry *.intoto.jsonl bundles as single attestations
+			attestationPath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
+			cmd := verify.VerifyGithubAttestationCommand{
+				AttestationPath: attestationPath,
+				BuilderID:       &tt.builderID,
+				SourceURI:       tt.source,
+			}
+
+			_, err := cmd.Exec(context.Background(), artifactPath)
+			if !errCmp(tt.err, err) {
+				t.Errorf("unexpected error (-want +got):\n%s", cmp.Diff(err, tt.err, cmpopts.EquateErrors()))
+			}
+		})
+	}
+
+}
+
 func Test_runVerifyNpmPackage(t *testing.T) {
 	// We cannot use t.Setenv due to parallelized tests.
 	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
@@ -2044,4 +2131,16 @@ func Test_runVerifyVSA(t *testing.T) {
 
 func pointerTo[K any](object K) *K {
 	return &object
+}
+
+func unwrapFull(t *testing.T, err error) error {
+	for err != nil {
+		t.Logf("%v", err)
+		unwrapped := errors.Unwrap(err)
+		if unwrapped == nil {
+			return err
+		}
+		err = unwrapped
+	}
+	return nil
 }
