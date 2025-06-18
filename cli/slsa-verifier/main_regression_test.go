@@ -77,7 +77,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 	// TODO(639): Remove this by regenerating multiple subjects test.
 	os.Setenv("SLSA_VERIFIER_TESTING", "1")
 
-	t.Parallel()
+	// Avoid rate limiting by not running the tests in parallel.
+	// t.Parallel()
 	goBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml"
 	genericBuilder := "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml"
 	delegatorBuilder := "https://github.com/slsa-framework/example-trw/.github/workflows/builder_high-perms_slsa3.yml"
