@@ -20,7 +20,7 @@ bazel_dep(name = "rules_multitool", version = "0.4.0")
 bazel_dep(name = "rules_diff", version = "1.0.0")
 
 # Needed in the root because we dereference ProtoInfo in our aspect impl
-bazel_dep(name = "rules_proto", version = "6.0.0")
+bazel_dep(name = "rules_proto", version = "6.0.2")
 
 # Needed in the root because we dereference the toolchain in our aspect impl
 bazel_dep(name = "rules_buf", version = "0.1.1")
