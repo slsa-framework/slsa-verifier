@@ -692,7 +692,8 @@ func Test_runVerifyGHAArtifactPath(t *testing.T) {
 }
 
 func Test_runVerifyGHAArtifactImage(t *testing.T) {
-	t.Parallel()
+	// Avoid rate limiting by not running the tests in parallel.
+	// t.Parallel()
 
 	// Override cosign image verification function for local image testing.
 	container.RunCosignImageVerification = func(ctx context.Context,
@@ -824,7 +825,8 @@ func Test_runVerifyGHAArtifactImage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			// Avoid rate limiting by not running the tests in parallel.
+			// t.Parallel()
 
 			checkVersions := getBuildersAndVersions(t, "", nil, GHA_ARTIFACT_IMAGE_BUILDERS)
 			if tt.noversion {
@@ -924,7 +926,8 @@ func localDigestCompute(image string) (string, error) {
 }
 
 func Test_runVerifyGCBArtifactImage(t *testing.T) {
-	t.Parallel()
+	// Avoid rate limiting by not running the tests in parallel.
+	// t.Parallel()
 	builder := "https://cloudbuild.googleapis.com/GoogleHostedWorker"
 	tests := []struct {
 		name           string
@@ -1285,7 +1288,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			// Avoid rate limiting by not running the tests in parallel.
+			// t.Parallel()
 
 			checkVersions := getBuildersAndVersions(t, tt.minversion, nil, GCB_ARTIFACT_IMAGE_BUILDERS)
 			if tt.noversion {
@@ -1376,7 +1380,8 @@ func Test_runVerifyGCBArtifactImage(t *testing.T) {
 }
 
 func Test_runVerifyGHAContainerBased(t *testing.T) {
-	t.Parallel()
+	// Avoid rate limiting by not running the tests in parallel.
+	// t.Parallel()
 
 	tests := []struct {
 		name        string
@@ -1513,7 +1518,8 @@ func Test_runVerifyGHAContainerBased(t *testing.T) {
 }
 
 func Test_runVerifyGithubAttestation(t *testing.T) {
-	t.Parallel()
+	// Avoid rate limiting by not running the tests in parallel.
+	// t.Parallel()
 	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
 
 	bcrReleaserBuilderID := "https://github.com/bazel-contrib/.github/.github/workflows/release_ruleset.yaml"
@@ -1561,7 +1567,8 @@ func Test_runVerifyGithubAttestation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			// Avoid rate limiting by not running the tests in parallel.
+			// t.Parallel()
 
 			artifactPath := filepath.Clean(filepath.Join(TEST_DIR, "bcr", tt.artifact))
 			// we treat these single entry *.intoto.jsonl bundles as single attestations
@@ -1584,7 +1591,8 @@ func Test_runVerifyGithubAttestation(t *testing.T) {
 func Test_runVerifyNpmPackage(t *testing.T) {
 	// We cannot use t.Setenv due to parallelized tests.
 	os.Setenv("SLSA_VERIFIER_EXPERIMENTAL", "1")
-	t.Parallel()
+	// Avoid rate limiting by not running the tests in parallel.
+	// t.Parallel()
 
 	tests := []struct {
 		name       string
@@ -2044,7 +2052,8 @@ func Test_runVerifyNpmPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			// Avoid rate limiting by not running the tests in parallel.
+			// t.Parallel()
 
 			artifactPath := filepath.Clean(filepath.Join(TEST_DIR, "npm", "gha", tt.artifact))
 			attestationsPath := fmt.Sprintf("%s.json", artifactPath)
