@@ -214,8 +214,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 ) ([]byte, *utils.TrustedBuilderID, error) {
 	isSigstoreBundle := IsSigstoreBundle(provenance)
 
-	// This includes a default retry count of 3.
-	rClient, err := getDefaultRekorClient()
+	rClient, err := getRekorClient()
 	if err != nil {
 		return nil, nil, err
 	}

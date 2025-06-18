@@ -51,12 +51,12 @@ var (
 	defaultRekorClientOnce = new(sync.Once)
 )
 
-// getDefaultRekorClient returns a cached Rekor client.
-func getDefaultRekorClient() (*rekorGenClient.Rekor, error) {
+// getRekorClient returns a cached Rekor client, with a retry count of 5.
+func getRekorClient() (*rekorGenClient.Rekor, error) {
 	var err error
 	defaultRekorClientOnce.Do(func() {
 		userAgent := fmt.Sprintf("slsa-verifier/%s (%s; %s)", version.GetVersionInfo().GitVersion, runtime.GOOS, runtime.GOARCH)
-		defaultRekorClient, err = rekorClient.GetRekorClient(defaultRekorAddr, rekorClient.WithUserAgent(userAgent))
+		defaultRekorClient, err = rekorClient.GetRekorClient(defaultRekorAddr, rekorClient.WithUserAgent(userAgent), rekorClient.WithRetryCount(5))
 		if err != nil {
 			defaultRekorClientOnce = new(sync.Once)
 			return
