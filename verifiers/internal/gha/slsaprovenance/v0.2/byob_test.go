@@ -55,7 +55,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_REF_TYPE": "branch",
 								"GITHUB_REF":      "refs/heads/main",
 							},
@@ -72,7 +72,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_BASE_REF":   "",
 								"GITHUB_REF_TYPE":   "tag",
 								"GITHUB_REF":        "refs/tags/v1.0.0",
@@ -99,7 +99,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_BASE_REF":   "",
 								"GITHUB_REF_TYPE":   "tag",
 								"GITHUB_REF":        "refs/tags/v1.0.0",
@@ -121,7 +121,7 @@ func Test_byobProvenance_GetBranch(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_REF_TYPE": "branch",
 								"GITHUB_REF":      "refs/heads/main",
 							},
@@ -196,7 +196,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_REF_TYPE": "branch",
 								"GITHUB_REF":      "refs/heads/main",
 							},
@@ -229,7 +229,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_REF_TYPE": "tag",
 								"GITHUB_REF":      "refs/tags/v1.0.0",
 							},
@@ -246,7 +246,7 @@ func Test_byobProvenance_GetTag(t *testing.T) {
 					StatementHeader: intoto.StatementHeader{},
 					Predicate: slsa02.ProvenancePredicate{
 						Invocation: slsa02.ProvenanceInvocation{
-							Environment: map[string]interface{}{
+							Environment: map[string]any{
 								"GITHUB_REF_TYPE": "tag",
 								"GITHUB_REF":      "refs/tags/v1.0.0",
 							},

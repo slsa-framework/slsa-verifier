@@ -22,7 +22,7 @@ func Test_GetExternalParams(t *testing.T) {
 	testCases := []struct {
 		name           string
 		prov           testProvenance
-		expectedParams map[string]interface{}
+		expectedParams map[string]any
 		expectedError  error
 	}{
 		{
@@ -46,13 +46,13 @@ func Test_GetExternalParams(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{},
+								ExternalParameters: map[string]any{},
 							},
 						},
 					},
 				},
 			},
-			expectedParams: make(map[string]interface{}),
+			expectedParams: make(map[string]any),
 			expectedError:  nil,
 		},
 		{
@@ -62,7 +62,7 @@ func Test_GetExternalParams(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
+								ExternalParameters: map[string]any{
 									"key": "value",
 								},
 							},
@@ -70,7 +70,7 @@ func Test_GetExternalParams(t *testing.T) {
 					},
 				},
 			},
-			expectedParams: map[string]interface{}{
+			expectedParams: map[string]any{
 				"key": "value",
 			},
 			expectedError: nil,
@@ -107,8 +107,8 @@ func Test_GetBuildTriggerPath(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"other": map[string]interface{}{},
+								ExternalParameters: map[string]any{
+									"other": map[string]any{},
 								},
 							},
 						},
@@ -125,8 +125,8 @@ func Test_GetBuildTriggerPath(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"workflow": map[string]interface{}{
+								ExternalParameters: map[string]any{
+									"workflow": map[string]any{
 										"key": "value",
 									},
 								},
@@ -145,7 +145,7 @@ func Test_GetBuildTriggerPath(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
+								ExternalParameters: map[string]any{
 									"workflow": map[string]string{
 										"key": "value",
 									},
@@ -165,7 +165,7 @@ func Test_GetBuildTriggerPath(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
+								ExternalParameters: map[string]any{
 									"workflow": map[string]string{
 										"path": testPath,
 									},
@@ -184,8 +184,8 @@ func Test_GetBuildTriggerPath(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"workflow": map[string]interface{}{
+								ExternalParameters: map[string]any{
+									"workflow": map[string]any{
 										"path": testPath,
 									},
 								},

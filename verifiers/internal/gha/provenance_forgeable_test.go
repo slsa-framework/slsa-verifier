@@ -571,13 +571,13 @@ func Test_verifySystemParameters(t *testing.T) {
 	}
 	tests := []struct {
 		name        string
-		environment map[string]interface{}
+		environment map[string]any
 		workflow    WorkflowIdentity
 		err         error
 	}{
 		{
 			name: "all field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -593,7 +593,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "unknown field",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"SOMETHING": "workflow_dispatch",
 			},
 			workflow: expectedWorkflow,
@@ -602,70 +602,70 @@ func Test_verifySystemParameters(t *testing.T) {
 		// Correct partial populated fields.
 		{
 			name: "only GITHUB_EVENT_NAME field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME": "workflow_dispatch",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_REF field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REF": "refs/heads/main",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_REPOSITORY field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REPOSITORY": "laurentsimon/provenance-npm-test",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_REPOSITORY_ID field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REPOSITORY_ID": "602223945",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_REPOSITORY_OWNER_ID field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REPOSITORY_OWNER_ID": "64505099",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_RUN_ATTEMPT field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_RUN_ATTEMPT": "1",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_RUN_ID field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_RUN_ID": "4757060009",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_SHA field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_WORKFLOW_REF field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_WORKFLOW_REF": "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main",
 			},
 			workflow: expectedWorkflow,
 		},
 		{
 			name: "only GITHUB_WORKFLOW_SHA field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_WORKFLOW_SHA": "b38894f2dda4355ea5606fccb166e61565e12a14",
 			},
 			workflow: expectedWorkflow,
@@ -673,7 +673,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		// All fields populated one mismatch.
 		{
 			name: "GITHUB_EVENT_NAME mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch2",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -690,7 +690,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_REF mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main2",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -707,7 +707,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_REPOSITORY mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test2",
@@ -724,7 +724,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_REPOSITORY_ID mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -741,7 +741,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_REPOSITORY_OWNER_ID mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -758,7 +758,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_RUN_ATTEMPT mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -775,7 +775,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_RUN_ID mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -792,7 +792,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_SHA mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -809,7 +809,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_WORKFLOW_REF mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -826,7 +826,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "GITHUB_WORKFLOW_SHA mismatch",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "refs/heads/main",
 				"GITHUB_REPOSITORY":          "laurentsimon/provenance-npm-test",
@@ -844,7 +844,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		// Incorrect partially populated fields.
 		{
 			name: "incorrect only GITHUB_EVENT_NAME field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME": "workflow_dispatch2",
 			},
 			workflow: expectedWorkflow,
@@ -852,7 +852,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_REF field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REF": "refs/heads/main2",
 			},
 			workflow: expectedWorkflow,
@@ -860,7 +860,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_REPOSITORY field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REPOSITORY": "laurentsimon/provenance-npm-test2",
 			},
 			workflow: expectedWorkflow,
@@ -868,7 +868,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_REPOSITORY_ID field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REPOSITORY_ID": "6022239452",
 			},
 			workflow: expectedWorkflow,
@@ -876,7 +876,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_REPOSITORY_OWNER_ID field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_REPOSITORY_OWNER_ID": "645050992",
 			},
 			workflow: expectedWorkflow,
@@ -884,7 +884,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_RUN_ATTEMPT field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_RUN_ATTEMPT": "12",
 			},
 			workflow: expectedWorkflow,
@@ -892,7 +892,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_RUN_ID field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_RUN_ID": "47570600092",
 			},
 			workflow: expectedWorkflow,
@@ -900,7 +900,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_SHA field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_SHA": "b38894f2dda4355ea5606fccb166e61565e12a142",
 			},
 			workflow: expectedWorkflow,
@@ -908,7 +908,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_WORKFLOW_REF field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_WORKFLOW_REF": "laurentsimon/provenance-npm-test/.github/workflows/release.yml@refs/heads/main2",
 			},
 			workflow: expectedWorkflow,
@@ -916,7 +916,7 @@ func Test_verifySystemParameters(t *testing.T) {
 		},
 		{
 			name: "incorrect only GITHUB_WORKFLOW_SHA field populated",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_WORKFLOW_SHA": "b38894f2dda4355ea5606fccb166e61565e12a142",
 			},
 			workflow: expectedWorkflow,
@@ -957,7 +957,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 		subject                    []intoto.Subject
 		numberResolvedDependencies int
 		workflowTriggerPath        string
-		environment                map[string]interface{}
+		environment                map[string]any
 		certificateIdentity        WorkflowIdentity
 		err                        error
 	}{
@@ -970,7 +970,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			},
 			numberResolvedDependencies: 1,
 			workflowTriggerPath:        "release/workflow/path",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "source-ref",
 				"GITHUB_REPOSITORY":          "repo/name",
@@ -1002,7 +1002,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 					Digest: intotocommon.DigestSet{"sha512": "abcd"},
 				},
 			},
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"SOMETHING": "workflow_dispatch",
 			},
 			certificateIdentity: expectedWorkflow,
@@ -1041,7 +1041,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			},
 			numberResolvedDependencies: 1,
 			workflowTriggerPath:        "release/workflow/path2",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME":          "workflow_dispatch",
 				"GITHUB_REF":                 "source-ref",
 				"GITHUB_REPOSITORY":          "repo/name",
@@ -1065,7 +1065,7 @@ func Test_verifyProvenanceMatchesCertificate(t *testing.T) {
 			},
 			numberResolvedDependencies: 1,
 			workflowTriggerPath:        "release/workflow/path",
-			environment: map[string]interface{}{
+			environment: map[string]any{
 				"GITHUB_EVENT_NAME": "workflow_dispatch2",
 			},
 			certificateIdentity: expectedWorkflow,

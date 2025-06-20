@@ -48,7 +48,7 @@ func (p *byobProvenance) GetBranch() (string, error) {
 		return ref, nil
 	case "tags":
 		// NOTE: If the ref type is a tag we want to try to parse out the branch from the tag.
-		sysParams, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
+		sysParams, ok := p.prov.Predicate.Invocation.Environment.(map[string]any)
 		if !ok {
 			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 		}

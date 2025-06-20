@@ -7,7 +7,7 @@ import (
 // Provenance represents provenance for a predicate type and build type.
 type Provenance interface {
 	// Predicate returns the predicate.
-	Predicate() (interface{}, error)
+	Predicate() (any, error)
 
 	// PredicateType returns the predicate type.
 	PredicateType() (string, error)

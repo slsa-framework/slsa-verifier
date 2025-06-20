@@ -53,7 +53,7 @@ func (p *testProvenance) GetBuildInvocationID() (string, error)       { return p
 func (p *testProvenance) GetBuildStartTime() (*time.Time, error)      { return p.buildStartTime, nil }
 func (p *testProvenance) GetBuildFinishTime() (*time.Time, error)     { return p.buildFinishTime, nil }
 func (p *testProvenance) GetNumberResolvedDependencies() (int, error) { return p.noResolvedDeps, nil }
-func (p *testProvenance) GetWorkflowInputs() (map[string]interface{}, error) {
+func (p *testProvenance) GetWorkflowInputs() (map[string]any, error) {
 	return p.workflowInputs, nil
 }
 

@@ -49,5 +49,5 @@ type Provenance interface {
 
 	// GetWorkflowInputs retrieves the inputs from the provenance. Only succeeds for event
 	// relevant event types (workflow_inputs).
-	GetWorkflowInputs() (map[string]interface{}, error)
+	GetWorkflowInputs() (map[string]any, error)
 }

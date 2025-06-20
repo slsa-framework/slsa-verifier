@@ -58,7 +58,7 @@ func New(payload []byte) (iface.Provenance, error) {
 	return &provenance, nil
 }
 
-func (p *Provenance) Predicate() (interface{}, error) {
+func (p *Provenance) Predicate() (any, error) {
 	return p.Pred, nil
 }
 
@@ -82,7 +82,7 @@ func (p *Provenance) BuildType() (string, error) {
 
 // GetSystemParameters implements Provenance.GetSystemParameters.
 func (p *Provenance) GetSystemParameters() (map[string]any, error) {
-	sysParams, ok := p.Pred.BuildDefinition.InternalParameters.(map[string]interface{})
+	sysParams, ok := p.Pred.BuildDefinition.InternalParameters.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: system parameters type", serrors.ErrorInvalidDssePayload)
 	}
@@ -122,7 +122,7 @@ func getSubstitutionsField(sysParams map[string]any, name string) (string, error
 	if !ok {
 		return "", fmt.Errorf("%w: substitution entry %q not found", common.ErrSubstitution, "systemSubstitutions")
 	}
-	substitutionsMap, ok := substitutions.(map[string]interface{})
+	substitutionsMap, ok := substitutions.(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("%w: no entry '%v' in substitution map", common.ErrSubstitution, "systemSubstitutions")
 	}
@@ -145,7 +145,7 @@ func (p *Provenance) SourceBranch() (string, error) {
 }
 
 func (p *Provenance) externalParameters() (map[string]any, error) {
-	extParams, ok := p.Pred.BuildDefinition.ExternalParameters.(map[string]interface{})
+	extParams, ok := p.Pred.BuildDefinition.ExternalParameters.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: system parameters type", serrors.ErrorInvalidDssePayload)
 	}
