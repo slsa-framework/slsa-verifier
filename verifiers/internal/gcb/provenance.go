@@ -193,10 +193,8 @@ func (p *Provenance) validateBuilderID(id string) error {
 	default:
 		return fmt.Errorf("%w: unknown predicate type: %v", serrors.ErrorInvalidDssePayload, predicateType)
 	}
-	for _, b := range builders {
-		if id == b {
-			return nil
-		}
+	if slices.Contains(builders, id) {
+		return nil
 	}
 	return serrors.ErrorInvalidBuilderID
 }
