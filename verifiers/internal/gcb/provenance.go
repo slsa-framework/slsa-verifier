@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
-
-	"golang.org/x/exp/slices"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	dsselib "github.com/secure-systems-lab/go-securesystemslib/dsse"
