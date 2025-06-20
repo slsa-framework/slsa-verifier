@@ -31,7 +31,7 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{},
+								ExternalParameters: map[string]any{},
 							},
 						},
 					},
@@ -47,8 +47,8 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"workflow": map[string]interface{}{},
+								ExternalParameters: map[string]any{
+									"workflow": map[string]any{},
 								},
 							},
 						},
@@ -65,8 +65,8 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"workflow": map[string]interface{}{
+								ExternalParameters: map[string]any{
+									"workflow": map[string]any{
 										"ref": testProvRef,
 									},
 								},
@@ -85,8 +85,8 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"workflow": map[string]interface{}{
+								ExternalParameters: map[string]any{
+									"workflow": map[string]any{
 										"repository": testProvRef,
 									},
 								},
@@ -105,8 +105,8 @@ func Test_NpmCLIGithubActionsProvenance_TriggerURI(t *testing.T) {
 					prov: &Attestation{
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								ExternalParameters: map[string]interface{}{
-									"workflow": map[string]interface{}{
+								ExternalParameters: map[string]any{
+									"workflow": map[string]any{
 										"repository": testProvRepository,
 										"ref":        testProvRef,
 									},

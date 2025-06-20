@@ -44,7 +44,7 @@ func GetWorkflowInputs(environment map[string]any, upperEnv bool) (map[string]an
 		return nil, fmt.Errorf("%w: error retrieving 'inputs': %v", serrors.ErrorInvalidDssePayload, err)
 	}
 
-	pyldInputs, ok := payloadInputs.(map[string]interface{})
+	pyldInputs, ok := payloadInputs.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type inputs")
 	}
@@ -142,7 +142,7 @@ func getBranchForTag(environment map[string]any, upperEnv bool) (string, error) 
 			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "release absent from payload")
 		}
 
-		release, ok := releasePayload.(map[string]interface{})
+		release, ok := releasePayload.(map[string]any)
 		if !ok {
 			return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type releasePayload")
 		}

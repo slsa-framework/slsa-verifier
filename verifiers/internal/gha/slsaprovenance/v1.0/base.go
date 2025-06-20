@@ -47,7 +47,7 @@ func (p *provenanceV1) SourceURI() (string, error) {
 }
 
 func (p *provenanceV1) builderTriggerInfo() (string, string, string, error) {
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]any)
 	if !ok {
 		return "", "", "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
 	}
@@ -105,7 +105,7 @@ func (p *provenanceV1) Subjects() ([]intoto.Subject, error) {
 
 // GetBranch implements Provenance.GetBranch.
 func (p *provenanceV1) GetBranch() (string, error) {
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "internal parameters type")
 	}
@@ -115,7 +115,7 @@ func (p *provenanceV1) GetBranch() (string, error) {
 
 // GetTag implements Provenance.GetTag.
 func (p *provenanceV1) GetTag() (string, error) {
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
@@ -124,8 +124,8 @@ func (p *provenanceV1) GetTag() (string, error) {
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.
-func (p *provenanceV1) GetWorkflowInputs() (map[string]interface{}, error) {
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+func (p *provenanceV1) GetWorkflowInputs() (map[string]any, error) {
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
@@ -150,7 +150,7 @@ func (p *provenanceV1) GetBuildTriggerPath() (string, error) {
 	// `w` may originally have been meant to be a `map[string]interface{}`, but there is not enough test coverage to be sure.
 	// See https://github.com/slsa-framework/slsa-verifier/pull/641/files#diff-8a6f19cc5906bcab1f16457810caf0806567ad7db6cb125d1b41a971ab525c39L78.
 	switch wMap := w.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		v, ok = wMap["path"].(string)
 	case map[string]string:
 		v, ok = wMap["path"]
@@ -186,7 +186,7 @@ func (p *provenanceV1) GetNumberResolvedDependencies() (int, error) {
 
 // GetSystemParameters implements Provenance.GetSystemParameters.
 func (p *provenanceV1) GetSystemParameters() (map[string]any, error) {
-	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
+	sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "system parameters type")
 	}
@@ -195,8 +195,8 @@ func (p *provenanceV1) GetSystemParameters() (map[string]any, error) {
 }
 
 // getExternalParameters() implements Provenance.getExternalParameters.
-func (p *provenanceV1) getExternalParameters() (map[string]interface{}, error) {
-	externalParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]interface{})
+func (p *provenanceV1) getExternalParameters() (map[string]any, error) {
+	externalParams, ok := p.prov.Predicate.BuildDefinition.ExternalParameters.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "external parameters type")
 	}

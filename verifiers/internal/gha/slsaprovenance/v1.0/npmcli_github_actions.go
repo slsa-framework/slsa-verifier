@@ -17,7 +17,7 @@ func (p *NpmCLIGithubActionsProvenance) TriggerURI() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	workflow, ok := externalParams["workflow"].(map[string]interface{})
+	workflow, ok := externalParams["workflow"].(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "workflow parameters")
 	}

@@ -149,7 +149,7 @@ func (p *Provenance) VerifyTextProvenance() error {
 		return err
 	}
 
-	var unverifiedTextIntotoStatement interface{}
+	var unverifiedTextIntotoStatement any
 	switch predicateType {
 	case v10.PredicateSLSAProvenance:
 		unverifiedTextIntotoStatement = &v10.Provenance{
@@ -329,7 +329,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 			return nil, fmt.Errorf("%w: expected %q, got %q", serrors.ErrorInvalidFormat, v01.PredicateSLSAProvenance, predicateType)
 		}
 		expectedType := "type.googleapis.com/google.devtools.cloudbuild.v1.Build"
-		args, ok := v.Recipe.Arguments.(map[string]interface{})
+		args, ok := v.Recipe.Arguments.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("%w: recipe arguments is not a map", serrors.ErrorInvalidDssePayload)
 		}
@@ -348,7 +348,7 @@ func (p *Provenance) VerifyBuilder(builderOpts *options.BuilderOpts) (*utils.Tru
 	return provBuilderID, nil
 }
 
-func getAsString(m map[string]interface{}, key string) (string, error) {
+func getAsString(m map[string]any, key string) (string, error) {
 	t, ok := m["@type"]
 	if !ok {
 		return "", fmt.Errorf("%w: '%s' field is absent", serrors.ErrorInvalidDssePayload, key)
