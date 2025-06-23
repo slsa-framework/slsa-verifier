@@ -196,7 +196,7 @@ func verifyGithubAttestation() *cobra.Command {
 			}
 			return nil
 		},
-		Short: "Verifies SLSA provenance for a github attestation [experimental]",
+		Short: "Verifies SLSA provenance for a GitHub artifact attestation",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := verify.VerifyGithubAttestationCommand{
 				AttestationPath:  o.AttestationPath,
