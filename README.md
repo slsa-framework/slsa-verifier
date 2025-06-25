@@ -35,6 +35,7 @@
     - [npm packages built using the SLSA3 Node.js builder](#npm-packages-built-using-the-slsa3-nodejs-builder)
     - [npm packages built using the npm CLI](#npm-packages-built-using-the-npm-cli)
   - [Container-based builds](#container-based-builds)
+- [Verification for GitHub `attest-build-provenance` Attestations](#verification-for-github-attest-build-provenance-attestations)
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
@@ -439,6 +440,50 @@ $ cat verifier-statement.intoto | jq -r '.predicate.buildDefinition.externalPara
 The builder image is described using an [in-toto Resource Descriptor](https://github.com/in-toto/attestation/blob/main/spec/v1/resource_descriptor.md).
 
 In case the builds are reproducible, you may also use the internal [docker CLI tool](https://github.com/slsa-framework/slsa-github-generator/tree/main/internal/builders/docker#the-verify-command) to verify the artifact by rebuilding the artifact with the provided provenance.
+
+## Verification for GitHub `attest-build-provenance` Attestations
+
+Attestations produced by builders that leverage the [attest-build-provenance](https://github.com/actions/attest-build-provenance) action.
+
+Currently limited to artifacts built with the following builder-ids:
+- `github.com/bazel-contrib/.github/blob/master/.github/workflows/release_ruleset.yaml`
+- `github.com/bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml`
+
+### the `verify-github-attestation` command
+
+```bash
+$ slsa-verifier verify-github-attestation --help
+Verifies SLSA provenance for a GitHub attestation
+
+Usage:
+  slsa-verifier verify-github-attestation [flags] module-file
+
+Flags:
+      --attestation-path string   path to an attestation file
+      --builder-id string         the unique builder ID who created the provenance
+  -h, --help                      help for verify-github-attestation
+      --print-attestation         [optional] print the verified attestation to stdout
+      --source-uri string         expected source repository that should have produced the binary, e.g. github.com/some/repo
+```
+
+First download the artifact and attestation (from bazel central registry in this example)
+
+```shell
+$ curl -sSO https://bcr.bazel.build/modules/aspect_rules_lint/1.3.4/MODULE.bazel
+$ curl -sSO https://bcr.bazel.build/modules/aspect_rules_lint/1.3.4/MODULE.bazel.intoto.jsonl
+```
+
+Verify the attestation
+
+```shell
+$ slsa-verifier verify-github-attestation --source-uri github.com/aspect-build/rules_lint --builder-id https://github.com/bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml --attestation-path MODULE.bazel.intoto.jsonl MODULE.bazel
+
+
+Verified build using builder "https://github.com/bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@refs/tags/v0.0.1" at commit 1e1a949147d641428dac19e77f044b782f5941fd
+Verifying artifact MODULE.bazel: PASSED
+
+PASSED: SLSA verification passed
+```
 
 ## Verification for Google Cloud Build
 
