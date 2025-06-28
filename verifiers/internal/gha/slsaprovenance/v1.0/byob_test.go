@@ -59,7 +59,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								InternalParameters: map[string]interface{}{
+								InternalParameters: map[string]any{
 									"GITHUB_REF_TYPE": "branch",
 									"GITHUB_REF":      "refs/heads/main",
 								},
@@ -78,7 +78,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								InternalParameters: map[string]interface{}{
+								InternalParameters: map[string]any{
 									"GITHUB_BASE_REF":   "",
 									"GITHUB_REF_TYPE":   "tag",
 									"GITHUB_REF":        "refs/tags/v1.0.0",
@@ -107,7 +107,7 @@ func Test_BYOBProvenance_GetBranch(t *testing.T) {
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								InternalParameters: map[string]interface{}{
+								InternalParameters: map[string]any{
 									"GITHUB_REF_TYPE": "branch",
 									"GITHUB_REF":      "refs/heads/main",
 								},
@@ -190,7 +190,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								InternalParameters: map[string]interface{}{
+								InternalParameters: map[string]any{
 									"GITHUB_REF_TYPE": "branch",
 									"GITHUB_REF":      "refs/heads/main",
 								},
@@ -229,7 +229,7 @@ func Test_BYOBProvenance_GetTag(t *testing.T) {
 						StatementHeader: intoto.StatementHeader{},
 						Predicate: slsa1.ProvenancePredicate{
 							BuildDefinition: slsa1.ProvenanceBuildDefinition{
-								InternalParameters: map[string]interface{}{
+								InternalParameters: map[string]any{
 									"GITHUB_REF_TYPE": "tag",
 									"GITHUB_REF":      "refs/tags/v1.0.0",
 								},

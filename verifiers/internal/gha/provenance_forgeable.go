@@ -280,7 +280,7 @@ func verifyNpmCLIGithubActionsV1SystemParameters(prov *slsav1.NpmCLIGithubAction
 	if err != nil {
 		return err
 	}
-	githubParams, ok := sysParams["github"].(map[string]interface{})
+	githubParams, ok := sysParams["github"].(map[string]any)
 	if !ok {
 		return fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "github parameters")
 	}
