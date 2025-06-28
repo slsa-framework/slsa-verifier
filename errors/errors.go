@@ -44,6 +44,7 @@ var (
 	ErrorInvalidHash               = errors.New("invalid hash")
 	ErrorNotPresent                = errors.New("not present")
 	ErrorInvalidPublicKey          = errors.New("invalid public key")
+	ErrorCouldNotFindTarget        = errors.New("could not get the target from the tuf root")
 	ErrorInvalidVerificationResult = errors.New("verificationResult is not PASSED")
 	ErrorMismatchVerifiedLevels    = errors.New("verified levels do not match")
 	ErrorMissingSubjectDigest      = errors.New("missing subject digest")
@@ -51,4 +52,5 @@ var (
 	ErrorMismatchResourceURI       = errors.New("resource URI does not match")
 	ErrorMismatchVerifierID        = errors.New("verifier ID does not match")
 	ErrorInvalidSLSALevel          = errors.New("invalid SLSA level")
+	ErrorInvalidClientOpts         = errors.New("no more than one of options.ClientOpts should be provided")
 )

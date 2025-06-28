@@ -1,6 +1,10 @@
 package options
 
-import "crypto"
+import (
+	"crypto"
+
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+)
 
 // ProvenanceOpts are the options for checking provenance information.
 type ProvenanceOpts struct {
@@ -64,4 +68,23 @@ type VerificationOpts struct {
 
 	// PublicKeyHashAlgo is the hash algorithm used to compute digest that was signed.
 	PublicKeyHashAlgo crypto.Hash
+}
+
+// ClientOpts contain clinets to be used by slsa-verifier.
+// In the future, this can include a logger and a rekor client.
+type ClientOpts struct {
+	// SigstoreTufClient is the Sigstore TUF client, used for retrieving the Npmjs public keys
+	SigstoreTUFClient utils.SigstoreTUFClient
+}
+
+// NewDefaultClientOpts returns default clients to be used by slsa-verifier.
+func NewDefaultClientOpts() (*ClientOpts, error) {
+	sigstoreTUFClient, err := utils.GetDefaultSigstoreTUFClient()
+	if err != nil {
+		return nil, err
+	}
+	opts := &ClientOpts{
+		SigstoreTUFClient: sigstoreTUFClient,
+	}
+	return opts, nil
 }
