@@ -17,6 +17,11 @@ type provenanceV1 struct {
 	prov *Attestation
 }
 
+const (
+	refNameTags  = "tags"
+	refNameHeads = "heads"
+)
+
 // Predicate implements ProvenanceV02.Predicate.
 func (p *provenanceV1) Predicate() slsa1.ProvenancePredicate {
 	return p.prov.Predicate

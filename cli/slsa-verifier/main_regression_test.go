@@ -1526,12 +1526,57 @@ func Test_runVerifyGithubAttestation(t *testing.T) {
 	bcrPublisherBuilderID := "https://github.com/bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml"
 
 	tests := []struct {
-		name      string
-		artifact  string
-		source    string
-		builderID string
-		err       error
+		name             string
+		artifact         string
+		source           string
+		sourceTag        *string
+		sourceVersionTag *string
+		builderID        string
+		err              error
 	}{
+		{
+			name:      "module.bazel using publishing builder",
+			artifact:  "MODULE.bazel",
+			source:    "github.com/aspect-build/rules_lint",
+			builderID: bcrPublisherBuilderID,
+		},
+		{
+			name:      "module.bazel using publishing builder and source tag",
+			artifact:  "MODULE-on-tag.bazel",
+			source:    "github.com/aspect-build/rules_lint",
+			sourceTag: pString("v1.3.4"),
+			builderID: bcrPublisherBuilderID,
+		},
+		{
+			name:      "module.bazel using publishing builder and incorrect source tag",
+			artifact:  "MODULE-on-tag.bazel",
+			source:    "github.com/aspect-build/rules_lint",
+			sourceTag: pString("v1.3.5"),
+			builderID: bcrPublisherBuilderID,
+			err:       serrors.ErrorMismatchTag,
+		},
+		{
+			name:             "module.bazel using publishing builder and source versioned tag",
+			artifact:         "MODULE-on-tag.bazel",
+			source:           "github.com/aspect-build/rules_lint",
+			sourceVersionTag: pString("v1.3.4"),
+			builderID:        bcrPublisherBuilderID,
+		},
+		{
+			name:             "module.bazel using publishing builder and partial source versioned tag",
+			artifact:         "MODULE-on-tag.bazel",
+			source:           "github.com/aspect-build/rules_lint",
+			sourceVersionTag: pString("v1.3"),
+			builderID:        bcrPublisherBuilderID,
+		},
+		{
+			name:             "module.bazel using publishing builder and incorrect source versioned tag",
+			artifact:         "MODULE-on-tag.bazel",
+			source:           "github.com/aspect-build/rules_lint",
+			sourceVersionTag: pString("v1.3.5"),
+			builderID:        bcrPublisherBuilderID,
+			err:              serrors.ErrorMismatchVersionedTag,
+		},
 		{
 			name:      "module.bazel using publishing builder",
 			artifact:  "MODULE.bazel",
@@ -1574,9 +1619,11 @@ func Test_runVerifyGithubAttestation(t *testing.T) {
 			// we treat these single entry *.intoto.jsonl bundles as single attestations
 			attestationPath := fmt.Sprintf("%s.intoto.jsonl", artifactPath)
 			cmd := verify.VerifyGithubAttestationCommand{
-				AttestationPath: attestationPath,
-				BuilderID:       &tt.builderID,
-				SourceURI:       tt.source,
+				AttestationPath:  attestationPath,
+				BuilderID:        &tt.builderID,
+				SourceTag:        tt.sourceTag,
+				SourceVersionTag: tt.sourceVersionTag,
+				SourceURI:        tt.source,
 			}
 
 			_, err := cmd.Exec(context.Background(), artifactPath)

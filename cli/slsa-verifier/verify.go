@@ -189,10 +189,10 @@ func verifyGithubAttestation() *cobra.Command {
 	o := &verify.VerifyGithubAttestationOptions{}
 
 	cmd := &cobra.Command{
-		Use: "verify-github-attestation [flags] module-file",
+		Use: "verify-github-attestation [flags] artifact",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return errors.New("expects a single path to an module file")
+				return errors.New("expects a single path to an artifact")
 			}
 			return nil
 		},
@@ -203,6 +203,12 @@ func verifyGithubAttestation() *cobra.Command {
 				SourceURI:        o.SourceURI,
 				PrintAttestation: o.PrintAttestation,
 				BuilderID:        &o.BuilderID,
+			}
+			if cmd.Flags().Changed("source-tag") {
+				v.SourceTag = &o.SourceTag
+			}
+			if cmd.Flags().Changed("source-versioned-tag") {
+				v.SourceVersionTag = &o.SourceVersionTag
 			}
 			if _, err := v.Exec(cmd.Context(), args[0]); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %v\n", FAILURE, err)
