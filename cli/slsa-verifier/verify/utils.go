@@ -55,19 +55,19 @@ func parseDigest(digest string) (string, error) {
 		return "", fmt.Errorf("invalid digest format: %s", digest)
 	}
 	algorithm := parts[0]
-	hash := parts[1]
+	h := parts[1]
 
 	expectedLen := map[string]int{"sha256": 64, "sha512": 128}
 	exp, ok := expectedLen[algorithm]
 	if !ok {
 		return "", fmt.Errorf("unsupported digest algorithm: %s (supported: sha256, sha512)", algorithm)
 	}
-	if len(hash) != exp {
-		return "", fmt.Errorf("invalid %s digest length: expected %d characters, got %d", algorithm, exp, len(hash))
+	if len(h) != exp {
+		return "", fmt.Errorf("invalid %s digest length: expected %d characters, got %d", algorithm, exp, len(h))
 	}
-	if _, err := hex.DecodeString(hash); err != nil {
-		return "", fmt.Errorf("invalid hex in digest: %s", hash)
+	if _, err := hex.DecodeString(h); err != nil {
+		return "", fmt.Errorf("invalid hex in digest: %s", h)
 	}
 
-	return hash, nil
+	return h, nil
 }
