@@ -5,7 +5,7 @@
   },
   "devDependencies": {
     "markdown-toc": "1.2.0",
-    "renovate": "37.374.1"
+    "renovate": "42.68.5"
   },
   "overrides": {
     "autolinker": "^4.0.0"
