@@ -1,6 +1,10 @@
 package options
 
-import "crypto"
+import (
+	"crypto"
+
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
+)
 
 // ProvenanceOpts are the options for checking provenance information.
 type ProvenanceOpts struct {
@@ -34,10 +38,14 @@ type ProvenanceOpts struct {
 	ExpectedProvenanceRepository *string
 }
 
-// BuildOpts are the options for checking the builder.
+// BuilderOpts are the options for checking the builder.
 type BuilderOpts struct {
-	// ExpectedBuilderID is the builderID passed in from the user.
+	// ExpectedID is the builderID passed in from the user.
 	ExpectedID *string
+
+	// TagResolver is used to resolve a commit SHA to its associated tags.
+	// If nil, SHA pinning is not supported and only tag refs are accepted.
+	TagResolver utils.TagResolver
 }
 
 // VSAOpts are the options for checking the VSA.

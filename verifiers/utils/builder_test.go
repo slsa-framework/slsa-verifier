@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -813,6 +814,104 @@ func Test_IsValidJreleaserBuilderTag(t *testing.T) {
 			err := IsValidJreleaserBuilderTag(tt.ref)
 			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
 				t.Error(cmp.Diff(err, tt.err))
+			}
+		})
+	}
+}
+
+// fakeTagResolver is a TagResolver for testing.
+type fakeTagResolver struct {
+	tags map[string][]string // sha → tag names
+	err  error
+}
+
+func (f *fakeTagResolver) TagsForCommitSHA(_ context.Context, _, _, sha string) ([]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.tags[sha], nil
+}
+
+func Test_IsValidBuilderSHARef(t *testing.T) {
+	t.Parallel()
+
+	const validSHA = "abc0123456789abcdef0123456789abcdef01234"
+
+	tests := []struct {
+		name     string
+		sha      string
+		testing  bool
+		resolver TagResolver
+		err      error
+	}{
+		{
+			name:    "valid SHA resolving to semver tag",
+			sha:     validSHA,
+			testing: false,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{validSHA: {"v1.2.3"}},
+			},
+		},
+		{
+			name:    "valid SHA resolving to semver tag - testing mode",
+			sha:     validSHA,
+			testing: true,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{validSHA: {"v1.2.3-rc1"}},
+			},
+		},
+		{
+			name:    "SHA resolving to non-semver tag only",
+			sha:     validSHA,
+			testing: false,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{validSHA: {"main-build-123"}},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "SHA resolving to no tags",
+			sha:     validSHA,
+			testing: false,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "not a SHA - tag ref format",
+			sha:     "refs/tags/v1.2.3",
+			testing: false,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "resolver error",
+			sha:     validSHA,
+			testing: false,
+			resolver: &fakeTagResolver{
+				err: fmt.Errorf("API error"),
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name:    "SHA with one valid and one invalid tag - passes",
+			sha:     validSHA,
+			testing: false,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{validSHA: {"v1.2.3", "latest"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := IsValidBuilderSHARef(context.Background(), tt.sha, tt.testing, tt.resolver, "owner", "repo")
+			if !cmp.Equal(err, tt.err, cmpopts.EquateErrors()) {
+				t.Errorf("unexpected error: got %v, want %v", err, tt.err)
 			}
 		})
 	}
