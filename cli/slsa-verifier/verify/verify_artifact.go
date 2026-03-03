@@ -57,7 +57,8 @@ func (c *VerifyArtifactCommand) Exec(ctx context.Context, artifacts []string) (*
 		}
 
 		builderOpts := &options.BuilderOpts{
-			ExpectedID: c.BuilderID,
+			ExpectedID:  c.BuilderID,
+			TagResolver: newTagResolver(),
 		}
 
 		provenance, err := os.ReadFile(c.ProvenancePath)

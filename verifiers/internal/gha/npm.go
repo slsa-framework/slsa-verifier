@@ -294,13 +294,13 @@ func (n *Npm) verifyPackageVersion(version *string) error {
 	return nil
 }
 
-func (n *Npm) verifyBuilderID(
+func (n *Npm) verifyBuilderID(ctx context.Context,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
 ) (*utils.TrustedBuilderID, error) {
 	// Verify certificate information.
-	builder, err := verifyNpmEnvAndCert(
+	builder, err := verifyNpmEnvAndCert(ctx,
 		n.ProvenanceEnvelope(),
 		n.ProvenanceLeafCertificate(),
 		provenanceOpts, builderOpts,
