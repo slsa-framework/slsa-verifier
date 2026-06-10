@@ -3,6 +3,7 @@ package gcb
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -54,7 +55,7 @@ func ProvenanceFromBytes(payload []byte) (*Provenance, error) {
 	var prov gloudProvenance
 	err := json.Unmarshal(payload, &prov)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidDssePayload, err)
+		return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidDssePayload, err)
 	}
 
 	return &Provenance{
@@ -492,7 +493,7 @@ func (p *Provenance) VerifyBranch(branch string) error {
 func (p *Provenance) VerifyTag(expectedTag string) error {
 	provenanceTag, err := p.getTag()
 	if err != nil {
-		return fmt.Errorf("%w: %v", serrors.ErrorMismatchTag, err.Error())
+		return fmt.Errorf("%w: %w", serrors.ErrorMismatchTag, err)
 	}
 
 	if provenanceTag != expectedTag {
@@ -505,7 +506,7 @@ func (p *Provenance) VerifyTag(expectedTag string) error {
 func (p *Provenance) VerifyVersionedTag(expectedTag string) error {
 	provenanceTag, err := p.getTag()
 	if err != nil {
-		return fmt.Errorf("%w: %v", serrors.ErrorMismatchVersionedTag, err.Error())
+		return fmt.Errorf("%w: %w", serrors.ErrorMismatchVersionedTag, err)
 	}
 	return utils.VerifyVersionedTag(provenanceTag, expectedTag)
 }
@@ -611,7 +612,7 @@ func (p *Provenance) verifySignatures(prov *provenance) error {
 		return nil
 	}
 
-	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
+	return fmt.Errorf("%w: %w", serrors.ErrorNoValidSignature, errors.Join(errs...))
 }
 
 // VerifySignature verifiers the signature for a provenance.
@@ -632,5 +633,5 @@ func (p *Provenance) VerifySignature() error {
 		return nil
 	}
 
-	return fmt.Errorf("%w: %v", serrors.ErrorNoValidSignature, errs)
+	return fmt.Errorf("%w: %w", serrors.ErrorNoValidSignature, errors.Join(errs...))
 }

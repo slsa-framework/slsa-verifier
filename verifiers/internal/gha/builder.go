@@ -147,7 +147,7 @@ func verifyTrustedBuilderID(certBuilderID, certTag string, expectedBuilderID *st
 	// Note: the certificate builderID has the form `name@refs/tags/v1.2.3`,
 	// so we pass `allowRef = true`.
 	if err := trustedBuilderID.MatchesLoose(*expectedBuilderID, true); err != nil {
-		return nil, false, fmt.Errorf("%w: %v", serrors.ErrorUntrustedReusableWorkflow, err)
+		return nil, false, fmt.Errorf("%w: %w", serrors.ErrorUntrustedReusableWorkflow, err)
 	}
 
 	return trustedBuilderID, false, nil
