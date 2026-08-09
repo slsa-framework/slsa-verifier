@@ -43,7 +43,7 @@
     - [npm packages built using the SLSA3 Node.js builder](#npm-packages-built-using-the-slsa3-nodejs-builder)
     - [npm packages built using the npm CLI](#npm-packages-built-using-the-npm-cli)
   - [Container-based builds](#container-based-builds)
-- [Verification for GitHub `attest-build-provenance` Attestations](#verification-for-github-attest-build-provenance-attestations)
+- [Verification for GitHub `attest` Attestations](#verification-for-github-attest-build-provenance-attestations)
 - [Verification for Google Cloud Build](#verification-for-google-cloud-build)
   - [Artifacts](#artifacts-1)
   - [Containers](#containers-1)
@@ -449,9 +449,9 @@ The builder image is described using an [in-toto Resource Descriptor](https://gi
 
 In case the builds are reproducible, you may also use the internal [docker CLI tool](https://github.com/slsa-framework/slsa-github-generator/tree/main/internal/builders/docker#the-verify-command) to verify the artifact by rebuilding the artifact with the provided provenance.
 
-## Verification for GitHub `attest-build-provenance` Attestations
+## Verification for GitHub `attest` Attestations
 
-Attestations produced by builders that leverage the [attest-build-provenance](https://github.com/actions/attest-build-provenance) action.
+Attestations produced by builders that leverage the [attest](https://github.com/actions/attest) action.
 
 Currently limited to artifacts built with the following builder-ids:
 - `github.com/bazel-contrib/.github/blob/master/.github/workflows/release_ruleset.yaml`
