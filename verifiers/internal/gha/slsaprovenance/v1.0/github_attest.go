@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 // GithubAttestBuildType is the build type for the github attest based builder.
@@ -15,13 +16,9 @@ type GithubAttestProvenance struct {
 }
 
 func (p *GithubAttestProvenance) TriggerURI() (string, error) {
-	externalParams, err := p.getExternalParameters()
+	workflow, err := p.getWorkflow()
 	if err != nil {
 		return "", err
-	}
-	workflow, ok := externalParams["workflow"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "workflow parameters")
 	}
 	repository, ok := workflow["repository"].(string)
 	if !ok {
@@ -33,4 +30,37 @@ func (p *GithubAttestProvenance) TriggerURI() (string, error) {
 	}
 	uri := fmt.Sprintf("git+%s@%s", repository, ref)
 	return uri, nil
+}
+
+// GetTag returns the triggering event's tag.
+func (p *GithubAttestProvenance) GetTag() (string, error) {
+	workflow, err := p.getWorkflow()
+	if err != nil {
+		return "", err
+	}
+	ref, ok := workflow["ref"].(string)
+	if !ok {
+		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "workflow parameters: ref")
+	}
+
+	refType, _ := utils.ParseGitRef(ref)
+	switch refType {
+	case refNameTags:
+		return ref, nil
+	default:
+		return "", fmt.Errorf("%w: non-tag ref type %q for ref %q",
+			serrors.ErrorInvalidDssePayload, refType, ref)
+	}
+}
+
+func (p *GithubAttestProvenance) getWorkflow() (map[string]interface{}, error) {
+	externalParams, err := p.getExternalParameters()
+	if err != nil {
+		return nil, err
+	}
+	workflow, ok := externalParams["workflow"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidFormat, "workflow parameters")
+	}
+	return workflow, nil
 }

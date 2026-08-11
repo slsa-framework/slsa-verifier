@@ -29,6 +29,8 @@ type VerifyGithubAttestationCommand struct {
 	AttestationPath     string
 	BuilderID           *string
 	SourceURI           string
+	SourceTag           *string
+	SourceVersionTag    *string
 	BuildWorkflowInputs map[string]string
 	PrintAttestation    bool
 }
@@ -43,6 +45,8 @@ func (c *VerifyGithubAttestationCommand) Exec(ctx context.Context, artifact stri
 	provenanceOpts := &options.ProvenanceOpts{
 		ExpectedSourceURI:      c.SourceURI,
 		ExpectedDigest:         artifactHash,
+		ExpectedVersionedTag:   c.SourceVersionTag,
+		ExpectedTag:            c.SourceTag,
 		ExpectedWorkflowInputs: c.BuildWorkflowInputs,
 	}
 

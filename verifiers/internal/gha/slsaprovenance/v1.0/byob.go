@@ -37,10 +37,10 @@ func (p *BYOBProvenance) GetBranch() (string, error) {
 
 	refType, _ := utils.ParseGitRef(ref)
 	switch refType {
-	case "heads": // branch.
+	case refNameHeads: // branch.
 		// NOTE: We return the full git ref.
 		return ref, nil
-	case "tags":
+	case refNameTags:
 		// NOTE: If the ref type is a tag we want to try to parse out the branch from the tag.
 		sysParams, ok := p.prov.Predicate.BuildDefinition.InternalParameters.(map[string]interface{})
 		if !ok {
@@ -73,9 +73,9 @@ func (p *BYOBProvenance) GetTag() (string, error) {
 
 	refType, _ := utils.ParseGitRef(ref)
 	switch refType {
-	case "heads": // branch.
+	case refNameHeads: // branch.
 		return "", nil
-	case "tags":
+	case refNameTags:
 		// NOTE: We return the full git ref.
 		return ref, nil
 	default:
