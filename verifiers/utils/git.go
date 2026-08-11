@@ -66,3 +66,16 @@ func TagFromGitRef(ref string) (string, error) {
 func BranchFromGitRef(ref string) (string, error) {
 	return ValidateGitRef("heads", ref)
 }
+
+// IsSHA returns true if s is a 40-character lowercase hex Git commit SHA.
+func IsSHA(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}

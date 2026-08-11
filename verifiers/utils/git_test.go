@@ -8,6 +8,68 @@ import (
 	serrors "github.com/slsa-framework/slsa-verifier/v2/errors"
 )
 
+func Test_IsSHA(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		s        string
+		expected bool
+	}{
+		{
+			name:     "valid 40-char lowercase hex",
+			s:        "abc0123456789abcdef0123456789abcdef01234",
+			expected: true,
+		},
+		{
+			name:     "all zeros",
+			s:        "0000000000000000000000000000000000000000",
+			expected: true,
+		},
+		{
+			name:     "39 chars",
+			s:        "abc0123456789abcdef0123456789abcdef0123",
+			expected: false,
+		},
+		{
+			name:     "41 chars",
+			s:        "abc0123456789abcdef0123456789abcdef012345",
+			expected: false,
+		},
+		{
+			name:     "uppercase hex",
+			s:        "ABC0123456789ABCDEF0123456789ABCDEF01234",
+			expected: false,
+		},
+		{
+			name:     "non-hex chars",
+			s:        "xyz0123456789abcdef0123456789abcdef01234",
+			expected: false,
+		},
+		{
+			name:     "tag ref",
+			s:        "refs/tags/v1.2.3",
+			expected: false,
+		},
+		{
+			name:     "empty string",
+			s:        "",
+			expected: false,
+		},
+	}
+
+	for i := range testCases {
+		tt := testCases[i]
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := IsSHA(tt.s), tt.expected; got != want {
+				t.Errorf("IsSHA(%q) = %v, want %v", tt.s, got, want)
+			}
+		})
+	}
+}
+
 func Test_NormalizeGitURI(t *testing.T) {
 	t.Parallel()
 

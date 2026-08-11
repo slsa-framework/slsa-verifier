@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -149,6 +150,31 @@ func IsValidBuilderTag(ref string, testing bool) error {
 		return fmt.Errorf("%w: %s: not of the form vX.Y.Z", serrors.ErrorInvalidRef, pin)
 	}
 	return nil
+}
+
+// IsValidBuilderSHARef validates a commit SHA by resolving it to a semver tag
+// via the GitHub API. owner and repo identify the builder repository.
+func IsValidBuilderSHARef(ctx context.Context, sha string, testing bool,
+	resolver TagResolver, owner, repo string,
+) error {
+	if !IsSHA(sha) {
+		return fmt.Errorf("%w: %q is not a valid commit SHA", serrors.ErrorInvalidRef, sha)
+	}
+	tags, err := resolver.TagsForCommitSHA(ctx, owner, repo, sha)
+	if err != nil {
+		return fmt.Errorf("%w: resolving SHA %s: %w", serrors.ErrorInvalidRef, sha, err)
+	}
+	if len(tags) == 0 {
+		return fmt.Errorf("%w: SHA %s has no associated tags in %s/%s",
+			serrors.ErrorInvalidRef, sha, owner, repo)
+	}
+	for _, tag := range tags {
+		if err := IsValidBuilderTag("refs/tags/"+tag, testing); err == nil {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: SHA %s has no valid semver tag in %s/%s",
+		serrors.ErrorInvalidRef, sha, owner, repo)
 }
 
 func IsValidJreleaserBuilderTag(ref string) error {

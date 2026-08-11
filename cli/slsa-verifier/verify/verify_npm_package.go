@@ -69,7 +69,8 @@ func (c *VerifyNpmPackageCommand) Exec(ctx context.Context, tarballs []string) (
 		}
 
 		builderOpts := &options.BuilderOpts{
-			ExpectedID: c.BuilderID,
+			ExpectedID:  c.BuilderID,
+			TagResolver: newTagResolver(),
 		}
 
 		attestations, err := os.ReadFile(c.AttestationsPath)

@@ -61,7 +61,8 @@ func (c *VerifyImageCommand) Exec(ctx context.Context, artifacts []string) (*uti
 	}
 
 	builderOpts := &options.BuilderOpts{
-		ExpectedID: c.BuilderID,
+		ExpectedID:  c.BuilderID,
+		TagResolver: newTagResolver(),
 	}
 
 	var provenance []byte

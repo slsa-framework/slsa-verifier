@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
@@ -63,7 +64,7 @@ func VerifyCertficateSourceRepository(id *WorkflowIdentity,
 // Builder IDs are verified against an expected builder ID provided in the
 // builerOpts, or against the set of defaultBuilders provided. The identiy
 // in the certificate corresponds to a GitHub workflow's path.
-func VerifyBuilderIdentity(id *WorkflowIdentity,
+func VerifyBuilderIdentity(ctx context.Context, id *WorkflowIdentity,
 	builderOpts *options.BuilderOpts,
 	defaultBuilders map[string]bool,
 ) (*utils.TrustedBuilderID, bool, error) {
@@ -90,7 +91,7 @@ func VerifyBuilderIdentity(id *WorkflowIdentity,
 	}
 
 	// Verify the ref is a full semantic version tag.
-	if err := verifyTrustedBuilderRef(id, workflowTag); err != nil {
+	if err := verifyTrustedBuilderRef(ctx, id, workflowTag, builderOpts.TagResolver); err != nil {
 		return nil, byob, err
 	}
 
@@ -171,19 +172,26 @@ func isTrustedDelegatorBuilder(certBuilder *utils.TrustedBuilderID, trustedBuild
 // Only allow `@refs/heads/main` for the builder and the e2e tests that need to work at HEAD.
 // This lets us use the pre-build builder binary generated during release (release happen at main).
 // For other projects, we only allow semantic versions that map to a release.
-func verifyTrustedBuilderRef(id *WorkflowIdentity, ref string) error {
-	if (id.SourceRepository == trustedBuilderRepository ||
-		id.SourceRepository == e2eTestRepository) &&
-		options.TestingEnabled() {
-		// Allow verification on the main branch to support e2e tests.
-		if ref == "refs/heads/main" {
-			return nil
-		}
+func verifyTrustedBuilderRef(ctx context.Context, id *WorkflowIdentity, ref string, resolver utils.TagResolver) error {
+	testing := (id.SourceRepository == trustedBuilderRepository ||
+		id.SourceRepository == e2eTestRepository) && options.TestingEnabled()
 
-		return utils.IsValidBuilderTag(ref, true)
+	if testing && ref == "refs/heads/main" {
+		return nil
 	}
 
-	return utils.IsValidBuilderTag(ref, false)
+	if utils.IsSHA(ref) {
+		if resolver == nil {
+			return fmt.Errorf("%w: SHA pinning requires a tag resolver; set GITHUB_TOKEN or provide a resolver", serrors.ErrorInvalidRef)
+		}
+		parts := strings.SplitN(id.SourceRepository, "/", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("%w: cannot parse repository %q", serrors.ErrorInvalidRef, id.SourceRepository)
+		}
+		return utils.IsValidBuilderSHARef(ctx, ref, testing, resolver, parts[0], parts[1])
+	}
+
+	return utils.IsValidBuilderTag(ref, testing)
 }
 
 func getExtension(cert *x509.Certificate, oid asn1.ObjectIdentifier, encoded bool) (string, error) {

@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
@@ -319,7 +320,7 @@ func Test_VerifyBuilderIdentity(t *testing.T) {
 			if tt.builderID != "" {
 				opts.ExpectedID = &tt.builderID
 			}
-			id, byob, err := VerifyBuilderIdentity(tt.workflow, opts, tt.defaults)
+			id, byob, err := VerifyBuilderIdentity(context.Background(), tt.workflow, opts, tt.defaults)
 			if byob != tt.byob {
 				t.Errorf("unexpected byob value:\n%s", cmp.Diff(tt.byob, byob))
 			}
@@ -450,6 +451,85 @@ func Test_VerifyCertficateSourceRepository(t *testing.T) {
 
 func asStringPointer(s string) *string {
 	return &s
+}
+
+// fakeTagResolver is a TagResolver for testing.
+type fakeTagResolver struct {
+	tags map[string][]string // sha → tag names
+}
+
+func (f *fakeTagResolver) TagsForCommitSHA(_ context.Context, _, _, sha string) ([]string, error) {
+	return f.tags[sha], nil
+}
+
+func Test_verifyTrustedBuilderRefSHA(t *testing.T) {
+	t.Parallel()
+
+	const validSHA = "abc0123456789abcdef0123456789abcdef01234"
+
+	tests := []struct {
+		name       string
+		workflow   *WorkflowIdentity
+		ref        string
+		resolver   utils.TagResolver
+		err        error
+	}{
+		{
+			name: "SHA pinned to valid semver tag - pass",
+			workflow: &WorkflowIdentity{
+				SourceRepository: "slsa-framework/slsa-github-generator",
+				Issuer:           certOidcIssuer,
+			},
+			ref: validSHA,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{validSHA: {"v1.2.3"}},
+			},
+		},
+		{
+			name: "SHA pinned to no tags - fail",
+			workflow: &WorkflowIdentity{
+				SourceRepository: "slsa-framework/slsa-github-generator",
+				Issuer:           certOidcIssuer,
+			},
+			ref: validSHA,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "SHA pinned to non-semver tag only - fail",
+			workflow: &WorkflowIdentity{
+				SourceRepository: "slsa-framework/slsa-github-generator",
+				Issuer:           certOidcIssuer,
+			},
+			ref: validSHA,
+			resolver: &fakeTagResolver{
+				tags: map[string][]string{validSHA: {"main-build-123"}},
+			},
+			err: serrors.ErrorInvalidRef,
+		},
+		{
+			name: "SHA with nil resolver - fail",
+			workflow: &WorkflowIdentity{
+				SourceRepository: "slsa-framework/slsa-github-generator",
+				Issuer:           certOidcIssuer,
+			},
+			ref:      validSHA,
+			resolver: nil,
+			err:      serrors.ErrorInvalidRef,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := verifyTrustedBuilderRef(context.Background(), tt.workflow, tt.ref, tt.resolver)
+			if diff := cmp.Diff(tt.err, err, cmpopts.EquateErrors()); diff != "" {
+				t.Errorf("unexpected error (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func Test_verifyTrustedBuilderID(t *testing.T) {
@@ -815,7 +895,7 @@ func Test_verifyTrustedBuilderRef(t *testing.T) {
 				t.Setenv("SLSA_VERIFIER_TESTING", "")
 			}
 
-			err := verifyTrustedBuilderRef(&wf, tt.builderRef)
+			err := verifyTrustedBuilderRef(context.Background(), &wf, tt.builderRef, nil)
 			if !errCmp(err, tt.expected) {
 				t.Error(cmp.Diff(err, tt.expected, cmpopts.EquateErrors()))
 			}

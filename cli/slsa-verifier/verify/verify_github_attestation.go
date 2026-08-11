@@ -47,7 +47,8 @@ func (c *VerifyGithubAttestationCommand) Exec(ctx context.Context, artifact stri
 	}
 
 	builderOpts := &options.BuilderOpts{
-		ExpectedID: c.BuilderID,
+		ExpectedID:  c.BuilderID,
+		TagResolver: newTagResolver(),
 	}
 
 	attestation, err := os.ReadFile(c.AttestationPath)

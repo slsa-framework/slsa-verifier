@@ -42,7 +42,7 @@ func (v *GHAVerifier) IsAuthoritativeFor(builderID string) bool {
 	return strings.HasPrefix(builderID, httpsGithubCom)
 }
 
-func verifyEnvAndCert(env *dsse.Envelope,
+func verifyEnvAndCert(ctx context.Context, env *dsse.Envelope,
 	cert *x509.Certificate,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
@@ -56,7 +56,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	}
 
 	// Verify the builder identity.
-	verifiedBuilderID, byob, err := VerifyBuilderIdentity(workflowInfo, builderOpts, defaultBuilders)
+	verifiedBuilderID, byob, err := VerifyBuilderIdentity(ctx, workflowInfo, builderOpts, defaultBuilders)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,7 +97,7 @@ func verifyEnvAndCert(env *dsse.Envelope,
 	return r, verifiedBuilderID, nil
 }
 
-func verifyNpmEnvAndCert(env *dsse.Envelope,
+func verifyNpmEnvAndCert(ctx context.Context, env *dsse.Envelope,
 	cert *x509.Certificate,
 	provenanceOpts *options.ProvenanceOpts,
 	builderOpts *options.BuilderOpts,
@@ -118,7 +118,7 @@ func verifyNpmEnvAndCert(env *dsse.Envelope,
 	delegatorBuilderOpts := options.BuilderOpts{
 		ExpectedID: &expectedDelegatorWorkflow,
 	}
-	trustedBuilderID, byob, err := VerifyBuilderIdentity(workflowInfo, &delegatorBuilderOpts, defaultBuilders)
+	trustedBuilderID, byob, err := VerifyBuilderIdentity(ctx, workflowInfo, &delegatorBuilderOpts, defaultBuilders)
 	// We accept a non-trusted builder for the default npm builder
 	// that uses npm CLI.
 	if err != nil && !errors.Is(err, serrors.ErrorUntrustedReusableWorkflow) {
@@ -237,7 +237,7 @@ func (v *GHAVerifier) VerifyArtifact(ctx context.Context,
 		return nil, nil, err
 	}
 
-	return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
+	return verifyEnvAndCert(ctx, signedAtt.Envelope, signedAtt.SigningCert,
 		provenanceOpts, builderOpts,
 		utils.MergeMaps(defaultArtifactTrustedReusableWorkflows, defaultBYOBReusableWorkflows))
 }
@@ -263,7 +263,7 @@ func (v *GHAVerifier) VerifyGithubAttestation(ctx context.Context,
 		return nil, nil, err
 	}
 
-	return verifyEnvAndCert(signedAtt.Envelope, signedAtt.SigningCert,
+	return verifyEnvAndCert(ctx, signedAtt.Envelope, signedAtt.SigningCert,
 		provenanceOpts, builderOpts, map[string]bool{})
 }
 
@@ -323,7 +323,7 @@ func (v *GHAVerifier) VerifyImage(ctx context.Context,
 			fmt.Fprintf(os.Stderr, "unexpected error getting certificate from OCI registry %s", err)
 			continue
 		}
-		verifiedProvenance, builderID, err = verifyEnvAndCert(env,
+		verifiedProvenance, builderID, err = verifyEnvAndCert(ctx, env,
 			cert, provenanceOpts, builderOpts,
 			defaultContainerTrustedReusableWorkflows)
 		if err == nil {
@@ -365,7 +365,7 @@ func (v *GHAVerifier) VerifyNpmPackage(ctx context.Context,
 	}
 
 	// Verify provenance builder information.
-	builder, err := npm.verifyBuilderID(
+	builder, err := npm.verifyBuilderID(ctx,
 		provenanceOpts, builderOpts,
 		defaultBYOBReusableWorkflows)
 	if err != nil {

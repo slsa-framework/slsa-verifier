@@ -19,6 +19,8 @@ import (
 	"hash"
 	"io"
 	"os"
+
+	"github.com/slsa-framework/slsa-verifier/v2/verifiers/utils"
 )
 
 func computeFileHash(filePath string, h hash.Hash) (string, error) {
@@ -32,4 +34,12 @@ func computeFileHash(filePath string, h hash.Hash) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// newTagResolver creates a GitHubTagResolver, optionally authenticated via
+// the GITHUB_TOKEN environment variable.
+func newTagResolver() utils.TagResolver {
+	return &utils.GitHubTagResolver{
+		Token: os.Getenv("GITHUB_TOKEN"),
+	}
 }
