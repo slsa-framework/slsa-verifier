@@ -75,7 +75,7 @@ func (p *provenanceV02) Subjects() ([]intoto.Subject, error) {
 // GetBranch implements Provenance.GetBranch.
 func (p *provenanceV02) GetBranch() (string, error) {
 	// GetBranch gets the branch from the invocation parameters.
-	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
+	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
@@ -85,7 +85,7 @@ func (p *provenanceV02) GetBranch() (string, error) {
 
 // GetTag implements Provenance.GetTag.
 func (p *provenanceV02) GetTag() (string, error) {
-	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
+	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
@@ -94,9 +94,9 @@ func (p *provenanceV02) GetTag() (string, error) {
 }
 
 // GetWorkflowInputs implements Provenance.GetWorkflowInputs.
-func (p *provenanceV02) GetWorkflowInputs() (map[string]interface{}, error) {
+func (p *provenanceV02) GetWorkflowInputs() (map[string]any, error) {
 	// Verify it's a workflow_dispatch trigger.
-	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
+	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}
@@ -140,7 +140,7 @@ func (p *provenanceV02) GetNumberResolvedDependencies() (int, error) {
 
 // GetSystemParameters implements Provenance.GetSystemParameters.
 func (p *provenanceV02) GetSystemParameters() (map[string]any, error) {
-	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]interface{})
+	environment, ok := p.prov.Predicate.Invocation.Environment.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", serrors.ErrorInvalidDssePayload, "parameters type")
 	}

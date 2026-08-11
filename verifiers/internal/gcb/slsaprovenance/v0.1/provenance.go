@@ -57,9 +57,9 @@ type ProvenanceRecipe struct {
 	// DefinedInMaterial can be sent as the null pointer to indicate that
 	// the value is not present.
 	// DefinedInMaterial *int        `json:"definedInMaterial,omitempty"`
-	EntryPoint  string      `json:"entryPoint"`
-	Arguments   interface{} `json:"arguments,omitempty"`
-	Environment interface{} `json:"environment,omitempty"`
+	EntryPoint  string `json:"entryPoint"`
+	Arguments   any    `json:"arguments,omitempty"`
+	Environment any    `json:"environment,omitempty"`
 }
 
 // ProvenanceMetadata contains metadata for the built artifact.
@@ -145,7 +145,7 @@ func (p *Provenance) SourceBranch() (string, error) {
 	return "", fmt.Errorf("%w: branch verification", serrors.ErrorNotSupported)
 }
 
-func (p *Provenance) Predicate() (interface{}, error) {
+func (p *Provenance) Predicate() (any, error) {
 	return p.Pred, nil
 }
 
@@ -170,7 +170,7 @@ func (p *Provenance) BuildType() (string, error) {
 // BuildType implements Statement.GetSystemParameters.
 func (p *Provenance) GetSystemParameters() (map[string]any, error) {
 	arguments := p.Pred.Recipe.Arguments
-	argsMap, ok := arguments.(map[string]interface{})
+	argsMap, ok := arguments.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot cast arguments as map", common.ErrSubstitution)
 	}
@@ -180,7 +180,7 @@ func (p *Provenance) GetSystemParameters() (map[string]any, error) {
 		return nil, fmt.Errorf("%w: no 'substitutions' field", common.ErrSubstitution)
 	}
 
-	m, ok := substitutions.(map[string]interface{})
+	m, ok := substitutions.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot convert substitutions to a map", common.ErrSubstitution)
 	}
