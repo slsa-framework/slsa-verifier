@@ -8,6 +8,14 @@
 
 <img align="right" src="https://slsa.dev/images/logo-mono.svg" width="140" height="140">
 
+> This project is **no longer actively maintained**.
+> We are working on guidance and simpler tooling to replace it.
+
+> If you are verifying attestations for GitHub Actions, we suggest generating them with
+> [GitHub artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations),
+> a built-in solution for generating SLSA provenance on GitHub, and verifying them
+> with [`gh attestation verify`](https://cli.github.com/manual/gh_attestation_verify).
+
 <!-- markdown-toc --bullets="-" -i README.md -->
 
 <!-- toc -->
