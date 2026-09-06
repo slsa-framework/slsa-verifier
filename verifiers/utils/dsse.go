@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -93,7 +94,7 @@ func DecodeSignature(s string) ([]byte, error) {
 	}
 	errs = append(errs, err)
 
-	return nil, fmt.Errorf("%w: %v", serrors.ErrorInvalidEncoding, errs)
+	return nil, fmt.Errorf("%w: %w", serrors.ErrorInvalidEncoding, errors.Join(errs...))
 }
 
 type SignatureEncoding int
